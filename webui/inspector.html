@@ -1,0 +1,174 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    body{background:transparent}
+    .wrap{
+      height:100%;
+      padding:12px;
+      border-radius:var(--r);
+      border:1px solid var(--border);
+      background:var(--surface);
+      display:flex; flex-direction:column; gap:10px;
+      overflow:hidden;
+      font-family: "Segoe UI Variable Text", "Segoe UI", "Bahnschrift", "Calibri", "Arial", sans-serif;
+    }
+    .tabs{
+      position:relative;
+      display:flex; gap:6px;
+      padding:6px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02);
+    }
+    .tab{
+      flex:1;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--muted);
+      font-weight:900;
+      cursor:pointer;
+    }
+    .tab.active{
+      background:rgba(255,255,255,.05);
+      border-color:rgba(255,255,255,.08);
+      color:var(--text);
+    }
+    .desc{font-size:12px; padding:0 2px 8px 2px}
+    .pane{display:none; overflow:auto; padding-right:2px}
+    .pane.active{display:block}
+
+    .card{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02);
+      padding:12px;
+      margin-bottom:12px;
+    }
+    .title{font-weight:900; font-size:12px}
+    .hint{font-size:12px; margin-top:4px; line-height:1.35; color:var(--muted)}
+    .details{
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02);
+      padding:12px;
+      margin-bottom:12px;
+    }
+    .section + .section{margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.06)}
+    .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.06);
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+    }
+    .kv{display:flex; flex-direction:column; gap:10px; margin-top:10px}
+    .kvrow{display:flex; justify-content:space-between; font-size:12px}
+    .kvval{font-weight:900; font-variant-numeric:tabular-nums}
+    .mini{height:6px; border-radius:999px; background:rgba(255,255,255,.10); overflow:hidden; margin-top:10px}
+    .minibar{height:100%; width:82%; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tab active" id="tabMain" type="button">Main</button>
+      <button class="tab" id="tabExport" type="button">Export</button>
+    </div>
+    <div class="desc muted" id="desc">Configure cut detection and preview behavior.</div>
+
+    <div class="pane active" id="paneMain">
+      <div class="card">
+        <div class="title">Preset</div>
+        <div class="hint">Load or save a preset for these cut settings.</div>
+        <!-- Preset area placeholder: wiring is handled in the Qt panel -->
+        <div class="hint">Preset UI will be implemented here (searchable dropdown + icon actions).</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Cut intensity</div>
+        <div class="hint">Higher = fewer cuts, more aggressive merging.</div>
+        <div class="hint">Slider UI placeholder.</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Voice threshold</div>
+        <div class="hint">Below this level is considered silence.</div>
+        <div class="hint">Threshold UI placeholder (percent + slider + meter).</div>
+      </div>
+
+      <!-- Soluzione 4: details area -->
+      <div class="details">
+        <div class="section">
+          <div class="title">Current setup</div>
+          <div class="chips">
+            <span class="chip">Pre 0.25s</span>
+            <span class="chip">Post 0.25s</span>
+            <span class="chip">Min cut 0.10s</span>
+            <span class="chip">Merge 300ms</span>
+            <span class="chip">Smoothing Medium</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="title">Cuts overview</div>
+          <div class="kv">
+            <div class="kvrow"><span class="muted">Cuts</span><span class="kvval" id="cuts">0</span></div>
+            <div class="kvrow"><span class="muted">Output</span><span class="kvval" id="out">0:00</span></div>
+            <div class="kvrow"><span class="muted">Keep ratio</span><span class="kvval" id="keep">0%</span></div>
+          </div>
+          <div class="mini"><div class="minibar" id="keepBar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="paneExport">
+      <div class="card">
+        <div class="title">Export</div>
+        <div class="hint">Choose codec and method, then export.</div>
+        <button class="btn btn--primary" id="btnExport2" type="button" style="width:100%; justify-content:center">Export MP4</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    let bridge=null;
+
+    function setActive(tab){
+      const main = tab==="main";
+      document.getElementById("tabMain").classList.toggle("active", main);
+      document.getElementById("tabExport").classList.toggle("active", !main);
+      document.getElementById("paneMain").classList.toggle("active", main);
+      document.getElementById("paneExport").classList.toggle("active", !main);
+      document.getElementById("desc").textContent = main
+        ? "Configure cut detection and preview behavior."
+        : "Configure export settings and start rendering.";
+    }
+
+    new QWebChannel(qt.webChannelTransport, function(channel){
+      bridge=channel.objects.bridge;
+      document.getElementById("tabMain").onclick=()=>setActive("main");
+      document.getElementById("tabExport").onclick=()=>setActive("export");
+      document.getElementById("btnExport2").onclick=()=>bridge.exportClicked();
+      bridge.requestUiState();
+    });
+
+    window.uiSetInspectorCuts = function(cuts, outStr, keepPct){
+      document.getElementById("cuts").textContent = String(cuts ?? 0);
+      document.getElementById("out").textContent = outStr || "0:00";
+      const kp = Math.max(0, Math.min(100, keepPct ?? 0));
+      document.getElementById("keep").textContent = kp.toFixed(0) + "%";
+      document.getElementById("keepBar").style.width = kp + "%";
+    }
+  </script>
+</body>
+</html>

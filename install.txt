@@ -1,0 +1,25 @@
+Developer quickstart (Windows PowerShell)
+
+1) Run app in development:
+   pip install -r requirements.txt
+   python main.py
+
+2) Build app folder (PyInstaller):
+   powershell -ExecutionPolicy Bypass -File .\build\build.ps1
+
+3) Build installer (Inno Setup):
+   powershell -ExecutionPolicy Bypass -File .\build\build-installer.ps1
+
+4) Build + sign installer (production certificate):
+   powershell -ExecutionPolicy Bypass -File .\build\build-installer.ps1 `
+     -BuildAppFirst `
+     -PfxPath "C:\cert\your-cert.pfx" `
+     -PfxPassword "YOUR_PASSWORD"
+
+5) Test-only self-signed certificate (internal QA):
+   powershell -ExecutionPolicy Bypass -File .\build\create-test-signing-cert.ps1 `
+     -PfxPassword "ChangeMe-StrongPassword-123!"
+
+Output:
+- App folder: .\dist\AutoCutter\
+- Installer:  .\installer\output\AutoCutterSetup.exe

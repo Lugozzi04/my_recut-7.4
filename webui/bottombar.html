@@ -1,0 +1,451 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="ui.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *{margin:0; padding:0; box-sizing:border-box;}
+    html, body{background:var(--surface); color:var(--text); margin:0; padding:0; width:100%; height:100%; overflow:hidden;}
+
+    .wrap{
+        padding:6px 10px;
+        border-radius:12px;
+        border:1px solid var(--border);
+        background:var(--surface2);
+        width:100%;
+        height:100%;
+        margin:0;
+    }
+
+    /* center transport like a pro editor */
+    .transport{
+      display:grid;
+      grid-template-columns: auto 1fr auto;
+      align-items:center;
+      gap:10px;
+      min-height:0;
+    }
+    .transport__left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .transport__center{
+      justify-self:center;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .transport__right{
+      justify-self:end;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .legend{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .legend__item{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      border:1px solid var(--border);
+      background:var(--surface);
+      border-radius:999px;
+      padding:2px 7px;
+    }
+    .legend__dot{
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      display:inline-block;
+    }
+    .legend__dot--keep{
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+    }
+    .legend__dot--cut{
+      background:var(--subtle);
+      border:1px solid var(--border);
+    }
+    .hotkeys{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      color:var(--subtle);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .kbd{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:18px;
+      height:17px;
+      padding:0 5px;
+      border-radius:6px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      color:var(--text);
+      font-weight:700;
+      line-height:1;
+    }
+    .kbd--action{
+      cursor:pointer;
+      transition: border-color .15s ease, background .15s ease, transform .08s ease;
+    }
+    .kbd--action:hover{
+      border-color: rgba(99,167,255,0.42);
+      background: rgba(99,167,255,0.10);
+    }
+    .kbd--action:active{
+      transform: translateY(1px);
+    }
+
+    .zoombar{
+        height:6px; width:180px;
+        border-radius:999px;
+        background:var(--border);
+        overflow:hidden;
+    }
+    .zoombar__fill{
+        height:100%;
+        width:0%;
+        border-radius:999px;
+        background:linear-gradient(90deg,var(--accent),var(--accent2));
+        transition:width var(--t), box-shadow 200ms ease;
+        box-shadow:0 0 0 rgba(75,134,255,0.0);
+    }
+    .zoombar__fill.is-active{
+        box-shadow:0 0 6px rgba(75,134,255,0.45), 0 0 16px rgba(75,134,255,0.35);
+    }
+    .zoombar__fill.flash{
+        animation:zoomFlash 360ms ease;
+    }
+    @keyframes zoomFlash{
+        0%{box-shadow:0 0 0 rgba(75,134,255,0.0)}
+        60%{box-shadow:0 0 10px rgba(75,134,255,0.7), 0 0 22px rgba(75,134,255,0.45)}
+        100%{box-shadow:0 0 6px rgba(75,134,255,0.45), 0 0 16px rgba(75,134,255,0.35)}
+    }
+    
+    .zoomfill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      transition:width var(--t);
+    }
+
+    .tc{
+      font-size:12px;
+      font-variant-numeric:tabular-nums;
+      white-space:nowrap;
+      color:var(--text);
+    }
+    .vsep{
+      width:1px;
+      height:24px;
+      background:var(--border);
+      flex-shrink:0;
+    }
+    .iconbtn svg{
+      color:inherit;
+    }
+    .transport .iconbtn{
+      width:34px;
+      height:34px;
+      border-radius:10px;
+    }
+    .transport .iconbtn--lg{
+      width:40px;
+      height:40px;
+      border-radius:11px;
+    }
+    .iconbtn.is-active{
+      border-color: rgba(255,90,90,0.55);
+      background: rgba(255,90,90,0.18);
+      color: #ffb3b3;
+      box-shadow: inset 0 0 0 1px rgba(255,90,90,0.25);
+    }
+    .iconbtn:disabled{
+      opacity:0.58;
+      filter:saturate(0.72);
+      pointer-events:none;
+    }
+    .row{
+      display:flex;
+      align-items:center;
+    }
+    .vvol{
+      width:8px;
+      height:34px;
+      margin:0;
+      padding:0;
+      accent-color: var(--accent);
+      writing-mode: vertical-lr;
+      direction: rtl;
+      cursor:pointer;
+    }
+    .vol-wrap{
+      width:28px;
+      height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      transition:border-color .15s ease, background .15s ease;
+    }
+    .vol-wrap:hover{
+      border-color:rgba(99,167,255,0.42);
+      background:rgba(99,167,255,0.10);
+    }
+    .vvol:focus{
+      outline:none;
+    }
+    @media (max-width: 1200px){
+      .hotkeys{display:none;}
+    }
+    @media (max-width: 949px){
+      .transport{
+        grid-template-columns: 1fr auto;
+        gap:8px;
+      }
+      .transport__left{
+        display:none;
+      }
+      .transport__center{
+        justify-self:start;
+        gap:8px;
+        min-width:0;
+      }
+      #btnZoomReset, #btnCut, #btnSplit{display:none;}
+      #zoomGroup .muted{display:none;}
+      .zoombar{width:120px;}
+      .vsep{height:20px;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap transport">
+    <div class="transport__left">
+      <div class="legend" title="Timeline colors">
+        <span class="legend__item"><span class="legend__dot legend__dot--keep"></span>Keep</span>
+        <span class="legend__item"><span class="legend__dot legend__dot--cut"></span>Cut</span>
+      </div>
+      <div class="hotkeys" title="Keyboard shortcuts">
+        <span class="kbd kbd--action" id="kbdJ" title="Seek backward 2s">J</span>
+        <span class="kbd kbd--action" id="kbdK" title="Play / Pause">K</span>
+        <span class="kbd kbd--action" id="kbdL" title="Seek forward 2s">L</span>
+        <span>playback</span>
+        <span class="kbd">←</span><span class="kbd">→</span>
+        <span>seek</span>
+      </div>
+    </div>
+
+    <div class="transport__center">
+      <div class="tc" id="timecode">0:00 <span class="muted">/ 0:00</span></div>
+      <div class="vsep"></div>
+      <button class="iconbtn" id="btnPrevCut" title="Previous cut">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 5h2v14h-2zM5.5 12l7-5.5v11z"/>
+        </svg>
+      </button>
+      <button class="iconbtn iconbtn--lg" id="btnPlay" title="Play / Pause">
+        <svg id="playIcon" width="20" height="20" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+          <path d="M4.993,2.496C4.516,2.223,4,2.45,4,3v26c0,0.55,0.516,0.777,0.993,0.504l22.826-13.008    c0.478-0.273,0.446-0.719-0.031-0.992L4.993,2.496z"/>
+        </svg>
+        <svg id="pauseIcon" width="20" height="20" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+          <path d="M6,4C5.45,4,5,4.45,5,5v22c0,0.55,0.45,1,1,1h3c0.55,0,1-0.45,1-1V5c0-0.55-0.45-1-1-1H6z"/>
+          <path d="M23,4c-0.55,0-1,0.45-1,1v22c0,0.55,0.45,1,1,1h3c0.55,0,1-0.45,1-1V5c0-0.55-0.45-1-1-1H23z"/>
+        </svg>
+      </button>
+      <button class="iconbtn" id="btnNextCut" title="Next cut">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 5h2v14H6zM18.5 12l-7 5.5V6.5z"/>
+        </svg>
+      </button>
+      <div class="vsep"></div>
+
+      <button class="iconbtn" id="btnZoomOut" title="Zoom out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.15" d="M10 17C13.866 17 17 13.866 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17Z" fill="currentColor"/>
+          <path d="M20 20L14.9497 14.9498M14.9497 14.9498C16.2165 13.683 17 11.933 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17C11.933 17 13.683 16.2165 14.9497 14.9498ZM7 10H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="row" id="zoomGroup" style="gap:10px; align-items:center;">
+        <span class="muted" style="font-size:12px; font-weight:800; color:var(--muted);">Zoom</span>
+        <div class="zoombar"><div class="zoombar__fill" id="zoomFill"></div></div>
+      </div>
+
+      <button class="iconbtn" id="btnZoomIn" title="Zoom in">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.15" d="M10 17C13.866 17 17 13.866 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17Z" fill="currentColor"/>
+          <path d="M20 20L14.9497 14.9497M14.9497 14.9497C16.2165 13.683 17 11.933 17 10C17 6.13401 13.866 3 10 3C6.13401 3 3 6.13401 3 10C3 13.866 6.13401 17 10 17C11.933 17 13.683 16.2165 14.9497 14.9497ZM7 10H13M10 7V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="iconbtn" id="btnZoomReset" title="Reset zoom">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M8.87 10.5046L10.8204 12.4504L9.76045 13.511L6 9.75456L9.76045 5.99805L10.8204 7.05871L8.87 9.00456H18V18H11.9532V16.5H16.5V10.5046H8.87Z" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="iconbtn" id="btnCut" title="Cut tool (C)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7.5 6.25a2.25 2.25 0 1 1-1.59 3.84l7.28 7.28a2.25 2.25 0 1 1-1.06 1.06L4.84 11.15A2.25 2.25 0 1 1 7.5 6.25Zm0 1.5a.75.75 0 1 0 .001 1.501A.75.75 0 0 0 7.5 7.75Zm8.75 8.75a.75.75 0 1 0 .001 1.501A.75.75 0 0 0 16.25 16.5Z" fill="currentColor"/>
+          <path d="M9.2 8.8 14.5 3.5m-1.6 7.4 5.6 5.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="iconbtn" id="btnSplit" title="Split tool (S)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 4a3 3 0 1 0 2.83 4H11l2 2-2 2H7.83A3 3 0 1 0 7 14h4l2 2-2 2H7.83A3 3 0 1 0 7 22h6l3-3-3-3 3-3-3-3 3-3-3-3H7.83A3 3 0 0 0 5 4zm0 2a1 1 0 1 1 .001 1.999A1 1 0 0 1 5 6zm0 10a1 1 0 1 1 .001 1.999A1 1 0 0 1 5 16z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="transport__right">
+      <div class="vol-wrap" title="Preview volume">
+        <input
+          id="previewVol"
+          class="vvol"
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value="100"
+          title="Preview volume"
+        />
+      </div>
+    </div>
+  </div>
+
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    let bridge = null;
+
+    new QWebChannel(qt.webChannelTransport, function(channel){
+      bridge = channel.objects.bridge;
+
+      document.getElementById("btnPlay").onclick = () => bridge.playPause();
+      document.getElementById("btnPrevCut").onclick = () => bridge.prevCut();
+      document.getElementById("btnNextCut").onclick = () => bridge.nextCut();
+      document.getElementById("btnZoomIn").onclick = () => bridge.zoomIn();
+      document.getElementById("btnZoomOut").onclick = () => bridge.zoomOut();
+      document.getElementById("btnZoomReset").onclick = () => bridge.zoomReset();
+      document.getElementById("btnCut").onclick = () => bridge.toggleCutTool();
+      document.getElementById("btnSplit").onclick = () => bridge.toggleSplitTool();
+      const kbdJ = document.getElementById("kbdJ");
+      const kbdK = document.getElementById("kbdK");
+      const kbdL = document.getElementById("kbdL");
+      if (kbdJ) kbdJ.onclick = () => bridge.seekBackward();
+      if (kbdK) kbdK.onclick = () => bridge.playPause();
+      if (kbdL) kbdL.onclick = () => bridge.seekForward();
+      const previewVol = document.getElementById("previewVol");
+      if (previewVol) {
+        previewVol.addEventListener("input", () => {
+          if (!bridge || !bridge.previewVolumeChanged) return;
+          bridge.previewVolumeChanged(Number(previewVol.value || 100));
+        });
+      }
+
+      bridge.requestUiState();
+    });
+
+    // called by python
+    window.uiSetTimecode = function(cur, dur){
+      document.getElementById("timecode").innerHTML =
+        cur + " <span class='muted'>/ " + dur + "</span>";
+    }
+
+    // zoom steps (0..max)
+    window.uiSetZoom = function(step, maxStep){
+      const max = Math.max(0, Number(maxStep ?? 0));
+      const s = Math.max(0, Math.min(max, Number(step ?? 0)));
+      const pct = max > 0 ? (s / max) * 100 : 0;
+      const el = document.getElementById("zoomFill");
+      if (el) {
+        el.style.width = pct + "%";
+        const active = pct > 0;
+        el.classList.toggle("is-active", active);
+        if (active) {
+          el.classList.remove("flash");
+          void el.offsetWidth;
+          el.classList.add("flash");
+        } else {
+          el.classList.remove("flash");
+        }
+      }
+    }
+    
+    // play/pause state (true = playing, false = paused)
+    window.uiSetPlayState = function(isPlaying){
+      const playIcon = document.getElementById("playIcon");
+      const pauseIcon = document.getElementById("pauseIcon");
+      if (playIcon && pauseIcon) {
+        if (isPlaying) {
+          playIcon.style.display = "none";
+          pauseIcon.style.display = "block";
+        } else {
+          playIcon.style.display = "block";
+          pauseIcon.style.display = "none";
+        }
+      }
+    }
+
+    window.uiSetPlayEnabled = function(enabled, reason){
+      const btn = document.getElementById("btnPlay");
+      if (!btn) return;
+      const ok = !!enabled;
+      btn.disabled = !ok;
+      const msg = String(reason || "");
+      btn.title = ok ? "Play / Pause" : (msg ? ("Play unavailable: " + msg) : "Play unavailable");
+    }
+
+    // enable/disable prev/next cut buttons
+    window.uiSetCutsReady = function(ready){
+      const prevBtn = document.getElementById("btnPrevCut");
+      const nextBtn = document.getElementById("btnNextCut");
+      const enabled = !!ready;
+      if (prevBtn) prevBtn.disabled = !enabled;
+      if (nextBtn) nextBtn.disabled = !enabled;
+    }
+
+    // cut tool active state
+    window.uiSetCutActive = function(active){
+      const btn = document.getElementById("btnCut");
+      if (!btn) return;
+      const on = !!active;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    // split tool active state
+    window.uiSetSplitActive = function(active){
+      const btn = document.getElementById("btnSplit");
+      if (!btn) return;
+      const on = !!active;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    window.uiSetPreviewVolume = function(value){
+      const el = document.getElementById("previewVol");
+      if (!el) return;
+      const v = Math.max(0, Math.min(100, Number(value ?? 100)));
+      if (Number(el.value) !== v) {
+        el.value = String(v);
+      }
+    }
+  </script>
+</body>
+</html>

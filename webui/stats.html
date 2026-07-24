@@ -1,0 +1,398 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="ui.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *{margin:0; padding:0; box-sizing:border-box;}
+    html, body{
+      background:transparent;
+      color:var(--text);
+      width:100%;
+      height:100%;
+      overflow:hidden;
+    }
+
+    .stats{
+      width:100%;
+      height:100%;
+      border:1px solid var(--border);
+      background:var(--surface2);
+      border-radius:12px;
+      margin:0;
+    }
+
+    .stats.compact{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:8px;
+      padding:10px;
+      align-items:stretch;
+      align-content:center;
+    }
+
+    .compact-card{
+      min-width:0;
+      border:1px solid var(--border);
+      background:var(--surface);
+      border-radius:10px;
+      padding:8px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      justify-content:center;
+      min-height:46px;
+    }
+    .compact-card .label{
+      color:var(--subtle);
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .compact-card .value{
+      color:var(--text);
+      font-weight:800;
+      font-size:13px;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .compact-card.saved{
+      border-color:rgba(94,164,255,.24);
+      background:rgba(94,164,255,.08);
+    }
+
+    .stats.full{
+      display:none;
+      height:auto;
+      min-height:0;
+      padding:12px;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    body.full .stats.compact{display:none;}
+    body.full .stats.full{display:flex;}
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:8px;
+    }
+    .kpi{
+      min-width:0;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--surface);
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .kpi .label{
+      color:var(--subtle);
+      font-size:12px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+    .kpi .value{
+      color:var(--text);
+      font-size:20px;
+      line-height:1;
+      font-weight:900;
+      letter-spacing:.01em;
+    }
+    .kpi .sub{
+      color:var(--muted);
+      font-size:12px;
+      min-height:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .kpi.kpi--highlight{
+      border-color:rgba(94,164,255,.34);
+      background:linear-gradient(180deg, rgba(94,164,255,.14), rgba(57,208,191,.06));
+      box-shadow:0 8px 18px rgba(94,164,255,.10);
+    }
+    .kpi.kpi--highlight .value{color:#f7fbff}
+
+    .bar-panel{
+      border:1px solid var(--border);
+      background:var(--surface);
+      border-radius:12px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .bar-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-size:12px;
+    }
+    .bar-title{font-weight:800; color:var(--muted)}
+    .kept{
+      height:8px;
+      border-radius:999px;
+      background:var(--border);
+      overflow:hidden;
+      border:1px solid var(--border);
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--accent),var(--accent2));
+      transition:width var(--t);
+    }
+
+    .secondary-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:8px;
+    }
+    .secondary{
+      min-width:0;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:var(--surface2);
+      padding:8px;
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+    .secondary .label{
+      color:var(--subtle);
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+    .secondary .value{
+      color:var(--text);
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .secondary[data-tooltip]{cursor:help}
+
+    .footer-row{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      justify-content:space-between;
+      font-size:12px;
+      color:var(--subtle);
+    }
+    .legend{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .legend .dot{
+      width:7px; height:7px; border-radius:999px; display:inline-block;
+      border:1px solid rgba(255,255,255,.18);
+    }
+    .dot--keep{background:linear-gradient(90deg,var(--accent),var(--accent2)); border:none}
+    .dot--cuts{background:rgba(255,255,255,.18)}
+
+    @media (max-width: 980px){
+      body.full .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      body.full .secondary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .stats.compact{grid-template-columns:repeat(4,minmax(0,1fr));}
+    }
+    @media (max-height: 760px){
+      .stats.compact{
+        gap:6px;
+        padding:8px;
+      }
+      .compact-card{
+        min-height:40px;
+        padding:6px 8px;
+      }
+      .compact-card .label{
+        font-size:11px;
+      }
+      .compact-card .value{
+        font-size:12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stats compact">
+    <div class="compact-card">
+      <div class="label">Duration</div>
+      <div class="value mono" id="durC">0:00</div>
+    </div>
+    <div class="compact-card">
+      <div class="label">Output</div>
+      <div class="value mono" id="outC">0:00</div>
+    </div>
+    <div class="compact-card">
+      <div class="label">Cuts</div>
+      <div class="value mono" id="cutsC">0</div>
+    </div>
+    <div class="compact-card saved">
+      <div class="label">Saved %</div>
+      <div class="value mono" id="savedPctC">0%</div>
+    </div>
+  </div>
+
+  <div class="stats full">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="label">Duration</div>
+        <div class="value mono" id="dur">0:00</div>
+        <div class="sub">Original timeline length</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Output</div>
+        <div class="value mono" id="out">0:00</div>
+        <div class="sub" id="outSub">Kept after cuts</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Cuts</div>
+        <div class="value mono" id="cuts">0</div>
+        <div class="sub" id="cutsSub">0 keeps</div>
+      </div>
+      <div class="kpi kpi--highlight">
+        <div class="label">Saved %</div>
+        <div class="value mono" id="savedPctMain">0%</div>
+        <div class="sub" id="savedMainSub">Saved 0:00</div>
+      </div>
+    </div>
+
+    <div class="bar-panel">
+      <div class="bar-head">
+        <span class="bar-title">Kept vs removed</span>
+        <span class="mono" id="keptPct">0%</span>
+      </div>
+      <div class="kept"><div class="fill" id="keptFill"></div></div>
+      <div class="footer-row">
+        <div class="legend">
+          <span><span class="dot dot--keep"></span> Kept</span>
+          <span><span class="dot dot--cuts"></span> Removed</span>
+        </div>
+        <span class="mono" id="saved">0:00 saved</span>
+      </div>
+    </div>
+
+    <div class="secondary-grid">
+      <div class="secondary" title="Average duration of removed ranges">
+        <div class="label">Avg cut</div>
+        <div class="value mono" id="avgCut">0:00</div>
+      </div>
+      <div class="secondary" title="Average duration of kept ranges">
+        <div class="label">Avg keep</div>
+        <div class="value mono" id="avgKeep">0:00</div>
+      </div>
+      <div class="secondary" title="Cuts per minute on the original timeline">
+        <div class="label">Cuts/min</div>
+        <div class="value mono" id="cutsPerMin">0.0</div>
+      </div>
+      <div class="secondary" title="Total keep segments">
+        <div class="label">Keeps</div>
+        <div class="value mono" id="keepsN">0</div>
+      </div>
+      <div class="secondary" title="Cuts per hour on the original timeline">
+        <div class="label">Cuts/hr</div>
+        <div class="value mono" id="cutsPerHour">0</div>
+      </div>
+      <div class="secondary" title="Saved time in hh:mm:ss">
+        <div class="label">Saved time</div>
+        <div class="value mono" id="savedTimeSecondary">0:00</div>
+      </div>
+      <div class="secondary" title="Kept percentage of original timeline">
+        <div class="label">Kept %</div>
+        <div class="value mono" id="keptPctSecondary">0%</div>
+      </div>
+      <div class="secondary" title="Output + saved = duration">
+        <div class="label">Balance</div>
+        <div class="value mono" id="balanceLabel">Ready</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    let bridge = null;
+
+    new QWebChannel(qt.webChannelTransport, function(channel){
+      bridge = channel.objects.bridge;
+      bridge.requestUiState();
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "full") document.body.classList.add("full");
+
+    function setText(id, val, fallback){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const v = (val === undefined || val === null || val === "") ? (fallback ?? "-") : val;
+      el.textContent = String(v);
+    }
+
+    window.uiSetStats = function(duration, output, cuts, keptPct, saved, avgCut, avgKeep, cutsPerMin, keepsN, savedPct){
+      const cutsN = Number(cuts ?? 0);
+      const kp = Math.max(0, Math.min(100, Number(keptPct ?? 0)));
+      const sp = Math.max(0, Math.min(100, Number(savedPct ?? (100 - kp))));
+
+      setText("durC", duration, "0:00");
+      setText("outC", output, "0:00");
+      setText("cutsC", cutsN, "0");
+      setText("savedPctC", sp.toFixed(0) + "%", "0%");
+
+      setText("dur", duration, "0:00");
+      setText("out", output, "0:00");
+      setText("cuts", cutsN, "0");
+      setText("savedPctMain", sp.toFixed(0) + "%", "0%");
+      setText("savedMainSub", "Saved " + (saved || "0:00"), "Saved 0:00");
+      setText("saved", (saved || "0:00") + " saved", "0:00 saved");
+      setText("savedTimeSecondary", saved, "0:00");
+      setText("keptPct", kp.toFixed(0) + "%", "0%");
+      setText("keptPctSecondary", kp.toFixed(0) + "%", "0%");
+      setText("avgCut", avgCut, "0:00");
+      setText("avgKeep", avgKeep, "0:00");
+      setText("keepsN", keepsN ?? 0, "0");
+      setText("cutsSub", (keepsN ?? 0) + " keeps", "0 keeps");
+
+      const fill = document.getElementById("keptFill");
+      if (fill) fill.style.width = kp + "%";
+
+      if (cutsPerMin !== undefined && cutsPerMin !== null) {
+        const cpm = Number(cutsPerMin);
+        setText("cutsPerMin", cpm.toFixed(1), "0.0");
+        setText("cutsPerHour", Math.round(cpm * 60).toString(), "0");
+      } else {
+        setText("cutsPerMin", "0.0", "0.0");
+        setText("cutsPerHour", "0", "0");
+      }
+
+      const balance = document.getElementById("balanceLabel");
+      if (balance) {
+        if (cutsN > 0) {
+          balance.textContent = "Cuts detected";
+          balance.style.color = "var(--text)";
+        } else {
+          balance.textContent = "No cuts yet";
+          balance.style.color = "var(--muted)";
+        }
+      }
+
+      const outSub = document.getElementById("outSub");
+      if (outSub) outSub.textContent = "Kept after cuts";
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "Balanced (Default)": {
+    "intensity": 50,
+    "threshold_pct": 6,
+    "pre_pad_s": 0.25,
+    "post_pad_s": 0.62,
+    "min_cut_s": 0.1,
+    "gain_db": 0.0,
+    "gain_affects_detection": false,
+    "attack_ms": 120,
+    "release_ms": 250,
+    "smoothing_mode": "Medium",
+    "merge_pauses_ms": 300,
+    "normalize_lufs": false,
+    "lufs_target": -14.0,
+    "limiter": true
+  },
+  "Natural Speech": {
+    "intensity": 34,
+    "threshold_pct": 3,
+    "pre_pad_s": 0.28,
+    "post_pad_s": 0.84,
+    "min_cut_s": 0.1,
+    "gain_db": 0.0,
+    "gain_affects_detection": false,
+    "attack_ms": 120,
+    "release_ms": 250,
+    "smoothing_mode": "Medium",
+    "merge_pauses_ms": 300,
+    "normalize_lufs": false,
+    "lufs_target": -14.0,
+    "limiter": true
+  },
+  "Aggressive Cleanup": {
+    "intensity": 72,
+    "threshold_pct": 10,
+    "pre_pad_s": 0.18,
+    "post_pad_s": 0.42,
+    "min_cut_s": 0.08,
+    "gain_db": 0.0,
+    "gain_affects_detection": false,
+    "attack_ms": 120,
+    "release_ms": 250,
+    "smoothing_mode": "Medium",
+    "merge_pauses_ms": 300,
+    "normalize_lufs": false,
+    "lufs_target": -14.0,
+    "limiter": true
+  }
+}

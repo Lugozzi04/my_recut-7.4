@@ -1,0 +1,60 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+.venv*/
+venv/
+env/
+
+# Build and release artifacts
+build/work/
+dist/
+installer/output/
+msix/staging/
+msix/output/
+pretrained_models/
+*.msix
+*.appx
+*.appxbundle
+*.msixbundle
+
+# Machine-specific exports / scratch files
+/auto_cutter.edl
+/ff.edl
+/fix_export.patch
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Local secrets and certificates
+cert/
+cert-test/
+*.pfx
+*.pem
+*.key
+*.p12
+*.crt
+.env
+store.env
+
+# Editor / OS files
+.cursor/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
