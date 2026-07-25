@@ -1,0 +1,33 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      QT_QPA_PLATFORM: offscreen
+      QTWEBENGINE_CHROMIUM_FLAGS: --disable-gpu
+      AUTO_CUTTER_EXPORT_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install --requirement requirements-dev.txt
+      - name: Compile
+        run: python -m compileall -q analysis core export ui utils widgets main.py
+      - name: Lint
+        run: ruff check .
+      - name: Type-check critical modules
+        run: mypy core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py
+      - name: Test
+        run: python -m unittest discover -s tests -p "test_*.py" -v

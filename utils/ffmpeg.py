@@ -3,16 +3,19 @@ import os
 import shutil
 import subprocess
 import hashlib
+import importlib
 import threading
 import bisect
 from pathlib import Path
-from typing import Optional, Tuple, List, Iterator
+from typing import Any, Optional, Tuple, List, Iterator
 
+from utils.runtime_paths import cache_root as runtime_cache_root
 from utils.runtime_paths import project_root as runtime_project_root
 from utils.subprocess_utils import run_no_window
 
+av: Any
 try:
-    import av  # type: ignore
+    av = importlib.import_module("av")
 except Exception:  # pragma: no cover - optional dependency
     av = None
 
@@ -30,23 +33,23 @@ def _candidate_dirs() -> List[Path]:
 
 
 def _find_exe(env_key: str, names: List[str]) -> Optional[str]:
-    # 1) env var esplicita
+    # 1) Explicit override.
     v = os.environ.get(env_key)
     if v and Path(v).exists():
         return str(Path(v))
 
-    # 2) PATH
-    for n in names:
-        p = shutil.which(n)
-        if p:
-            return p
-
-    # 3) cartelle progetto (./bin)
+    # 2) Bundled binaries. Keep runtime behavior stable across machines.
     for d in _candidate_dirs():
         for n in names:
             p = d / n
             if p.exists():
                 return str(p)
+
+    # 3) System PATH fallback for development installs without bundled binaries.
+    for n in names:
+        resolved = shutil.which(n)
+        if resolved:
+            return resolved
 
     return None
 
@@ -90,7 +93,7 @@ def run_cmd(cmd: List[str], timeout_s: float | None = None) -> subprocess.Comple
         timeout_s = None
 
     try:
-        # Su Windows ffprobe puÃ² emettere bytes non decodificabili in cp1252:
+        # Su Windows ffprobe puo emettere bytes non decodificabili in cp1252:
         # forziamo UTF-8 e non falliamo mai sulla decodifica.
         return run_no_window(
             cmd,
@@ -180,8 +183,7 @@ def _get_splice_lock(path: str) -> threading.Lock:
 
 
 def _splice_cache_root() -> Path:
-    root = _project_root()
-    d = root / "cache" / "splice_points"
+    d = runtime_cache_root() / "splice_points"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -485,8 +487,7 @@ def _get_keyframe_lock(path: str) -> threading.Lock:
 
 
 def _keyframe_cache_root() -> Path:
-    root = _project_root()
-    d = root / "cache" / "keyframes"
+    d = runtime_cache_root() / "keyframes"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

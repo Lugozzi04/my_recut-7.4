@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
 import os
 import sys
 import time
@@ -11,7 +10,6 @@ import copy
 import shutil
 import hashlib
 import subprocess
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -22,23 +20,19 @@ from PySide6.QtCore import (
     Qt,
     QThread,
     QUrl,
-    QEvent,
-    QObject,
     QTimer,
     Slot,
-    QPointF,
-    QRect,
-    QLocale,
     QSettings,
     QStandardPaths,
+    QLocale,
 )
-from PySide6.QtGui import QValidator, QPainter, QColor, QIcon, QDesktopServices
-from PySide6.QtGui import QKeySequence, QShortcut, QWheelEvent, QCursor
+from PySide6.QtGui import QColor, QIcon, QDesktopServices
+from PySide6.QtGui import QKeySequence, QShortcut, QCursor
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QFileDialog, QHBoxLayout,
-    QToolButton, QPushButton, QLabel, QSlider, QDoubleSpinBox, QSpinBox,
+    QToolButton, QPushButton, QLabel, QSlider, QSpinBox,
     QProgressBar, QComboBox, QCheckBox, QMenu,
-    QStackedWidget, QApplication, QAbstractSpinBox, QSizePolicy, QScrollArea, QPlainTextEdit,
+    QStackedWidget, QApplication, QSizePolicy, QScrollArea, QPlainTextEdit,
 )
 
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -50,7 +44,12 @@ from utils.ffmpeg import (
     ffprobe_keyframes,
     clear_keyframe_cache,
 )
-from utils.runtime_paths import project_root
+from utils.codec_detection import resolve_video_codec
+from utils.app_version import app_version
+from utils.crash_handler import crash_logs_dir
+from utils.diagnostics import create_support_bundle
+from utils.i18n import normalize_language, text as ui_text
+from utils.runtime_paths import project_root, resource_path
 from utils.timefmt import fmt_hms
 
 from analysis.audio_analyzer import AnalyzeWorker
@@ -70,8 +69,26 @@ from .theme import apply_theme
 from .pro_messagebox import QMessageBox, get_int as pro_get_int, get_text as pro_get_text
 from .layout_left import build_left_panel
 from .layout_right import build_right_panel
-from .store_dialogs import ask_switch_to_lifetime
-from core import Project, Track, Clip, Media
+from .main_window_components import (
+    GlobalWheelBlocker,
+    MiniTimelineWidget,
+    NoWheelDoubleSpinBox,
+    NoWheelSpinBox,
+    ToggleSwitch,
+    WebUiBridge,
+    WheelOnlyIfFocusedFilter,
+    qt_is_valid,
+)
+from core import Project, ProjectSession, Track, TrackState, Clip, Media
+from core.project_file import (
+    PROJECT_FORMAT,
+    PROJECT_VERSION,
+    ProjectFormatError,
+    make_payload_portable,
+    normalize_project_payload,
+    relink_items_in_directory,
+    resolve_project_items,
+)
 
 from PySide6.QtWidgets import QBoxLayout, QFrame, QSplitter, QVBoxLayout, QHBoxLayout
 
@@ -79,470 +96,32 @@ from PySide6.QtWebChannel import QWebChannel
 
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
-try:
-    from shiboken6 import isValid as _qt_is_valid
-except Exception:
-    def _qt_is_valid(obj: Any) -> bool:
-        return obj is not None
-
-
-class MiniTimelineWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._duration = 0.0
-        self._segments: list[Segment] = []
-        self._speaker_ids: list[int] | None = None
-        self._colors = [
-            QColor(90, 170, 255),
-            QColor(255, 170, 90),
-            QColor(140, 220, 140),
-            QColor(200, 150, 255),
-            QColor(255, 120, 120),
-            QColor(180, 200, 90),
-        ]
-        self.setMinimumHeight(36)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-    def set_data(
-        self,
-        duration: float,
-        segments: list[Segment] | None,
-        speaker_ids: list[int] | None = None,
-    ) -> None:
-        self._duration = float(duration or 0.0)
-        self._segments = list(segments or [])
-        self._speaker_ids = list(speaker_ids) if speaker_ids is not None else None
-        self.update()
-
-    def paintEvent(self, _event):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing, False)
-        rect = self.rect().adjusted(2, 2, -2, -2)
-        p.fillRect(rect, QColor(28, 30, 36))
-
-        if self._duration <= 0 or not self._segments:
-            p.setPen(QColor(130, 130, 130))
-            p.drawText(rect, Qt.AlignCenter, "No AI data")
-            p.end()
-            return
-
-        w = max(1.0, float(rect.width()))
-        x0 = float(rect.left())
-        y0 = float(rect.top())
-        h = float(rect.height())
-
-        for i, seg in enumerate(self._segments):
-            try:
-                s = max(0.0, float(seg.start))
-                e = max(s, float(seg.end))
-            except Exception:
-                continue
-            if e <= s:
-                continue
-            xs = x0 + (s / self._duration) * w
-            xe = x0 + (e / self._duration) * w
-            color = self._colors[0]
-            if self._speaker_ids and i < len(self._speaker_ids):
-                idx = int(self._speaker_ids[i]) % max(1, len(self._colors))
-                color = self._colors[idx]
-            p.fillRect(QRect(int(xs), int(y0), max(1, int(xe - xs)), int(h)), color)
-
-        p.setPen(QColor(60, 60, 60))
-        p.drawRect(rect)
-        p.end()
-
-
-class NoWheelUnlessFocusedMixin:
-    def wheelEvent(self, e: QWheelEvent):
-        # Only allow wheel to change value if the widget has focus (clicked/activated)
-        if not self.hasFocus():
-            e.ignore()
-            return
-        super().wheelEvent(e)
-
-class DragValueMixin:
-    """
-    Allow DaVinci-style horizontal drag to change value:
-    click to edit; click-drag left/right to decrease/increase.
-    """
-    _drag_active: bool = False
-    _drag_origin: QPointF | None = None
-    _drag_start_value: float | None = None
-
-    def mousePressEvent(self, e):
-        if e.button() == Qt.LeftButton:
-            self._drag_active = False
-            self._drag_origin = e.globalPosition()
-            try:
-                self._drag_start_value = float(self.value())
-            except Exception:
-                self._drag_start_value = None
-        super().mousePressEvent(e)
-
-    def mouseMoveEvent(self, e):
-        if e.buttons() & Qt.LeftButton and self._drag_origin is not None and self._drag_start_value is not None:
-            dx = int(e.globalPosition().x() - self._drag_origin.x())
-            dy = int(e.globalPosition().y() - self._drag_origin.y())
-
-            # Start drag only after a small horizontal threshold
-            if not self._drag_active and abs(dx) > 4 and abs(dx) >= abs(dy):
-                self._drag_active = True
-                self.setCursor(Qt.SizeHorCursor)
-
-            if self._drag_active:
-                step = float(self.singleStep())
-                # pixels per step (tweak if needed)
-                steps = int(dx / 5)
-                new_val = self._drag_start_value + (steps * step)
-                self.setValue(new_val)
-                return
-
-        super().mouseMoveEvent(e)
-
-    def mouseReleaseEvent(self, e):
-        if self._drag_active:
-            self.unsetCursor()
-        self._drag_active = False
-        self._drag_origin = None
-        self._drag_start_value = None
-        super().mouseReleaseEvent(e)
-
-    def eventFilter(self, obj, event):
-        # Capture mouse events from internal line edit too.
-        if event.type() == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
-            self._drag_active = False
-            self._drag_origin = event.globalPosition()
-            try:
-                self._drag_start_value = float(self.value())
-            except Exception:
-                self._drag_start_value = None
-        elif event.type() == QEvent.MouseMove and event.buttons() & Qt.LeftButton:
-            if self._drag_origin is not None and self._drag_start_value is not None:
-                dx = int(event.globalPosition().x() - self._drag_origin.x())
-                dy = int(event.globalPosition().y() - self._drag_origin.y())
-                if not self._drag_active and abs(dx) > 4 and abs(dx) >= abs(dy):
-                    self._drag_active = True
-                    self.setCursor(Qt.SizeHorCursor)
-                if self._drag_active:
-                    step = float(self.singleStep())
-                    steps = int(dx / 5)
-                    new_val = self._drag_start_value + (steps * step)
-                    self.setValue(new_val)
-                    return True
-        elif event.type() == QEvent.MouseButtonRelease:
-            if self._drag_active:
-                self.unsetCursor()
-            self._drag_active = False
-            self._drag_origin = None
-            self._drag_start_value = None
-        return super().eventFilter(obj, event)
-
-class NoWheelSpinBox(NoWheelUnlessFocusedMixin, DragValueMixin, QSpinBox):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Only commit on finish; clamp out-of-range to nearest valid value.
-        self.setKeyboardTracking(False)
-        self.editingFinished.connect(self._commit_text_value)
-        try:
-            self.lineEdit().installEventFilter(self)
-        except Exception:
-            pass
-
-    def validate(self, text: str, pos: int):
-        state, _, _ = super().validate(text, pos)
-        if state == QValidator.Acceptable or state == QValidator.Intermediate:
-            return (state, text, pos)
-        # Allow out-of-range numbers to be typed (will clamp on commit).
-        if text.strip() in ("", "+", "-"):
-            return (QValidator.Intermediate, text, pos)
-        try:
-            int(text)
-            return (QValidator.Intermediate, text, pos)
-        except Exception:
-            return (QValidator.Invalid, text, pos)
-
-    def _commit_text_value(self):
-        txt = self.lineEdit().text().strip()
-        if txt in ("", "+", "-"):
-            return
-        try:
-            val = int(txt)
-        except Exception:
-            return
-        val = max(self.minimum(), min(self.maximum(), val))
-        self.setValue(val)
-
-
-class NoWheelDoubleSpinBox(NoWheelUnlessFocusedMixin, DragValueMixin, QDoubleSpinBox):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        try:
-            # Keep decimal formatting consistent across locales for this UI (e.g. 0.25 s)
-            self.setLocale(QLocale.c())
-        except Exception:
-            pass
-        # Only commit on finish; clamp out-of-range to nearest valid value.
-        self.setKeyboardTracking(False)
-        self.editingFinished.connect(self._commit_text_value)
-        try:
-            self.lineEdit().installEventFilter(self)
-        except Exception:
-            pass
-
-    def validate(self, text: str, pos: int):
-        state, _, _ = super().validate(text, pos)
-        if state == QValidator.Acceptable or state == QValidator.Intermediate:
-            return (state, text, pos)
-        # Allow out-of-range numbers to be typed (will clamp on commit).
-        if text.strip() in ("", "+", "-", ".", ","):
-            return (QValidator.Intermediate, text, pos)
-        try:
-            t = text.replace(",", ".")
-            float(t)
-            return (QValidator.Intermediate, text, pos)
-        except Exception:
-            return (QValidator.Invalid, text, pos)
-
-    def _commit_text_value(self):
-        txt = self.lineEdit().text().strip()
-        if txt in ("", "+", "-", ".", ","):
-            return
-        try:
-            t = txt.replace(",", ".")
-            val = float(t)
-        except Exception:
-            return
-        val = max(self.minimum(), min(self.maximum(), val))
-        self.setValue(val)
-
-class WheelOnlyIfFocusedFilter(QObject):
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Wheel:
-            # Case 1: wheel hits the spinbox itself
-            if isinstance(obj, (QSpinBox, QDoubleSpinBox)):
-                if not obj.hasFocus():
-                    return True
-
-            # Case 2: wheel hits the internal editor (QLineEdit)
-            parent = obj.parent()
-            if isinstance(parent, (QSpinBox, QDoubleSpinBox)):
-                if not parent.hasFocus():
-                    return True
-
-        return super().eventFilter(obj, event)
-    
-
-class GlobalWheelBlocker(QObject):
-    """
-    Blocks wheel on spinboxes unless the spinbox currently has focus.
-    Works even when Qt routes wheel to internal editors or assigns focus via wheel.
-    """
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Wheel:
-            w = QApplication.widgetAt(QCursor.pos())
-            # Walk up from widget under cursor to find a spinbox
-            while w is not None and not isinstance(w, QAbstractSpinBox):
-                w = w.parentWidget()
-
-            if isinstance(w, QAbstractSpinBox):
-                # Allow wheel only if that spinbox is focused (clicked first)
-                if not w.hasFocus():
-                    return True  # swallow wheel
-
-        return super().eventFilter(obj, event)
-    
-
-class WebUiBridge(QObject):
-    def __init__(self, window: "MainWindow"):
-        super().__init__()
-        self.w = window
-
-    # ---- topbar ----
-    @Slot()
-    def importClicked(self) -> None:
-        self.w.open_file()
-
-    @Slot()
-    def resetClicked(self) -> None:
-        self.w.reset_workspace()
-
-    @Slot()
-    def projectSaveClicked(self) -> None:
-        self.w.save_project_file()
-
-    @Slot()
-    def projectLoadClicked(self) -> None:
-        self.w.load_project_file()
-
-    @Slot()
-    def exportClicked(self) -> None:
-        # In Python, export action maps to export_mp4()
-        self.w.export_mp4()
-
-    @Slot(bool)
-    def autoSkipChanged(self, enabled: bool) -> None:
-        self.w.chk_skip.setChecked(bool(enabled))
-        self.w._on_skip_changed()
-
-    @Slot()
-    def openMenu(self) -> None:
-        self.w._open_top_menu()
-
-    @Slot()
-    def logoutClicked(self) -> None:
-        self.w._logout_account()
-
-    # ---- transport ----
-    @Slot()
-    def playPause(self) -> None:
-        self.w.toggle_play()
-
-    @Slot()
-    def zoomIn(self) -> None:
-        self.w.zoom_in()
-
-    @Slot()
-    def zoomOut(self) -> None:
-        self.w.zoom_out()
-
-    @Slot()
-    def zoomReset(self) -> None:
-        self.w.zoom_reset()
-
-    @Slot()
-    def toggleSplitTool(self) -> None:
-        self.w._toggle_split_tool()
-
-    @Slot()
-    def toggleCutTool(self) -> None:
-        self.w._toggle_cut_tool()
-
-    @Slot()
-    def prevCut(self) -> None:
-        self.w.jump_to_previous_cut()
-
-    @Slot()
-    def nextCut(self) -> None:
-        self.w.jump_to_next_cut()
-
-    @Slot()
-    def seekBackward(self) -> None:
-        self.w.transport_seek_backward()
-
-    @Slot()
-    def seekForward(self) -> None:
-        self.w.transport_seek_forward()
-
-    @Slot(bool)
-    def snapChanged(self, enabled: bool) -> None:
-        self.w._snap_enabled = bool(enabled)
-        if hasattr(self.w, "timeline"):
-            try:
-                self.w.timeline.setSnapEnabled(bool(enabled))
-            except Exception:
-                pass
-
-    @Slot(int)
-    def previewVolumeChanged(self, value: int) -> None:
-        try:
-            self.w._set_preview_volume_from_web(int(value))
-        except Exception:
-            pass
-
-    # ---- bootstrap ----
-    @Slot()
-    def requestUiState(self) -> None:
-        self.w._web_push_full_state()
-
-
-class ToggleSwitch(QCheckBox):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setCursor(Qt.PointingHandCursor)
-        self.setFocusPolicy(Qt.NoFocus)
-        # Bigger hit area to make mode switching easier.
-        self.setFixedSize(58, 30)
-        self.setText("")
-
-    def paintEvent(self, _event):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        rect = self.rect().adjusted(2, 2, -2, -2)
-        radius = rect.height() / 2.0
-        is_on = self.isChecked()
-
-        bg_off = QColor(90, 96, 110, 150)
-        bg_on = QColor(75, 134, 255, 200)
-        knob = QColor(240, 243, 248)
-
-        p.setPen(Qt.NoPen)
-        p.setBrush(bg_on if is_on else bg_off)
-        p.drawRoundedRect(rect, radius, radius)
-
-        knob_r = rect.height() - 4
-        if is_on:
-            x = rect.right() - knob_r - 2
-        else:
-            x = rect.left() + 2
-        y = rect.top() + 2
-        p.setBrush(knob)
-        p.drawEllipse(int(x), int(y), int(knob_r), int(knob_r))
-        p.end()
-
-
-@dataclass
-class TrackState:
-    path: Optional[str] = None
-    media_id: Optional[str] = None
-    audio_track_id: Optional[str] = None
-    video_track_id: Optional[str] = None
-    audio_clip_id: Optional[str] = None
-    video_clip_id: Optional[str] = None
-    duration: float = 0.0
-    rms: Optional[np.ndarray] = None
-    hop_s: float = 0.03
-    cuts: list[Segment] = field(default_factory=list)
-    keeps: list[Segment] = field(default_factory=list)
-    cuts_enabled: bool = False
-    manual_cuts: list[Segment] = field(default_factory=list)
-    suppressed_cuts: list[Segment] = field(default_factory=list)
-    undo_stack: list[tuple[list[Segment], list[Segment]]] = field(default_factory=list)
-    redo_stack: list[tuple[list[Segment], list[Segment]]] = field(default_factory=list)
-    pending_cut_start: float | None = None
-    pending_cut_end: float | None = None
-    rms_min: float = 0.0
-    rms_max: float = 0.0
-    rms_eps: float = 1e-9
-    cfg: dict = field(default_factory=dict)
-    filters_restored: bool = False
-    cuts_restored: bool = False
-    video_color: tuple[int, int, int, int] | None = None
-    video_edge: tuple[int, int, int] | None = None
-    segment_group_id: str | None = None
-    segment_index: int = 1
-    segment_source_in: float = 0.0
-    segment_source_out: float = 0.0
-    classic_cuts: list[Segment] = field(default_factory=list)
-    classic_keeps: list[Segment] = field(default_factory=list)
-    classic_manual_cuts: list[Segment] = field(default_factory=list)
-    classic_suppressed_cuts: list[Segment] = field(default_factory=list)
-    classic_cuts_enabled: bool = False
-    ai_cuts: list[Segment] = field(default_factory=list)
-    ai_keeps: list[Segment] = field(default_factory=list)
-    ai_manual_cuts: list[Segment] = field(default_factory=list)
-    ai_suppressed_cuts: list[Segment] = field(default_factory=list)
-    ai_cuts_enabled: bool = False
-    ai_speech: list[Segment] = field(default_factory=list)
-    ai_speech_raw: list[Segment] = field(default_factory=list)
-    ai_speaker_ids: list[int] | None = None
-    copy_source_id: str | None = None
-    copy_index: int = 0
-
-
 class MainWindow(QMainWindow):
+    @property
+    def project(self) -> Project:
+        return self._project_session.project
+
+    @project.setter
+    def project(self, value: Project) -> None:
+        self._project_session.project = value
+
+    @property
+    def _tracks(self) -> list[TrackState]:
+        return self._project_session.track_states
+
+    @_tracks.setter
+    def _tracks(self, value: list[TrackState]) -> None:
+        self._project_session.track_states = value
+
     def __init__(self):
         super().__init__()
+        self._project_session = ProjectSession.create_default("Untitled")
         self._project_root = project_root()
+        try:
+            saved_language = QSettings("Auto Cutter", "Auto Cutter").value("ui_language", "")
+        except Exception:
+            saved_language = ""
+        self._ui_language = normalize_language(str(saved_language or QLocale.system().name()))
         self._session_log_path: Path | None = None
         self._session_log_lock = threading.Lock()
         self._session_log_started_ts = time.time()
@@ -558,14 +137,6 @@ class MainWindow(QMainWindow):
         logo = self._project_root / "icons" / "logo" / "logo.png"
         if logo.exists():
             self.setWindowIcon(QIcon(str(logo)))
-
-        # Account/license context (provided by the runtime entitlement service).
-        self._auth_api: Any = None
-        self._auth_user: dict[str, Any] | None = None
-        self._auth_license: dict[str, Any] | None = None
-        self._license_ui_timer = QTimer(self)
-        self._license_ui_timer.setSingleShot(False)
-        self._license_ui_timer.timeout.connect(self._refresh_account_badge)
 
         # -----------------------------
         # Project tracks
@@ -624,6 +195,7 @@ class MainWindow(QMainWindow):
         # -----------------------------
         self.project = Project.create_default("Untitled")
         self._project_file_path: Path | None = None
+        self._offline_project_items: list[dict[str, Any]] = []
         self._timeline_track_map: list[dict] = []
         if self._tracks:
             self._ensure_audio_track_for_state(self._tracks[0])
@@ -1161,6 +733,9 @@ class MainWindow(QMainWindow):
         self.btn_export_edl.setEnabled(False)
 
         self.codec_combo = QComboBox()
+        self.codec_combo.addItem("Auto (recommended)", "auto")
+        self.codec_combo.addItem("H.264 (NVIDIA NVENC)", "h264_nvenc")
+        self.codec_combo.addItem("H.264 (Intel Quick Sync)", "h264_qsv")
         self.codec_combo.addItem("H.264 (AMD AMF) - fast & compatible", "h264_amf")
         self.codec_combo.addItem("HEVC/H.265 (AMD AMF) - better quality/size", "hevc_amf")
         self.codec_combo.addItem("AV1 (AMD AMF) - best compression", "av1_amf")
@@ -1330,10 +905,136 @@ class MainWindow(QMainWindow):
 
         # Default page
         self._switch_page(0)
-        self._license_ui_timer.start(60_000)
-        self._refresh_account_badge()
         self._apply_responsive_ui()
         self._init_crash_recovery()
+
+    def _apply_core_translations(self) -> None:
+        language = str(getattr(self, "_ui_language", "en") or "en")
+        translations = {
+            "btn_open": "add_video",
+            "seg_main": "main",
+            "seg_export": "export",
+            "btn_export": "export_mp4",
+            "btn_export_edl": "export_edl",
+            "btn_ai_process": "process_ai",
+            "btn_ai_reprocess": "reprocess_ai",
+            "btn_export_details": "show_logs",
+            "btn_export_copy_logs": "copy_logs",
+            "btn_export_open_logs_folder": "open_logs",
+        }
+        for attr, key in translations.items():
+            widget = getattr(self, attr, None)
+            if widget is not None and hasattr(widget, "setText"):
+                widget.setText(ui_text(key, language))
+
+    def _apply_accessibility_metadata(self) -> None:
+        controls = {
+            "btn_open": ("Add video", "Open one or more media files"),
+            "btn_play": ("Play or pause", "Toggle timeline playback"),
+            "btn_zoom_out": ("Zoom out timeline", "Decrease timeline zoom"),
+            "btn_zoom_in": ("Zoom in timeline", "Increase timeline zoom"),
+            "btn_zoom_reset": ("Reset timeline zoom", "Show the complete timeline"),
+            "btn_cut_tool": ("Cut tool", "Mark a range to remove"),
+            "btn_split": ("Split tool", "Split the selected clip at the playhead"),
+            "preset_combo": ("Cut preset", "Select analysis and cut settings"),
+            "codec_combo": ("Export codec", "Select automatic, hardware, or software video encoding"),
+            "export_method_combo": ("Export method", "Select the rendering strategy"),
+            "btn_export": ("Export MP4", "Render the current project to an MP4 file"),
+            "export_progress": ("Export progress", "Current export completion percentage"),
+            "timeline": ("Project timeline", "Review clips, cuts, and the playhead"),
+        }
+        for attr, (name, description) in controls.items():
+            widget = getattr(self, attr, None)
+            if widget is None:
+                continue
+            try:
+                widget.setAccessibleName(name)
+                widget.setAccessibleDescription(description)
+            except Exception:
+                continue
+        for view, name in (
+            (getattr(self, "web_topbar", None), "Project actions and status"),
+            (getattr(self, "web_transport", None), "Playback controls"),
+            (getattr(self, "web_stats", None), "Project statistics"),
+        ):
+            if view is not None:
+                view.setAccessibleName(name)
+
+    def _show_quick_start(self, force: bool = True) -> None:
+        settings = QSettings("Auto Cutter", "Auto Cutter")
+        if not force and bool(int(settings.value("onboarding_complete_v1", 0) or 0)):
+            return
+        if self._ui_language == "it":
+            message = (
+                "1. Aggiungi o trascina un video.\n"
+                "2. Scegli Classic o AI e analizza l'audio.\n"
+                "3. Controlla i tagli nella timeline e correggili se necessario.\n"
+                "4. Apri Esporta, lascia Codec su Auto e crea l'MP4.\n\n"
+                "Scorciatoie: K riproduci/pausa, C taglio, S dividi, Ctrl+Z annulla."
+            )
+            title = "Guida rapida"
+        else:
+            message = (
+                "1. Add or drop a video.\n"
+                "2. Choose Classic or AI and analyze the audio.\n"
+                "3. Review cuts on the timeline and adjust them if needed.\n"
+                "4. Open Export, keep Codec on Auto, and create the MP4.\n\n"
+                "Shortcuts: K play/pause, C cut, S split, Ctrl+Z undo."
+            )
+            title = "Quick start"
+        QMessageBox.information(self, title, message)
+        settings.setValue("onboarding_complete_v1", 1)
+
+    def _create_diagnostics_bundle(self) -> None:
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        suggested = Path.home() / "Desktop" / f"AutoCutter-diagnostics-{stamp}.zip"
+        output, _ = QFileDialog.getSaveFileName(
+            self,
+            ui_text("diagnostics", self._ui_language).replace("...", ""),
+            str(suggested),
+            "ZIP archive (*.zip)",
+        )
+        if not output:
+            return
+        try:
+            bundle = create_support_bundle(
+                Path(output),
+                session_logs_dir=self._session_logs_dir(),
+                crash_logs_dir=crash_logs_dir(),
+                ffmpeg_path=self.ffmpeg_path,
+                consistency_errors=self._project_session.consistency_errors(),
+            )
+            QMessageBox.information(
+                self,
+                "Diagnostics",
+                f"Diagnostics bundle created:\n{bundle}\n\nReview its contents before sharing.",
+            )
+        except Exception as exc:
+            QMessageBox.critical(self, "Diagnostics failed", str(exc))
+
+    def _show_about(self) -> None:
+        QMessageBox.information(
+            self,
+            "Auto Cutter",
+            (
+                f"Auto Cutter {app_version()}\n\n"
+                "Desktop video editor and automatic voice-cut workflow.\n\n"
+                "Includes separate FFmpeg command-line programs licensed under "
+                "GNU GPL version 3 or later. Source and license notices are "
+                "included with the application."
+            ),
+        )
+
+    def _open_third_party_notices(self) -> None:
+        candidates = (
+            resource_path("licenses", "THIRD_PARTY_NOTICES.md"),
+            resource_path("THIRD_PARTY_NOTICES.md"),
+        )
+        notice = next((path for path in candidates if path.is_file()), None)
+        if notice is None:
+            QMessageBox.warning(self, "Third-party notices", "THIRD_PARTY_NOTICES.md was not found.")
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(notice)))
 
     def showEvent(self, event):
         ret = super().showEvent(event)
@@ -1386,6 +1087,7 @@ class MainWindow(QMainWindow):
                 pass
             self._app_log("startup_auto_restore_end", input_loaded=bool(self.input_path))
             self._media_dbg("deferred_startup_auto_restore end")
+            QTimer.singleShot(250, lambda: self._show_quick_start(force=False))
 
     def _timeline_zoom_signature(self):
         """
@@ -1833,10 +1535,11 @@ class MainWindow(QMainWindow):
 
     def _init_web_views(self) -> None:
         self.web_topbar = QWebEngineView()
-        self.web_inspector = QWebEngineView()
         self.web_transport = QWebEngineView()
         self.web_stats = QWebEngineView()
-        self.web_stats_full = QWebEngineView()
+        # These legacy pages were updated but never inserted in the layout.
+        self.web_inspector = None
+        self.web_stats_full = None
         self._web_ready: dict[QWebEngineView, bool] = {}
         self._web_js_queue: dict[QWebEngineView, list[str]] = {}
         self._web_js_flush_pending: set[int] = set()
@@ -1847,14 +1550,12 @@ class MainWindow(QMainWindow):
         self.web_topbar.setFixedHeight(int(round(70 * scale_soft)))
         self.web_transport.setFixedHeight(int(round(74 * scale_soft)))
         self.web_stats.setFixedHeight(int(round(78 * scale_soft)))
-        self.web_stats_full.setMinimumHeight(200)
-        self.web_stats_full.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self._web_channel = QWebChannel()
         self._web_bridge = WebUiBridge(self)
         self._web_channel.registerObject("bridge", self._web_bridge)
 
-        for view in (self.web_topbar, self.web_inspector, self.web_transport, self.web_stats, self.web_stats_full):
+        for view in (self.web_topbar, self.web_transport, self.web_stats):
             view.page().setWebChannel(self._web_channel)
             view.setContextMenuPolicy(Qt.NoContextMenu)
             # Rimuovi lo sfondo bianco di default dei QWebEngineView
@@ -1892,7 +1593,6 @@ class MainWindow(QMainWindow):
             "topbar": webdir / "topbar.html",
             "transport": webdir / "bottombar.html",
             "stats": webdir / "stats.html",
-            "inspector": webdir / "inspector.html",
             "css": webdir / "ui.css",
         }
         missing = [name for name, p in required.items() if not p.exists()]
@@ -1922,8 +1622,6 @@ class MainWindow(QMainWindow):
         self.web_topbar.setUrl(_url_with_version(required["topbar"]))
         self.web_transport.setUrl(_url_with_version(required["transport"]))
         self.web_stats.setUrl(_url_with_version(required["stats"]))
-        self.web_stats_full.setUrl(_url_with_version(required["stats"], extra_query="mode=full"))
-        self.web_inspector.setUrl(_url_with_version(required["inspector"]))
 
     def _on_web_loaded(self, view: QWebEngineView, ok: bool) -> None:
         try:
@@ -1950,7 +1648,7 @@ class MainWindow(QMainWindow):
 
     def _web_obj_valid(self, obj: Any) -> bool:
         try:
-            return bool(obj) and bool(_qt_is_valid(obj))
+            return bool(obj) and bool(qt_is_valid(obj))
         except Exception:
             return bool(obj)
 
@@ -3134,25 +2832,10 @@ class MainWindow(QMainWindow):
         track.video_edge = tuple(edge)
 
     def _ensure_video_track_for_state(self, track: TrackState) -> None:
-        if track.video_track_id and self.project.get_track(track.video_track_id):
-            return
-        used = {t.video_track_id for t in self._tracks if t.video_track_id}
-        for t in self.project.tracks:
-            if t.kind == "video" and t.id not in used:
-                track.video_track_id = t.id
-                return
-        idx = len([t for t in self.project.tracks if t.kind == "video"]) + 1
-        vt = self.project.add_track(f"V{idx}", "video")
-        track.video_track_id = vt.id
+        self._project_session.ensure_track_for_state(track, "video")
 
     def _find_clip(self, clip_id: str | None) -> Optional[Clip]:
-        if not clip_id:
-            return None
-        for t in self.project.tracks:
-            for c in t.clips:
-                if c.id == clip_id:
-                    return c
-        return None
+        return self._project_session.find_clip(clip_id)
 
     def _track_index_for_clip_id(self, clip_id: str | None) -> Optional[int]:
         if not clip_id:
@@ -3163,69 +2846,15 @@ class MainWindow(QMainWindow):
         return None
 
     def _ensure_audio_track_for_state(self, track: TrackState) -> None:
-        if track.audio_track_id and self.project.get_track(track.audio_track_id):
-            return
-        used = {t.audio_track_id for t in self._tracks if t.audio_track_id}
-        for t in self.project.tracks:
-            if t.kind == "audio" and t.id not in used:
-                track.audio_track_id = t.id
-                return
-        idx = len([t for t in self.project.tracks if t.kind == "audio"]) + 1
-        at = self.project.add_track(f"A{idx}", "audio")
-        track.audio_track_id = at.id
+        self._project_session.ensure_track_for_state(track, "audio")
 
     def _add_media_to_project(self, path: str, track: TrackState) -> None:
-        name = Path(path).name
-        media = self.project.add_media(path, name=name)
-        track.media_id = media.id
-
         self._ensure_segment_meta(track)
         if float(getattr(track, "segment_source_out", 0.0) or 0.0) <= 0.0:
             track.segment_source_in = 0.0
             track.segment_source_out = float(track.duration or 0.0)
         self._assign_video_color(track)
-        self._ensure_video_track_for_state(track)
-        self._ensure_audio_track_for_state(track)
-        link_id = uuid.uuid4().hex
-        start = float(self.project.timeline_duration() or 0.0)
-        seg_in = float(getattr(track, "segment_source_in", 0.0) or 0.0)
-        seg_out = float(getattr(track, "segment_source_out", 0.0) or 0.0)
-        if seg_out <= seg_in + 1e-6:
-            seg_in = 0.0
-            seg_out = float(track.duration or 0.0)
-        dur = max(0.0, float(seg_out) - float(seg_in))
-        if dur > 0.0:
-            track.duration = float(dur)
-        end = float(start + dur) if dur > 0.0 else float(start)
-
-        # audio clip (parallel, starts at 0)
-        aclip = self.project.add_clip(
-            track_id=str(track.audio_track_id),
-            media_id=media.id,
-            link_id=link_id,
-            source_in=float(seg_in),
-            source_out=float(seg_out),
-            timeline_in=float(start),
-            timeline_out=float(end),
-            name=name,
-        )
-        track.audio_clip_id = aclip.id
-
-        # video clip (sequential on V1)
-        vclip = self.project.add_clip(
-            track_id=str(track.video_track_id),
-            media_id=media.id,
-            link_id=link_id,
-            source_in=float(seg_in),
-            source_out=float(seg_out),
-            timeline_in=float(start),
-            timeline_out=float(end),
-            name=name,
-            color=track.video_color,
-            edge=track.video_edge,
-        )
-        track.video_clip_id = vclip.id
-        # Sequential timeline: clips are placed one after another by start offset.
+        self._project_session.add_media_for_state(path, track)
 
     def _rebuild_sequential_timeline(self) -> None:
         """
@@ -3478,29 +3107,7 @@ class MainWindow(QMainWindow):
         return merge_overlaps(sorted(cleaned, key=lambda s: s.start))
 
     def _sync_project_from_track(self, track: TrackState) -> None:
-        dur = float(track.duration or 0.0)
-        media = self.project.get_media(str(track.media_id)) if track.media_id else None
-        if media is not None:
-            media.duration = dur
-        if float(getattr(track, "segment_source_out", 0.0) or 0.0) <= 0.0:
-            track.segment_source_in = float(getattr(track, "segment_source_in", 0.0) or 0.0)
-            track.segment_source_out = track.segment_source_in + dur
-
-        aclip = self._find_clip(track.audio_clip_id)
-        if aclip is not None and dur > 0.0:
-            # If clip length was not initialized yet, expand it now.
-            if float(aclip.source_out) <= float(aclip.source_in) + 1e-6:
-                aclip.source_out = float(aclip.source_in) + dur
-            if float(aclip.timeline_out) <= float(aclip.timeline_in) + 1e-6:
-                aclip.timeline_out = float(aclip.timeline_in) + dur
-
-        vclip = self._find_clip(track.video_clip_id)
-        if vclip is not None and dur > 0.0:
-            if float(vclip.source_out) <= float(vclip.source_in) + 1e-6:
-                vclip.source_out = float(vclip.source_in) + dur
-            if float(vclip.timeline_out) <= float(vclip.timeline_in) + 1e-6:
-                vclip.timeline_out = float(vclip.timeline_in) + dur
-        # Do not rebuild sequential timeline; clips stay where they are.
+        self._project_session.sync_state_to_project(track)
 
     def _finalize_timeline_reorder(self) -> None:
         self._rebuild_sequential_timeline()
@@ -4123,6 +3730,8 @@ class MainWindow(QMainWindow):
             self._ai_processing = False
             self._video_color_cursor = 0
             self.project = Project.create_default("Untitled")
+            self._project_file_path = None
+            self._offline_project_items = []
             self._timeline_track_map = []
             self._video_segments = []
             self._video_segment_index = 0
@@ -4847,286 +4456,6 @@ class MainWindow(QMainWindow):
             return f"{h}:{m:02d}:{s:02d}"
         return f"{m}:{s:02d}"
 
-    def set_auth_context(
-        self,
-        *,
-        api: Any,
-        user: dict[str, Any] | None,
-        license_payload: dict[str, Any] | None,
-    ) -> None:
-        self._auth_api = api
-        self._auth_user = dict(user) if isinstance(user, dict) else None
-        self._auth_license = dict(license_payload) if isinstance(license_payload, dict) else None
-        self._refresh_account_badge()
-
-    def _on_license_updated(self, license_payload: dict[str, Any]) -> None:
-        if isinstance(license_payload, dict):
-            self._auth_license = dict(license_payload)
-            self._refresh_account_badge()
-
-    @staticmethod
-    def _parse_iso_utc(value: Any) -> datetime | None:
-        if not isinstance(value, str):
-            return None
-        raw = value.strip()
-        if not raw:
-            return None
-        if raw.endswith("Z"):
-            raw = f"{raw[:-1]}+00:00"
-        try:
-            parsed = datetime.fromisoformat(raw)
-        except ValueError:
-            return None
-        if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone(timezone.utc)
-
-    @staticmethod
-    def _plan_label(plan: str) -> str:
-        key = str(plan or "").strip().lower()
-        return {
-            "trial": "Trial",
-            "monthly": "Monthly",
-            "lifetime": "Lifetime",
-        }.get(key, key.capitalize() or "Unknown")
-
-    def _license_remaining_label(self, license_payload: dict[str, Any]) -> tuple[str, bool]:
-        ends_at = self._parse_iso_utc(license_payload.get("ends_at"))
-        if not ends_at:
-            return ("No expiry", False)
-
-        remaining_seconds = int(math.ceil((ends_at - datetime.now(timezone.utc)).total_seconds()))
-        if remaining_seconds <= 0:
-            return ("Expired", False)
-
-        if remaining_seconds <= 24 * 60 * 60:
-            hours = remaining_seconds // 3600
-            minutes = (remaining_seconds % 3600) // 60
-            seconds = remaining_seconds % 60
-            return (f"{hours:02d}h {minutes:02d}m {seconds:02d}s", True)
-
-        remaining_days = int(math.ceil(remaining_seconds / 86400.0))
-        if remaining_days >= 28:
-            return ("1 month", False)
-        if remaining_days >= 21:
-            return ("3 weeks", False)
-        if remaining_days >= 14:
-            return ("2 weeks", False)
-        if remaining_days >= 7:
-            return ("1 week", False)
-        if remaining_days == 1:
-            return ("1 day", False)
-        return (f"{remaining_days} days", False)
-
-    def _build_account_payload(self) -> tuple[dict[str, Any], bool]:
-        user_payload = self._auth_user if isinstance(self._auth_user, dict) else None
-        api = self._auth_api
-
-        api_license = getattr(api, "license_cache", None) if api is not None else None
-        if isinstance(api_license, dict):
-            license_payload = dict(api_license)
-            self._auth_license = dict(api_license)
-        else:
-            license_payload = self._auth_license if isinstance(self._auth_license, dict) else None
-
-        account_name = ""
-        if isinstance(user_payload, dict):
-            raw_display = user_payload.get("display_name")
-            raw_email = user_payload.get("email")
-            if isinstance(raw_display, str) and raw_display.strip():
-                account_name = raw_display.strip()
-            elif isinstance(raw_email, str):
-                account_name = raw_email.strip()
-
-        license_line = "License: unavailable"
-        countdown_mode = False
-        plan_key = ""
-        status_key = ""
-        active_license = False
-        if isinstance(license_payload, dict):
-            plan_key = str(license_payload.get("plan", "") or "").strip().lower()
-            status_key = str(license_payload.get("status", "") or "").strip().lower()
-            plan = self._plan_label(plan_key)
-            status = status_key
-            remaining_label, countdown_mode = self._license_remaining_label(license_payload)
-            active_license = bool(status == "active" and remaining_label != "Expired")
-            if status != "active" or remaining_label == "Expired":
-                license_line = f"License: {plan} - expired"
-            elif remaining_label == "No expiry":
-                license_line = f"License: {plan}"
-            else:
-                license_line = f"License: {plan} - {remaining_label} left"
-
-        can_buy_monthly = bool(api is not None and bool(getattr(api, "purchase_monthly_enabled", False)))
-        can_buy_lifetime = bool(api is not None and bool(getattr(api, "purchase_lifetime_enabled", False)))
-
-        lifetime_active = bool(active_license and plan_key == "lifetime")
-        monthly_active = bool(active_license and plan_key == "monthly")
-
-        if lifetime_active:
-            # Lifetime already covers the app forever: no upsell to monthly/lifetime.
-            can_buy_monthly = False
-            can_buy_lifetime = False
-        elif monthly_active:
-            # Monthly already active: hide monthly re-purchase.
-            can_buy_monthly = False
-            # Lifetime may be allowed as upgrade path, with explicit cancellation warning.
-            can_buy_lifetime = bool(can_buy_lifetime)
-
-        payload = {
-            "title": "Account",
-            "name": account_name or "Signed in",
-            "license": license_line,
-            "logout_enabled": bool(api is not None and bool(getattr(api, "supports_logout", True))),
-            "manage_store_enabled": bool(api is not None and callable(getattr(api, "open_store_subscription_page", None))),
-            "purchase_monthly_enabled": bool(can_buy_monthly),
-            "purchase_lifetime_enabled": bool(can_buy_lifetime),
-            "monthly_offer_label": str(getattr(api, "monthly_offer_label", "EUR 6.99 / month")) if api is not None else "EUR 6.99 / month",
-            "lifetime_offer_label": str(getattr(api, "lifetime_offer_label", "EUR 50.00 one-time")) if api is not None else "EUR 50.00 one-time",
-            "plan_key": plan_key,
-            "status_key": status_key,
-            "monthly_active": bool(monthly_active),
-            "lifetime_active": bool(lifetime_active),
-        }
-        return payload, countdown_mode
-
-    def _refresh_account_badge(self) -> None:
-        payload, countdown_mode = self._build_account_payload()
-        self._web_js(self.web_topbar, f"uiSetAccount({json.dumps(payload)});")
-
-        target_interval_ms = 1000 if countdown_mode else 60_000
-        if self._license_ui_timer.interval() != target_interval_ms:
-            self._license_ui_timer.setInterval(target_interval_ms)
-        if not self._license_ui_timer.isActive():
-            self._license_ui_timer.start()
-
-    def _sync_license_with_monitor(self, license_payload: dict[str, Any], *, checked_now: bool = False) -> None:
-        monitor = getattr(self, "_license_monitor", None)
-        if monitor is None:
-            return
-        try:
-            monitor.set_current_license(license_payload, checked_now=checked_now)
-        except Exception:
-            pass
-
-    def _refresh_license_now(self, *, silent: bool = False) -> None:
-        api = self._auth_api
-        if api is None:
-            if not silent:
-                QMessageBox.information(self, "Entitlement", "No entitlement provider is configured.")
-            return
-
-        payload = None
-        try:
-            restore_fn = getattr(api, "restore_purchases", None)
-            if callable(restore_fn):
-                payload = restore_fn()
-            else:
-                refresh_fn = getattr(api, "refresh_license", None)
-                if callable(refresh_fn):
-                    try:
-                        payload = refresh_fn(force=True)
-                    except TypeError:
-                        payload = refresh_fn()
-        except Exception as exc:
-            if not silent:
-                QMessageBox.warning(self, "Entitlement", str(exc) or "Entitlement refresh failed.")
-            return
-
-        if isinstance(payload, dict):
-            self._auth_license = dict(payload)
-            self._refresh_account_badge()
-            self._sync_license_with_monitor(payload, checked_now=True)
-            if not silent:
-                QMessageBox.information(self, "Entitlement", "Entitlement refreshed successfully.")
-            return
-        if not silent:
-            QMessageBox.information(self, "Entitlement", "No updated entitlement was returned by Microsoft Store.")
-
-    def _purchase_store_plan(self, plan: str) -> None:
-        api = self._auth_api
-        if api is None:
-            QMessageBox.warning(self, "Purchase", "No store provider configured.")
-            return
-
-        payload, _ = self._build_account_payload()
-        lifetime_active = bool(payload.get("lifetime_active", False))
-        monthly_active = bool(payload.get("monthly_active", False))
-
-        if plan == "monthly":
-            if lifetime_active:
-                QMessageBox.information(
-                    self,
-                    "Purchase",
-                    "Lifetime access is already active. A monthly plan is not needed.",
-                )
-                return
-            if monthly_active:
-                QMessageBox.information(
-                    self,
-                    "Purchase",
-                    "A monthly subscription is already active on this account.",
-                )
-                return
-
-        if plan == "lifetime" and monthly_active:
-            choice = ask_switch_to_lifetime(self)
-            if choice == "store":
-                try:
-                    fn_open = getattr(api, "open_store_subscription_page", None)
-                    if callable(fn_open):
-                        fn_open()
-                except Exception:
-                    pass
-                return
-            if choice != "continue":
-                return
-
-        fn = getattr(api, "purchase_monthly", None) if plan == "monthly" else getattr(api, "purchase_lifetime", None)
-        if not callable(fn):
-            QMessageBox.warning(self, "Purchase", "Selected plan is not configured.")
-            return
-
-        try:
-            result = fn()
-        except Exception as exc:
-            QMessageBox.warning(self, "Purchase", str(exc) or "Purchase failed.")
-            return
-
-        success = bool(getattr(result, "success", False))
-        detail = str(getattr(result, "detail", "") or "")
-        license_payload = getattr(result, "license_payload", None)
-        if isinstance(license_payload, dict):
-            self._auth_license = dict(license_payload)
-            self._refresh_account_badge()
-            self._sync_license_with_monitor(license_payload, checked_now=True)
-
-        if success:
-            QMessageBox.information(self, "Purchase", detail or "Purchase completed successfully.")
-            return
-        QMessageBox.information(self, "Purchase", detail or "Purchase did not complete.")
-
-    def _logout_account(self) -> None:
-        api = self._auth_api
-        if api is None:
-            QMessageBox.information(self, "Account", "No account action available.")
-            return
-
-        manage_fn = getattr(api, "open_store_subscription_page", None)
-        if callable(manage_fn):
-            try:
-                manage_fn()
-            except Exception:
-                pass
-            QMessageBox.information(
-                self,
-                "Account",
-                "This build uses Microsoft Store entitlement.\nUse Microsoft Store to manage billing and plans.",
-            )
-            return
-
-        QMessageBox.information(self, "Account", "This build is managed by Microsoft Store entitlement.")
-
     def _web_js(self, view: QWebEngineView, js: str) -> None:
         # Defer WebEngine work onto the UI loop so updates are never fired
         # inline while Qt is still settling a heavy analysis/timeline refresh.
@@ -5468,8 +4797,6 @@ class MainWindow(QMainWindow):
         self._push_topbar_status_chips()
         self._web_js(self.web_topbar, f"uiSetReadyDotState({json.dumps(getattr(self, '_ready_dot_state', 'idle'))});")
         self._web_js(self.web_topbar, f"uiSetExportDotState({json.dumps(getattr(self, '_export_dot_state', 'idle'))});")
-        self._refresh_account_badge()
-
         # timecode
         cur = self._fmt_time(getattr(self, "_last_pos", 0.0))
         st = self._compute_stats()
@@ -5518,13 +4845,6 @@ class MainWindow(QMainWindow):
             self.web_stats,
             f"uiSetStats({json.dumps(dur)}, {json.dumps(out_fmt)}, {st['cuts_n']}, {st['kept_pct']}, {json.dumps(saved_fmt)}, {json.dumps(avg_cut_fmt)}, {json.dumps(avg_keep_fmt)}, {st['cuts_per_min']}, {st['keeps_n']}, {st['saved_pct']});",
         )
-        if hasattr(self, "web_stats_full"):
-            self._web_js(
-                self.web_stats_full,
-                f"uiSetStats({json.dumps(dur)}, {json.dumps(out_fmt)}, {st['cuts_n']}, {st['kept_pct']}, {json.dumps(saved_fmt)}, {json.dumps(avg_cut_fmt)}, {json.dumps(avg_keep_fmt)}, {st['cuts_per_min']}, {st['keeps_n']}, {st['saved_pct']});",
-            )
-        self._web_js(self.web_inspector, f"uiSetInspectorCuts({st['cuts_n']}, {json.dumps(out_fmt)}, {st['kept_pct']});")
-
         # Update right panel stats (legacy fallback)
         if self.stats_duration:
             self.stats_duration.setText(f"Duration: {dur}")
@@ -5768,7 +5088,7 @@ class MainWindow(QMainWindow):
                 + "if(document && document.body){document.body.style.color='var(--text)';}"
                 + "})()"
             )
-            for view in (self.web_topbar, self.web_transport, self.web_stats, self.web_stats_full):
+            for view in (self.web_topbar, self.web_transport, self.web_stats):
                 self._web_js(view, js)
         except Exception:
             pass
@@ -5879,45 +5199,19 @@ class MainWindow(QMainWindow):
 
     def _open_top_menu(self) -> None:
         menu = QMenu(self)
-        act_logout = None
-        act_manage_store = None
-        act_buy_monthly = None
-        act_buy_lifetime = None
-        act_refresh_license = None
         act_theme_dark = None
         act_theme_light = None
         act_theme_system = None
         act_recovery_toggle = None
         act_recovery_custom = None
         act_reset_defaults = None
+        act_language_en = None
+        act_language_it = None
+        act_quick_start = None
+        act_diagnostics = None
+        act_about = None
+        act_third_party = None
         recovery_interval_actions = {}
-
-        try:
-            payload, _ = self._build_account_payload()
-            acc_name = str(payload.get("name", "Signed in"))
-            acc_license = str(payload.get("license", "License: unavailable"))
-            act_acc = menu.addAction(acc_name)
-            act_acc.setEnabled(False)
-            act_lic = menu.addAction(acc_license)
-            act_lic.setEnabled(False)
-            if bool(payload.get("logout_enabled", False)):
-                act_logout = menu.addAction("Logout")
-            if bool(payload.get("manage_store_enabled", False)):
-                act_manage_store = menu.addAction("Manage billing in Microsoft Store")
-            if bool(payload.get("purchase_monthly_enabled", False)):
-                monthly_label = str(payload.get("monthly_offer_label", "EUR 6.99 / month"))
-                act_buy_monthly = menu.addAction(f"Start Monthly Plan ({monthly_label})")
-            if bool(payload.get("purchase_lifetime_enabled", False)):
-                lifetime_label = str(payload.get("lifetime_offer_label", "EUR 50.00 one-time"))
-                if bool(payload.get("monthly_active", False)):
-                    act_buy_lifetime = menu.addAction(f"Switch to Lifetime ({lifetime_label}) - cancel monthly first")
-                else:
-                    act_buy_lifetime = menu.addAction(f"Unlock Lifetime ({lifetime_label})")
-            if bool(payload.get("manage_store_enabled", False) or payload.get("purchase_monthly_enabled", False) or payload.get("purchase_lifetime_enabled", False)):
-                act_refresh_license = menu.addAction("Refresh entitlement")
-            menu.addSeparator()
-        except Exception:
-            pass
 
         # Theme (manual override; default is fixed Dark)
         try:
@@ -5991,6 +5285,22 @@ class MainWindow(QMainWindow):
             act_remember_cuts = menu.addAction("Enable remember cuts")
 
         menu.addSeparator()
+        language_menu = menu.addMenu("Language / Lingua")
+        act_language_en = language_menu.addAction("English")
+        act_language_en.setCheckable(True)
+        act_language_en.setChecked(self._ui_language == "en")
+        act_language_it = language_menu.addAction("Italiano")
+        act_language_it.setCheckable(True)
+        act_language_it.setChecked(self._ui_language == "it")
+
+        help_menu = menu.addMenu("Help")
+        act_quick_start = help_menu.addAction(ui_text("quick_start", self._ui_language))
+        act_diagnostics = help_menu.addAction(ui_text("diagnostics", self._ui_language))
+        act_third_party = help_menu.addAction(ui_text("third_party", self._ui_language))
+        help_menu.addSeparator()
+        act_about = help_menu.addAction(ui_text("about", self._ui_language))
+
+        menu.addSeparator()
         act_reset_defaults = menu.addAction("Reset app to defaults...")
 
         chosen = menu.exec(QCursor.pos())
@@ -5998,31 +5308,29 @@ class MainWindow(QMainWindow):
             self._app_log("menu_topbar_closed_no_selection")
             return
 
-        if act_logout is not None and chosen == act_logout:
-            self._app_log("menu_topbar_action", action="logout")
-            self._logout_account()
+        if chosen in (act_language_en, act_language_it):
+            self._ui_language = "it" if chosen == act_language_it else "en"
+            QSettings("Auto Cutter", "Auto Cutter").setValue("ui_language", self._ui_language)
+            self._apply_core_translations()
+            self._apply_accessibility_metadata()
+            self.statusBar().showMessage(
+                "Lingua aggiornata." if self._ui_language == "it" else "Language updated.",
+                2500,
+            )
             return
-        if act_manage_store is not None and chosen == act_manage_store:
-            self._app_log("menu_topbar_action", action="store_manage")
-            try:
-                fn = getattr(self._auth_api, "open_store_subscription_page", None)
-                if callable(fn):
-                    fn()
-            except Exception:
-                pass
+        if chosen == act_quick_start:
+            self._show_quick_start(force=True)
             return
-        if act_buy_monthly is not None and chosen == act_buy_monthly:
-            self._app_log("menu_topbar_action", action="store_buy_monthly")
-            self._purchase_store_plan("monthly")
+        if chosen == act_diagnostics:
+            self._create_diagnostics_bundle()
             return
-        if act_buy_lifetime is not None and chosen == act_buy_lifetime:
-            self._app_log("menu_topbar_action", action="store_buy_lifetime")
-            self._purchase_store_plan("lifetime")
+        if chosen == act_third_party:
+            self._open_third_party_notices()
             return
-        if act_refresh_license is not None and chosen == act_refresh_license:
-            self._app_log("menu_topbar_action", action="store_refresh_license")
-            self._refresh_license_now(silent=False)
+        if chosen == act_about:
+            self._show_about()
             return
+
         if act_theme_dark is not None and chosen == act_theme_dark:
             self._theme_name = "Dark"
             self._apply_theme_pref()
@@ -6458,8 +5766,8 @@ class MainWindow(QMainWindow):
             pass
 
         payload: dict[str, Any] = {
-            "format": "autocutter_project",
-            "version": 1,
+            "format": PROJECT_FORMAT,
+            "version": PROJECT_VERSION,
             "saved_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "project_name": str(getattr(self.project, "name", "Untitled") or "Untitled"),
             "global": {
@@ -6480,7 +5788,10 @@ class MainWindow(QMainWindow):
                 "chunk_count": int(self.chunk_count_spin.value()),
                 "hwaccel_decode": bool(self.hwaccel_cb.isChecked()),
             },
-            "tracks": self._build_session_items(include_cfg=True, include_cuts=True),
+            "tracks": [
+                *self._build_session_items(include_cfg=True, include_cuts=True),
+                *[dict(item) for item in getattr(self, "_offline_project_items", [])],
+            ],
         }
         return payload
 
@@ -6600,6 +5911,7 @@ class MainWindow(QMainWindow):
             out = out.with_suffix(".autocutter")
 
         try:
+            payload = make_payload_portable(payload, out)
             out.parent.mkdir(parents=True, exist_ok=True)
             tmp = out.with_suffix(out.suffix + ".tmp")
             tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -6622,36 +5934,55 @@ class MainWindow(QMainWindow):
         source_path: Path | None = None,
         source_label: str = "Project",
     ) -> bool:
-        if not isinstance(raw, dict):
-            QMessageBox.critical(self, f"{source_label} load failed", "Project file has invalid structure.")
+        try:
+            raw = normalize_project_payload(raw)
+        except ProjectFormatError as exc:
+            QMessageBox.critical(self, f"{source_label} load failed", str(exc))
             return False
-        items = raw.get("tracks", raw.get("items"))
-        if not isinstance(items, list) or not items:
-            QMessageBox.critical(self, f"{source_label} load failed", "Project file does not contain tracks.")
-            return False
+        items = raw["tracks"]
 
-        valid_items: list[dict[str, Any]] = []
-        missing_paths: list[str] = []
-        for item in items:
-            if not isinstance(item, dict):
-                continue
-            p = str(item.get("path", "") or "").strip()
-            if not p:
-                continue
-            if Path(p).exists():
-                valid_items.append(dict(item))
-            else:
-                missing_paths.append(p)
-
-        if not valid_items:
-            QMessageBox.critical(self, f"{source_label} load failed", "None of the media files in this project are available.")
-            return False
-        if missing_paths:
-            msg = (
-                f"{len(missing_paths)} media file(s) are missing and will be skipped.\n\n"
-                "Continue loading available files?"
+        valid_items, missing_items = resolve_project_items(items, source_path)
+        if missing_items and source_path is not None:
+            search = QMessageBox.question(
+                self,
+                "Missing media",
+                (
+                    f"{len(missing_items)} media file(s) are offline.\n\n"
+                    "Search for them in another folder?"
+                ),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
             )
-            if QMessageBox.question(self, "Missing media", msg, QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+            if search == QMessageBox.Yes:
+                search_dir = QFileDialog.getExistingDirectory(
+                    self,
+                    "Choose a folder containing the missing media",
+                    str(source_path.parent),
+                )
+                if search_dir:
+                    relinked, missing_items = relink_items_in_directory(missing_items, Path(search_dir))
+                    valid_items.extend(relinked)
+
+        if missing_items:
+            missing_names = [
+                str(item.get("media_name") or Path(str(item.get("path", "") or "")).name or "unknown")
+                for item in missing_items
+            ]
+            preview = "\n".join(f"- {name}" for name in missing_names[:8])
+            if len(missing_names) > 8:
+                preview += f"\n- and {len(missing_names) - 8} more"
+            keep_offline = QMessageBox.question(
+                self,
+                "Keep media offline",
+                (
+                    "These media files are still unavailable:\n\n"
+                    f"{preview}\n\n"
+                    "Open the project and keep their edits for a future relink?"
+                ),
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes,
+            )
+            if keep_offline != QMessageBox.Yes:
                 return False
 
         # Preserve session keys because _perform_workspace_reset clears them by design.
@@ -6664,6 +5995,7 @@ class MainWindow(QMainWindow):
             settings_backup = {}
 
         self._perform_workspace_reset()
+        self._offline_project_items = [dict(item) for item in missing_items]
 
         if settings_backup:
             try:
@@ -6712,7 +6044,7 @@ class MainWindow(QMainWindow):
             source=source_label,
             path=str(source_path) if isinstance(source_path, Path) else "",
             tracks_loaded=len(valid_items),
-            tracks_missing=len(missing_paths),
+            tracks_missing=len(missing_items),
         )
         return True
 
@@ -7663,6 +6995,8 @@ class MainWindow(QMainWindow):
         self._apply_advanced_lock_state()
         self._refresh_advanced_ui_state()
         self._sync_icons()
+        self._apply_core_translations()
+        self._apply_accessibility_metadata()
         self._sync_icons()
 
   
@@ -11336,7 +10670,26 @@ class MainWindow(QMainWindow):
             return
 
         self._export_abort_requested = False
-        codec = self.codec_combo.currentData()
+        requested_codec = str(self.codec_combo.currentData() or "auto")
+        codec_fallback_warning = ""
+        try:
+            codec_selection = resolve_video_codec(self.ffmpeg_path, requested_codec)
+            codec = codec_selection.resolved
+            if codec_selection.used_fallback:
+                codec_fallback_warning = (
+                    f"{requested_codec} is not usable on this computer; "
+                    f"the export will use {codec}. {codec_selection.fallback_reason}"
+                )
+            self._app_log(
+                "export_codec_resolved",
+                requested=requested_codec,
+                resolved=str(codec),
+                fallback=bool(codec_selection.used_fallback),
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Export codec unavailable", str(e))
+            self._app_log("export_request_rejected", reason="no_usable_video_encoder", error=str(e))
+            return
         export_method = self.export_method_combo.currentData()
         self._app_log(
             "export_start",
@@ -11411,6 +10764,7 @@ class MainWindow(QMainWindow):
             codec=str(codec),
             expected_duration_s=float(expected_duration_s),
             input_paths=list(input_paths or []),
+            initial_warnings=[codec_fallback_warning] if codec_fallback_warning else None,
         ):
             self._app_log("export_request_rejected", reason="preflight_failed")
             return
@@ -11577,7 +10931,7 @@ class MainWindow(QMainWindow):
 
     def _selected_video_encoder(self, codec_value: str) -> str:
         c = str(codec_value or "").strip().lower()
-        if c in {"h264_amf", "hevc_amf", "av1_amf", "libx264"}:
+        if c in {"h264_amf", "h264_nvenc", "h264_qsv", "hevc_amf", "av1_amf", "libx264"}:
             return c
         return "libx264"
 
@@ -11593,21 +10947,6 @@ class MainWindow(QMainWindow):
                 timeout=8,
             )
             return int(p.returncode) == 0
-        except Exception:
-            return False
-
-    def _license_is_active_for_export(self) -> bool:
-        api = getattr(self, "_auth_api", None)
-        if api is None:
-            return True
-        fn = getattr(api, "is_license_active", None)
-        if not callable(fn):
-            return True
-        payload = getattr(api, "license_cache", None)
-        if not isinstance(payload, dict):
-            payload = self._auth_license if isinstance(self._auth_license, dict) else None
-        try:
-            return bool(fn(payload))
         except Exception:
             return False
 
@@ -11646,9 +10985,10 @@ class MainWindow(QMainWindow):
         codec: str,
         expected_duration_s: float,
         input_paths: list[str],
+        initial_warnings: list[str] | None = None,
     ) -> bool:
         errors: list[str] = []
-        warnings: list[str] = []
+        warnings: list[str] = [str(item) for item in (initial_warnings or []) if str(item).strip()]
 
         # 1) ffmpeg / ffprobe
         ffmpeg = str(getattr(self, "ffmpeg_path", "") or "").strip()
@@ -11695,10 +11035,6 @@ class MainWindow(QMainWindow):
             deps_ok, reason = ai_dependency_status()
             if not deps_ok:
                 warnings.append(f"AI dependencies are not fully available: {reason}")
-
-        # 5) active license
-        if not self._license_is_active_for_export():
-            errors.append("Active license not found. Refresh license and try again.")
 
         if errors:
             text = "Export preflight failed:\n\n- " + "\n- ".join(errors)

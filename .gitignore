@@ -15,20 +15,18 @@ htmlcov/
 # Virtual environments
 .venv/
 .venv*/
+ai_runtime/
 venv/
 env/
 
 # Build and release artifacts
 build/work/
+build/third_party/
 dist/
 installer/output/
-msix/staging/
-msix/output/
 pretrained_models/
-*.msix
-*.appx
-*.appxbundle
-*.msixbundle
+cache/keyframes/
+cache/splice_points/
 
 # Machine-specific exports / scratch files
 /auto_cutter.edl
@@ -49,7 +47,6 @@ cert-test/
 *.p12
 *.crt
 .env
-store.env
 
 # Editor / OS files
 .cursor/
@@ -57,4 +54,3 @@ store.env
 .idea/
 .DS_Store
 Thumbs.db
-

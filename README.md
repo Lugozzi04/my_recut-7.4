@@ -1,98 +1,102 @@
-# Auto-Cutter
+# Auto Cutter
 
-Auto-Cutter is a Windows desktop app for video cutting, timeline editing, and MP4/EDL export. It uses PySide6 for the UI and FFmpeg for media processing. Optional AI-assisted analysis lives under `analysis/`.
+Auto Cutter is a Windows desktop editor for automatic voice cuts, timeline
+review, MP4 rendering, and EDL export. The UI is built with PySide6 and media
+processing uses separate FFmpeg command-line programs.
 
-## Project layout
+## Requirements
 
-- `main.py` application entry point
-- `ui/` main window and custom Qt widgets
-- `audio/`, `video/`, `analysis/`, `export/` processing pipeline
-- `core/` project data model
-- `utils/` shared helpers
-- `widgets/` reusable timeline controls
-- `bin/` bundled FFmpeg binaries used at runtime
-- `pretrained_models/` optional model assets for AI workflows, kept local by default
-- `build/` packaging scripts
-- `installer/` Inno Setup script
-- `msix/` MSIX packaging templates and notes
-- `store.env.example` runtime licensing variable template
+- Windows 10 or later, 64-bit
+- Python 3.10 for source development
+- About 500 MB for the core development environment
+- Optional AI runtime: more than 2 GB depending on installed model packages
 
-## What should stay out of Git
-
-The first commit should not include local environments or generated outputs. These are safe to leave untracked:
-
-- `.venv310/` and `.venv_spleeter/`
-- `__pycache__/`, `*.pyc`, `*.pyd`
-- `build/work/`
-- `dist/`
-- `installer/output/`
-- `msix/staging/`
-- `msix/output/`
-- `pretrained_models/`
-- local certificates such as `*.pfx`
-- scratch exports like `auto_cutter.edl`, `ff.edl`, `fix_export.patch`
-- editor/workspace folders like `.cursor/` and `.vscode/`
-
-`pretrained_models/` is optional. It is bundled by the packaging scripts if present, but it is not required for the core editor/runtime path.
-By default it is not tracked in Git, so you can keep the repo lighter and add the assets only on machines that need the AI path.
-
-## First-time setup
-
-Recommended: Python 3.10 on Windows.
+## First setup
 
 ```powershell
 py -3.10 -m venv .venv310
 .\.venv310\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-If you use VS Code, select `.venv310\Scripts\python.exe` as the interpreter. If you run the app with the wrong Python, you will usually get `ModuleNotFoundError: PySide6`.
-
-Run the app:
-
-```powershell
+python -m pip install --requirement requirements.txt
 python main.py
 ```
 
-## First run
+In VS Code, select `.venv310\Scripts\python.exe`. Running with another
+interpreter is the usual cause of `ModuleNotFoundError: PySide6`.
 
-On startup the app checks the Microsoft Store entitlement/session. If no active license/session is available, it shows a message and exits. Runtime licensing variables are documented in `store.env.example`.
+## Workflow
 
-Typical first-run flow:
+1. Add or drag one or more videos.
+2. Choose Classic analysis, or install and select the optional AI mode.
+3. Review generated cuts on the timeline.
+4. Save the `.autocutter` project.
+5. Export MP4 with `Codec: Auto`, or export EDL.
 
-1. Launch the app with the project venv active.
-2. Add or drop a video into the workspace.
-3. Let the app analyze or manually mark cuts.
-4. Adjust the timeline if needed.
-5. Export MP4 or EDL.
+Projects use relative media paths where possible. Missing media is retained as
+offline state and can be searched in another folder when the project is opened.
 
-## Daily use
+## Optional AI runtime
 
-After the first setup, the normal workflow is short:
+The AI runtime is not copied from a developer virtual environment and is not
+part of the core installer. Create the pinned local runtime with:
 
-1. Activate `.venv310`.
-2. Run `python main.py`.
-3. Open your project/video.
-4. Edit cuts, save presets if needed, and export.
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build\install-ai-runtime.ps1
+```
 
-Presets and window state are remembered between runs, so you usually only need to reopen the app and continue.
+This creates the ignored `ai_runtime/` directory from `requirements-ai.txt`.
+`AUTO_CUTTER_AI_PY` can point to another verified Python interpreter.
+Spleeter models are kept in `ai_runtime/pretrained_models/` by default and are
+downloaded on first use; `AUTO_CUTTER_AI_MODELS` can select another location.
 
-## Building
+## Development checks
 
-Build scripts live in `build/`.
+```powershell
+python -m pip install --requirement requirements-dev.txt
+ruff check .
+mypy core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py
+pytest
+```
+
+The Windows GitHub Actions workflow runs compilation, lint, type checks, unit
+tests, cancellation tests, and a real FFmpeg export integration test.
+
+## Build
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build\build.ps1
 powershell -ExecutionPolicy Bypass -File .\build\build-installer.ps1
-powershell -ExecutionPolicy Bypass -File .\build\build-msix.ps1
 ```
 
-`requirements-build.txt` adds the packaging dependencies needed by the build scripts.
+The build:
 
-## Notes
+- removes stale target artifacts;
+- verifies every native command exit code;
+- reads the version from `VERSION`;
+- prepares and verifies FFmpeg source/license assets;
+- creates `dist\AutoCutter\AutoCutter.exe`;
+- creates `installer\output\AutoCutterSetup.exe`.
 
-- `bin/` is kept in the repo because the app expects bundled FFmpeg binaries.
-- `store.env.example` is only a template; copy or export the variables you need in your local environment.
-- If you want the AI path offline, keep the separate runtime setup used by `analysis/ai_pipeline.py` and add the optional model assets locally before building.
+For a signed release, pass `-PfxPath` and `-PfxPassword` to
+`build-installer.ps1`. Both the application executable and installer are signed
+and verified.
 
+## Diagnostics
+
+Use `Settings > Help > Create diagnostics bundle` to create a ZIP containing
+runtime metadata and redacted logs. Media and project files are not included.
+Review the ZIP before sharing it.
+
+## Repository hygiene
+
+Virtual environments, models, caches, certificates, generated builds, exports,
+and third-party release assets are ignored. `bin/*.exe` is configured for Git
+LFS. Existing large blobs in old Git history require a separate history
+migration if reducing clone size is necessary.
+
+## Third-party software
+
+See `THIRD_PARTY_NOTICES.md` and `docs/FFMPEG_DISTRIBUTION.md`. The included
+Gyan FFmpeg 8.0.1 essentials binaries report GPLv3-or-later. Release builds
+include the corresponding FFmpeg source archive and GPL text. Obtain legal
+review before public distribution, especially for statically linked external
+libraries.

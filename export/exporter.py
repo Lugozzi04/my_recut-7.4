@@ -1,9 +1,7 @@
 import os
 import tempfile
-import subprocess
 import threading
 import time
-from collections import deque
 from collections.abc import Callable
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,58 +21,21 @@ from utils.ffmpeg import (
     ffprobe_duration_seconds,
     scan_splice_safe_pts,
 )
-from utils.subprocess_utils import popen_no_window, run_no_window
+from utils.subprocess_utils import run_no_window
 from ui.render_filters import (
     build_filter_complex,
     build_filter_complex_multi,
     build_filter_complex_video_only,
 )
+from .runtime_utils import (
+    ExportCancelled as _ExportCancelled,
+    SmartHybridFallback as _SmartHybridFallback,
+    env_value as _env,
+)
+from .process_mixin import ExportProcessMixin
 
 
-def _env(name: str, default=None):
-    """Read AUTO_CUTTER_* env vars and fall back to legacy RECUT_* names."""
-    val = os.environ.get(name)
-    if val is not None:
-        return val
-    if name.startswith("AUTO_CUTTER_"):
-        legacy = "RECUT_" + name[len("AUTO_CUTTER_") :]
-        legacy_val = os.environ.get(legacy)
-        if legacy_val is not None:
-            return legacy_val
-    return default
-
-
-def _safe_int(s: str):
-    s = s.strip()
-    if not s or s.upper() == "N/A":
-        return None
-    try:
-        return int(s)
-    except ValueError:
-        return None
-
-
-class _ExportCancelled(Exception):
-    pass
-
-
-class _SmartHybridFallback(Exception):
-    pass
-
-
-def _parse_out_time_hms(s: str):
-    # "HH:MM:SS.micro" -> seconds (float)
-    s = s.strip()
-    if not s or s.upper() == "N/A":
-        return None
-    try:
-        hh, mm, ss = s.split(":")
-        return int(hh) * 3600.0 + int(mm) * 60.0 + float(ss)
-    except Exception:
-        return None
-
-
-class ExportWorker(QObject):
+class ExportWorker(ExportProcessMixin, QObject):
     progress = Signal(int, str)  # percent, text
     finished = Signal()
     error = Signal(str)
@@ -86,7 +47,7 @@ class ExportWorker(QObject):
         input_path: str,
         output_path: str,
         keeps: list[Segment],
-        codec: str = "h264_amf",
+        codec: str = "libx264",
         use_hwaccel: bool = False,  # se vuoi provare hw decode, metti True (vedi nota sotto)
         export_method: str = "filter_concat",  # "filter_concat" | "chunked_parallel" | "smart_render" | "smart_hybrid"
         parallel_workers: int = 2,  # quanti ffmpeg contemporanei per chunked_parallel
@@ -158,9 +119,7 @@ class ExportWorker(QObject):
         # Debug logging
         self.debug = _env("AUTO_CUTTER_EXPORT_DEBUG", "1").strip() not in ("0", "false", "False", "")
         self.debug_full = _env("AUTO_CUTTER_EXPORT_DEBUG_FULL", "0").strip() in ("1", "true", "True")
-        self._cancelled = False
-        self._proc_lock = threading.Lock()
-        self._active_procs: set[subprocess.Popen] = set()
+        self._init_process_control()
         self._chunk_times: list[float] = []
         self._export_start_ts: float | None = None
         self._export_method_used: str | None = None
@@ -1407,311 +1366,6 @@ class ExportWorker(QObject):
                 pass
 
 
-    def _finish_success(self) -> None:
-        self._log_export_summary()
-        self.finished.emit()
-
-    def cancel(self) -> None:
-        self._cancelled = True
-        self._terminate_all_procs()
-
-    def _register_proc(self, proc: subprocess.Popen) -> None:
-        try:
-            with self._proc_lock:
-                self._active_procs.add(proc)
-        except Exception:
-            pass
-
-    def _unregister_proc(self, proc: subprocess.Popen) -> None:
-        try:
-            with self._proc_lock:
-                self._active_procs.discard(proc)
-        except Exception:
-            pass
-
-    def _terminate_proc(self, proc: subprocess.Popen) -> None:
-        try:
-            if proc.poll() is None:
-                try:
-                    proc.terminate()
-                except Exception:
-                    pass
-                try:
-                    proc.wait(timeout=1.5)
-                except Exception:
-                    try:
-                        proc.kill()
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-
-    def _terminate_all_procs(self) -> None:
-        try:
-            with self._proc_lock:
-                procs = list(self._active_procs)
-            for p in procs:
-                self._terminate_proc(p)
-        except Exception:
-            pass
-
-    def _check_cancelled(self) -> None:
-        if self._cancelled:
-            raise _ExportCancelled("Export cancelled.")
-
-    def _run_ffmpeg(self, cmd: list[str]) -> tuple[int, str, str]:
-        self._check_cancelled()
-
-        def _run_once(cmd_run: list[str]) -> tuple[int, str]:
-            proc = popen_no_window(
-                cmd_run,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-            )
-            self._register_proc(proc)
-            err_lines = deque(maxlen=200)
-
-            def _drain_stderr() -> None:
-                try:
-                    assert proc.stderr is not None
-                    for line in proc.stderr:
-                        if line:
-                            err_lines.append(line.rstrip())
-                except Exception:
-                    pass
-
-            t = threading.Thread(target=_drain_stderr, daemon=True)
-            t.start()
-            try:
-                heartbeat_sec = float(_env("AUTO_CUTTER_FFMPEG_HEARTBEAT_SEC", "5").strip() or "5")
-            except Exception:
-                heartbeat_sec = 5.0
-            if heartbeat_sec < 0.0:
-                heartbeat_sec = 0.0
-            t_start = time.monotonic()
-            t_last_hb = t_start
-            out_hint = ""
-            try:
-                out_hint = str(cmd_run[-1]) if cmd_run else ""
-            except Exception:
-                out_hint = ""
-
-            try:
-                while True:
-                    if self._cancelled:
-                        self._terminate_proc(proc)
-                        raise _ExportCancelled("Export cancelled.")
-                    if heartbeat_sec > 0.0:
-                        now = time.monotonic()
-                        if (now - t_last_hb) >= heartbeat_sec:
-                            self._log(
-                                f"ffmpeg_wait elapsed={now - t_start:.1f}s "
-                                f"target={out_hint}"
-                            )
-                            t_last_hb = now
-                    rc = proc.poll()
-                    if rc is not None:
-                        try:
-                            t.join(timeout=1.0)
-                        except Exception:
-                            pass
-                        return int(rc), "\n".join(err_lines)
-                    time.sleep(0.1)
-            finally:
-                self._unregister_proc(proc)
-
-        rc, err = _run_once(cmd)
-        if rc != 0 and ("-hwaccel" in cmd or "-hwaccel_output_format" in cmd):
-            cmd_no_hw = self._strip_hwaccel_args(cmd)
-            self._log("hwaccel_failed -> retry cpu decode")
-            self._disable_hwaccel_for_export("ffmpeg_run_failed")
-            rc, err = _run_once(cmd_no_hw)
-
-        return int(rc), "", (err or "")
-
-    def _run_ffmpeg_progress(
-        self,
-        cmd: list[str],
-        on_progress: Callable[[float], None] | None = None,
-    ) -> tuple[int, str]:
-        self._check_cancelled()
-
-        def _run_once(cmd_run: list[str]) -> tuple[int, str]:
-            proc = popen_no_window(
-                cmd_run,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-            )
-            self._register_proc(proc)
-            err_lines = deque(maxlen=200)
-            line_q = deque()
-            q_lock = threading.Lock()
-            reader_done = threading.Event()
-            out_time = 0.0
-            try:
-                stall_warn_s = float(
-                    _env("AUTO_CUTTER_FFMPEG_PROGRESS_STALL_WARN_SEC", "90").strip() or "90"
-                )
-            except Exception:
-                stall_warn_s = 90.0
-            try:
-                stall_kill_s = float(
-                    _env("AUTO_CUTTER_FFMPEG_PROGRESS_STALL_KILL_SEC", "420").strip() or "420"
-                )
-            except Exception:
-                stall_kill_s = 420.0
-            try:
-                stall_eps = float(
-                    _env("AUTO_CUTTER_FFMPEG_PROGRESS_STALL_EPS", "0.20").strip() or "0.20"
-                )
-            except Exception:
-                stall_eps = 0.20
-            stall_warn_s = max(0.0, float(stall_warn_s))
-            stall_kill_s = max(0.0, float(stall_kill_s))
-            stall_eps = max(0.001, float(stall_eps))
-            try:
-                heartbeat_sec = float(
-                    _env("AUTO_CUTTER_FFMPEG_PROGRESS_HEARTBEAT_SEC", "5").strip() or "5"
-                )
-            except Exception:
-                heartbeat_sec = 5.0
-            if heartbeat_sec < 0.0:
-                heartbeat_sec = 0.0
-            t_start = time.monotonic()
-            t_last_hb = t_start
-            t_last_activity = t_start
-            t_last_progress = t_start
-            last_reported_out = 0.0
-            stall_warned = False
-            out_hint = ""
-            try:
-                out_hint = str(cmd_run[-1]) if cmd_run else ""
-            except Exception:
-                out_hint = ""
-
-            def _drain_stderr() -> None:
-                nonlocal t_last_activity
-                try:
-                    assert proc.stderr is not None
-                    for raw in proc.stderr:
-                        if raw is None:
-                            continue
-                        line = raw.strip()
-                        if not line:
-                            continue
-                        with q_lock:
-                            line_q.append(line)
-                            err_lines.append(line)
-                        t_last_activity = time.monotonic()
-                except Exception:
-                    pass
-                finally:
-                    reader_done.set()
-
-            def _consume_progress() -> None:
-                nonlocal out_time, t_last_activity, t_last_progress, last_reported_out, stall_warned
-                while True:
-                    with q_lock:
-                        if not line_q:
-                            break
-                        line = line_q.popleft()
-                    if line.startswith("out_time_ms="):
-                        v = _safe_int(line.split("=", 1)[1])
-                        if v is not None:
-                            out_time = v / 1_000_000.0
-                            if out_time >= (last_reported_out + stall_eps):
-                                last_reported_out = out_time
-                                t_last_progress = time.monotonic()
-                                t_last_activity = t_last_progress
-                                stall_warned = False
-                            if on_progress:
-                                on_progress(out_time)
-                    elif line.startswith("out_time_us="):
-                        v = _safe_int(line.split("=", 1)[1])
-                        if v is not None:
-                            out_time = v / 1_000_000.0
-                            if out_time >= (last_reported_out + stall_eps):
-                                last_reported_out = out_time
-                                t_last_progress = time.monotonic()
-                                t_last_activity = t_last_progress
-                                stall_warned = False
-                            if on_progress:
-                                on_progress(out_time)
-                    elif line.startswith("out_time="):
-                        v = _parse_out_time_hms(line.split("=", 1)[1])
-                        if v is not None:
-                            out_time = v
-                            if out_time >= (last_reported_out + stall_eps):
-                                last_reported_out = out_time
-                                t_last_progress = time.monotonic()
-                                t_last_activity = t_last_progress
-                                stall_warned = False
-                            if on_progress:
-                                on_progress(out_time)
-
-            t = threading.Thread(target=_drain_stderr, daemon=True)
-            t.start()
-            try:
-                while True:
-                    if self._cancelled:
-                        self._terminate_proc(proc)
-                        raise _ExportCancelled("Export cancelled.")
-                    _consume_progress()
-                    if heartbeat_sec > 0.0:
-                        now = time.monotonic()
-                        if (now - t_last_hb) >= heartbeat_sec:
-                            self._log(
-                                f"ffmpeg_progress_wait elapsed={now - t_start:.1f}s "
-                                f"out_time={out_time:.1f}s target={out_hint}"
-                            )
-                            t_last_hb = now
-                    now = time.monotonic()
-                    idle_for = max(0.0, now - max(t_last_activity, t_last_progress))
-                    if stall_warn_s > 0.0 and (not stall_warned) and idle_for >= stall_warn_s:
-                        self._log(
-                            f"ffmpeg_stall_warning idle={idle_for:.1f}s out_time={out_time:.1f}s "
-                            f"target={out_hint}"
-                        )
-                        stall_warned = True
-                    if stall_kill_s > 0.0 and idle_for >= stall_kill_s:
-                        stall_msg = (
-                            f"ffmpeg_stall_detected idle={idle_for:.1f}s out_time={out_time:.1f}s "
-                            f"target={out_hint}"
-                        )
-                        self._log(stall_msg + " -> terminate")
-                        try:
-                            err_lines.append(stall_msg)
-                        except Exception:
-                            pass
-                        self._terminate_proc(proc)
-                    rc = proc.poll()
-                    if rc is not None:
-                        try:
-                            t.join(timeout=1.0)
-                        except Exception:
-                            pass
-                        _consume_progress()
-                        return int(rc), "\n".join(err_lines)
-                    if reader_done.is_set():
-                        # Reader ended unexpectedly: keep polling process until completion.
-                        pass
-                    time.sleep(0.1)
-            finally:
-                self._unregister_proc(proc)
-
-        rc, err = _run_once(cmd)
-        if rc != 0 and ("-hwaccel" in cmd or "-hwaccel_output_format" in cmd):
-            cmd_no_hw = self._strip_hwaccel_args(cmd)
-            self._log("hwaccel_failed -> retry cpu decode")
-            self._disable_hwaccel_for_export("ffmpeg_progress_failed")
-            rc, err = _run_once(cmd_no_hw)
-
-        return int(rc), err
-
     def _summarize_keeps(self, keeps: list[Segment]) -> str:
         if not keeps:
             return "keeps=0"
@@ -2221,6 +1875,30 @@ class ExportWorker(QObject):
                 "-g", "240",
                 "-bf", "0",
                 "-pix_fmt", "yuv420p",
+            ]
+
+        if self.codec == "h264_nvenc":
+            qp = "14" if is_cut_hq else "18"
+            return [
+                "-c:v", "h264_nvenc",
+                "-preset", "p5",
+                "-tune", "hq",
+                "-rc", "constqp",
+                "-qp", qp,
+                "-g", "240",
+                "-bf", "0",
+                "-pix_fmt", "yuv420p",
+            ]
+
+        if self.codec == "h264_qsv":
+            quality = "14" if is_cut_hq else "18"
+            return [
+                "-c:v", "h264_qsv",
+                "-preset", "medium",
+                "-global_quality", quality,
+                "-g", "240",
+                "-bf", "0",
+                "-pix_fmt", "nv12",
             ]
 
         # Fallback software
@@ -5826,7 +5504,7 @@ class ExportWorker(QObject):
         src_codec = self._probe_video_codec(src_path)
         if not src_codec:
             return False
-        if self.codec in ("h264_amf", "libx264") and src_codec == "h264":
+        if self.codec in ("h264_amf", "h264_nvenc", "h264_qsv", "libx264") and src_codec == "h264":
             return True
         if self.codec == "hevc_amf" and src_codec in ("hevc", "h265"):
             return True

@@ -90,14 +90,14 @@ def _apply_attack_release_to_silent_mask(
     cur_silent = bool(silent[0])
     out[0] = cur_silent
 
-    run_len = 1  # lunghezza run del "nuovo stato osservato" (diverso da cur_silent)
+    run_len = 0  # lunghezza run del "nuovo stato osservato" (diverso da cur_silent)
 
     for i in range(1, silent.size):
         obs_silent = bool(silent[i])
 
         if obs_silent == cur_silent:
             # nessuna transizione in corso
-            run_len = 1
+            run_len = 0
             out[i] = cur_silent
             continue
 
@@ -108,12 +108,12 @@ def _apply_attack_release_to_silent_mask(
             # silent -> voice: serve attack
             if run_len >= max(1, atk_frames):
                 cur_silent = False
-                run_len = 1
+                run_len = 0
         else:
             # voice -> silent: serve release
             if run_len >= max(1, rel_frames):
                 cur_silent = True
-                run_len = 1
+                run_len = 0
 
         out[i] = cur_silent
 

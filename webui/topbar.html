@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="ui.css">
@@ -201,55 +201,6 @@
     }
     .toggle-btn__label{user-select:none; color:var(--muted); font-weight:700}
 
-    .account{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width:180px;
-      padding:4px 8px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.05);
-      background:rgba(255,255,255,.02);
-    }
-    .avatar{
-      width:30px; height:30px;
-      border-radius:999px;
-      display:grid;
-      place-items:center;
-      font-size:12px;
-      font-weight:900;
-      background:linear-gradient(180deg, rgba(94,164,255,.20), rgba(57,208,191,.12));
-      border:1px solid rgba(94,164,255,.28);
-      color:#fff;
-      flex:0 0 auto;
-    }
-    .account__meta{
-      min-width:0;
-      display:flex;
-      flex-direction:column;
-      gap:1px;
-    }
-    .account__title{
-      font-size:12px;
-      line-height:1.2;
-      text-transform:uppercase;
-      letter-spacing:.10em;
-      font-weight:800;
-      color:var(--subtle);
-    }
-    .account__name{
-      font-size:12px;
-      line-height:1.2;
-      font-weight:700;
-      color:var(--text);
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      max-width:180px;
-    }
-    .account__license{
-      display:none; /* kept for JS state; surfaced in Qt overflow menu */
-    }
     @media (max-width: 1199px){
       .topbar{
         grid-template-columns:auto minmax(180px,1fr) auto;
@@ -259,12 +210,6 @@
       #chipAudio, #chipCodec{display:none;}
       .brand__sub{display:none;}
       .toggle-btn__label{display:none;}
-      .account{
-        min-width:140px;
-        padding:4px 6px;
-      }
-      .account__title{display:none;}
-      .account__name{max-width:130px;}
       .chip{max-width:46%; padding:2px 7px;}
     }
     @media (max-width: 949px){
@@ -281,14 +226,6 @@
       .chip{max-width:none; padding:2px 6px;}
       .chip__k{display:none;}
       .project .muted{display:none;}
-      .account{
-        min-width:0;
-        border:none;
-        background:transparent;
-        padding:0;
-      }
-      .account__meta{display:none;}
-      .avatar{width:28px; height:28px;}
     }
   </style>
 </head>
@@ -304,26 +241,26 @@
         </div>
       </div>
 
-      <button class="btn btn--secondary" id="btnImport" type="button">
+      <button class="btn btn--secondary" id="btnImport" type="button" aria-label="Import video">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;">
           <path d="M3 8.2C3 7.07989 3 6.51984 3.21799 6.09202C3.40973 5.71569 3.71569 5.40973 4.09202 5.21799C4.51984 5 5.0799 5 6.2 5H9.67452C10.1637 5 10.4083 5 10.6385 5.05526C10.8425 5.10425 11.0376 5.18506 11.2166 5.29472C11.4184 5.4184 11.5914 5.59135 11.9373 5.93726L12.0627 6.06274C12.4086 6.40865 12.5816 6.5816 12.7834 6.70528C12.9624 6.81494 13.1575 6.89575 13.3615 6.94474C13.5917 7 13.8363 7 14.3255 7H17.8C18.9201 7 19.4802 7 19.908 7.21799C20.2843 7.40973 20.5903 7.71569 20.782 8.09202C21 8.51984 21 9.0799 21 10.2V15.8C21 16.9201 21 17.4802 20.782 17.908C20.5903 18.2843 20.2843 18.5903 19.908 18.782C19.4802 19 18.9201 19 17.8 19H6.2C5.07989 19 4.51984 19 4.09202 18.782C3.71569 18.5903 3.40973 18.2843 3.21799 17.908C3 17.4802 3 16.9201 3 15.8V8.2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Import
       </button>
 
-      <button class="btn btn--secondary" id="btnReset" type="button" title="Clear all videos">
+      <button class="btn btn--secondary" id="btnReset" type="button" title="Clear all videos" aria-label="Reset workspace">
         Reset
       </button>
 
-      <button class="btn btn--secondary" id="btnProjectSave" type="button" title="Save .autocutter project">
+      <button class="btn btn--secondary" id="btnProjectSave" type="button" title="Save .autocutter project" aria-label="Save project">
         Project Save
       </button>
 
-      <button class="btn btn--secondary" id="btnProjectLoad" type="button" title="Load .autocutter project">
+      <button class="btn btn--secondary" id="btnProjectLoad" type="button" title="Load .autocutter project" aria-label="Load project">
         Project Load
       </button>
 
-      <button class="toggle-btn" id="btnSkip" type="button" title="Auto-skip cut sections during preview">
+      <button class="toggle-btn" id="btnSkip" type="button" title="Auto-skip cut sections during preview" aria-label="Auto-skip cuts during preview" aria-pressed="false">
         <span class="toggle-btn__track"><span class="toggle-btn__thumb"></span></span>
         <span class="toggle-btn__label">Auto-skip preview</span>
       </button>
@@ -331,7 +268,7 @@
 
     <div class="center">
       <div class="statusline">
-        <div class="state">
+        <div class="state" role="status" aria-live="polite">
           <span class="dot dot--idle" id="dotReady"></span>
           <span id="txtState">No video loaded</span>
         </div>
@@ -348,11 +285,11 @@
         <div class="chip" id="chipCodec" title="Export codec"><span class="chip__k">Codec</span><span class="chip__v">H.264</span></div>
       </div>
 
-      <div class="thin"><div class="bar" id="prog"></div></div>
+      <div class="thin" id="progressTrack" role="progressbar" aria-label="Analysis or export progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="bar" id="prog"></div></div>
     </div>
 
     <div class="right">
-      <button class="btn btn--primary" id="btnExport" type="button">
+      <button class="btn btn--primary" id="btnExport" type="button" aria-label="Export MP4">
         <span class="dot dot--idle dot--export-indicator" id="dotExport"></span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px; vertical-align: middle;">
           <path opacity="0.5" d="M4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -361,17 +298,7 @@
         Export
       </button>
 
-      <div class="account" title="Account info. License and logout are in the menu.">
-        <div class="avatar" id="txtAccountAvatar">A</div>
-        <div class="account__meta">
-          <div class="account__title" id="txtAccountTitle">Account</div>
-          <div class="account__name" id="txtAccountName">Signed in</div>
-          <div class="account__license" id="txtAccountLicense">License: unavailable</div>
-        </div>
-      </div>
-
-      <button class="iconbtn" id="btnMenu" type="button" title="Settings, account, shortcuts">...</button>
-      <button class="btn" id="btnLogout" type="button" title="Logout from current account" style="display:none;">Logout</button>
+      <button class="iconbtn" id="btnMenu" type="button" title="Settings and shortcuts" aria-label="Settings and help">...</button>
     </div>
   </div>
 
@@ -388,27 +315,11 @@
       if (el) el.textContent = (videoName || "-");
     }
     function setProgress(p){
+      const value = Math.max(0, Math.min(100, Number(p) || 0));
       const el = document.getElementById("prog");
-      if (el) el.style.width = (p || 0) + "%";
-    }
-    function setAccount(payload){
-      const data = payload || {};
-      const title = data.title || "Account";
-      const name = data.name || "Signed in";
-      const license = data.license || "License: unavailable";
-      const titleEl = document.getElementById("txtAccountTitle");
-      const nameEl = document.getElementById("txtAccountName");
-      const licenseEl = document.getElementById("txtAccountLicense");
-      const avatarEl = document.getElementById("txtAccountAvatar");
-      if (titleEl) titleEl.textContent = title;
-      if (nameEl) nameEl.textContent = name;
-      if (licenseEl) licenseEl.textContent = license;
-      if (avatarEl) {
-        const src = String(name || "").trim();
-        avatarEl.textContent = (src ? src[0] : "A").toUpperCase();
-      }
-      const btnLogout = document.getElementById("btnLogout");
-      if (btnLogout) btnLogout.disabled = !data.logout_enabled;
+      if (el) el.style.width = value + "%";
+      const track = document.getElementById("progressTrack");
+      if (track) track.setAttribute("aria-valuenow", String(value));
     }
     function setStatusChip(id, value, kind){
       const chip = document.getElementById(id);
@@ -431,23 +342,17 @@
       document.getElementById("btnProjectLoad").onclick = () => bridge.projectLoadClicked();
       document.getElementById("btnExport").onclick = () => bridge.exportClicked();
 
-      const btnLogout = document.getElementById("btnLogout");
-      if (btnLogout) {
-        btnLogout.onclick = () => {
-          if (!bridge) return;
-          if (confirm("Logout from current account?")) bridge.logoutClicked();
-        };
-      }
-
       btnSkip.onclick = (e) => {
         e.stopPropagation();
         skipEnabled = !skipEnabled;
         btnSkip.classList.toggle("active", skipEnabled);
+        btnSkip.setAttribute("aria-pressed", skipEnabled ? "true" : "false");
         bridge.autoSkipChanged(skipEnabled);
       };
       document.getElementById("btnMenu").onclick = () => bridge.openMenu();
 
       btnSkip.classList.toggle("active", skipEnabled);
+      btnSkip.setAttribute("aria-pressed", skipEnabled ? "true" : "false");
       bridge.requestUiState();
     });
 
@@ -460,6 +365,7 @@
       if (!btnSkip) return;
       skipEnabled = !!v;
       btnSkip.classList.toggle("active", skipEnabled);
+      btnSkip.setAttribute("aria-pressed", skipEnabled ? "true" : "false");
     }
     window.uiSetStatusChips = function(payload){
       const data = payload || {};
@@ -483,7 +389,6 @@
       else if (state === "done") dot.classList.add("dot--done");
       else dot.classList.add("dot--idle");
     }
-    window.uiSetAccount = function(payload){ setAccount(payload || {}); }
     window.uiSetVideoLoaded = function(_loaded){
       window.uiSetReadyDotState("idle");
       window.uiSetExportDotState("idle");

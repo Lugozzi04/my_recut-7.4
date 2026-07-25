@@ -23,25 +23,21 @@ for folder in ("icons", "webui", "bin"):
     if source.exists():
         datas.append((str(source), folder))
 
-for optional_folder in ("pretrained_models",):
-    source = project_root / optional_folder
-    if source.exists():
-        datas.append((str(source), optional_folder))
-
 presets_file = project_root / "presets.json"
 if presets_file.exists():
     datas.append((str(presets_file), "."))
+for document_name in ("VERSION", "README.md", "PRIVACY.md", "CHANGELOG.md"):
+    document = project_root / document_name
+    if document.exists():
+        datas.append((str(document), "."))
+third_party_dir = project_root / "build" / "third_party"
+if third_party_dir.exists():
+    datas.append((str(third_party_dir), "licenses"))
 
 # Third-party runtime assets
 datas += collect_data_files("av")
 binaries += collect_dynamic_libs("av")
 hiddenimports += collect_submodules("av")
-
-try:
-    datas += collect_data_files("winsdk")
-    hiddenimports += collect_submodules("winsdk")
-except Exception:
-    pass
 
 # Qt modules used dynamically
 hiddenimports += [
@@ -55,8 +51,16 @@ hiddenimports += [
 ]
 
 # Keep installer lean: these large ML stacks are optional in dev workflows
-# and are not required for the core desktop login/edit/export runtime.
+# and are not required for the core desktop edit/export runtime.
 excluded_packages = [
+    "_pytest",
+    "mypy",
+    "pytest",
+    "ruff",
+    "scipy",
+    "silero_vad",
+    "soundfile",
+    "speechbrain",
     "tensorflow",
     "tensorboard",
     "keras",

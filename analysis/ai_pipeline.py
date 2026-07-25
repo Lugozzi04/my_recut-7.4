@@ -15,6 +15,7 @@ import importlib.util
 import numpy as np
 
 from analysis.cut_engine import Segment
+from analysis.cancellation import AiCancellationToken
 from utils.ffmpeg import ensure_ffmpeg, ffprobe_duration_seconds, _project_root
 from utils.subprocess_utils import run_no_window
 
@@ -99,21 +100,25 @@ class AiPipelineResult:
 
 
 def find_spleeter_python() -> Optional[str]:
-    env = _app_env("AUTO_CUTTER_SPLEETER_PY") or os.environ.get("SPLEETER_PY")
+    env = (
+        _app_env("AUTO_CUTTER_AI_PY")
+        or _app_env("AUTO_CUTTER_SPLEETER_PY")
+        or os.environ.get("SPLEETER_PY")
+    )
     if env:
         p = Path(env)
-        if p.exists():
+        if p.exists() and _python_has_module(str(p), "spleeter"):
             return str(p)
 
     for root in _candidate_ai_roots():
         candidates = [
-            root / ".venv_spleeter" / "Scripts" / "python.exe",
-            root / ".venv_spleeter" / "bin" / "python",
             root / "ai_runtime" / "Scripts" / "python.exe",
             root / "ai_runtime" / "bin" / "python",
+            root / ".venv_spleeter" / "Scripts" / "python.exe",
+            root / ".venv_spleeter" / "bin" / "python",
         ]
         for cand in candidates:
-            if cand.exists():
+            if cand.exists() and _python_has_module(str(cand), "spleeter"):
                 return str(cand)
     return None
 
@@ -186,8 +191,29 @@ def _python_has_silero_runtime(python_exe: str) -> bool:
     return _python_can_import_modules(str(python_exe), ["silero_vad", "torch"])
 
 
+def _spleeter_model_path(spleeter_python: str) -> Path:
+    configured = _app_env("AUTO_CUTTER_AI_MODELS")
+    if configured:
+        return Path(configured).expanduser().resolve()
+
+    # Reuse source-tree models when developing, but keep downloaded models
+    # beside the external AI runtime in installed builds.
+    for root in _candidate_ai_roots():
+        candidate = root / "pretrained_models"
+        if candidate.is_dir():
+            return candidate
+
+    python_path = Path(spleeter_python).resolve()
+    runtime_root = python_path.parent.parent if python_path.parent.name.lower() in {"scripts", "bin"} else python_path.parent
+    return runtime_root / "pretrained_models"
+
+
 def find_silero_python() -> Optional[str]:
-    env = _app_env("AUTO_CUTTER_SILERO_PY") or os.environ.get("SILERO_PY")
+    env = (
+        _app_env("AUTO_CUTTER_AI_PY")
+        or _app_env("AUTO_CUTTER_SILERO_PY")
+        or os.environ.get("SILERO_PY")
+    )
     if env:
         p = Path(env)
         if p.exists() and _python_has_silero_runtime(str(p)):
@@ -207,12 +233,12 @@ def find_silero_python() -> Optional[str]:
             [
                 root / ".venv310" / "Scripts" / "python.exe",
                 root / ".venv" / "Scripts" / "python.exe",
-                root / ".venv_spleeter" / "Scripts" / "python.exe",
                 root / "ai_runtime" / "Scripts" / "python.exe",
+                root / ".venv_spleeter" / "Scripts" / "python.exe",
                 root / ".venv310" / "bin" / "python",
                 root / ".venv" / "bin" / "python",
-                root / ".venv_spleeter" / "bin" / "python",
                 root / "ai_runtime" / "bin" / "python",
+                root / ".venv_spleeter" / "bin" / "python",
             ]
         )
     seen: set[str] = set()
@@ -229,7 +255,11 @@ def find_silero_python() -> Optional[str]:
     return None
 
 
-def _extract_audio_wav(src: str, dst: Path) -> None:
+def _extract_audio_wav(
+    src: str,
+    dst: Path,
+    cancel_token: AiCancellationToken | None = None,
+) -> None:
     ffmpeg, _ = ensure_ffmpeg()
     cmd = [
         ffmpeg,
@@ -242,13 +272,23 @@ def _extract_audio_wav(src: str, dst: Path) -> None:
         "-ar", "48000",
         str(dst),
     ]
-    p = run_no_window(cmd, capture_output=True, text=True)
+    runner = cancel_token.run if cancel_token is not None else run_no_window
+    p = runner(cmd, capture_output=True, text=True)
     if p.returncode != 0:
         raise RuntimeError(p.stderr.strip() or "FFmpeg audio extraction failed")
 
 
-def _run_spleeter(spleeter_py: str, wav_path: Path, out_dir: Path, model: str) -> Path:
+def _run_spleeter(
+    spleeter_py: str,
+    wav_path: Path,
+    out_dir: Path,
+    model: str,
+    cancel_token: AiCancellationToken | None = None,
+) -> Path:
     env = os.environ.copy()
+    model_path = _spleeter_model_path(spleeter_py)
+    model_path.mkdir(parents=True, exist_ok=True)
+    env["MODEL_PATH"] = str(model_path)
     try:
         ffmpeg, _ = ensure_ffmpeg()
         env["FFMPEG_BINARY"] = str(ffmpeg)
@@ -263,7 +303,8 @@ def _run_spleeter(spleeter_py: str, wav_path: Path, out_dir: Path, model: str) -
         "-o", str(out_dir),
         str(wav_path),
     ]
-    p = run_no_window(cmd, capture_output=True, text=True, env=env)
+    runner = cancel_token.run if cancel_token is not None else run_no_window
+    p = runner(cmd, capture_output=True, text=True, env=env)
     if p.returncode != 0:
         err = (p.stderr or "").strip()
         raise RuntimeError(err or "Spleeter failed")
@@ -292,11 +333,11 @@ def _read_audio_fallback(path: Path) -> tuple[np.ndarray, int]:
     data = None
     sr = None
     try:
-        import soundfile as sf  # type: ignore
+        import soundfile as sf
         data, sr = sf.read(str(path), always_2d=False)
     except Exception:
         try:
-            from scipy.io import wavfile  # type: ignore
+            from scipy.io import wavfile
             sr, data = wavfile.read(str(path))
         except Exception as e:
             raise RuntimeError(f"Failed to read audio for VAD: {e}") from e
@@ -322,7 +363,7 @@ def _resample_audio(data: np.ndarray, sr: int, target_sr: int) -> np.ndarray:
     if sr == target_sr:
         return data
     try:
-        from scipy.signal import resample_poly  # type: ignore
+        from scipy.signal import resample_poly
         g = math.gcd(sr, target_sr)
         up = target_sr // g
         down = sr // g
@@ -341,6 +382,7 @@ def _run_silero_vad_external(
     threshold: float,
     min_speech_s: float,
     merge_gap_s: float,
+    cancel_token: AiCancellationToken | None = None,
 ) -> list[Segment]:
     script = r"""
 import json
@@ -402,7 +444,8 @@ ts = get_speech_timestamps(
 )
 print(json.dumps(ts), end="")
 """
-    p = run_no_window(
+    runner = cancel_token.run if cancel_token is not None else run_no_window
+    p = runner(
         [
             str(silero_python),
             "-c",
@@ -442,7 +485,10 @@ def _run_silero_vad(
     min_speech_s: float,
     merge_gap_s: float,
     silero_python: Optional[str] = None,
+    cancel_token: AiCancellationToken | None = None,
 ) -> list[Segment]:
+    if cancel_token is not None:
+        cancel_token.check()
     if not _inprocess_silero_runtime_ok():
         if silero_python:
             return _run_silero_vad_external(
@@ -451,6 +497,7 @@ def _run_silero_vad(
                 threshold,
                 min_speech_s,
                 merge_gap_s,
+                cancel_token,
             )
         if _module_available("silero_vad") and not _module_available("torch"):
             raise RuntimeError(
@@ -469,6 +516,7 @@ def _run_silero_vad(
                 threshold,
                 min_speech_s,
                 merge_gap_s,
+                cancel_token,
             )
         raise
 
@@ -484,6 +532,8 @@ def _run_silero_vad(
         min_speech_duration_ms=int(max(0.0, float(min_speech_s)) * 1000.0),
         min_silence_duration_ms=int(max(0.0, float(merge_gap_s)) * 1000.0),
     )
+    if cancel_token is not None:
+        cancel_token.check()
     segs = []
     for t in ts:
         try:
@@ -524,9 +574,12 @@ def _run_speechbrain_diarization(
     speech: list[Segment],
     max_speakers: int,
     expected_speakers: int = 0,
+    cancel_token: AiCancellationToken | None = None,
 ) -> Optional[list[int]]:
     if not speech:
         return None
+    if cancel_token is not None:
+        cancel_token.check()
 
     try:
         from speechbrain.pretrained import EncoderClassifier
@@ -551,9 +604,13 @@ def _run_speechbrain_diarization(
         sr = target_sr
 
     classifier = EncoderClassifier.from_hparams(source="speechbrain/spkrec-ecapa-voxceleb")
+    if cancel_token is not None:
+        cancel_token.check()
 
     embeddings = []
     for s in speech:
+        if cancel_token is not None:
+            cancel_token.check()
         start = max(0, int(float(s.start) * sr))
         end = max(start + 1, int(float(s.end) * sr))
         chunk = waveform[:, start:end]
@@ -578,11 +635,19 @@ def _run_speechbrain_diarization(
     return [int(x) for x in labels]
 
 
-def run_ai_pipeline(path: str, cfg: Optional[AiPipelineConfig] = None) -> AiPipelineResult:
+def run_ai_pipeline(
+    path: str,
+    cfg: Optional[AiPipelineConfig] = None,
+    cancel_token: AiCancellationToken | None = None,
+) -> AiPipelineResult:
     cfg = cfg or AiPipelineConfig()
+    if cancel_token is not None:
+        cancel_token.check()
     spleeter_py = cfg.spleeter_python or find_spleeter_python()
     if not spleeter_py:
-        raise RuntimeError("Spleeter python not found (set AUTO_CUTTER_SPLEETER_PY or create .venv_spleeter).")
+        raise RuntimeError(
+            "AI runtime not found. Run build/install-ai-runtime.ps1 or set AUTO_CUTTER_AI_PY."
+        )
     silero_py = cfg.silero_python or find_silero_python()
     if not _inprocess_silero_runtime_ok() and not silero_py:
         raise RuntimeError("silero_vad not found (set AUTO_CUTTER_SILERO_PY or install silero-vad).")
@@ -590,12 +655,20 @@ def run_ai_pipeline(path: str, cfg: Optional[AiPipelineConfig] = None) -> AiPipe
     tmp_dir = Path(tempfile.mkdtemp(prefix="auto_cutter_ai_"))
     try:
         wav_path = tmp_dir / "input.wav"
-        _extract_audio_wav(path, wav_path)
+        _extract_audio_wav(path, wav_path, cancel_token)
 
         out_dir = tmp_dir / "spleeter_out"
         out_dir.mkdir(parents=True, exist_ok=True)
-        vocals_path = _run_spleeter(spleeter_py, wav_path, out_dir, cfg.spleeter_model)
+        vocals_path = _run_spleeter(
+            spleeter_py,
+            wav_path,
+            out_dir,
+            cfg.spleeter_model,
+            cancel_token,
+        )
 
+        if cancel_token is not None:
+            cancel_token.check()
         duration = float(ffprobe_duration_seconds(path))
 
         speech = _run_silero_vad(
@@ -604,6 +677,7 @@ def run_ai_pipeline(path: str, cfg: Optional[AiPipelineConfig] = None) -> AiPipe
             cfg.min_speech_s,
             cfg.merge_gap_s,
             silero_py,
+            cancel_token,
         )
         if _needs_vad_fallback(speech, duration):
             # fallback to VAD on original audio if vocals look unreliable
@@ -614,6 +688,7 @@ def run_ai_pipeline(path: str, cfg: Optional[AiPipelineConfig] = None) -> AiPipe
                     cfg.min_speech_s,
                     cfg.merge_gap_s,
                     silero_py,
+                    cancel_token,
                 )
                 if speech_alt:
                     speech = speech_alt
@@ -626,8 +701,11 @@ def run_ai_pipeline(path: str, cfg: Optional[AiPipelineConfig] = None) -> AiPipe
                 speech,
                 cfg.max_speakers,
                 int(getattr(cfg, "expected_speakers", 0) or 0),
+                cancel_token,
             )
 
+        if cancel_token is not None:
+            cancel_token.check()
         if cfg.keep_temp:
             return AiPipelineResult(duration=duration, speech=speech, temp_dir=tmp_dir, speaker_ids=speaker_ids)
 

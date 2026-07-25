@@ -4,6 +4,7 @@ from typing import Optional
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from .cancellation import AiCancellationToken
 from .ai_pipeline import (
     AiPipelineConfig,
     run_ai_pipeline,
@@ -22,7 +23,7 @@ def ai_dependency_status() -> tuple[bool, str]:
     silero_py = find_silero_python()
     missing: list[str] = []
     if not spleeter_py:
-        missing.append("Spleeter python not found (set AUTO_CUTTER_SPLEETER_PY or create .venv_spleeter).")
+        missing.append("AI runtime not found (run build/install-ai-runtime.ps1 or set AUTO_CUTTER_AI_PY).")
     if not silero_py:
         missing.append("Silero not found (set AUTO_CUTTER_SILERO_PY or install silero-vad in the app Python).")
     if missing:
@@ -40,18 +41,19 @@ class AiAnalyzeWorker(QObject):
         self.track_idx = int(track_idx)
         self.cfg = cfg
         self._cancel_requested = False
+        self._cancel_token = AiCancellationToken()
 
     @Slot()
     def cancel(self) -> None:
-        # Best-effort: current pipeline call is not interruptible mid-run.
         self._cancel_requested = True
+        self._cancel_token.cancel()
 
     @Slot()
     def run(self):
         try:
             if self._cancel_requested:
                 raise RuntimeError("__CANCELLED__")
-            res = run_ai_pipeline(self.path, self.cfg)
+            res = run_ai_pipeline(self.path, self.cfg, cancel_token=self._cancel_token)
             if self._cancel_requested:
                 raise RuntimeError("__CANCELLED__")
             payload = {
