@@ -46,7 +46,7 @@ class ProjectFileTests(unittest.TestCase):
             available, missing = resolve_project_items(portable["tracks"], project)
 
             self.assertEqual(portable["tracks"][0]["path_kind"], "relative")
-            self.assertEqual(Path(available[0]["path"]), media)
+            self.assertTrue(Path(available[0]["path"]).samefile(media))
             self.assertEqual(missing, [])
 
     def test_relink_uses_name_size_and_fingerprint(self) -> None:
@@ -69,7 +69,7 @@ class ProjectFileTests(unittest.TestCase):
 
             relinked, unresolved = relink_items_in_directory([item], root / "new-location")
 
-            self.assertEqual(Path(relinked[0]["path"]), media)
+            self.assertTrue(Path(relinked[0]["path"]).samefile(media))
             self.assertEqual(unresolved, [])
 
 

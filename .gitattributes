@@ -3,4 +3,3 @@
 *.py text eol=lf
 *.html text eol=lf
 *.md text eol=lf
-bin/*.exe filter=lfs diff=lfs merge=lfs -text

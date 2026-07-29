@@ -4,7 +4,6 @@ from PySide6.QtCore import QSettings
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
-from ui.main_window import MainWindow
 from utils.app_version import app_version
 from utils.crash_handler import install_global_exception_handler
 from utils.runtime_paths import resource_path
@@ -13,6 +12,9 @@ from utils.runtime_paths import resource_path
 def main() -> int:
     install_global_exception_handler()
     app = QApplication(sys.argv)
+    # Import the heavy Qt/WebEngine UI only after crash logging is active.
+    from ui.main_window import MainWindow
+
     try:
         # Force a consistent cross-PC widget style (do not depend on OS theme/style).
         app.setStyle("Fusion")
