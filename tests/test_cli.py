@@ -28,7 +28,8 @@ class CliTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # The pipeline returns canonical paths; Windows TEMP may use 8.3 aliases.
+        self.root = Path(self.temp.name).resolve()
         self.environment = patch.dict(os.environ, {
             "AUTO_CUTTER_DATA_DIR": str(self.root),
             "AUTO_CUTTER_PIPELINE_STORE": str(self.root / "jobs.json"),

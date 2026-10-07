@@ -141,7 +141,7 @@ class PipelineExporterTests(unittest.TestCase):
 
     def test_planner_builds_fast_single_source_keeps_and_audio_settings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             source.write_bytes(b"source")
             manager, job = self._ready_job(root, self._project_payload(source))
@@ -163,7 +163,7 @@ class PipelineExporterTests(unittest.TestCase):
 
     def test_service_moves_job_to_ready_upload_and_persists_progress(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             source.write_bytes(b"source")
             manager, job = self._ready_job(root, self._project_payload(source))
@@ -183,7 +183,7 @@ class PipelineExporterTests(unittest.TestCase):
 
     def test_export_cache_reuses_only_valid_matching_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             source.write_bytes(b"source")
             _manager, job = self._ready_job(root, self._project_payload(source))
@@ -216,7 +216,7 @@ class PipelineExporterTests(unittest.TestCase):
 
     def test_queue_cancellation_leaves_export_retryable(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             source.write_bytes(b"source")
             manager, job = self._ready_job(root, self._project_payload(source))
@@ -241,7 +241,7 @@ class PipelineExporterTests(unittest.TestCase):
 
     def test_invalid_project_fails_without_starting_render(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             source.write_bytes(b"source")
             manager, job = self._ready_job(root, self._project_payload(source))
@@ -268,7 +268,7 @@ class PipelineExporterTests(unittest.TestCase):
         except Exception as exc:
             self.skipTest(f"FFmpeg unavailable: {exc}")
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             source = root / "source.mp4"
             generated = run_no_window(
                 [

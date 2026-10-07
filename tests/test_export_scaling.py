@@ -327,20 +327,58 @@ class ExportScalingTests(unittest.TestCase):
         worker._log = logs.append
         jobs = [{"rep": idx} for idx in range(8)]
 
-        worker._execute_parallel_jobs(
-            jobs,
-            lambda job: {
-                "rep": int(job["rep"]),
-                "elapsed_seconds": 0.1,
-            },
-            initial_workers=2,
-            media_seconds=lambda _job: 1.0,
-            on_result=lambda result: completed.append(int(result["rep"])),
-            label="test",
-        )
+        # Scaling requires headroom; runner CPU/RAM limits must not decide
+        # whether this test exercises the adjustment branch.
+        with (
+            patch.dict(os.environ, {"AUTO_CUTTER_ADAPTIVE_SCHEDULER": "1"}),
+            patch.object(worker, "_thread_budget", return_value=8),
+            patch.object(worker, "_available_ram_gb", return_value=16.0),
+            patch.object(worker, "_storage_tier", return_value="ssd"),
+        ):
+            worker._execute_parallel_jobs(
+                jobs,
+                lambda job: {
+                    "rep": int(job["rep"]),
+                    "elapsed_seconds": 0.1,
+                },
+                initial_workers=2,
+                media_seconds=lambda _job: 1.0,
+                on_result=lambda result: completed.append(int(result["rep"])),
+                label="test",
+            )
 
         self.assertEqual(sorted(completed), list(range(8)))
-        self.assertTrue(any("adaptive_scheduler_adjust" in line for line in logs))
+        self.assertTrue(any("adaptive_scheduler_adjust label=test from=2 to=3" in line for line in logs))
+
+    def test_adaptive_scheduler_at_cpu_cap_executes_every_job_without_adjustment(self) -> None:
+        worker = self._worker()
+        worker._parallel_auto = True
+        logs: list[str] = []
+        completed: list[int] = []
+        worker._log = logs.append
+        jobs = [{"rep": idx} for idx in range(8)]
+
+        with (
+            patch.dict(os.environ, {"AUTO_CUTTER_ADAPTIVE_SCHEDULER": "1"}),
+            patch.object(worker, "_thread_budget", return_value=4),
+            patch.object(worker, "_available_ram_gb", return_value=16.0),
+            patch.object(worker, "_storage_tier", return_value="ssd"),
+        ):
+            worker._execute_parallel_jobs(
+                jobs,
+                lambda job: {
+                    "rep": int(job["rep"]),
+                    "elapsed_seconds": 0.1,
+                },
+                initial_workers=2,
+                media_seconds=lambda _job: 1.0,
+                on_result=lambda result: completed.append(int(result["rep"])),
+                label="test",
+            )
+
+        self.assertEqual(sorted(completed), list(range(8)))
+        self.assertTrue(any("enabled=yes initial=2 cap=2 jobs=8" in line for line in logs))
+        self.assertFalse(any("adaptive_scheduler_adjust" in line for line in logs))
 
 
 if __name__ == "__main__":

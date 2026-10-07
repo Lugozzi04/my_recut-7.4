@@ -155,3 +155,90 @@ def test_writable_paths_ignore_cwd_and_pyinstaller_resource_root(
     assert paths[:5] == list(overrides.values())
     assert paths[5] == overrides["AUTO_CUTTER_CONFIG_DIR"] / "session_logs"
     assert all(bundle not in path.parents and unrelated not in path.parents for path in paths)
+
+
+@pytest.fixture
+def windows_short_directory(tmp_path: Path) -> tuple[Path, Path]:
+    if sys.platform != "win32":
+        pytest.skip("Windows 8.3 path aliases are platform-specific")
+    import ctypes
+    from ctypes import wintypes
+
+    directory = tmp_path.resolve() / "Windows directory with a long name"
+    directory.mkdir()
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    short_path = kernel32.GetShortPathNameW
+    short_path.argtypes = (wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD)
+    short_path.restype = wintypes.DWORD
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = short_path(str(directory), buffer, len(buffer))
+    if not length:
+        raise ctypes.WinError(ctypes.get_last_error())
+    assert length < len(buffer)
+    alias = Path(buffer.value)
+    if str(alias).casefold() == str(directory).casefold():
+        pytest.skip("The test volume does not provide Windows 8.3 aliases")
+    assert alias.resolve() == directory
+    return directory, alias
+
+
+def test_cli_canonicalizes_short_aliases_and_preserves_unicode(
+    windows_short_directory: tuple[Path, Path],
+) -> None:
+    import io
+    import json
+
+    from automation.cli import run_cli
+    from automation.runtime import PipelineRuntime
+    from core.presets import PresetRepository
+
+    directory, alias = windows_short_directory
+    source = directory / "local à 🎮.mp4"
+    source.write_bytes(b"media fixture")
+    output = directory / "delivery è 🎬.mp4"
+    manager = PipelineManager(PipelineStore(directory / "jobs.json"))
+
+    def factory(*, on_event):
+        return PipelineRuntime(
+            manager, PresetRepository(directory / "presets.json"), on_event,
+            duration_probe=lambda _path: 10.0, video_probe=lambda _path: True,
+            settings_loader=lambda: {},
+        )
+
+    stdout, stderr = io.StringIO(), io.StringIO()
+    code = run_cli(
+        ["process", str(alias / source.name), "--output", str(alias / output.name), "--dry-run", "--json"],
+        runtime_factory=factory, stdout=stdout, stderr=stderr,
+    )
+    assert code == 0, stderr.getvalue()
+    plan = json.loads(stdout.getvalue())["plan"]
+    assert plan["source"] == str(source)
+    assert plan["delivery"]["output_path"] == str(output)
+    assert not output.exists()
+    assert not manager.store.path.exists()
+
+
+def test_output_lock_is_shared_by_long_and_short_path_aliases(
+    windows_short_directory: tuple[Path, Path],
+) -> None:
+    from automation.locking import FileLockBusyError
+    from automation.paths import output_execution_lock
+
+    directory, alias = windows_short_directory
+    output = directory / "delivery.mp4"
+    with output_execution_lock(output).hold():
+        with pytest.raises(FileLockBusyError):
+            with output_execution_lock(alias / output.name).hold(blocking=False, reentrant=False):
+                raise AssertionError("A short path bypassed the active output lock")
+    assert not output.exists()
+
+
+def test_force_cannot_replace_source_through_short_path_alias(
+    windows_short_directory: tuple[Path, Path],
+) -> None:
+    directory, alias = windows_short_directory
+    source = directory / "source è 🎬.mp4"
+    source.write_bytes(b"protected source")
+    with pytest.raises(OutputSourceCollisionError):
+        choose_output_path(alias / source.name, force=True, protected=(source,))
+    assert source.read_bytes() == b"protected source"

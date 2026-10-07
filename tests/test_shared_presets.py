@@ -138,7 +138,7 @@ class SharedPresetTests(unittest.TestCase):
     def test_pipeline_snapshot_matches_shared_gui_calculation_for_each_preset(self) -> None:
         for name, cfg in default_presets_catalog().items():
             with self.subTest(preset=name), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
+                root = Path(tmp).resolve()
                 job = self.make_job(root, {"name": name, "config": cfg, "version": 1})
                 analysis = fixture_analysis(None)
                 expected_cuts, expected_keeps = compute_classic_cuts(
@@ -155,7 +155,7 @@ class SharedPresetTests(unittest.TestCase):
 
     def test_snapshot_changes_and_export_settings_invalidate_project_cache(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             cfg = default_presets_catalog()["Balanced (Default)"]
             job = self.make_job(root, {"name": "Balanced (Default)", "config": cfg, "version": 1})
             calls = []
@@ -190,7 +190,7 @@ class SharedPresetTests(unittest.TestCase):
 
     def test_project_override_keeps_source_directory_unmodified(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             requested = root / "artifacts" / "edit.autocutter"
             job.metadata["delivery"] = {"project_path": str(requested)}
@@ -201,7 +201,7 @@ class SharedPresetTests(unittest.TestCase):
 
     def test_invalid_snapshot_and_source_collision_do_not_start_analysis(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root, {"name": "broken"})
             calls = []
 
@@ -232,7 +232,7 @@ class SharedPresetTests(unittest.TestCase):
 
     def test_local_source_range_is_retained_as_manual_cuts_and_invalidates_cache(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             cfg = normalize_preset_cfg({"intensity": 0})
             job = self.make_job(root, {"name": "Manual range", "config": cfg, "version": 1})
             job.metadata["source_range"] = {"start_s": 2.0, "end_s": 5.0}

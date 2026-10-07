@@ -85,7 +85,8 @@ class PipelineRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # The pipeline returns canonical paths; Windows TEMP may use 8.3 aliases.
+        self.root = Path(self.temp.name).resolve()
         self.env = patch.dict(os.environ, {
             "AUTO_CUTTER_CONFIG_DIR": str(self.root / "config"),
             "AUTO_CUTTER_OUTPUT_DIR": str(self.root / "output"),

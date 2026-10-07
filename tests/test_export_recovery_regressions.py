@@ -103,7 +103,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
     def test_invalid_cached_streams_duration_and_probe_errors_are_cache_misses(self) -> None:
         for defect in ("video", "audio", "duration", "probe"):
             with self.subTest(defect=defect), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
+                root = Path(tmp).resolve()
                 job = self.make_job(root)
                 output = self.make_exporter().export(job).path
 
@@ -122,7 +122,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_cancel_during_validation_preserves_existing_delivery(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             output = root / "source.youtube-ready.mp4"
             output.write_bytes(b"previous-output")
@@ -145,7 +145,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
                 self.error.emit("render failed")
 
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             output = root / "source.youtube-ready.mp4"
             output.write_bytes(b"previous-output")
@@ -160,7 +160,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
     def test_source_project_and_hardlink_collisions_never_start_worker(self) -> None:
         for collision in ("source", "project", "hardlink"):
             with self.subTest(collision=collision), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
+                root = Path(tmp).resolve()
                 job = self.make_job(root)
                 protected = Path(job.project_path if collision == "project" else job.local_source_path)
                 requested = protected
@@ -187,7 +187,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_source_collision_is_rechecked_after_render(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             output = root / "source.youtube-ready.mp4"
             source = Path(job.local_source_path)
@@ -205,7 +205,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_override_avoids_existing_file_and_sidecar_and_keeps_cache_choice(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             requested = root / "custom.mp4"
             requested.write_bytes(b"existing-delivery")
             second_sidecar = root / "custom_2.mp4.automation.json"
@@ -224,7 +224,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_force_override_replaces_requested_output_after_validation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             requested = root / "custom.mp4"
             requested.write_bytes(b"previous-output")
             job = self.make_job(root, {"output_path": str(requested), "force": True})
@@ -236,7 +236,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_output_directory_override_and_durable_path_are_honored(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             directory = root / "deliveries"
             job = self.make_job(root, {"output_dir": str(directory)})
             result = self.make_exporter().export(job)
@@ -248,7 +248,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_no_force_publish_cannot_clobber_a_racing_destination(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = choose_output_path(root / "delivery.mp4")
             temporary = root / ".delivery.partial.mp4"
             temporary.write_bytes(b"validated-render")
@@ -262,7 +262,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_owned_override_with_corrupt_cache_is_repaired_at_reserved_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root, {"output_path": str(root / "custom.mp4"), "force": False})
             exporter = self.make_exporter()
             first = exporter.export(job)
@@ -276,7 +276,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_legacy_sidecar_without_file_identity_can_still_be_reused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             exporter = self.make_exporter()
             first = exporter.export(job)
@@ -290,7 +290,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_crash_between_manifest_and_video_does_not_reuse_previous_video(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             exporter = self.make_exporter()
             first = exporter.export(job)
@@ -313,7 +313,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_legacy_job_preserves_foreign_output_and_recovers_suffix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             previous = root / "source.youtube-ready.mp4"
             previous.write_bytes(b"user-video")
@@ -325,7 +325,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_failed_manifest_write_never_promotes_the_video(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             job = self.make_job(root)
             output = root / "source.youtube-ready.mp4"
             output.write_bytes(b"previous-video")
@@ -344,7 +344,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_foreign_video_after_pending_manifest_is_not_overwritten_on_retry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = root / "delivery.mp4"
             job = self.make_job(root, {"output_path": str(output), "force": False})
             exporter = self.make_exporter()
@@ -370,7 +370,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_foreign_sidecar_created_during_publish_is_never_replaced(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = root / "delivery.mp4"
             sidecar = output.with_suffix(".mp4.automation.json")
             job = self.make_job(root, {"output_path": str(output), "force": False})
@@ -390,7 +390,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_promoted_pending_export_recovers_cache_and_finalizes_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = root / "delivery.mp4"
             job = self.make_job(root, {"output_path": str(output)})
             exporter = self.make_exporter()
@@ -412,7 +412,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_cancelled_pending_manifest_without_final_allows_clean_retry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = root / "delivery.mp4"
             job = self.make_job(root, {"output_path": str(output)})
             exporter = self.make_exporter()
@@ -433,7 +433,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_interrupted_corrupt_owned_output_repair_retries_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             output = root / "delivery.mp4"
             job = self.make_job(root, {"output_path": str(output), "force": False})
             exporter = self.make_exporter()
@@ -467,7 +467,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_legacy_service_reserves_and_locks_destination_before_worker(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             manager = PipelineManager(PipelineStore(root / "jobs.json"))
             job = self.make_job(root)
             job.state = PipelineState.READY_EXPORT
@@ -493,7 +493,7 @@ class ExportRecoveryRegressions(unittest.TestCase):
 
     def test_concurrent_legacy_jobs_reserve_different_destinations(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
+            root = Path(tmp).resolve()
             manager = PipelineManager(PipelineStore(root / "jobs.json"))
             first = self.make_job(root)
             first.state = PipelineState.READY_EXPORT
