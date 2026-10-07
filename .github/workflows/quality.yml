@@ -24,10 +24,14 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --requirement requirements-dev.txt
       - name: Compile
-        run: python -m compileall -q analysis core export ui utils widgets main.py
+        run: python -m compileall -q analysis automation core export integrations ui utils widgets main.py
       - name: Lint
         run: ruff check .
       - name: Type-check critical modules
-        run: mypy core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py
+        run: >-
+          mypy automation analysis/audio_service.py core/project_file.py core/project_session.py
+          utils/codec_detection.py analysis/cancellation.py analysis/classic.py
+          core/config.py core/presets.py integrations utils/runtime_paths.py utils/console.py
+          utils/credential_files.py utils/ffconcat.py utils/redaction.py utils/ffmpeg.py
       - name: Test
-        run: python -m unittest discover -s tests -p "test_*.py" -v
+        run: python -m pytest -o addopts= -q

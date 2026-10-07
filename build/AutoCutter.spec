@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules, copy_metadata
 
 
 try:
@@ -38,6 +38,22 @@ if third_party_dir.exists():
 datas += collect_data_files("av")
 binaries += collect_dynamic_libs("av")
 hiddenimports += collect_submodules("av")
+
+datas += collect_data_files("yt_dlp")
+hiddenimports += collect_submodules("yt_dlp")
+
+# YouTube uses static discovery documents and dynamic auth/transport imports.
+datas += collect_data_files("googleapiclient")
+datas += collect_data_files("google_auth_oauthlib")
+hiddenimports += collect_submodules("googleapiclient")
+hiddenimports += collect_submodules("google.auth")
+hiddenimports += collect_submodules("google_auth_oauthlib")
+hiddenimports += ["google_auth_httplib2", "httplib2", "requests_oauthlib", "oauthlib"]
+for distribution in (
+    "google-auth", "google-auth-oauthlib", "google-api-python-client",
+    "google-auth-httplib2", "httplib2", "requests-oauthlib", "oauthlib",
+):
+    datas += copy_metadata(distribution)
 
 # Qt modules used dynamically
 hiddenimports += [
@@ -102,7 +118,9 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,
+    # One executable supports terminal stdout/stderr and Ctrl+C. GUI startup
+    # detaches only a private console created by an Explorer launch.
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

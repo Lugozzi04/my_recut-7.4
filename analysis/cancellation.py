@@ -70,20 +70,29 @@ class AiCancellationToken:
             return
         if os.name == "nt":
             try:
-                run_no_window(
+                result = run_no_window(
                     ["taskkill", "/PID", str(process.pid), "/T", "/F"],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    timeout=3,
+                    timeout=1.5,
                 )
-                return
+                if result.returncode == 0:
+                    try:
+                        process.wait(timeout=0.75)
+                    except subprocess.TimeoutExpired:
+                        pass
+                    if process.poll() is not None:
+                        return
             except Exception:
                 pass
         try:
             process.terminate()
-            process.wait(timeout=1)
+            process.wait(timeout=0.75)
+            return
         except Exception:
-            try:
-                process.kill()
-            except Exception:
-                pass
+            pass
+        try:
+            process.kill()
+            process.wait(timeout=0.75)
+        except Exception:
+            pass

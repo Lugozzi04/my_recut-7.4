@@ -28,6 +28,17 @@ that invokes the FFmpeg command-line programs.
   https://doc.qt.io/qtforpython-6/licenses.html
 - NumPy 2.2.6: BSD-3-Clause, https://numpy.org/doc/stable/license.html
 - PyAV 16.1.0: BSD-3-Clause, https://github.com/PyAV-Org/PyAV
+- yt-dlp 2026.8.19: Unlicense, https://github.com/yt-dlp/yt-dlp
+- google-auth 2.48.0: Apache-2.0,
+  https://github.com/googleapis/google-auth-library-python/blob/main/LICENSE
+- google-auth-oauthlib 1.5.0: Apache-2.0,
+  https://github.com/googleapis/google-cloud-python/blob/main/packages/google-auth-oauthlib/LICENSE
+- google-api-python-client 2.201.0: Apache-2.0,
+  https://github.com/googleapis/google-api-python-client/blob/main/LICENSE
+
+The Google libraries provide optional desktop OAuth and PRIVATE YouTube Data
+API uploads. Release bundles include their distribution metadata and license
+files, together with the metadata of their OAuth and HTTP transport dependencies.
 
 Optional AI dependencies are listed and pinned in `requirements-ai.txt`.
 Their license files must be collected and reviewed before distributing an AI

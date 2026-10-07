@@ -6,12 +6,15 @@ import hashlib
 import importlib
 import threading
 import bisect
+import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Optional, Tuple, List, Iterator
 
 from utils.runtime_paths import cache_root as runtime_cache_root
 from utils.runtime_paths import project_root as runtime_project_root
-from utils.subprocess_utils import run_no_window
+from utils.subprocess_utils import popen_no_window, run_no_window
 
 av: Any
 try:
@@ -22,6 +25,90 @@ except Exception:  # pragma: no cover - optional dependency
 
 class FFmpegNotFound(RuntimeError):
     pass
+
+
+class FFprobeCancelled(BaseException):
+    # Validators catch Exception to reject corrupt media. Cancellation must
+    # leave those artifacts alone and reach the frontend/service boundary.
+    code = "cancelled"
+    exit_code = 70
+
+    def __init__(self) -> None:
+        super().__init__("Media probe cancelled.")
+
+
+_PROBE_CANCELLATION: ContextVar[Any] = ContextVar("autocutter_probe_cancellation", default=None)
+
+
+@contextmanager
+def cancellable_probe_scope(cancellation: Any) -> Iterator[None]:
+    """Bind the existing probe functions to the current shared job token."""
+    if cancellation is None:
+        yield
+        return
+    context_token = _PROBE_CANCELLATION.set(cancellation)
+    try:
+        yield
+    finally:
+        _PROBE_CANCELLATION.reset(context_token)
+
+
+def _check_probe_cancellation(cancellation: Any) -> None:
+    state = getattr(cancellation, "is_cancelled", getattr(cancellation, "cancelled", False))
+    if callable(state):
+        state = state()
+    if state:
+        raise FFprobeCancelled()
+
+
+def _reap_probe(process: subprocess.Popen) -> None:
+    # FFprobe is one owned child. Drain only after killing it: closing a pipe
+    # while Windows' communicate reader is blocked can wait on its lock.
+    drained = False
+    for _attempt in range(2):
+        try:
+            if process.poll() is None:
+                process.kill()
+        except OSError:
+            # The child may have exited between poll and kill. Cleanup errors
+            # must not turn cancellation into an invalid-artifact exception.
+            pass
+        try:
+            process.communicate(timeout=.75)
+            drained = True
+            break
+        except (subprocess.TimeoutExpired, OSError):
+            continue
+    if drained:
+        for stream in (process.stdout, process.stderr):
+            try:
+                if stream is not None:
+                    stream.close()
+            except OSError:
+                pass
+
+
+def _run_cancellable_probe(cmd: List[str], timeout_s: float | None, cancellation: Any) -> subprocess.CompletedProcess:
+    _check_probe_cancellation(cancellation)
+    process = popen_no_window(
+        cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, encoding="utf-8", errors="replace",
+    )
+    deadline = time.monotonic() + timeout_s if timeout_s is not None else None
+    try:
+        while True:
+            _check_probe_cancellation(cancellation)
+            remaining = deadline - time.monotonic() if deadline is not None else None
+            if remaining is not None and remaining <= 0:
+                raise subprocess.TimeoutExpired(cmd, timeout_s or 0.0)
+            try:
+                stdout, stderr = process.communicate(timeout=min(0.05, remaining) if remaining is not None else 0.05)
+            except subprocess.TimeoutExpired:
+                continue
+            _check_probe_cancellation(cancellation)
+            return subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
+    finally:
+        _reap_probe(process)
 
 
 def _project_root() -> Path:
@@ -93,6 +180,9 @@ def run_cmd(cmd: List[str], timeout_s: float | None = None) -> subprocess.Comple
         timeout_s = None
 
     try:
+        cancellation = _PROBE_CANCELLATION.get()
+        if cancellation is not None:
+            return _run_cancellable_probe(cmd, timeout_s, cancellation)
         # Su Windows ffprobe puo emettere bytes non decodificabili in cp1252:
         # forziamo UTF-8 e non falliamo mai sulla decodifica.
         return run_no_window(

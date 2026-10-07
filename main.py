@@ -1,16 +1,28 @@
 import sys
 
-from PySide6.QtCore import QSettings
-from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication
-
-from utils.app_version import app_version
-from utils.crash_handler import install_global_exception_handler
-from utils.runtime_paths import resource_path
-
-
 def main() -> int:
+    args = sys.argv[1:]
+    if args and "--smoke-test" not in args:
+        from automation.cli import run_cli
+
+        return run_cli(args)
+    return run_gui()
+
+
+def run_gui() -> int:
+    from utils.console import detach_gui_console
+
+    detach_gui_console()
+    from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QIcon
+    from PySide6.QtWidgets import QApplication
+
+    from utils.app_version import app_version
+    from utils.crash_handler import install_global_exception_handler
+    from utils.runtime_paths import initialize_qt_settings, resource_path
+
     install_global_exception_handler()
+    initialize_qt_settings()
     app = QApplication(sys.argv)
     # Import the heavy Qt/WebEngine UI only after crash logging is active.
     from ui.main_window import MainWindow

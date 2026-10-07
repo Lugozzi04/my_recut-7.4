@@ -10,11 +10,12 @@ import sys
 import zipfile
 
 from utils.app_version import app_version
+from utils.redaction import redact_secrets
 from utils.subprocess_utils import run_no_window
 
 
 def _redact(text: str) -> str:
-    output = str(text or "")
+    output = redact_secrets(text)
     home = str(Path.home())
     if home:
         output = output.replace(home, "%USERPROFILE%")
@@ -59,13 +60,13 @@ def create_support_bundle(
 
     details = {
         "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
-        "app_version": app_version(),
+        "app_version": _redact(app_version()),
         "python": platform.python_version(),
-        "platform": platform.platform(),
+        "platform": _redact(platform.platform()),
         "architecture": platform.machine(),
         "frozen": bool(getattr(sys, "frozen", False)),
-        "ffmpeg": _ffmpeg_version(ffmpeg_path),
-        "project_consistency_errors": [str(item) for item in (consistency_errors or [])],
+        "ffmpeg": _redact(_ffmpeg_version(ffmpeg_path)),
+        "project_consistency_errors": [_redact(str(item)) for item in (consistency_errors or [])],
     }
     privacy = (
         "This bundle contains runtime metadata and redacted application logs. "
@@ -84,7 +85,7 @@ def create_support_bundle(
             for index, log_path in enumerate(logs, start=1):
                 try:
                     raw = log_path.read_text(encoding="utf-8", errors="replace")
-                    archive.writestr(f"logs/session-{index}.log", _redact(raw[-2_000_000:]))
+                    archive.writestr(f"logs/session-{index}.log", _redact(raw)[-2_000_000:])
                 except OSError:
                     continue
         if crash_logs_dir is not None and Path(crash_logs_dir).is_dir():
@@ -96,7 +97,7 @@ def create_support_bundle(
             for index, log_path in enumerate(crashes, start=1):
                 try:
                     raw = log_path.read_text(encoding="utf-8", errors="replace")
-                    archive.writestr(f"crashes/crash-{index}.log", _redact(raw[-2_000_000:]))
+                    archive.writestr(f"crashes/crash-{index}.log", _redact(raw)[-2_000_000:])
                 except OSError:
                     continue
     return destination

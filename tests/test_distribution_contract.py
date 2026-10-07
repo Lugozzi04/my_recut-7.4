@@ -34,6 +34,14 @@ class DistributionContractTests(unittest.TestCase):
             self.assertIn(f'"{package}"', spec)
         self.assertNotIn('for optional_folder in ("pretrained_models",)', spec)
 
+    def test_twitch_downloader_is_pinned_and_packaged(self) -> None:
+        requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+        spec = (ROOT / "build" / "AutoCutter.spec").read_text(encoding="utf-8")
+
+        self.assertIn("yt-dlp==2026.8.19", requirements)
+        self.assertIn('collect_data_files("yt_dlp")', spec)
+        self.assertIn('collect_submodules("yt_dlp")', spec)
+
     def test_build_runs_packaged_smoke_test(self) -> None:
         script = (ROOT / "build" / "build.ps1").read_text(encoding="utf-8")
         main = (ROOT / "main.py").read_text(encoding="utf-8")

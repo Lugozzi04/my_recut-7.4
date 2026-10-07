@@ -10,14 +10,22 @@ from utils.subprocess_utils import run_no_window
 
 
 H264_HARDWARE_CODECS = ("h264_nvenc", "h264_qsv", "h264_amf")
+HEVC_HARDWARE_CODECS = ("hevc_nvenc", "hevc_qsv", "hevc_amf")
+AV1_HARDWARE_CODECS = ("av1_nvenc", "av1_qsv", "av1_amf")
 SUPPORTED_VIDEO_CODECS = {
     "auto",
     "h264_nvenc",
     "h264_qsv",
     "h264_amf",
     "hevc_amf",
+    "hevc_nvenc",
+    "hevc_qsv",
     "av1_amf",
+    "av1_nvenc",
+    "av1_qsv",
     "libx264",
+    "libx265",
+    "libaom-av1",
 }
 
 
@@ -71,9 +79,11 @@ def probe_video_encoder(
         "-f",
         "lavfi",
         "-i",
-        "color=c=black:s=64x64:r=25:d=0.08",
+        # Hardware encoders may buffer the first frames and some reject tiny
+        # surfaces. Exercise a short, valid stream so FFmpeg can drain it.
+        "color=c=black:s=640x360:r=30:d=0.5",
         "-frames:v",
-        "1",
+        "15",
         "-an",
         "-c:v",
         codec,
@@ -134,19 +144,26 @@ def resolve_video_codec(
             return CodecSelection(requested=choice, resolved=candidate)
         failures.append(f"{candidate}: {reason or 'unavailable'}")
 
-    if choice != "auto" and choice != "libx264":
+    if choice.startswith("hevc_") or choice == "libx265":
+        software_fallback = "libx265"
+    elif choice.startswith("av1_") or choice == "libaom-av1":
+        software_fallback = "libaom-av1"
+    else:
+        software_fallback = "libx264"
+
+    if choice != "auto" and choice != software_fallback:
         ok, software_reason = probe_video_encoder(
             ffmpeg_path,
-            "libx264",
+            software_fallback,
             runner=runner,
             use_cache=use_cache,
         )
         if ok:
             return CodecSelection(
                 requested=choice,
-                resolved="libx264",
+                resolved=software_fallback,
                 fallback_reason="; ".join(failures),
             )
-        failures.append(f"libx264: {software_reason or 'unavailable'}")
+        failures.append(f"{software_fallback}: {software_reason or 'unavailable'}")
 
     raise RuntimeError("No usable video encoder found (" + "; ".join(failures) + ")")

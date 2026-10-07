@@ -40,6 +40,25 @@ class CodecDetectionTests(unittest.TestCase):
         self.assertEqual(result.resolved, "h264_qsv")
         self.assertFalse(result.used_fallback)
 
+    def test_probe_uses_a_drainable_hardware_encoder_sample(self) -> None:
+        captured: list[list[str]] = []
+
+        def runner(cmd, **_kwargs):
+            captured.append(list(cmd))
+            return subprocess.CompletedProcess(cmd, 0, stderr="")
+
+        result = resolve_video_codec(
+            self.ffmpeg,
+            "h264_amf",
+            runner=runner,
+            use_cache=False,
+        )
+
+        self.assertEqual(result.resolved, "h264_amf")
+        self.assertIn("color=c=black:s=640x360:r=30:d=0.5", captured[0])
+        frames_pos = captured[0].index("-frames:v")
+        self.assertEqual(captured[0][frames_pos + 1], "15")
+
     def test_auto_falls_back_to_software(self) -> None:
         result = resolve_video_codec(
             self.ffmpeg,
@@ -62,6 +81,26 @@ class CodecDetectionTests(unittest.TestCase):
         self.assertEqual(result.resolved, "libx264")
         self.assertTrue(result.used_fallback)
         self.assertIn("h264_amf unavailable", result.fallback_reason)
+
+    def test_hevc_hardware_falls_back_to_same_family_software_encoder(self) -> None:
+        result = resolve_video_codec(
+            self.ffmpeg,
+            "hevc_nvenc",
+            runner=self._runner_with_working("libx265"),
+            use_cache=False,
+        )
+
+        self.assertEqual(result.resolved, "libx265")
+
+    def test_av1_hardware_falls_back_to_same_family_software_encoder(self) -> None:
+        result = resolve_video_codec(
+            self.ffmpeg,
+            "av1_qsv",
+            runner=self._runner_with_working("libaom-av1"),
+            use_cache=False,
+        )
+
+        self.assertEqual(result.resolved, "libaom-av1")
 
 
 if __name__ == "__main__":

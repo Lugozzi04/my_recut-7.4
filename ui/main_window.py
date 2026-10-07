@@ -10,6 +10,7 @@ import copy
 import shutil
 import hashlib
 import subprocess
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -48,20 +49,26 @@ from utils.codec_detection import resolve_video_codec
 from utils.app_version import app_version
 from utils.crash_handler import crash_logs_dir
 from utils.diagnostics import create_support_bundle
+from utils.redaction import redact_secrets
 from utils.i18n import normalize_language, text as ui_text
-from utils.runtime_paths import project_root, resource_path
+from utils.runtime_paths import project_root, resource_path, config_root, logs_root
 from utils.timefmt import fmt_hms
 
 from analysis.audio_analyzer import AnalyzeWorker
 from analysis.ai_backend import AiAnalyzeWorker, ai_dependency_status
 from analysis.ai_pipeline import AiPipelineConfig
 from analysis.intensity_map import map_intensity
-from analysis.cut_engine import Segment, compute_cuts_from_rms, invert_to_keeps, merge_overlaps
+from analysis.cut_engine import Segment, invert_to_keeps, merge_overlaps
+from analysis.classic import compute_classic_cuts, threshold_amp_to_pct, threshold_pct_to_amp
+from core.presets import PresetRepository, normalize_preset_cfg, default_presets_catalog
+from automation.models import PipelineJob, PipelineState
 
 from widgets.timeline import TimelineWidget
 from widgets.threshold_meter import ThresholdMeter
 from widgets.seek_slider import SeekJumpSlider
+from export.advisor import ExportAdvisorWorker, ExportRecommendation
 from export.exporter import ExportWorker
+from export.settings import ExportSettings
 
 from .frame_video_widget import FrameVideoWidget
 from .icons import IconSet
@@ -79,6 +86,7 @@ from .main_window_components import (
     WheelOnlyIfFocusedFilter,
     qt_is_valid,
 )
+from .twitch_integration import TwitchIntegration, normalize_twitch_client_id
 from core import Project, ProjectSession, Track, TrackState, Clip, Media
 from core.project_file import (
     PROJECT_FORMAT,
@@ -147,6 +155,8 @@ class MainWindow(QMainWindow):
         self._analysis_workers: dict[int, AnalyzeWorker] = {}
         self._analysis_expected_path: dict[int, str] = {}
         self._analysis_job_ids: dict[int, int] = {}
+        self._analysis_targets: dict[int, TrackState] = {}
+        self._analysis_progress: dict[int, int] = {}
         self._analysis_job_seq: int = 0
         self._orphan_analysis_threads: list[QThread] = []
         self._orphan_analysis_workers: list[AnalyzeWorker] = []
@@ -701,7 +711,7 @@ class MainWindow(QMainWindow):
         # -----------------------------
         # Export page widgets (required by layout_export_page)
         # -----------------------------
-        self.btn_export = QPushButton("Export MP4")
+        self.btn_export = QPushButton("Export video")
         self.btn_export.setObjectName("Primary")
         self.btn_export.setEnabled(False)
 
@@ -738,8 +748,14 @@ class MainWindow(QMainWindow):
         self.codec_combo.addItem("H.264 (Intel Quick Sync)", "h264_qsv")
         self.codec_combo.addItem("H.264 (AMD AMF) - fast & compatible", "h264_amf")
         self.codec_combo.addItem("HEVC/H.265 (AMD AMF) - better quality/size", "hevc_amf")
+        self.codec_combo.addItem("HEVC/H.265 (NVIDIA NVENC)", "hevc_nvenc")
+        self.codec_combo.addItem("HEVC/H.265 (Intel Quick Sync)", "hevc_qsv")
         self.codec_combo.addItem("AV1 (AMD AMF) - best compression", "av1_amf")
+        self.codec_combo.addItem("AV1 (NVIDIA NVENC)", "av1_nvenc")
+        self.codec_combo.addItem("AV1 (Intel Quick Sync)", "av1_qsv")
         self.codec_combo.addItem("H.264 (x264 software) - best quality, slower", "libx264")
+        self.codec_combo.addItem("HEVC/H.265 (x265 software)", "libx265")
+        self.codec_combo.addItem("AV1 (libaom software) - very slow", "libaom-av1")
 
         self.export_method_combo = QComboBox()
         self.export_method_combo.addItem("Auto", "auto")
@@ -769,6 +785,133 @@ class MainWindow(QMainWindow):
         self.hwaccel_cb = QCheckBox("Use HW decode (d3d11va)")
         self.hwaccel_cb.setChecked(True)
 
+        self.export_preset_combo = QComboBox()
+        self.export_preset_combo.addItem("Original - high quality", "original_hq")
+        self.export_preset_combo.addItem("Web - high quality", "web_hq")
+        self.export_preset_combo.addItem("Compact", "compact")
+        self.export_preset_combo.addItem("Master", "master")
+        self.export_preset_combo.addItem("Custom", "custom")
+        self.btn_export_defaults = QPushButton("Default")
+
+        self.container_combo = QComboBox()
+        self.container_combo.addItem("MP4", "mp4")
+        self.container_combo.addItem("Matroska (MKV)", "mkv")
+        self.container_combo.addItem("QuickTime (MOV)", "mov")
+        self.container_combo.addItem("WebM (AV1 + Opus)", "webm")
+
+        self.output_mode_combo = QComboBox()
+        self.output_mode_combo.addItem("Single video", "single")
+        self.output_mode_combo.addItem("One file per clip", "per_clip")
+        self.output_mode_combo.addItem("Audio only", "audio_only")
+        self.output_mode_combo.addItem("Video only", "video_only")
+        self.output_mode_combo.addItem("Selected timeline range", "selected_range")
+
+        self.resolution_combo = QComboBox()
+        self.resolution_combo.addItem("Original", "source")
+        self.resolution_combo.addItem("4K / 2160p", "2160p")
+        self.resolution_combo.addItem("1440p", "1440p")
+        self.resolution_combo.addItem("Full HD / 1080p", "1080p")
+        self.resolution_combo.addItem("HD / 720p", "720p")
+
+        self.aspect_combo = QComboBox()
+        self.aspect_combo.addItem("Original", "source")
+        self.aspect_combo.addItem("Landscape 16:9", "landscape")
+        self.aspect_combo.addItem("Vertical 9:16", "vertical")
+        self.aspect_combo.addItem("Square 1:1", "square")
+        self.no_upscale_cb = QCheckBox("Do not upscale smaller sources")
+        self.no_upscale_cb.setChecked(True)
+
+        self.fps_combo = QComboBox()
+        self.fps_combo.addItem("Original", "source")
+        for fps_value in (24, 25, 30, 50, 60):
+            self.fps_combo.addItem(f"{fps_value} FPS", str(fps_value))
+        self.fps_mode_combo = QComboBox()
+        self.fps_mode_combo.addItem("Constant frame rate (CFR)", "cfr")
+        self.fps_mode_combo.addItem("Preserve variable frame rate (VFR)", "vfr")
+
+        self.video_quality_combo = QComboBox()
+        self.video_quality_combo.addItem("Maximum", "maximum")
+        self.video_quality_combo.addItem("Very high", "very_high")
+        self.video_quality_combo.addItem("High", "high")
+        self.video_quality_combo.addItem("Balanced", "balanced")
+        self.video_quality_combo.addItem("Compact", "compact")
+        self.video_quality_combo.addItem("Custom", "custom")
+
+        self.rate_control_combo = QComboBox()
+        self.rate_control_combo.addItem("Constant quality", "quality")
+        self.rate_control_combo.addItem("Target bitrate", "bitrate")
+        self.rate_control_combo.addItem("Approximate file size", "target_size")
+        self.video_bitrate_spin = NoWheelDoubleSpinBox()
+        self.video_bitrate_spin.setRange(0.1, 500.0)
+        self.video_bitrate_spin.setDecimals(1)
+        self.video_bitrate_spin.setSingleStep(1.0)
+        self.video_bitrate_spin.setSuffix(" Mbps")
+        self.video_bitrate_spin.setValue(18.0)
+        self.target_size_spin = NoWheelSpinBox()
+        self.target_size_spin.setRange(1, 1_000_000)
+        self.target_size_spin.setSuffix(" MB")
+        self.target_size_spin.setValue(1500)
+        self.custom_quality_spin = NoWheelSpinBox()
+        self.custom_quality_spin.setRange(0, 51)
+        self.custom_quality_spin.setValue(16)
+        self.two_pass_cb = QCheckBox("Two-pass encoding (x264 bitrate modes)")
+
+        self.audio_codec_combo = QComboBox()
+        self.audio_codec_combo.addItem("Auto", "auto")
+        self.audio_codec_combo.addItem("Copy when possible", "copy")
+        self.audio_codec_combo.addItem("AAC", "aac")
+        self.audio_codec_combo.addItem("Opus", "opus")
+        self.audio_codec_combo.addItem("PCM 24-bit", "pcm_s24le")
+        self.audio_bitrate_combo = QComboBox()
+        for bitrate in (128, 192, 256, 320):
+            self.audio_bitrate_combo.addItem(f"{bitrate} kbps", bitrate)
+        self.audio_bitrate_combo.setCurrentIndex(3)
+        self.sample_rate_combo = QComboBox()
+        self.sample_rate_combo.addItem("Original", "source")
+        self.sample_rate_combo.addItem("44.1 kHz", "44100")
+        self.sample_rate_combo.addItem("48 kHz", "48000")
+        self.channels_combo = QComboBox()
+        self.channels_combo.addItem("Original", "source")
+        self.channels_combo.addItem("Mono", "mono")
+        self.channels_combo.addItem("Stereo", "stereo")
+
+        self.pixel_depth_combo = QComboBox()
+        self.pixel_depth_combo.addItem("Original / automatic", "source")
+        self.pixel_depth_combo.addItem("8-bit", "8")
+        self.pixel_depth_combo.addItem("10-bit", "10")
+        self.color_mode_combo = QComboBox()
+        self.color_mode_combo.addItem("Preserve source metadata", "preserve")
+        self.color_mode_combo.addItem("SDR Rec.709", "rec709")
+        self.color_mode_combo.addItem("Rec.2020", "rec2020")
+        self.color_mode_combo.addItem("Preserve HDR", "hdr_preserve")
+
+        self.range_start_spin = NoWheelDoubleSpinBox()
+        self.range_start_spin.setRange(0.0, 86400.0)
+        self.range_start_spin.setDecimals(3)
+        self.range_start_spin.setSuffix(" s")
+        self.range_end_spin = NoWheelDoubleSpinBox()
+        self.range_end_spin.setRange(0.0, 86400.0)
+        self.range_end_spin.setDecimals(3)
+        self.range_end_spin.setSuffix(" s")
+        self.export_compatibility_label = QLabel("")
+        self.export_compatibility_label.setWordWrap(True)
+
+        self.btn_export_advisor = QPushButton("Benchmark & recommend")
+        self.btn_export_advisor_apply = QPushButton("Apply recommendation")
+        self.btn_export_advisor_apply.setEnabled(False)
+        self.btn_export_advisor_apply.setVisible(False)
+        self.btn_clear_export_cache = QPushButton("Clear render cache")
+        self.export_advisor_result = QLabel(
+            "Recommendation: run the optional benchmark. Your export settings will not be changed."
+        )
+        self.export_advisor_result.setWordWrap(True)
+        self.export_advisor_result.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.export_advisor_thread = None
+        self.export_advisor_worker = None
+        self._last_export_recommendation = None
+        self._applying_export_settings = False
+        self._load_export_settings()
+
         self._wheel_filter = WheelOnlyIfFocusedFilter(self)
         # Spinboxes should only get focus by click (prevents accidental wheel changes)
         for w in (
@@ -777,6 +920,8 @@ class MainWindow(QMainWindow):
             self.attack_ms, self.release_ms, self.merge_pauses_ms,
             self.lufs_target,
             self.parallel_workers_spin, self.chunk_count_spin,
+            self.video_bitrate_spin, self.target_size_spin, self.custom_quality_spin,
+            self.range_start_spin, self.range_end_spin,
         ):
             try:
                 w.setFocusPolicy(Qt.ClickFocus)
@@ -800,6 +945,7 @@ class MainWindow(QMainWindow):
         self._apply_window_size_pref()
         self._apply_layout_mode()
         self._apply_ui_prefs()
+        self._sync_export_settings_ui()
 
         # 3) poi applichi tema / icone
         self._apply_theme_pref()
@@ -859,9 +1005,19 @@ class MainWindow(QMainWindow):
         self.btn_export_details.clicked.connect(self._toggle_export_details)
         self.btn_export_copy_logs.clicked.connect(self._copy_export_logs)
         self.btn_export_open_logs_folder.clicked.connect(self._open_export_logs_folder)
+        self.btn_export_advisor.clicked.connect(self._start_export_advisor)
+        self.btn_export_advisor_apply.clicked.connect(self._apply_export_recommendation)
+        self.btn_export_defaults.clicked.connect(self._reset_export_settings)
+        self.btn_clear_export_cache.clicked.connect(self._clear_export_cache)
 
-        self.codec_combo.currentIndexChanged.connect(lambda _i: self._push_topbar_status_chips())
-        self.export_method_combo.currentIndexChanged.connect(lambda _i: self._push_topbar_status_chips())
+        self.export_preset_combo.currentIndexChanged.connect(self._on_export_preset_changed)
+        for control in self._export_setting_controls():
+            if isinstance(control, QComboBox):
+                control.currentIndexChanged.connect(self._on_export_setting_changed)
+            elif isinstance(control, QCheckBox):
+                control.stateChanged.connect(self._on_export_setting_changed)
+            else:
+                control.valueChanged.connect(self._on_export_setting_changed)
 
         self.seg_main.clicked.connect(lambda: self._switch_page(0))
         self.seg_export.clicked.connect(lambda: self._switch_page(1))
@@ -907,6 +1063,7 @@ class MainWindow(QMainWindow):
         self._switch_page(0)
         self._apply_responsive_ui()
         self._init_crash_recovery()
+        self._init_twitch_automation()
 
     def _apply_core_translations(self) -> None:
         language = str(getattr(self, "_ui_language", "en") or "en")
@@ -2498,10 +2655,7 @@ class MainWindow(QMainWindow):
                 pass
 
     def _session_logs_dir(self) -> Path:
-        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-        if not base:
-            base = str(Path.home() / ".auto_cutter")
-        d = Path(base) / "session_logs"
+        d = logs_root()
         d.mkdir(parents=True, exist_ok=True)
         return d
 
@@ -2554,7 +2708,7 @@ class MainWindow(QMainWindow):
                 row[str(k)] = v
             except Exception:
                 row[str(k)] = str(v)
-        line = json.dumps(row, ensure_ascii=False)
+        line = redact_secrets(json.dumps(row, ensure_ascii=False))
         try:
             with self._session_log_lock:
                 with p.open("a", encoding="utf-8") as f:
@@ -3724,6 +3878,8 @@ class MainWindow(QMainWindow):
             self._analysis_workers.clear()
             self._analysis_expected_path.clear()
             self._analysis_job_ids.clear()
+            self._analysis_targets.clear()
+            self._analysis_progress.clear()
             self._ai_threads.clear()
             self._ai_workers.clear()
             self._ai_expected_path.clear()
@@ -4406,6 +4562,7 @@ class MainWindow(QMainWindow):
         self._update_ai_stats_panel(track)
         self._update_ai_options_panel(track)
         self._web_push_full_state()
+        self._sync_analysis_ui_for_active_track()
 
     def _active_timeline_map(self) -> Optional[dict]:
         try:
@@ -4776,7 +4933,10 @@ class MainWindow(QMainWindow):
                 except Exception:
                     meta.setText("Manual tuning")
 
-        self._push_topbar_status_chips()
+        try:
+            self._push_topbar_status_chips()
+        except Exception:
+            pass
 
 
     def _web_push_full_state(self) -> None:
@@ -4944,10 +5104,7 @@ class MainWindow(QMainWindow):
         s.setValue("layout_mode", self._layout_mode)
 
     def _user_presets_path(self) -> Path:
-        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-        if not base:
-            base = str(Path.home() / ".auto_cutter")
-        path = Path(base)
+        path = config_root()
         path.mkdir(parents=True, exist_ok=True)
         return path / "presets.json"
 
@@ -5110,30 +5267,35 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
         try:
+            advisor_thread = getattr(self, "export_advisor_thread", None)
+            if advisor_thread is not None and advisor_thread.isRunning():
+                advisor_thread.requestInterruption()
+                advisor_thread.quit()
+                advisor_thread.wait(5000)
+        except Exception:
+            pass
+        try:
             self._abort_analysis_tasks(wait_ms=800)
         except Exception:
             pass
+        # A bounded wait may end before a worker has delivered its finished
+        # signal. Keep the window (and its QThread children) alive until then.
+        if self._background_qthreads_running():
+            event.ignore()
+            QTimer.singleShot(250, self.close)
+            return
         try:
             self._cancel_warm_cache(wait_ms=1200)
         except Exception:
             pass
-        # Clear persistent caches on app close (requested default behavior)
         try:
-            removed_chunk = int(ExportWorker.clear_persistent_chunk_cache() or 0)
+            twitch = getattr(self, "_twitch_integration", None)
+            if twitch is not None:
+                twitch.shutdown()
         except Exception:
-            removed_chunk = 0
-        try:
-            removed_kf = int(clear_keyframe_cache() or 0)
-        except Exception:
-            removed_kf = 0
-        if removed_chunk or removed_kf:
-            try:
-                print(
-                    f"[cache] cleared on close: chunk_entries={removed_chunk} keyframe_entries={removed_kf}",
-                    flush=True,
-                )
-            except Exception:
-                pass
+            pass
+        # Bounded render/keyframe caches intentionally persist between sessions.
+        # Clearing them is an explicit action in the Performance panel.
         # Persist last session info for "recent files" and "remember filters/cuts"
         try:
             s = QSettings("Auto Cutter", "Auto Cutter")
@@ -5211,6 +5373,16 @@ class MainWindow(QMainWindow):
         act_diagnostics = None
         act_about = None
         act_third_party = None
+        act_twitch_client_id = None
+        act_twitch_connect = None
+        act_twitch_disconnect = None
+        act_twitch_watcher = None
+        act_twitch_poll = None
+        act_twitch_pending = None
+        act_twitch_download_folder = None
+        act_twitch_open_download_folder = None
+        act_twitch_retry_download = None
+        act_twitch_cancel_download = None
         recovery_interval_actions = {}
 
         # Theme (manual override; default is fixed Dark)
@@ -5284,6 +5456,93 @@ class MainWindow(QMainWindow):
         else:
             act_remember_cuts = menu.addAction("Enable remember cuts")
 
+        # Twitch automation remains opt-in and never replaces the manual editor.
+        menu.addSeparator()
+        twitch_menu = menu.addMenu("Twitch automation")
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.is_configured:
+            twitch_status = "Status: not configured"
+        elif twitch.connected_login:
+            twitch_status = f"Account: @{twitch.connected_login}"
+        elif twitch.has_stored_token:
+            twitch_status = "Account: connected (saved credentials)"
+        else:
+            twitch_status = "Status: ready to connect"
+        act_twitch_status = twitch_menu.addAction(twitch_status)
+        act_twitch_status.setEnabled(False)
+        if twitch is not None and twitch.is_configured:
+            watcher_label = "Watcher: running" if twitch.is_running else "Watcher: stopped"
+            act_twitch_runtime = twitch_menu.addAction(watcher_label)
+            act_twitch_runtime.setEnabled(False)
+        if twitch is not None and twitch.is_downloading:
+            act_twitch_download_runtime = twitch_menu.addAction("Download: running")
+            act_twitch_download_runtime.setEnabled(False)
+        if twitch is not None and twitch.is_analyzing:
+            act_twitch_analysis_runtime = twitch_menu.addAction("Analysis: running")
+            act_twitch_analysis_runtime.setEnabled(False)
+        if twitch is not None and twitch.is_exporting:
+            act_twitch_export_runtime = twitch_menu.addAction("Export: running")
+            act_twitch_export_runtime.setEnabled(False)
+        twitch_menu.addSeparator()
+        act_twitch_client_id = twitch_menu.addAction("Set Client ID...")
+        act_twitch_connect = twitch_menu.addAction("Connect Twitch account...")
+        act_twitch_connect.setEnabled(
+            bool(twitch is not None and twitch.is_configured and not twitch.is_authenticating)
+        )
+        act_twitch_disconnect = twitch_menu.addAction("Disconnect Twitch account")
+        act_twitch_disconnect.setEnabled(bool(twitch is not None and twitch.has_stored_token))
+        twitch_menu.addSeparator()
+        act_twitch_watcher = twitch_menu.addAction("Watch for new VODs")
+        act_twitch_watcher.setCheckable(True)
+        act_twitch_watcher.setChecked(bool(twitch is not None and twitch.is_enabled))
+        act_twitch_watcher.setEnabled(bool(twitch is not None and twitch.has_stored_token))
+        act_twitch_poll = twitch_menu.addAction("Check for a new VOD now")
+        act_twitch_poll.setEnabled(bool(twitch is not None and twitch.has_stored_token))
+        pending_twitch_jobs = self._pending_twitch_jobs()
+        act_twitch_pending = twitch_menu.addAction(
+            f"Configure pending VOD... ({len(pending_twitch_jobs)})"
+        )
+        act_twitch_pending.setEnabled(bool(pending_twitch_jobs))
+        failed_twitch_downloads = self._failed_twitch_download_jobs()
+        act_twitch_retry_download = twitch_menu.addAction(
+            f"Retry failed download... ({len(failed_twitch_downloads)})"
+        )
+        act_twitch_retry_download.setEnabled(bool(failed_twitch_downloads))
+        act_twitch_cancel_download = twitch_menu.addAction("Cancel current download")
+        act_twitch_cancel_download.setEnabled(bool(twitch is not None and twitch.is_downloading))
+        failed_twitch_analyses = self._failed_twitch_analysis_jobs()
+        act_twitch_retry_analysis = twitch_menu.addAction(
+            f"Retry failed analysis... ({len(failed_twitch_analyses)})"
+        )
+        act_twitch_retry_analysis.setEnabled(bool(failed_twitch_analyses))
+        act_twitch_cancel_analysis = twitch_menu.addAction("Cancel current analysis")
+        act_twitch_cancel_analysis.setEnabled(bool(twitch is not None and twitch.is_analyzing))
+        failed_twitch_exports = self._failed_twitch_export_jobs()
+        act_twitch_retry_export = twitch_menu.addAction(
+            f"Retry failed export... ({len(failed_twitch_exports)})"
+        )
+        act_twitch_retry_export.setEnabled(bool(failed_twitch_exports))
+        act_twitch_cancel_export = twitch_menu.addAction("Cancel current export")
+        act_twitch_cancel_export.setEnabled(bool(twitch is not None and twitch.is_exporting))
+        failed_uploads = self._failed_twitch_upload_jobs()
+        act_retry_upload = twitch_menu.addAction(f"Retry YouTube delivery... ({len(failed_uploads)})")
+        act_retry_upload.setEnabled(bool(failed_uploads))
+        act_cancel_upload = twitch_menu.addAction("Cancel YouTube upload")
+        act_cancel_upload.setEnabled(bool(twitch is not None and twitch.is_uploading))
+        ready_twitch_projects = self._ready_twitch_project_jobs()
+        act_twitch_open_project = twitch_menu.addAction(
+            f"Open ready project... ({len(ready_twitch_projects)})"
+        )
+        act_twitch_open_project.setEnabled(bool(ready_twitch_projects))
+        ready_twitch_exports = self._ready_twitch_upload_jobs()
+        act_twitch_open_export = twitch_menu.addAction(
+            f"Open exported video... ({len(ready_twitch_exports)})"
+        )
+        act_twitch_open_export.setEnabled(bool(ready_twitch_exports))
+        twitch_menu.addSeparator()
+        act_twitch_download_folder = twitch_menu.addAction("Set download folder...")
+        act_twitch_open_download_folder = twitch_menu.addAction("Open download folder")
+
         menu.addSeparator()
         language_menu = menu.addMenu("Language / Lingua")
         act_language_en = language_menu.addAction("English")
@@ -5306,6 +5565,63 @@ class MainWindow(QMainWindow):
         chosen = menu.exec(QCursor.pos())
         if chosen is None:
             self._app_log("menu_topbar_closed_no_selection")
+            return
+
+        if chosen == act_twitch_client_id:
+            self._configure_twitch_client_id()
+            return
+        if chosen == act_twitch_connect:
+            self._connect_twitch_account()
+            return
+        if chosen == act_twitch_disconnect:
+            self._disconnect_twitch_account()
+            return
+        if chosen == act_twitch_watcher:
+            self._set_twitch_watcher_enabled(bool(act_twitch_watcher.isChecked()))
+            return
+        if chosen == act_twitch_poll:
+            self._poll_twitch_now()
+            return
+        if chosen == act_twitch_pending:
+            self._configure_next_twitch_job()
+            return
+        if chosen == act_twitch_retry_download:
+            self._retry_twitch_download()
+            return
+        if chosen == act_twitch_cancel_download:
+            self._cancel_twitch_download()
+            return
+        if chosen == act_twitch_retry_analysis:
+            self._retry_twitch_analysis()
+            return
+        if chosen == act_twitch_cancel_analysis:
+            self._cancel_twitch_analysis()
+            return
+        if chosen == act_twitch_retry_export:
+            self._retry_twitch_export()
+            return
+        if chosen == act_twitch_cancel_export:
+            self._cancel_twitch_export()
+            return
+        if chosen == act_retry_upload:
+            if twitch is not None and failed_uploads:
+                twitch.queue_upload(failed_uploads[-1].id)
+            return
+        if chosen == act_cancel_upload:
+            if twitch is not None:
+                twitch.cancel_upload()
+            return
+        if chosen == act_twitch_open_project:
+            self._open_latest_twitch_project()
+            return
+        if chosen == act_twitch_open_export:
+            self._open_latest_twitch_export()
+            return
+        if chosen == act_twitch_download_folder:
+            self._configure_twitch_download_folder()
+            return
+        if chosen == act_twitch_open_download_folder:
+            self._open_twitch_download_folder()
             return
 
         if chosen in (act_language_en, act_language_it):
@@ -5481,6 +5797,7 @@ class MainWindow(QMainWindow):
                 "- restore default UI/layout preferences\n"
                 "- restore default presets (custom presets removed)\n"
                 "- clear saved recent/session data\n"
+                "- disconnect Twitch automation\n"
                 "- reset current workspace"
             ),
             QMessageBox.Yes | QMessageBox.No,
@@ -5498,6 +5815,18 @@ class MainWindow(QMainWindow):
             pass
         try:
             self._cancel_warm_cache(wait_ms=0)
+        except Exception:
+            pass
+        try:
+            twitch = getattr(self, "_twitch_integration", None)
+            if twitch is not None:
+                twitch.cancel_download()
+                twitch.cancel_analysis()
+                twitch.cancel_export()
+                twitch.clear_configuration()
+            self._twitch_watcher_enabled = False
+            self._twitch_client_id = ""
+            self._twitch_status = "unconfigured"
         except Exception:
             pass
 
@@ -5577,6 +5906,826 @@ class MainWindow(QMainWindow):
             pass
 
         QMessageBox.information(self, "Reset app to defaults", "Default settings restored.")
+
+    def _init_twitch_automation(self) -> None:
+        self._twitch_integration = TwitchIntegration(self)
+        self._twitch_client_id = ""
+        self._twitch_watcher_enabled = False
+        self._twitch_status = "unconfigured"
+        self._twitch_poll_interval_s = 120
+        self._twitch_download_log_progress: dict[str, int] = {}
+        self._twitch_analysis_log_progress: dict[str, int] = {}
+        self._twitch_export_log_progress: dict[str, int] = {}
+
+        twitch = self._twitch_integration
+        twitch.deviceCodeReady.connect(self._on_twitch_device_code)
+        twitch.connected.connect(self._on_twitch_connected)
+        twitch.disconnected.connect(self._on_twitch_disconnected)
+        twitch.vodDiscovered.connect(self._on_twitch_vod_discovered)
+        twitch.error.connect(self._on_twitch_error)
+        twitch.statusChanged.connect(self._on_twitch_status_changed)
+        twitch.enabledChanged.connect(self._on_twitch_enabled_changed)
+        twitch.downloadStarted.connect(self._on_twitch_download_started)
+        twitch.downloadProgress.connect(self._on_twitch_download_progress)
+        twitch.downloadFinished.connect(self._on_twitch_download_finished)
+        twitch.downloadFailed.connect(self._on_twitch_download_failed)
+        twitch.analysisStarted.connect(self._on_twitch_analysis_started)
+        twitch.analysisProgress.connect(self._on_twitch_analysis_progress)
+        twitch.analysisFinished.connect(self._on_twitch_analysis_finished)
+        twitch.analysisFailed.connect(self._on_twitch_analysis_failed)
+        twitch.exportStarted.connect(self._on_twitch_export_started)
+        twitch.exportProgress.connect(self._on_twitch_export_progress)
+        twitch.exportDetail.connect(self._on_twitch_export_detail)
+        twitch.exportFinished.connect(self._on_twitch_export_finished)
+        twitch.exportFailed.connect(self._on_twitch_export_failed)
+        twitch.uploadStarted.connect(self._on_twitch_upload_started)
+        twitch.uploadProgress.connect(self._on_twitch_upload_progress)
+        twitch.uploadFinished.connect(self._on_twitch_upload_finished)
+        twitch.uploadFailed.connect(self._on_twitch_upload_failed)
+
+        settings = QSettings("Auto Cutter", "Auto Cutter")
+        saved_client_id = str(settings.value("automation/twitch/client_id", "") or "").strip()
+        env_client_id = str(os.environ.get("AUTO_CUTTER_TWITCH_CLIENT_ID", "") or "").strip()
+        requested_client_id = saved_client_id or env_client_id
+        saved_download_dir = str(settings.value("automation/download_dir", "") or "").strip()
+        self._twitch_download_dir = Path(saved_download_dir) if saved_download_dir else (
+            self._default_twitch_download_dir()
+        )
+        try:
+            twitch.configure_download_dir(self._twitch_download_dir)
+        except Exception as exc:
+            self._twitch_download_dir = self._default_twitch_download_dir()
+            self._app_log("pipeline_download_dir_invalid", error=str(exc))
+        try:
+            self._twitch_poll_interval_s = max(
+                30,
+                min(3600, int(settings.value("automation/twitch/poll_interval_s", 120) or 120)),
+            )
+        except (TypeError, ValueError):
+            self._twitch_poll_interval_s = 120
+        self._twitch_watcher_enabled = str(
+            settings.value("automation/twitch/watcher_enabled", "0") or "0"
+        ).strip().lower() in {"1", "true", "yes", "on"}
+
+        if requested_client_id:
+            try:
+                self._twitch_client_id = normalize_twitch_client_id(requested_client_id)
+                twitch.configure(
+                    self._twitch_client_id,
+                    poll_interval_s=self._twitch_poll_interval_s,
+                )
+            except Exception as exc:
+                self._twitch_client_id = ""
+                self._twitch_watcher_enabled = False
+                self._app_log("twitch_configuration_invalid", error=str(exc))
+
+        smoke_test = "--smoke-test" in sys.argv
+        if not smoke_test:
+            try:
+                recovered = twitch.recover_pipeline()
+                if recovered:
+                    self._app_log("pipeline_jobs_recovered", count=len(recovered))
+            except Exception as exc:
+                self._app_log("pipeline_recovery_failed", error=str(exc))
+
+        if self._twitch_watcher_enabled and not twitch.has_stored_token:
+            self._twitch_watcher_enabled = False
+            settings.setValue("automation/twitch/watcher_enabled", 0)
+        elif self._twitch_watcher_enabled and not smoke_test:
+            QTimer.singleShot(0, self._restore_twitch_watcher)
+
+        self._app_log(
+            "twitch_automation_init",
+            configured=twitch.is_configured,
+            credentials=twitch.has_stored_token,
+            watcher_enabled=self._twitch_watcher_enabled,
+            download_dir=str(self._twitch_download_dir),
+        )
+
+    def _restore_twitch_watcher(self) -> None:
+        if not self._set_twitch_watcher_enabled(True):
+            self.statusBar().showMessage("Twitch watcher could not be restored.", 5000)
+
+    def _configure_twitch_client_id(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        value, ok = pro_get_text(
+            self,
+            "Twitch Client ID",
+            "Enter the Client ID of your Twitch public application:",
+            text=str(twitch.client_id or self._twitch_client_id),
+        )
+        if not ok:
+            return
+        try:
+            client_id = normalize_twitch_client_id(value)
+        except ValueError as exc:
+            QMessageBox.warning(self, "Invalid Twitch Client ID", str(exc))
+            return
+
+        if twitch.has_stored_token and client_id != twitch.client_id:
+            answer = QMessageBox.question(
+                self,
+                "Change Twitch Client ID",
+                "Changing Client ID disconnects the current Twitch account. Continue?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No,
+            )
+            if answer != QMessageBox.Yes:
+                return
+            twitch.disconnect_account()
+
+        try:
+            twitch.configure(client_id, poll_interval_s=self._twitch_poll_interval_s)
+        except Exception as exc:
+            QMessageBox.warning(self, "Twitch configuration", str(exc))
+            return
+
+        self._twitch_client_id = client_id
+        self._twitch_watcher_enabled = False
+        settings = QSettings("Auto Cutter", "Auto Cutter")
+        settings.setValue("automation/twitch/client_id", client_id)
+        settings.setValue("automation/twitch/poll_interval_s", self._twitch_poll_interval_s)
+        settings.setValue("automation/twitch/watcher_enabled", 0)
+        self._app_log("twitch_client_configured")
+        self.statusBar().showMessage("Twitch Client ID saved. Connect the account next.", 5000)
+
+    def _connect_twitch_account(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.is_configured:
+            QMessageBox.warning(self, "Twitch", "Configure a Twitch Client ID first.")
+            return
+        if twitch.is_authenticating:
+            self.statusBar().showMessage("Twitch connection is already in progress.", 4000)
+            return
+        if twitch.begin_connect():
+            self._app_log("twitch_auth_started")
+            self.statusBar().showMessage("Requesting a Twitch activation code...", 5000)
+
+    def _disconnect_twitch_account(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.has_stored_token:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Disconnect Twitch",
+            "Disconnect Twitch and remove the encrypted credentials from this PC?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        try:
+            twitch.disconnect_account()
+        except Exception as exc:
+            QMessageBox.warning(self, "Disconnect Twitch", str(exc))
+
+    def _set_twitch_watcher_enabled(self, enabled: bool) -> bool:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return False
+        if not twitch.set_enabled(enabled):
+            return False
+        self._twitch_watcher_enabled = bool(enabled)
+        QSettings("Auto Cutter", "Auto Cutter").setValue(
+            "automation/twitch/watcher_enabled",
+            1 if enabled else 0,
+        )
+        self._app_log("twitch_watcher_changed", enabled=bool(enabled))
+        return True
+
+    def _poll_twitch_now(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is not None and twitch.poll_now():
+            self._app_log("twitch_poll_requested")
+            self.statusBar().showMessage("Checking Twitch for a new VOD...", 5000)
+
+    def _default_twitch_download_dir(self) -> Path:
+        movies = str(QStandardPaths.writableLocation(QStandardPaths.MoviesLocation) or "").strip()
+        root = Path(movies) if movies else Path.home() / "Videos"
+        return root / "Auto Cutter" / "Automation"
+
+    def _configure_twitch_download_folder(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        current = Path(getattr(self, "_twitch_download_dir", self._default_twitch_download_dir()))
+        selected = QFileDialog.getExistingDirectory(
+            self,
+            "Select Twitch download folder",
+            str(current),
+        )
+        if not selected:
+            return
+        try:
+            target = Path(selected).expanduser().resolve()
+            twitch.configure_download_dir(target)
+            self._twitch_download_dir = target
+            QSettings("Auto Cutter", "Auto Cutter").setValue("automation/download_dir", str(target))
+            self._app_log("pipeline_download_dir_changed", path=str(target))
+            self.statusBar().showMessage(f"Twitch downloads: {target}", 6000)
+        except Exception as exc:
+            QMessageBox.warning(self, "Twitch download folder", str(exc))
+
+    def _open_twitch_download_folder(self) -> None:
+        target = Path(getattr(self, "_twitch_download_dir", self._default_twitch_download_dir()))
+        try:
+            target.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            QMessageBox.warning(self, "Twitch download folder", str(exc))
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(target))):
+            QMessageBox.warning(self, "Twitch download folder", f"Could not open:\n{target}")
+
+    @Slot(str, str, int)
+    def _on_twitch_device_code(self, code: str, verification_uri: str, expires_in: int) -> None:
+        try:
+            QApplication.clipboard().setText(code)
+        except Exception:
+            pass
+        opened = QDesktopServices.openUrl(QUrl(verification_uri))
+        browser_note = "The Twitch page was opened in your browser." if opened else (
+            f"Open this address manually: {verification_uri}"
+        )
+        QMessageBox.information(
+            self,
+            "Connect Twitch",
+            (
+                f"Enter this code on Twitch:\n\n{code}\n\n"
+                f"{browser_note}\nThe code was copied to the clipboard and expires in {expires_in} seconds."
+            ),
+        )
+
+    @Slot(str)
+    def _on_twitch_connected(self, login: str) -> None:
+        self._app_log("twitch_auth_connected", login=login)
+        self.statusBar().showMessage(f"Twitch connected as @{login}.", 6000)
+        if self._twitch_watcher_enabled:
+            self._set_twitch_watcher_enabled(True)
+            return
+        answer = QMessageBox.question(
+            self,
+            "Twitch connected",
+            f"Connected as @{login}. Enable automatic monitoring for new VODs?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if answer == QMessageBox.Yes:
+            self._set_twitch_watcher_enabled(True)
+
+    @Slot()
+    def _on_twitch_disconnected(self) -> None:
+        self._twitch_watcher_enabled = False
+        QSettings("Auto Cutter", "Auto Cutter").setValue("automation/twitch/watcher_enabled", 0)
+        self._app_log("twitch_auth_disconnected")
+        self.statusBar().showMessage("Twitch account disconnected.", 5000)
+
+    @Slot(bool)
+    def _on_twitch_enabled_changed(self, enabled: bool) -> None:
+        self._twitch_watcher_enabled = bool(enabled)
+        QSettings("Auto Cutter", "Auto Cutter").setValue(
+            "automation/twitch/watcher_enabled",
+            1 if enabled else 0,
+        )
+        state = "enabled" if enabled else "disabled"
+        self.statusBar().showMessage(f"Twitch VOD watcher {state}.", 4000)
+
+    @Slot(str)
+    def _on_twitch_status_changed(self, status: str) -> None:
+        self._twitch_status = str(status or "unknown")
+        self._app_log("twitch_status", status=self._twitch_status)
+        if self._twitch_status == "checking":
+            self.statusBar().showMessage("Checking Twitch for a new VOD...", 5000)
+        elif self._twitch_status == "watching":
+            self.statusBar().showMessage("Twitch VOD watcher is active.", 4000)
+        elif self._twitch_status == "connected":
+            self.statusBar().showMessage("Twitch check completed.", 4000)
+        elif self._twitch_status == "download_failed":
+            self.statusBar().showMessage("Twitch VOD download failed. Retry it from the menu.", 8000)
+        elif self._twitch_status == "export_queued":
+            self.statusBar().showMessage("Automatic analysis complete. Export queued...", 5000)
+        elif self._twitch_status == "exporting":
+            self.statusBar().showMessage("Exporting the automatic project...", 5000)
+        elif self._twitch_status == "ready_upload":
+            self.statusBar().showMessage("Automatic export complete. Video ready for upload.", 8000)
+        elif self._twitch_status == "export_failed":
+            self.statusBar().showMessage("Automatic export failed. Retry it from the menu.", 8000)
+
+    @Slot(str)
+    def _on_twitch_error(self, message: str) -> None:
+        clean_message = str(message or "Unknown Twitch error.")
+        self._app_log("twitch_error", error=clean_message)
+        self.statusBar().showMessage(f"Twitch: {clean_message}", 10000)
+
+    @Slot(object, object)
+    def _on_twitch_vod_discovered(self, job: object, video: object) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._app_log("twitch_vod_discovered", job_id=job.id, vod_id=job.vod_id)
+        duration_s = int(getattr(video, "duration_s", 0) or 0)
+        duration_text = f" ({fmt_hms(duration_s)})" if duration_s > 0 else ""
+        title = job.source_title or f"VOD {job.vod_id}"
+        answer = QMessageBox.question(
+            self,
+            "New Twitch VOD",
+            f"A new VOD is available{duration_text}:\n\n{title}\n\nSelect its start and end now?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if answer == QMessageBox.Yes:
+            self._configure_twitch_job(job.id)
+
+    def _pending_twitch_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            return [
+                job
+                for job in twitch.manager.list_jobs(include_terminal=False)
+                if job.state in {PipelineState.DISCOVERED, PipelineState.WAITING_RANGE}
+            ]
+        except Exception as exc:
+            self._app_log("pipeline_jobs_read_failed", error=str(exc))
+            return []
+
+    def _failed_twitch_download_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            return [
+                job
+                for job in twitch.manager.list_jobs(include_terminal=True)
+                if ((job.state == PipelineState.FAILED and job.retry_state == PipelineState.DOWNLOADING)
+                    or (job.state == PipelineState.CANCELLED and job.metadata.get("cancelled_from") == "downloading"))
+            ]
+        except Exception as exc:
+            self._app_log("pipeline_failed_downloads_read_failed", error=str(exc))
+            return []
+
+    def _failed_twitch_analysis_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            return [
+                job
+                for job in twitch.manager.list_jobs(include_terminal=True)
+                if ((job.state == PipelineState.FAILED and job.retry_state == PipelineState.ANALYZING)
+                    or (job.state == PipelineState.CANCELLED and job.metadata.get("cancelled_from") == "analyzing"))
+            ]
+        except Exception as exc:
+            self._app_log("pipeline_failed_analyses_read_failed", error=str(exc))
+            return []
+
+    def _failed_twitch_export_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            retry_states = {PipelineState.READY_EXPORT, PipelineState.EXPORTING}
+            return [
+                job
+                for job in twitch.manager.list_jobs(include_terminal=True)
+                if ((job.state == PipelineState.FAILED and job.retry_state in retry_states)
+                    or (job.state == PipelineState.CANCELLED
+                        and job.metadata.get("cancelled_from") in {"ready_export", "exporting"}))
+            ]
+        except Exception as exc:
+            self._app_log("pipeline_failed_exports_read_failed", error=str(exc))
+            return []
+
+    def _ready_twitch_upload_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            jobs = [job for job in twitch.manager.list_jobs(include_terminal=True)
+                    if job.state in {PipelineState.READY_UPLOAD, PipelineState.UPLOADING, PipelineState.DONE}
+                    and bool(job.export_path) and Path(str(job.export_path)).is_file()]
+            return sorted(jobs, key=lambda job: str(job.updated_at))
+        except Exception as exc:
+            self._app_log("pipeline_ready_exports_read_failed", error=str(exc))
+            return []
+
+    def _failed_twitch_upload_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        states = {PipelineState.READY_UPLOAD, PipelineState.UPLOADING}
+        return [job for job in twitch.manager.list_jobs(include_terminal=True)
+                if ((job.state == PipelineState.FAILED and job.retry_state in states)
+                    or (job.state == PipelineState.CANCELLED
+                        and job.metadata.get("cancelled_from") in {state.value for state in states}))
+                and job.metadata.get("delivery", {}).get("youtube") is True]
+
+    @Slot(str)
+    def _on_twitch_upload_started(self, job_id: str) -> None:
+        self._app_log("youtube_upload_started", job_id=job_id, privacy="private")
+        self.statusBar().showMessage("Uploading to YouTube PRIVATE...", 5000)
+
+    @Slot(str, int)
+    def _on_twitch_upload_progress(self, job_id: str, progress: int) -> None:
+        self.statusBar().showMessage(f"YouTube PRIVATE upload: {progress}%", 5000)
+
+    @Slot(object)
+    def _on_twitch_upload_finished(self, job: object) -> None:
+        if isinstance(job, PipelineJob):
+            self._app_log("youtube_upload_finished", job_id=job.id, video_id=job.youtube_video_id)
+            self.statusBar().showMessage(f"YouTube PRIVATE video ready: {job.youtube_video_id}", 15000)
+
+    @Slot(object, str)
+    def _on_twitch_upload_failed(self, job: object, message: str) -> None:
+        self._app_log("youtube_upload_failed", message=message)
+        self.statusBar().showMessage(f"YouTube delivery failed: {message}", 15000)
+
+    def _ready_twitch_project_jobs(self) -> list[PipelineJob]:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return []
+        try:
+            jobs = [
+                job
+                for job in twitch.manager.list_jobs(include_terminal=True)
+                if job.state in {PipelineState.READY_EXPORT, PipelineState.EXPORTING,
+                                 PipelineState.READY_UPLOAD, PipelineState.UPLOADING, PipelineState.DONE}
+                and bool(job.project_path)
+                and Path(str(job.project_path)).is_file()
+            ]
+            return sorted(jobs, key=lambda job: str(job.updated_at))
+        except Exception as exc:
+            self._app_log("pipeline_ready_projects_read_failed", error=str(exc))
+            return []
+
+    def _retry_twitch_download(self) -> None:
+        failed = self._failed_twitch_download_jobs()
+        if not failed:
+            self.statusBar().showMessage("No failed Twitch download is waiting for retry.", 4000)
+            return
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        job = failed[-1]
+        try:
+            queued = twitch.queue_download(job.id)
+        except Exception as exc:
+            QMessageBox.warning(self, "Retry Twitch download", str(exc))
+            return
+        if queued:
+            self._app_log("twitch_download_retry_queued", job_id=job.id)
+            self.statusBar().showMessage("Twitch VOD download queued for retry.", 5000)
+
+    def _retry_twitch_analysis(self) -> None:
+        failed = self._failed_twitch_analysis_jobs()
+        if not failed:
+            self.statusBar().showMessage("No failed automatic analysis is waiting for retry.", 4000)
+            return
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        job = failed[-1]
+        try:
+            queued = twitch.queue_analysis(job.id)
+        except Exception as exc:
+            QMessageBox.warning(self, "Retry automatic analysis", str(exc))
+            return
+        if queued:
+            self._app_log("twitch_analysis_retry_queued", job_id=job.id)
+            self.statusBar().showMessage("Automatic analysis queued for retry.", 5000)
+
+    def _retry_twitch_export(self) -> None:
+        failed = self._failed_twitch_export_jobs()
+        if not failed:
+            self.statusBar().showMessage("No failed automatic export is waiting for retry.", 4000)
+            return
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        job = failed[-1]
+        try:
+            queued = twitch.queue_export(job.id)
+        except Exception as exc:
+            QMessageBox.warning(self, "Retry automatic export", str(exc))
+            return
+        if queued:
+            self._app_log("twitch_export_retry_queued", job_id=job.id)
+            self.statusBar().showMessage("Automatic export queued for retry.", 5000)
+
+    def _cancel_twitch_download(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.is_downloading:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Cancel Twitch download",
+            "Cancel the current download? It will remain available for retry.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes and twitch.cancel_download():
+            self._app_log("twitch_download_cancel_requested", job_id=twitch.active_download_job_id)
+            self.statusBar().showMessage("Cancelling Twitch VOD download...", 5000)
+
+    def _cancel_twitch_analysis(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.is_analyzing:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Cancel automatic analysis",
+            "Cancel the current analysis? It will remain available for retry.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes and twitch.cancel_analysis():
+            self._app_log("twitch_analysis_cancel_requested", job_id=twitch.active_analysis_job_id)
+            self.statusBar().showMessage("Cancelling automatic analysis...", 5000)
+
+    def _cancel_twitch_export(self) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None or not twitch.is_exporting:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Cancel automatic export",
+            "Cancel the current export? It will remain available for retry.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes and twitch.cancel_export():
+            self._app_log("twitch_export_cancel_requested", job_id=twitch.active_export_job_id)
+            self.statusBar().showMessage("Cancelling automatic export...", 5000)
+
+    def _open_latest_twitch_project(self) -> None:
+        ready = self._ready_twitch_project_jobs()
+        if not ready:
+            self.statusBar().showMessage("No automatically analyzed project is ready.", 4000)
+            return
+        if self._analysis_in_progress() or self._export_in_progress():
+            QMessageBox.warning(
+                self,
+                "Open automatic project",
+                "Stop the current analysis or export before opening another project.",
+            )
+            return
+        job = ready[-1]
+        project_path = Path(str(job.project_path)).resolve()
+        try:
+            raw = json.loads(project_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            QMessageBox.warning(self, "Open automatic project", str(exc))
+            return
+        if not isinstance(raw, dict):
+            QMessageBox.warning(self, "Open automatic project", "The generated project has invalid structure.")
+            return
+        if self._load_project_payload(raw, source_path=project_path, source_label="Automatic project"):
+            self._app_log("twitch_project_opened", job_id=job.id, path=str(project_path))
+
+    def _open_latest_twitch_export(self) -> None:
+        ready = self._ready_twitch_upload_jobs()
+        if not ready:
+            self.statusBar().showMessage("No automatic export is ready.", 4000)
+            return
+        job = ready[-1]
+        export_path = Path(str(job.export_path)).resolve()
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(export_path))):
+            QMessageBox.warning(self, "Open exported video", f"Could not open:\n{export_path}")
+            return
+        self._app_log("twitch_export_opened", job_id=job.id, path=str(export_path))
+
+    @Slot(str)
+    def _on_twitch_download_started(self, job_id: str) -> None:
+        self._twitch_download_log_progress[job_id] = -10
+        self._app_log("twitch_download_started", job_id=job_id)
+        self.statusBar().showMessage("Downloading the selected Twitch VOD range: 0%", 5000)
+
+    @Slot(str, int)
+    def _on_twitch_download_progress(self, job_id: str, progress: int) -> None:
+        value = max(0, min(100, int(progress)))
+        self.statusBar().showMessage(f"Downloading Twitch VOD: {value}%", 5000)
+        previous = int(self._twitch_download_log_progress.get(job_id, -10))
+        if value >= 100 or value - previous >= 10:
+            self._twitch_download_log_progress[job_id] = value
+            self._app_log("twitch_download_progress", job_id=job_id, progress=value)
+
+    @Slot(object)
+    def _on_twitch_download_finished(self, job: object) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_download_log_progress.pop(job.id, None)
+        self._app_log(
+            "twitch_download_finished",
+            job_id=job.id,
+            path=str(job.local_source_path or ""),
+        )
+        self.statusBar().showMessage("Twitch VOD downloaded. Starting automatic analysis...", 8000)
+
+    @Slot(object, str)
+    def _on_twitch_download_failed(self, job: object, message: str) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_download_log_progress.pop(job.id, None)
+        clean_message = str(message or job.error_message or "Unknown download error.")
+        self._app_log(
+            "twitch_download_failed",
+            job_id=job.id,
+            code=str(job.error_code or "download_failed"),
+            error=clean_message,
+        )
+        QMessageBox.warning(
+            self,
+            "Twitch VOD download failed",
+            f"{clean_message}\n\nUse Twitch automation > Retry failed download to try again.",
+        )
+
+    @Slot(str)
+    def _on_twitch_analysis_started(self, job_id: str) -> None:
+        self._twitch_analysis_log_progress[job_id] = -10
+        self._app_log("twitch_analysis_started", job_id=job_id)
+        self.statusBar().showMessage("Analyzing downloaded Twitch VOD: 0%", 5000)
+
+    @Slot(str, int)
+    def _on_twitch_analysis_progress(self, job_id: str, progress: int) -> None:
+        value = max(0, min(100, int(progress)))
+        self.statusBar().showMessage(f"Analyzing downloaded Twitch VOD: {value}%", 5000)
+        previous = int(self._twitch_analysis_log_progress.get(job_id, -10))
+        if value >= 100 or value - previous >= 10:
+            self._twitch_analysis_log_progress[job_id] = value
+            self._app_log("twitch_analysis_progress", job_id=job_id, progress=value)
+
+    @Slot(object)
+    def _on_twitch_analysis_finished(self, job: object) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_analysis_log_progress.pop(job.id, None)
+        self._app_log(
+            "twitch_analysis_finished",
+            job_id=job.id,
+            project_path=str(job.project_path or ""),
+        )
+        self.statusBar().showMessage("Automatic analysis complete. Starting export...", 8000)
+
+    @Slot(object, str)
+    def _on_twitch_analysis_failed(self, job: object, message: str) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_analysis_log_progress.pop(job.id, None)
+        clean_message = str(message or job.error_message or "Unknown analysis error.")
+        self._app_log(
+            "twitch_analysis_failed",
+            job_id=job.id,
+            code=str(job.error_code or "analysis_failed"),
+            error=clean_message,
+        )
+        QMessageBox.warning(
+            self,
+            "Automatic analysis failed",
+            f"{clean_message}\n\nUse Twitch automation > Retry failed analysis to try again.",
+        )
+
+    @Slot(str)
+    def _on_twitch_export_started(self, job_id: str) -> None:
+        self._twitch_export_log_progress[job_id] = -10
+        self._app_log("twitch_export_started", job_id=job_id)
+        self.statusBar().showMessage("Exporting automatic project: 0%", 5000)
+
+    @Slot(str, int)
+    def _on_twitch_export_progress(self, job_id: str, progress: int) -> None:
+        value = max(0, min(100, int(progress)))
+        self.statusBar().showMessage(f"Exporting automatic project: {value}%", 5000)
+        previous = int(self._twitch_export_log_progress.get(job_id, -10))
+        if value >= 100 or value - previous >= 10:
+            self._twitch_export_log_progress[job_id] = value
+            self._app_log("twitch_export_progress", job_id=job_id, progress=value)
+
+    @Slot(str, str)
+    def _on_twitch_export_detail(self, job_id: str, message: str) -> None:
+        self._app_log("twitch_export_detail", job_id=job_id, detail=str(message))
+
+    @Slot(object)
+    def _on_twitch_export_finished(self, job: object) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_export_log_progress.pop(job.id, None)
+        self._app_log("twitch_export_finished", job_id=job.id, path=str(job.export_path or ""))
+        self.statusBar().showMessage("Automatic export complete. Video ready for upload.", 10000)
+        QMessageBox.information(
+            self,
+            "Automatic export ready",
+            (
+                "The selected VOD range was analyzed and exported successfully.\n\n"
+                f"Video:\n{job.export_path}\n\n"
+                "Open it from Twitch automation > Open exported video."
+            ),
+        )
+
+    @Slot(object, str)
+    def _on_twitch_export_failed(self, job: object, message: str) -> None:
+        if not isinstance(job, PipelineJob):
+            return
+        self._twitch_export_log_progress.pop(job.id, None)
+        clean_message = str(message or job.error_message or "Unknown export error.")
+        self._app_log(
+            "twitch_export_failed",
+            job_id=job.id,
+            code=str(job.error_code or "export_failed"),
+            error=clean_message,
+        )
+        QMessageBox.warning(
+            self,
+            "Automatic export failed",
+            f"{clean_message}\n\nUse Twitch automation > Retry failed export to try again.",
+        )
+
+    def _configure_next_twitch_job(self) -> None:
+        pending = self._pending_twitch_jobs()
+        if not pending:
+            self.statusBar().showMessage("No Twitch VOD is waiting for a range.", 4000)
+            return
+        self._configure_twitch_job(pending[-1].id)
+
+    def _configure_twitch_job(self, job_id: str) -> None:
+        twitch = getattr(self, "_twitch_integration", None)
+        if twitch is None:
+            return
+        try:
+            job = twitch.manager.get(job_id)
+            if job.state == PipelineState.DISCOVERED:
+                job = twitch.manager.request_range(job.id)
+            if job.state != PipelineState.WAITING_RANGE:
+                QMessageBox.information(
+                    self,
+                    "Twitch VOD",
+                    f"This VOD is already in pipeline state: {job.state.value}.",
+                )
+                return
+
+            twitch_metadata = job.metadata.get("twitch", {})
+            duration_value = twitch_metadata.get("duration_s", 0) if isinstance(twitch_metadata, dict) else 0
+            duration_s = max(1, int(duration_value or 0))
+            if duration_s <= 1:
+                duration_s = 24 * 60 * 60
+            start_s, ok = pro_get_int(
+                self,
+                "Twitch VOD range",
+                f"Start time in seconds (VOD duration: {fmt_hms(duration_s)}):",
+                0,
+                0,
+                duration_s - 1,
+                1,
+            )
+            if not ok:
+                return
+            end_s, ok = pro_get_int(
+                self,
+                "Twitch VOD range",
+                f"End time in seconds (after {fmt_hms(start_s)}):",
+                duration_s,
+                start_s + 1,
+                duration_s,
+                1,
+            )
+            if not ok:
+                return
+
+            preset_reader = getattr(self, "_current_preset_cfg", None)
+            combo = getattr(self, "preset_combo", None)
+            preset_name = str(combo.currentText()) if combo is not None else "Balanced (Default)"
+            preset_config = (preset_reader() if callable(preset_reader)
+                             else PresetRepository().resolve("Balanced (Default)"))
+            export_reader = getattr(self, "_export_settings_from_ui", None)
+            export_settings = export_reader() if callable(export_reader) else ExportSettings.defaults()
+            twitch.manager.update_metadata(job.id, {
+                "preset": {"name": preset_name, "config": normalize_preset_cfg(preset_config), "version": 1},
+                "export_settings": export_settings.to_mapping(),
+                "delivery": {"output_dir": str(Path(self._twitch_download_dir).expanduser().resolve()),
+                             "download_dir": str(Path(self._twitch_download_dir).expanduser().resolve()),
+                             "keep_source": True, "youtube": False},
+            })
+            queued = twitch.manager.select_range(job.id, start_s, end_s)
+            self._app_log(
+                "twitch_vod_range_selected",
+                job_id=queued.id,
+                start_s=start_s,
+                end_s=end_s,
+            )
+            started = twitch.queue_download(queued.id)
+            if started:
+                QMessageBox.information(
+                    self,
+                    "Twitch VOD download",
+                    (
+                        f"Range saved: {fmt_hms(start_s)} - {fmt_hms(end_s)}.\n\n"
+                        f"The download has started in:\n{self._twitch_download_dir}"
+                    ),
+                )
+            else:
+                self.statusBar().showMessage("This Twitch VOD is already queued for download.", 5000)
+        except Exception as exc:
+            self._app_log("twitch_vod_range_failed", job_id=job_id, error=str(exc))
+            QMessageBox.warning(self, "Twitch VOD", str(exc))
 
     def _project_file_default_path(self) -> Path:
         if isinstance(getattr(self, "_project_file_path", None), Path):
@@ -5787,6 +6936,7 @@ class MainWindow(QMainWindow):
                 "parallel_workers": int(self.parallel_workers_spin.value()),
                 "chunk_count": int(self.chunk_count_spin.value()),
                 "hwaccel_decode": bool(self.hwaccel_cb.isChecked()),
+                "export_settings": self._export_settings_from_ui().to_mapping(),
             },
             "tracks": [
                 *self._build_session_items(include_cfg=True, include_cuts=True),
@@ -5800,6 +6950,14 @@ class MainWindow(QMainWindow):
             return
 
         # Export/UI settings
+        try:
+            export_raw = global_state.get("export_settings")
+            if isinstance(export_raw, dict):
+                project_export_settings = ExportSettings.from_mapping(export_raw)
+                self._apply_export_settings_to_ui(project_export_settings)
+                self._save_export_settings(project_export_settings)
+        except Exception:
+            pass
         try:
             codec = str(global_state.get("codec", "") or "").strip()
             if codec:
@@ -7180,12 +8338,6 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("Analyzing audio...")
             self._media_dbg("open_path start_analysis_thread")
             self._start_analysis_thread(path, self._active_track_index)
-            # Skip cache warming during startup recent auto-restore to keep
-            # startup playback responsive; it can be warmed later on demand.
-            if not bool(getattr(self, "_in_auto_restore_session", False)):
-                self._enqueue_warm_export_cache(path)
-            else:
-                self._media_dbg("open_path skip warm_export_cache (auto_restore)")
         else:
             self.statusBar().showMessage("FFmpeg not found: analysis disabled.", 6000)
         self._update_split_button_state()
@@ -7200,10 +8352,43 @@ class MainWindow(QMainWindow):
         self._media_dbg("open_path end")
 
 
-    def _enqueue_warm_export_cache(self, path: str) -> None:
+    @staticmethod
+    def _should_warm_export_cache(path: str, duration_s: float | None = None) -> bool:
+        if not path:
+            return False
+        try:
+            max_duration_s = max(0.0, float(os.environ.get("AUTO_CUTTER_WARM_CACHE_MAX_DURATION_S", "900")))
+        except Exception:
+            max_duration_s = 900.0
+        try:
+            max_bytes = max(0, int(os.environ.get("AUTO_CUTTER_WARM_CACHE_MAX_BYTES", str(1024**3))))
+        except Exception:
+            max_bytes = 1024**3
+        try:
+            size = int(Path(path).stat().st_size)
+        except OSError:
+            return False
+        if max_bytes <= 0 or size > max_bytes:
+            return False
+        if duration_s is None:
+            try:
+                duration_s = float(ffprobe_duration_seconds(path))
+            except Exception:
+                return False
+        return max_duration_s > 0.0 and 0.0 < float(duration_s) <= max_duration_s
+
+    def _enqueue_warm_export_cache(self, path: str, duration_s: float | None = None) -> None:
         if not path:
             return
         if bool(getattr(self, "_pending_workspace_reset", False)) or bool(getattr(self, "_workspace_resetting", False)):
+            return
+        if not self._should_warm_export_cache(path, duration_s):
+            self._app_log(
+                "cache_warm_skipped",
+                path=str(path),
+                duration_s=float(duration_s or 0.0),
+                reason="media_too_large_or_long",
+            )
             return
         try:
             with self._warm_cache_lock:
@@ -7599,6 +8784,88 @@ class MainWindow(QMainWindow):
             current = None
         return current is not None and int(current) == int(job_id)
 
+    def _resolve_analysis_target_index(
+        self,
+        original_track_idx: int,
+        job_id: int,
+        target: TrackState,
+        expected_path: str,
+    ) -> int | None:
+        if not self._is_current_analysis_job(original_track_idx, job_id):
+            return None
+        for idx, track in enumerate(self._tracks):
+            if track is not target:
+                continue
+            if expected_path and track.path and not self._same_local_path(track.path, expected_path):
+                return None
+            return int(idx)
+        return None
+
+    def _analysis_slot_for_track(self, target: TrackState) -> int | None:
+        for slot, registered in list(getattr(self, "_analysis_targets", {}).items()):
+            if registered is not target:
+                continue
+            job_id = self._analysis_job_ids.get(int(slot))
+            if job_id is None:
+                continue
+            thread = self._analysis_threads.get(int(slot))
+            try:
+                if thread is not None and thread.isRunning():
+                    return int(slot)
+            except Exception:
+                continue
+        return None
+
+    def _cleanup_analysis_job_refs(self, track_idx: int, job_id: int, thread: QThread) -> None:
+        # A late finished signal from an old worker must never remove a newer job
+        # that reused the same list index.
+        if not self._is_current_analysis_job(track_idx, job_id):
+            return
+        if self._analysis_threads.get(int(track_idx)) is not thread:
+            return
+        self._analysis_threads.pop(int(track_idx), None)
+        self._analysis_workers.pop(int(track_idx), None)
+        self._analysis_expected_path.pop(int(track_idx), None)
+        self._analysis_job_ids.pop(int(track_idx), None)
+        self._analysis_targets.pop(int(track_idx), None)
+        self._analysis_progress.pop(int(track_idx), None)
+
+    def _sync_analysis_ui_for_active_track(self) -> None:
+        try:
+            track = self._get_active_track()
+        except Exception:
+            return
+
+        analyzed = bool(track.rms is not None and float(track.duration or 0.0) > 0.0)
+        slot = self._analysis_slot_for_track(track)
+        if analyzed:
+            state = "Ready"
+            progress = 0
+            self._set_ready_dot_state("ready")
+        elif slot is not None:
+            pct = max(0, min(100, int(self._analysis_progress.get(slot, 0))))
+            state = "Analyzing audio..."
+            progress = 10 + int(pct * 0.8)
+            self._set_ready_dot_state("idle")
+        else:
+            state = "Waiting for audio analysis"
+            progress = 0
+            self._set_ready_dot_state("idle")
+
+        try:
+            self._web_js(self.web_topbar, f"uiSetState({json.dumps(state)});")
+            self._web_js(self.web_topbar, f"uiSetProgress({int(progress)});")
+        except Exception:
+            pass
+        try:
+            if analyzed:
+                self.statusBar().showMessage("Audio analysis ready.", 2500)
+            elif slot is not None:
+                pct = max(0, min(100, int(self._analysis_progress.get(slot, 0))))
+                self.statusBar().showMessage(f"Analyzing audio... {pct}%")
+        except Exception:
+            pass
+
     def _cleanup_orphan_analysis_refs(self) -> None:
         try:
             self._orphan_analysis_threads = [
@@ -7673,6 +8940,8 @@ class MainWindow(QMainWindow):
         self._analysis_workers.clear()
         self._analysis_expected_path.clear()
         self._analysis_job_ids.clear()
+        self._analysis_targets.clear()
+        self._analysis_progress.clear()
         self._ai_threads.clear()
         self._ai_workers.clear()
         self._ai_expected_path.clear()
@@ -7685,7 +8954,6 @@ class MainWindow(QMainWindow):
             bool(getattr(self, "_analysis_threads", {}))
             or bool(getattr(self, "_ai_threads", {}))
             or bool(getattr(self, "_ai_processing", False))
-            or bool(self._warm_cache_in_progress())
         )
 
     def _export_in_progress(self) -> bool:
@@ -7766,6 +9034,8 @@ class MainWindow(QMainWindow):
                 self._analysis_workers.pop(idx, None)
                 self._analysis_expected_path.pop(idx, None)
                 self._analysis_job_ids.pop(idx, None)
+                self._analysis_targets.pop(idx, None)
+                self._analysis_progress.pop(idx, None)
         for idx, t in list(getattr(self, "_ai_threads", {}).items()):
             try:
                 running = bool(t is not None and t.isRunning())
@@ -8281,49 +9551,11 @@ class MainWindow(QMainWindow):
     # Presets (FULL, forward-compatible)
     # -----------------------------
     def _normalize_preset_cfg(self, cfg: dict) -> dict:
-        """
-        Normalize WITHOUT dropping unknown keys (forward-compatible).
-        Accept legacy aliases: preroll_s, aggressiveness.
-        Also stores placeholders for new advanced params (attack/release/smoothing/merge pauses, LUFS/limiter)
-        if present in the file.
-        """
-        out = dict(cfg or {})
-
-        # Required basics
-        out["intensity"] = int(out.get("intensity", 45))
-        out["threshold_pct"] = int(out.get("threshold_pct", 45))
-
-        # Legacy alias: preroll_s -> pre_pad_s
-        if "pre_pad_s" not in out:
-            out["pre_pad_s"] = float(out.get("preroll_s", 0.25))
-        out["pre_pad_s"] = float(out.get("pre_pad_s", 0.25))
-
-        # post pad: prefer explicit post_pad_s; else derive from legacy aggressiveness if present
-        if "post_pad_s" not in out:
-            if "aggressiveness" in out:
-                ag = float(out.get("aggressiveness", 70))
-                ag = max(0.0, min(100.0, ag))
-                out["post_pad_s"] = round(0.05 + (ag / 100.0) * 0.95, 2)
-            else:
-                out["post_pad_s"] = 0.25
-        out["post_pad_s"] = float(out.get("post_pad_s", 0.25))
-
-        # Existing advanced fields
-        out["min_cut_s"] = float(out.get("min_cut_s", 0.10))
-        out["gain_db"] = float(out.get("gain_db", 0.0))
-        out["gain_affects_detection"] = bool(out.get("gain_affects_detection", False))
-
-        # New advanced defaults (kept even if UI not yet exposes them)
-        out["attack_ms"] = int(out.get("attack_ms", self.attack_ms_default))
-        out["release_ms"] = int(out.get("release_ms", self.release_ms_default))
-        out["smoothing_mode"] = str(out.get("smoothing_mode", self.smoothing_mode_default))
-        out["merge_pauses_ms"] = int(out.get("merge_pauses_ms", self.merge_pauses_ms_default))
-
-        out["normalize_lufs"] = bool(out.get("normalize_lufs", self.normalize_lufs_default))
-        out["lufs_target"] = float(out.get("lufs_target", self.lufs_target_default))
-        out["limiter"] = bool(out.get("limiter", self.limiter_default))
-
-        return out
+        defaults = {name: getattr(self, name + "_default") for name in (
+            "attack_ms", "release_ms", "smoothing_mode", "merge_pauses_ms",
+            "normalize_lufs", "lufs_target", "limiter",
+        )}
+        return normalize_preset_cfg(cfg, defaults)
 
     def _current_preset_cfg(self) -> dict:
         """
@@ -8350,81 +9582,17 @@ class MainWindow(QMainWindow):
         return cfg
 
     def _load_presets(self):
-        self.presets = {}
         try:
-            if self.presets_path.exists():
-                data = json.loads(self.presets_path.read_text(encoding="utf-8"))
-                if isinstance(data, dict):
-                    for name, cfg in data.items():
-                        if not isinstance(name, str) or not isinstance(cfg, dict):
-                            continue
-                        if name.strip().lower() == "manual":
-                            continue
-                        norm = self._normalize_preset_cfg(cfg)
-                        self.presets[name] = norm
-            else:
-                # Migrate legacy presets.json from app folder if present
-                legacy = self._project_root / "presets.json"
-                if legacy.exists():
-                    data = json.loads(legacy.read_text(encoding="utf-8"))
-                    if isinstance(data, dict):
-                        for name, cfg in data.items():
-                            if not isinstance(name, str) or not isinstance(cfg, dict):
-                                continue
-                            if name.strip().lower() == "manual":
-                                continue
-                            norm = self._normalize_preset_cfg(cfg)
-                            self.presets[name] = norm
-                        self._save_presets()
-            if not self.presets:
-                self.presets = {
-                    name: self._normalize_preset_cfg(cfg)
-                    for name, cfg in self._default_presets_catalog().items()
-                }
-                self._save_presets()
+            repository = PresetRepository()
+            self.presets = repository.load()
+            if not repository.path.is_file():
+                repository.save(self.presets)
         except Exception as e:
             QMessageBox.warning(self, "Presets", f"Failed to read presets.json:\n{e}")
             self.presets = {}
 
     def _default_presets_catalog(self) -> dict[str, dict]:
-        # Default presets shipped with the app. Keep exactly three curated options.
-        common = {
-            "gain_db": 0.0,
-            "gain_affects_detection": False,
-            "attack_ms": 120,
-            "release_ms": 250,
-            "smoothing_mode": "Medium",
-            "merge_pauses_ms": 300,
-            "normalize_lufs": False,
-            "lufs_target": -14.0,
-            "limiter": True,
-        }
-        return {
-            "Balanced (Default)": {
-                "intensity": 50,
-                "threshold_pct": 6,
-                "pre_pad_s": 0.25,
-                "post_pad_s": 0.62,
-                "min_cut_s": 0.10,
-                **common,
-            },
-            "Natural Speech": {
-                "intensity": 34,
-                "threshold_pct": 3,
-                "pre_pad_s": 0.28,
-                "post_pad_s": 0.84,
-                "min_cut_s": 0.10,
-                **common,
-            },
-            "Aggressive Cleanup": {
-                "intensity": 72,
-                "threshold_pct": 10,
-                "pre_pad_s": 0.18,
-                "post_pad_s": 0.42,
-                "min_cut_s": 0.08,
-                **common,
-            },
-        }
+        return default_presets_catalog()
 
     def _reset_presets_to_defaults(self) -> None:
         r = QMessageBox.question(
@@ -8454,9 +9622,7 @@ class MainWindow(QMainWindow):
 
     def _save_presets(self):
         try:
-            tmp = self.presets_path.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(self.presets, indent=2), encoding="utf-8")
-            tmp.replace(self.presets_path)
+            PresetRepository(self.presets_path).save(self.presets)
         except Exception as e:
             QMessageBox.critical(self, "Presets", f"Failed to save presets.json:\n{e}")
 
@@ -8885,6 +10051,9 @@ class MainWindow(QMainWindow):
 
     def _start_analysis_thread(self, path: str, track_idx: int):
         self._app_log("analysis_start", path=str(path), track_idx=int(track_idx))
+        if not (0 <= int(track_idx) < len(self._tracks)):
+            return
+        target_track = self._tracks[int(track_idx)]
         old_t = self._analysis_threads.get(track_idx)
         if old_t is not None:
             old_w = self._analysis_workers.get(track_idx)
@@ -8905,6 +10074,8 @@ class MainWindow(QMainWindow):
                     self._analysis_workers.pop(track_idx, None)
                     self._analysis_expected_path.pop(track_idx, None)
                     self._analysis_job_ids.pop(track_idx, None)
+                    self._analysis_targets.pop(track_idx, None)
+                    self._analysis_progress.pop(track_idx, None)
             except Exception:
                 pass
             if old_t is not None:
@@ -8922,13 +10093,21 @@ class MainWindow(QMainWindow):
 
         an_thread.started.connect(an_worker.run)
         an_worker.done.connect(
-            lambda idx, duration, rms_np, hop_s, auto_thr, jid=job_id: self._on_analysis_done_guard(
-                jid, idx, duration, rms_np, hop_s, auto_thr
+            lambda idx, duration, rms_np, hop_s, auto_thr, jid=job_id, target=target_track, expected=str(path): self._on_analysis_done_guard(
+                jid, idx, target, expected, duration, rms_np, hop_s, auto_thr
             ),
             Qt.QueuedConnection,
         )
         an_worker.error.connect(
-            lambda idx, msg, jid=job_id: self._on_analysis_error_guard(jid, idx, msg),
+            lambda idx, msg, jid=job_id, target=target_track, expected=str(path): self._on_analysis_error_guard(
+                jid, idx, target, expected, msg
+            ),
+            Qt.QueuedConnection,
+        )
+        an_worker.progress.connect(
+            lambda idx, pct, jid=job_id, target=target_track, expected=str(path): self._on_analysis_progress_guard(
+                jid, idx, target, expected, pct
+            ),
             Qt.QueuedConnection,
         )
 
@@ -8944,9 +10123,11 @@ class MainWindow(QMainWindow):
         self._analysis_workers[track_idx] = an_worker
         self._analysis_expected_path[track_idx] = str(path)
         self._analysis_job_ids[track_idx] = int(job_id)
-        an_thread.finished.connect(lambda idx=track_idx: self._analysis_threads.pop(idx, None))
-        an_thread.finished.connect(lambda idx=track_idx: self._analysis_workers.pop(idx, None))
-        an_thread.finished.connect(lambda idx=track_idx: self._analysis_expected_path.pop(idx, None))
+        self._analysis_targets[track_idx] = target_track
+        self._analysis_progress[track_idx] = 0
+        an_thread.finished.connect(
+            lambda idx=track_idx, jid=job_id, thread=an_thread: self._cleanup_analysis_job_refs(idx, jid, thread)
+        )
         an_thread.finished.connect(self._update_split_button_state)
 
         an_thread.start()
@@ -8955,38 +10136,101 @@ class MainWindow(QMainWindow):
         self._web_js(self.web_topbar, "uiSetProgress(12);")  # placeholder value (0-100)
         self._update_split_button_state()
 
+    def _on_analysis_progress_guard(
+        self,
+        job_id: int,
+        original_track_idx: int,
+        target: TrackState,
+        expected_path: str,
+        percentage: int,
+    ) -> None:
+        if not self._is_current_analysis_job(original_track_idx, job_id):
+            return
+        self._analysis_progress[int(original_track_idx)] = max(0, min(100, int(percentage)))
+        track_idx = self._resolve_analysis_target_index(
+            original_track_idx, job_id, target, expected_path
+        )
+        if track_idx is None:
+            return
+        if bool(getattr(self, "_pending_workspace_reset", False)) or bool(getattr(self, "_workspace_resetting", False)):
+            return
+        if track_idx != self._active_track_index:
+            return
+        pct = max(0, min(100, int(percentage)))
+        self.statusBar().showMessage(f"Analyzing audio... {pct}%")
+        self._web_js(self.web_topbar, f"uiSetProgress({10 + int(pct * 0.8)});")
+
     def _on_analysis_done_guard(
         self,
         job_id: int,
-        track_idx: int,
+        original_track_idx: int,
+        target: TrackState,
+        expected_path: str,
         duration: float,
         rms_np: object,
         hop_s: float,
         auto_thr: float,
     ) -> None:
-        if not self._is_current_analysis_job(track_idx, job_id):
+        track_idx = self._resolve_analysis_target_index(
+            original_track_idx, job_id, target, expected_path
+        )
+        if track_idx is None:
             self._app_log(
                 "analysis_done_stale_ignored",
-                track_idx=int(track_idx),
+                track_idx=int(original_track_idx),
                 job_id=int(job_id),
-                current=int(self._analysis_job_ids.get(track_idx, -1)),
+                current=int(self._analysis_job_ids.get(original_track_idx, -1)),
             )
             return
-        self._on_analysis_done(track_idx, duration, rms_np, hop_s, auto_thr)
-
-    def _on_analysis_error_guard(self, job_id: int, track_idx: int, msg: str) -> None:
-        if not self._is_current_analysis_job(track_idx, job_id):
+        try:
+            self._on_analysis_done(
+                track_idx,
+                duration,
+                rms_np,
+                hop_s,
+                auto_thr,
+                expected_path=expected_path,
+            )
+        except Exception as exc:
             self._app_log(
-                "analysis_error_stale_ignored",
+                "analysis_apply_error",
                 track_idx=int(track_idx),
                 job_id=int(job_id),
-                current=int(self._analysis_job_ids.get(track_idx, -1)),
+                message=str(exc),
+            )
+            self._on_analysis_error(track_idx, f"Failed to apply audio analysis: {exc}")
+
+    def _on_analysis_error_guard(
+        self,
+        job_id: int,
+        original_track_idx: int,
+        target: TrackState,
+        expected_path: str,
+        msg: str,
+    ) -> None:
+        track_idx = self._resolve_analysis_target_index(
+            original_track_idx, job_id, target, expected_path
+        )
+        if track_idx is None:
+            self._app_log(
+                "analysis_error_stale_ignored",
+                track_idx=int(original_track_idx),
+                job_id=int(job_id),
+                current=int(self._analysis_job_ids.get(original_track_idx, -1)),
             )
             return
         self._on_analysis_error(track_idx, msg)
 
 
-    def _on_analysis_done(self, track_idx: int, duration: float, rms_np: object, hop_s: float, auto_thr: float):
+    def _on_analysis_done(
+        self,
+        track_idx: int,
+        duration: float,
+        rms_np: object,
+        hop_s: float,
+        auto_thr: float,
+        expected_path: str | None = None,
+    ):
         try:
             rms_len = int(len(rms_np)) if rms_np is not None else 0
         except Exception:
@@ -9008,8 +10252,8 @@ class MainWindow(QMainWindow):
             return
         track = self._tracks[track_idx]
         # Ignore stale analysis results (e.g., after reset or track replaced)
-        expected = self._analysis_expected_path.get(track_idx)
-        if expected and track.path and str(track.path) != str(expected):
+        expected = expected_path or self._analysis_expected_path.get(track_idx)
+        if expected and track.path and not self._same_local_path(track.path, expected):
             return
         if track.path is None:
             return
@@ -9053,6 +10297,13 @@ class MainWindow(QMainWindow):
             self.seek.setRange(0, int(total * 1000))
             self._update_time_label(self.seek.value() / 1000.0)
             self._update_split_button_state()
+            self._sync_analysis_ui_for_active_track()
+            self._app_log(
+                "analysis_applied",
+                track_idx=int(track_idx),
+                active=False,
+                cuts=len(track.cuts or []),
+            )
             return
 
         self._refresh_timeline_tracks(reset_view=True)
@@ -9094,6 +10345,19 @@ class MainWindow(QMainWindow):
         else:
             self.statusBar().showMessage("Analysis complete. Cuts generated automatically.", 5000)
         self._update_split_button_state()
+        self._app_log(
+            "analysis_applied",
+            track_idx=int(track_idx),
+            active=True,
+            cuts=len(track.cuts or []),
+        )
+        if not bool(getattr(self, "_in_auto_restore_session", False)):
+            analyzed_path = str(track.path or "")
+            analyzed_duration = float(track.duration or 0.0)
+            QTimer.singleShot(
+                250,
+                lambda p=analyzed_path, d=analyzed_duration: self._enqueue_warm_export_cache(p, d),
+            )
 
     def _on_analysis_error(self, track_idx: int, msg: str):
         self._app_log(
@@ -9110,6 +10374,7 @@ class MainWindow(QMainWindow):
         if self._is_cancelled_error(msg):
             self.statusBar().showMessage("Analysis canceled.", 2500)
             self._update_split_button_state()
+            self._sync_analysis_ui_for_active_track()
             return
         if track_idx != self._active_track_index:
             track = self._tracks[track_idx] if 0 <= track_idx < len(self._tracks) else None
@@ -9118,6 +10383,7 @@ class MainWindow(QMainWindow):
             name = Path(track.path).name if track and track.path else "Track"
             QMessageBox.critical(self, "Analysis failed", f"{name}: {msg}")
             self._update_split_button_state()
+            self._sync_analysis_ui_for_active_track()
             return
 
         if not self.input_path:
@@ -9147,56 +10413,25 @@ class MainWindow(QMainWindow):
         self._update_split_button_state()
 
     def _auto_thr_to_pct(self, auto_thr_amp: float) -> int:
-        rms_min = float(getattr(self, "_rms_min", 0.0))
-        rms_max = float(getattr(self, "_rms_max", rms_min))
-        eps = float(getattr(self, "_rms_eps", max(1e-9, rms_max * 0.001)))
-
-        lo = rms_min
-        hi = rms_max + eps
-        if hi <= lo + 1e-12:
-            return 45
-
-        x = float(auto_thr_amp)
-        pct = (x - lo) / (hi - lo) * 100.0
-        return int(max(0, min(100, round(pct))))
+        return threshold_amp_to_pct(
+            auto_thr_amp, float(getattr(self, "_rms_min", 0.0)),
+            float(getattr(self, "_rms_max", 0.0)), getattr(self, "_rms_eps", None),
+        )
 
     def _threshold_pct_to_amp(self, pct: float) -> float:
-        a = max(0.0, min(1.0, float(pct) / 100.0))
-
-        rms_min = float(getattr(self, "_rms_min", 0.0))
-        rms_max = float(getattr(self, "_rms_max", rms_min))
-        eps = float(getattr(self, "_rms_eps", max(1e-9, rms_max * 0.001)))
-
-        thr = rms_min + a * ((rms_max + eps) - rms_min)
-
-        if self.gain_affects_detection.isChecked():
-            g = 10.0 ** (float(self.gain_db.value()) / 20.0)
-            if g > 1e-9:
-                thr = thr / g
-
-        return float(max(0.0, thr))
+        return threshold_pct_to_amp(
+            pct, float(getattr(self, "_rms_min", 0.0)), float(getattr(self, "_rms_max", 0.0)),
+            getattr(self, "_rms_eps", None), float(self.gain_db.value()),
+            self.gain_affects_detection.isChecked(),
+        )
 
     def _threshold_pct_to_amp_for_track(
-        self,
-        track: TrackState,
-        pct: float,
-        gain_db: float,
-        gain_affects_detection: bool,
+        self, track: TrackState, pct: float, gain_db: float, gain_affects_detection: bool,
     ) -> float:
-        a = max(0.0, min(1.0, float(pct) / 100.0))
-
-        rms_min = float(getattr(track, "rms_min", 0.0) or 0.0)
-        rms_max = float(getattr(track, "rms_max", rms_min) or rms_min)
-        eps = float(getattr(track, "rms_eps", max(1e-9, rms_max * 0.001)) or max(1e-9, rms_max * 0.001))
-
-        thr = rms_min + a * ((rms_max + eps) - rms_min)
-
-        if gain_affects_detection:
-            g = 10.0 ** (float(gain_db) / 20.0)
-            if g > 1e-9:
-                thr = thr / g
-
-        return float(max(0.0, thr))
+        return threshold_pct_to_amp(
+            pct, float(track.rms_min or 0.0), float(track.rms_max or 0.0),
+            track.rms_eps or None, gain_db, gain_affects_detection,
+        )
 
     def _compute_cuts_for_track(self, track_idx: int) -> None:
         if track_idx < 0 or track_idx >= len(self._tracks):
@@ -9216,74 +10451,16 @@ class MainWindow(QMainWindow):
         else:
             cfg = self._normalize_preset_cfg(self._current_preset_cfg())
 
-        intensity = int(cfg.get("intensity", self.slider_precision.value()))
-        threshold_pct = float(cfg.get("threshold_pct", self.threshold_pct.value()))
-        pre_pad = float(cfg.get("pre_pad_s", 0.25))
-        post_pad = float(cfg.get("post_pad_s", 0.25))
-        min_cut_s = float(cfg.get("min_cut_s", 0.10))
-        gain_db = float(cfg.get("gain_db", 0.0))
-        gain_affects = bool(cfg.get("gain_affects_detection", False))
-        attack_ms = int(cfg.get("attack_ms", self.attack_ms_default))
-        release_ms = int(cfg.get("release_ms", self.release_ms_default))
-        smoothing_mode = str(cfg.get("smoothing_mode", self.smoothing_mode_default))
-        merge_pauses_ms = int(cfg.get("merge_pauses_ms", self.merge_pauses_ms_default))
-
-        thr = self._threshold_pct_to_amp_for_track(track, threshold_pct, gain_db, gain_affects)
-
-        manual_cuts = merge_overlaps(list(track.manual_cuts or []))
-        suppressed = merge_overlaps(list(track.suppressed_cuts or []))
-
-        if intensity < 10:
-            track.cuts = merge_overlaps(manual_cuts)
-            track.keeps = invert_to_keeps(float(track.duration), list(track.cuts or []), min_keep=0.0)
-            track.suppressed_cuts = suppressed
-            self._save_classic_cuts(track)
-            return
-
-        min_silence, edge_keep, min_keep = map_intensity(intensity)
-        edge_keep = max(float(edge_keep), float(post_pad))
-
-        smooth_ms_map = {"Off": 0, "Low": 50, "Medium": 120, "High": 250}
-        smoothing_ms = int(smooth_ms_map.get(smoothing_mode, 120))
-        merge_pause_s = max(0.0, float(merge_pauses_ms) / 1000.0)
-        min_silence_eff = max(float(min_silence), merge_pause_s)
-        aggr = int(max(0, min(100, round(20 + (float(intensity) / 100.0) * 70))))
-
         seg_rms = self._segment_rms(track)
-        if seg_rms is None or getattr(seg_rms, "size", 0) == 0:
+        if int(cfg["intensity"]) >= 10 and (seg_rms is None or getattr(seg_rms, "size", 0) == 0):
             return
-
-        kwargs = dict(
-            rms=seg_rms,
-            duration=float(track.duration),
-            hop_s=float(track.hop_s),
-            threshold=thr,
-            min_silence=min_silence_eff,
-            edge_keep=edge_keep,
-            pre_roll=float(pre_pad),
-            min_cut=float(min_cut_s),
-            aggressiveness=aggr,
+        track.suppressed_cuts = merge_overlaps(list(track.suppressed_cuts or []))
+        track.cuts, track.keeps = compute_classic_cuts(
+            seg_rms if seg_rms is not None else np.array([]), float(track.duration), float(track.hop_s), cfg,
+            manual_cuts=track.manual_cuts or [], suppressed_cuts=track.suppressed_cuts,
+            rms_min=float(track.rms_min or 0.0), rms_max=float(track.rms_max or 0.0),
+            rms_eps=track.rms_eps or None,
         )
-
-        try:
-            auto_cuts = compute_cuts_from_rms(
-                **kwargs,
-                detection_smoothing_ms=float(smoothing_ms),
-                attack_ms=float(attack_ms),
-                release_ms=float(release_ms),
-                merge_short_pauses_ms=float(merge_pauses_ms),
-            )
-        except TypeError:
-            auto_cuts = compute_cuts_from_rms(**kwargs)
-
-        auto_cuts = merge_overlaps(list(auto_cuts or []))
-        if suppressed:
-            auto_cuts = self._subtract_segments(auto_cuts, suppressed)
-        cuts = merge_overlaps(auto_cuts + manual_cuts)
-        track.suppressed_cuts = suppressed
-
-        track.cuts = cuts
-        track.keeps = invert_to_keeps(float(track.duration), cuts, min_keep=min_keep)
         self._save_classic_cuts(track)
 
     # -----------------------------
@@ -9296,7 +10473,7 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _subtract_segments(base: list[Segment] | None, masks: list[Segment] | None, eps: float = 1e-6) -> list[Segment]:
         """
-        Return base \ masks, preserving remaining fragments.
+        Return base minus masks, preserving remaining fragments.
         Example: [0,10] - [3,4] => [0,3],[4,10]
         """
         if not base:
@@ -9366,71 +10543,13 @@ class MainWindow(QMainWindow):
         if rms is None or getattr(rms, "size", 0) == 0:
             return
 
-        intensity = self.slider_precision.value()
-        thr = self._threshold_pct_to_amp(float(self.threshold_pct.value()))
-
-        if intensity < 10:
-            track.manual_cuts = merge_overlaps(list(track.manual_cuts or []))
-            track.suppressed_cuts = merge_overlaps(list(track.suppressed_cuts or []))
-            track.cuts = merge_overlaps(list(track.manual_cuts or []))
-            track.keeps = invert_to_keeps(float(track.duration), list(track.cuts or []), min_keep=0.0)
-        else:
-            min_silence, edge_keep, min_keep = map_intensity(intensity)
-
-            pre_pad = float(self.pre_pad_s.value())
-            post_pad = float(self.post_pad_s.value())
-
-            edge_keep = max(float(edge_keep), float(post_pad))
-
-            # New advanced params (currently defaults; later bind to UI)
-            attack_ms = int(self.attack_ms.value())
-            release_ms = int(self.release_ms.value())
-            smoothing_mode = str(self.smoothing_mode.currentText())
-            merge_pauses_ms = int(self.merge_pauses_ms.value())
-
-            # Map smoothing mode -> ms (you can tune later)
-            smooth_ms_map = {"Off": 0, "Low": 50, "Medium": 120, "High": 250}
-            smoothing_ms = int(smooth_ms_map.get(smoothing_mode, 120))
-
-            # Merge short pauses logically increases min_silence, but engine may implement it separately later.
-            # We keep a conservative approach: bump min_silence by (merge_pauses_ms / 1000).
-            merge_pause_s = max(0.0, float(merge_pauses_ms) / 1000.0)
-            min_silence_eff = max(float(min_silence), merge_pause_s)
-
-            aggr = int(max(0, min(100, round(20 + (float(intensity) / 100.0) * 70))))
-
-            kwargs = dict(
-                rms=rms,
-                duration=float(track.duration),
-                hop_s=float(track.hop_s),
-                threshold=thr,
-                min_silence=min_silence_eff,
-                edge_keep=edge_keep,
-                pre_roll=pre_pad,
-                min_cut=float(self.min_cut_s.value()),
-                aggressiveness=aggr,
-            )
-
-            # Try passing advanced kwargs if your engine supports them; otherwise fallback silently.
-            try:
-                auto_cuts = compute_cuts_from_rms(
-                    **kwargs,
-                    detection_smoothing_ms=float(smoothing_ms),
-                    attack_ms=float(attack_ms),
-                    release_ms=float(release_ms),
-                    merge_short_pauses_ms=float(merge_pauses_ms),
-                )
-            except TypeError:
-                auto_cuts = compute_cuts_from_rms(**kwargs)
-
-            track.manual_cuts = merge_overlaps(list(track.manual_cuts or []))
-            track.suppressed_cuts = merge_overlaps(list(track.suppressed_cuts or []))
-            auto_cuts = merge_overlaps(list(auto_cuts or []))
-            if track.suppressed_cuts:
-                auto_cuts = self._subtract_segments(auto_cuts, list(track.suppressed_cuts or []))
-            track.cuts = merge_overlaps(auto_cuts + list(track.manual_cuts or []))
-
-            track.keeps = invert_to_keeps(float(track.duration), track.cuts, min_keep=min_keep)
+        track.manual_cuts = merge_overlaps(list(track.manual_cuts or []))
+        track.suppressed_cuts = merge_overlaps(list(track.suppressed_cuts or []))
+        track.cuts, track.keeps = compute_classic_cuts(
+            rms, float(track.duration), float(track.hop_s), self._current_preset_cfg(),
+            manual_cuts=track.manual_cuts, suppressed_cuts=track.suppressed_cuts,
+            threshold_amp=self._threshold_pct_to_amp(float(self.threshold_pct.value())),
+        )
 
         out_dur = sum(k.dur for k in track.keeps) if track.keeps else 0.0
         cuts_n = len(track.cuts)
@@ -10652,6 +11771,355 @@ class MainWindow(QMainWindow):
 
         return input_paths, out_segments
 
+    def _export_setting_controls(self) -> tuple[QWidget, ...]:
+        return (
+            self.codec_combo,
+            self.export_method_combo,
+            self.cut_quality_combo,
+            self.container_combo,
+            self.output_mode_combo,
+            self.resolution_combo,
+            self.aspect_combo,
+            self.no_upscale_cb,
+            self.fps_combo,
+            self.fps_mode_combo,
+            self.video_quality_combo,
+            self.rate_control_combo,
+            self.video_bitrate_spin,
+            self.target_size_spin,
+            self.custom_quality_spin,
+            self.two_pass_cb,
+            self.audio_codec_combo,
+            self.audio_bitrate_combo,
+            self.sample_rate_combo,
+            self.channels_combo,
+            self.pixel_depth_combo,
+            self.color_mode_combo,
+            self.range_start_spin,
+            self.range_end_spin,
+            self.parallel_workers_spin,
+            self.chunk_count_spin,
+            self.hwaccel_cb,
+        )
+
+    @staticmethod
+    def _set_combo_data(combo: QComboBox, value: object) -> None:
+        idx = int(combo.findData(value))
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+
+    def _export_settings_from_ui(self) -> ExportSettings:
+        cut_keys = ("balanced", "higher", "faster", "maximum_speed")
+        cut_idx = max(0, min(int(self.cut_quality_combo.currentIndex()), len(cut_keys) - 1))
+        return ExportSettings(
+            preset=str(self.export_preset_combo.currentData() or "custom"),
+            codec=str(self.codec_combo.currentData() or "auto"),
+            method=str(self.export_method_combo.currentData() or "auto"),
+            container=str(self.container_combo.currentData() or "mp4"),
+            output_mode=str(self.output_mode_combo.currentData() or "single"),
+            resolution=str(self.resolution_combo.currentData() or "source"),
+            aspect=str(self.aspect_combo.currentData() or "source"),
+            no_upscale=bool(self.no_upscale_cb.isChecked()),
+            fps=str(self.fps_combo.currentData() or "source"),
+            fps_mode=str(self.fps_mode_combo.currentData() or "cfr"),
+            quality=str(self.video_quality_combo.currentData() or "very_high"),
+            rate_control=str(self.rate_control_combo.currentData() or "quality"),
+            video_bitrate_mbps=float(self.video_bitrate_spin.value()),
+            target_size_mb=int(self.target_size_spin.value()),
+            custom_quality=int(self.custom_quality_spin.value()),
+            two_pass=bool(self.two_pass_cb.isChecked()),
+            audio_codec=str(self.audio_codec_combo.currentData() or "auto"),
+            audio_bitrate_kbps=int(self.audio_bitrate_combo.currentData() or 320),
+            sample_rate=str(self.sample_rate_combo.currentData() or "source"),
+            channels=str(self.channels_combo.currentData() or "source"),
+            pixel_depth=str(self.pixel_depth_combo.currentData() or "source"),
+            color_mode=str(self.color_mode_combo.currentData() or "preserve"),
+            cut_quality=cut_keys[cut_idx],
+            parallel_workers=int(self.parallel_workers_spin.value()),
+            chunk_count=int(self.chunk_count_spin.value()),
+            hwaccel_decode=bool(self.hwaccel_cb.isChecked()),
+            range_start=float(self.range_start_spin.value()),
+            range_end=float(self.range_end_spin.value()),
+        ).normalized()
+
+    def _apply_export_settings_to_ui(self, settings: ExportSettings) -> None:
+        value = settings.normalized()
+        self._applying_export_settings = True
+        try:
+            self._set_combo_data(self.export_preset_combo, value.preset)
+            self._set_combo_data(self.codec_combo, value.codec)
+            self._set_combo_data(self.export_method_combo, value.method)
+            self._set_combo_data(self.container_combo, value.container)
+            self._set_combo_data(self.output_mode_combo, value.output_mode)
+            self._set_combo_data(self.resolution_combo, value.resolution)
+            self._set_combo_data(self.aspect_combo, value.aspect)
+            self.no_upscale_cb.setChecked(value.no_upscale)
+            self._set_combo_data(self.fps_combo, value.fps)
+            self._set_combo_data(self.fps_mode_combo, value.fps_mode)
+            self._set_combo_data(self.video_quality_combo, value.quality)
+            self._set_combo_data(self.rate_control_combo, value.rate_control)
+            self.video_bitrate_spin.setValue(value.video_bitrate_mbps)
+            self.target_size_spin.setValue(value.target_size_mb)
+            self.custom_quality_spin.setValue(value.custom_quality)
+            self.two_pass_cb.setChecked(value.two_pass)
+            self._set_combo_data(self.audio_codec_combo, value.audio_codec)
+            self._set_combo_data(self.audio_bitrate_combo, value.audio_bitrate_kbps)
+            self._set_combo_data(self.sample_rate_combo, value.sample_rate)
+            self._set_combo_data(self.channels_combo, value.channels)
+            self._set_combo_data(self.pixel_depth_combo, value.pixel_depth)
+            self._set_combo_data(self.color_mode_combo, value.color_mode)
+            cut_index = {
+                "balanced": 0,
+                "higher": 1,
+                "faster": 2,
+                "maximum_speed": 3,
+            }.get(value.cut_quality, 0)
+            self.cut_quality_combo.setCurrentIndex(cut_index)
+            self.parallel_workers_spin.setValue(value.parallel_workers)
+            self.chunk_count_spin.setValue(value.chunk_count)
+            self.hwaccel_cb.setChecked(value.hwaccel_decode)
+            self.range_start_spin.setValue(value.range_start)
+            self.range_end_spin.setValue(value.range_end)
+        finally:
+            self._applying_export_settings = False
+        self._sync_export_settings_ui(value)
+
+    def _load_export_settings(self) -> None:
+        settings = ExportSettings.defaults()
+        try:
+            raw = str(QSettings("Auto Cutter", "Auto Cutter").value("export/settings_v1", "") or "")
+            if raw:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    settings = ExportSettings.from_mapping(parsed)
+        except Exception:
+            settings = ExportSettings.defaults()
+        self._apply_export_settings_to_ui(settings)
+
+    def _save_export_settings(self, settings: ExportSettings | None = None) -> None:
+        value = (settings or self._export_settings_from_ui()).normalized()
+        QSettings("Auto Cutter", "Auto Cutter").setValue(
+            "export/settings_v1",
+            json.dumps(value.to_mapping(), ensure_ascii=True, sort_keys=True),
+        )
+
+    def _sync_export_settings_ui(self, settings: ExportSettings | None = None) -> None:
+        value = (settings or self._export_settings_from_ui()).normalized()
+        rate = value.rate_control
+        bitrate_visible = rate == "bitrate"
+        target_visible = rate == "target_size"
+        custom_visible = value.quality == "custom" and rate == "quality"
+        getattr(self, "export_bitrate_wrap", self.video_bitrate_spin).setVisible(bitrate_visible)
+        getattr(self, "export_target_size_wrap", self.target_size_spin).setVisible(target_visible)
+        getattr(self, "export_custom_quality_wrap", self.custom_quality_spin).setVisible(custom_visible)
+        self.two_pass_cb.setEnabled(value.codec == "libx264" and rate in {"bitrate", "target_size"})
+        self.audio_bitrate_combo.setEnabled(value.audio_codec not in {"copy", "pcm_s24le"})
+        selected_range = value.output_mode == "selected_range"
+        getattr(self, "export_range_wrap", self.range_start_spin).setVisible(selected_range)
+        self.fps_mode_combo.setEnabled(value.fps == "source")
+        messages = value.compatibility_messages()
+        self.export_compatibility_label.setText(" ".join(messages))
+        self.export_compatibility_label.setProperty(
+            "status",
+            "warning" if value.requires_accurate_pipeline() else "ok",
+        )
+        self.export_compatibility_label.style().unpolish(self.export_compatibility_label)
+        self.export_compatibility_label.style().polish(self.export_compatibility_label)
+        self.btn_export.setText(
+            "Export audio" if value.output_mode == "audio_only" else
+            "Export clips" if value.output_mode == "per_clip" else
+            "Export video"
+        )
+        try:
+            self._push_topbar_status_chips()
+        except Exception:
+            pass
+
+    @Slot()
+    def _on_export_preset_changed(self) -> None:
+        if self._applying_export_settings:
+            return
+        preset = str(self.export_preset_combo.currentData() or "custom")
+        current = self._export_settings_from_ui()
+        updated = current.with_preset(preset)
+        self._apply_export_settings_to_ui(updated)
+        self._save_export_settings(updated)
+
+    @Slot()
+    def _on_export_setting_changed(self) -> None:
+        if self._applying_export_settings:
+            return
+        value = self._export_settings_from_ui()
+        if value.preset != "custom":
+            value = replace(value, preset="custom")
+        self._apply_export_settings_to_ui(value)
+        self._save_export_settings(value)
+
+    @Slot()
+    def _reset_export_settings(self) -> None:
+        defaults = ExportSettings.defaults()
+        self._apply_export_settings_to_ui(defaults)
+        self._save_export_settings(defaults)
+        self.export_advisor_result.setText("Export settings restored to the recommended defaults.")
+
+    @Slot()
+    def _apply_export_recommendation(self) -> None:
+        recommendation = getattr(self, "_last_export_recommendation", None)
+        if recommendation is None:
+            return
+        current = self._export_settings_from_ui()
+        updated = replace(
+            current,
+            preset="custom",
+            codec=str(recommendation.codec),
+            method="auto",
+            parallel_workers=int(recommendation.workers),
+            chunk_count=int(recommendation.chunks),
+            quality="very_high",
+            rate_control="quality",
+            custom_quality=16,
+        ).normalized()
+        self._apply_export_settings_to_ui(updated)
+        self._save_export_settings(updated)
+        self.btn_export_advisor_apply.setEnabled(False)
+        self.export_advisor_result.setText(
+            "Recommendation applied. You can still review and change every value before export."
+        )
+        self._app_log(
+            "export_advisor_applied",
+            codec=updated.codec,
+            workers=updated.parallel_workers,
+            chunks=updated.chunk_count,
+        )
+
+    @Slot()
+    def _clear_export_cache(self) -> None:
+        if bool(getattr(self, "_export_processing", False)):
+            self.statusBar().showMessage("Stop the active export before clearing its cache.", 5000)
+            return
+        try:
+            removed_chunks = int(ExportWorker.clear_persistent_chunk_cache() or 0)
+        except Exception:
+            removed_chunks = 0
+        try:
+            removed_keyframes = int(clear_keyframe_cache() or 0)
+        except Exception:
+            removed_keyframes = 0
+        self.export_advisor_result.setText(
+            f"Render cache cleared: {removed_chunks} chunk entries, "
+            f"{removed_keyframes} keyframe entries."
+        )
+        self._app_log(
+            "export_cache_cleared",
+            chunks=removed_chunks,
+            keyframes=removed_keyframes,
+        )
+
+    @Slot()
+    def _start_export_advisor(self) -> None:
+        if not self.input_path or not self.ffmpeg_path:
+            self.export_advisor_result.setText("Load a video before running the settings advisor.")
+            return
+        current_thread = getattr(self, "export_advisor_thread", None)
+        if current_thread is not None and current_thread.isRunning():
+            return
+
+        try:
+            input_paths, flat_segments = self._build_flatten_export_segments()
+        except Exception:
+            input_paths, flat_segments = [], []
+        if not input_paths:
+            input_paths = [track.path for track in self._tracks if track.path]
+        if not input_paths:
+            input_paths = [self.input_path]
+
+        if flat_segments:
+            total_seconds = sum(float(seg.get("duration", 0.0) or 0.0) for seg in flat_segments)
+            segment_count = len(flat_segments)
+        else:
+            keeps = self._collect_global_keeps()
+            total_seconds = sum(max(0.0, float(seg.end) - float(seg.start)) for seg in keeps)
+            segment_count = len(keeps)
+
+        self.btn_export_advisor.setEnabled(False)
+        self.btn_export_advisor_apply.setEnabled(False)
+        self.btn_export_advisor_apply.setVisible(False)
+        self._last_export_recommendation = None
+        self.export_advisor_result.setText(
+            "Benchmark in progress. Current controls remain unchanged..."
+        )
+        thread = QThread(self)
+        worker = ExportAdvisorWorker(
+            ffmpeg_path=self.ffmpeg_path,
+            input_path=input_paths[0],
+            requested_codec=str(self.codec_combo.currentData() or "auto"),
+            total_seconds=float(total_seconds),
+            segment_count=max(1, int(segment_count)),
+            input_count=max(1, len(input_paths)),
+        )
+        self.export_advisor_thread = thread
+        self.export_advisor_worker = worker
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_export_advisor_done, Qt.QueuedConnection)
+        worker.error.connect(self._on_export_advisor_error, Qt.QueuedConnection)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        worker.error.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(self._on_export_advisor_thread_finished)
+        self._app_log(
+            "export_advisor_start",
+            inputs=len(input_paths),
+            segments=segment_count,
+            total_seconds=float(total_seconds),
+            requested_codec=str(self.codec_combo.currentData() or "auto"),
+        )
+        thread.start()
+
+    @Slot(object)
+    def _on_export_advisor_done(self, recommendation: ExportRecommendation) -> None:
+        self._last_export_recommendation = recommendation
+        current_codec = str(self.codec_combo.currentData() or "auto")
+        current_method = str(self.export_method_combo.currentData() or "auto")
+        current_workers = int(self.parallel_workers_spin.value())
+        current_chunks = int(self.chunk_count_spin.value())
+        measured = ", ".join(
+            f"{item.codec} {item.speed:.2f}x" for item in recommendation.benchmarks
+        )
+        self.export_advisor_result.setText(
+            "Recommended (not applied): "
+            f"codec={recommendation.codec}, method={recommendation.method}, "
+            f"workers={recommendation.workers}, chunks={recommendation.chunks}.\n"
+            f"Measured: {measured}.\n"
+            f"Current: codec={current_codec}, method={current_method}, "
+            f"workers={current_workers or 'Auto'}, chunks={current_chunks or 'Auto'}.\n"
+            f"{recommendation.note}"
+        )
+        self.btn_export_advisor_apply.setVisible(True)
+        self.btn_export_advisor_apply.setEnabled(True)
+        self._app_log(
+            "export_advisor_done",
+            recommended_codec=recommendation.codec,
+            recommended_workers=recommendation.workers,
+            recommended_chunks=recommendation.chunks,
+        )
+
+    @Slot(str)
+    def _on_export_advisor_error(self, message: str) -> None:
+        self._last_export_recommendation = None
+        self.btn_export_advisor_apply.setEnabled(False)
+        self.btn_export_advisor_apply.setVisible(False)
+        self.export_advisor_result.setText(f"Recommendation unavailable: {message}")
+        self._app_log("export_advisor_error", message=str(message))
+
+    @Slot()
+    def _on_export_advisor_thread_finished(self) -> None:
+        self.btn_export_advisor.setEnabled(True)
+        self.export_advisor_thread = None
+        self.export_advisor_worker = None
+
     def export_mp4(self):
         self._app_log("export_request_begin", has_input=bool(self.input_path), has_ffmpeg=bool(self.ffmpeg_path))
         if not self.input_path or not self.ffmpeg_path:
@@ -10659,18 +12127,40 @@ class MainWindow(QMainWindow):
             self._app_log("export_request_rejected", reason="no_input_or_ffmpeg")
             return
 
-        out_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export MP4",
-            str(Path(self.input_path).with_name(f"{Path(self.input_path).stem}.cutted.mp4")),
-            "MP4 (*.mp4)"
-        )
+        settings = self._export_settings_from_ui()
+        self._save_export_settings(settings)
+        requested_settings = settings
+        extension = settings.output_extension()
+        if settings.output_mode == "per_clip":
+            out_path = QFileDialog.getExistingDirectory(
+                self,
+                "Choose folder for exported clips",
+                str(Path(self.input_path).parent),
+            )
+        else:
+            format_filters = {
+                ".mp4": "MP4 (*.mp4)",
+                ".mkv": "Matroska (*.mkv)",
+                ".mov": "QuickTime (*.mov)",
+                ".webm": "WebM (*.webm)",
+                ".m4a": "MPEG-4 Audio (*.m4a)",
+                ".opus": "Opus Audio (*.opus)",
+                ".wav": "Wave Audio (*.wav)",
+            }
+            out_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Export media",
+                str(Path(self.input_path).with_name(f"{Path(self.input_path).stem}.cutted{extension}")),
+                format_filters.get(extension, "Media files (*.*)"),
+            )
         if not out_path:
             self._app_log("export_request_cancelled_save_dialog")
             return
+        if settings.output_mode != "per_clip" and not str(out_path).lower().endswith(extension):
+            out_path = f"{out_path}{extension}"
 
         self._export_abort_requested = False
-        requested_codec = str(self.codec_combo.currentData() or "auto")
+        requested_codec = settings.codec
         codec_fallback_warning = ""
         try:
             codec_selection = resolve_video_codec(self.ffmpeg_path, requested_codec)
@@ -10690,7 +12180,19 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export codec unavailable", str(e))
             self._app_log("export_request_rejected", reason="no_usable_video_encoder", error=str(e))
             return
-        export_method = self.export_method_combo.currentData()
+        if settings.container == "webm" and codec not in {
+            "av1_amf", "av1_nvenc", "av1_qsv", "libaom-av1"
+        }:
+            QMessageBox.critical(
+                self,
+                "WebM requires AV1",
+                "Select an AV1 encoder for WebM export. The current encoder resolved to "
+                f"{codec}.",
+            )
+            self._app_log("export_request_rejected", reason="webm_requires_av1", codec=str(codec))
+            return
+        settings = replace(settings, codec=str(codec)).normalized()
+        export_method = settings.method
         self._app_log(
             "export_start",
             output_path=str(out_path),
@@ -10699,12 +12201,12 @@ class MainWindow(QMainWindow):
         )
 
         # "Auto" -> 0 (let ExportWorker decide based on CPU/GPU)
-        pw = int(self.parallel_workers_spin.value())
-        cc = int(self.chunk_count_spin.value())
+        pw = int(settings.parallel_workers)
+        cc = int(settings.chunk_count)
         if cc < 0:
             cc = 0
 
-        # New audio features defaults (until UI exposes them)
+        # Timeline loudness controls are combined with the delivery audio settings.
         normalize_lufs = bool(self.normalize_lufs.isChecked())
         lufs_target = float(self.lufs_target.value())
         limiter_on = bool(self.limiter.isChecked())
@@ -10720,14 +12222,31 @@ class MainWindow(QMainWindow):
         input_paths, flat_segments = self._build_flatten_export_segments()
         keeps_for_export: list[Segment] = []
 
+        selected_range = settings.output_mode == "selected_range"
+        if selected_range:
+            if settings.range_end <= settings.range_start:
+                QMessageBox.warning(self, "Export", "Set a valid timeline start and end range.")
+                self._app_log("export_request_rejected", reason="invalid_selected_range")
+                return
+            if flat_segments:
+                flat_segments = self._clip_flat_segments_to_range(
+                    flat_segments,
+                    settings.range_start,
+                    settings.range_end,
+                )
+            settings = replace(settings, output_mode="single").normalized()
+
         # Fast-path: if flattened segments map linearly to a single input,
         # convert to legacy keeps (faster, uses preseek).
         if flat_segments:
-            fast_ok, fast_keeps = self._segments_to_legacy_keeps(input_paths, flat_segments)
-            if fast_ok:
-                flat_segments = []
-                input_paths = [input_paths[0]] if input_paths else []
-                keeps_for_export = fast_keeps
+            if settings.output_mode != "per_clip":
+                fast_ok, fast_keeps = self._segments_to_legacy_keeps(input_paths, flat_segments)
+                if fast_ok:
+                    flat_segments = []
+                    input_paths = [input_paths[0]] if input_paths else []
+                    keeps_for_export = fast_keeps
+                else:
+                    keeps_for_export = self.keeps  # unused when segments provided
             else:
                 keeps_for_export = self.keeps  # unused when segments provided
         else:
@@ -10740,6 +12259,13 @@ class MainWindow(QMainWindow):
                 # Single-input projects can still have multiple timeline clips (split/duplicate/delete).
                 # Export must use global timeline keeps, not only active-track keeps.
                 keeps_for_export = self._collect_global_keeps()
+
+        if selected_range and not flat_segments:
+            keeps_for_export = self._clip_keeps_to_output_range(
+                keeps_for_export,
+                self.range_start_spin.value(),
+                self.range_end_spin.value(),
+            )
 
         if not flat_segments and not keeps_for_export:
             QMessageBox.warning(self, "Export", "Nothing to export (keeps is empty).")
@@ -10829,6 +12355,8 @@ class MainWindow(QMainWindow):
                 cut_hq_max_seconds=cut_hq_max_seconds,
                 input_paths=input_paths if len(input_paths) > 0 else None,
                 segments=flat_segments if flat_segments else None,
+                export_settings=settings,
+                requested_export_settings=requested_settings,
             )
             self.ex_worker.moveToThread(self.ex_thread)
 
@@ -10854,6 +12382,61 @@ class MainWindow(QMainWindow):
             self._app_log("export_thread_setup_failed", error=str(e))
             self._on_export_error(f"Export failed to start: {e}")
             return
+
+    @staticmethod
+    def _clip_flat_segments_to_range(
+        segments: list[dict],
+        range_start: float,
+        range_end: float,
+    ) -> list[dict]:
+        start = max(0.0, float(range_start))
+        end = max(start, float(range_end))
+        clipped: list[dict] = []
+        cursor = 0.0
+        for source in segments:
+            seg_start = float(source.get("start", 0.0) or 0.0)
+            seg_end = float(source.get("end", seg_start) or seg_start)
+            left = max(start, seg_start)
+            right = min(end, seg_end)
+            if right <= left + 1e-9:
+                continue
+            head = left - seg_start
+            duration = right - left
+            item = dict(source)
+            for prefix in ("v", "a"):
+                in_key = f"{prefix}_in"
+                out_key = f"{prefix}_out"
+                if item.get(f"{prefix}_idx", None) is not None:
+                    source_in = float(item.get(in_key, 0.0) or 0.0) + head
+                    item[in_key] = source_in
+                    item[out_key] = source_in + duration
+            item["start"] = cursor
+            item["end"] = cursor + duration
+            item["duration"] = duration
+            clipped.append(item)
+            cursor += duration
+        return clipped
+
+    @staticmethod
+    def _clip_keeps_to_output_range(
+        keeps: list[Segment],
+        range_start: float,
+        range_end: float,
+    ) -> list[Segment]:
+        start = max(0.0, float(range_start))
+        end = max(start, float(range_end))
+        clipped: list[Segment] = []
+        cursor = 0.0
+        for keep in keeps:
+            duration = max(0.0, float(keep.end) - float(keep.start))
+            timeline_end = cursor + duration
+            left = max(start, cursor)
+            right = min(end, timeline_end)
+            if right > left + 1e-9:
+                source_start = float(keep.start) + (left - cursor)
+                clipped.append(Segment(source_start, source_start + (right - left)))
+            cursor = timeline_end
+        return clipped
 
     def _segments_to_legacy_keeps(
         self,
@@ -10931,7 +12514,12 @@ class MainWindow(QMainWindow):
 
     def _selected_video_encoder(self, codec_value: str) -> str:
         c = str(codec_value or "").strip().lower()
-        if c in {"h264_amf", "h264_nvenc", "h264_qsv", "hevc_amf", "av1_amf", "libx264"}:
+        if c in {
+            "h264_amf", "h264_nvenc", "h264_qsv",
+            "hevc_amf", "hevc_nvenc", "hevc_qsv",
+            "av1_amf", "av1_nvenc", "av1_qsv",
+            "libx264", "libx265", "libaom-av1",
+        }:
             return c
         return "libx264"
 
@@ -11312,6 +12900,21 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(12000, self._check_export_liveness)
 
+    def _background_qthreads_running(self) -> bool:
+        threads = [getattr(self, "ex_thread", None), getattr(self, "export_advisor_thread", None)]
+        for name in ("_analysis_threads", "_ai_threads"):
+            threads.extend(getattr(self, name, {}).values())
+        for name in ("_orphan_analysis_threads", "_orphan_ai_threads"):
+            threads.extend(getattr(self, name, []))
+        for thread in threads:
+            try:
+                if thread is not None and thread.isRunning():
+                    return True
+            except RuntimeError:
+                # Qt may already have deleted a finished thread.
+                continue
+        return False
+
     def _abort_export(self, wait_ms: int = 1500) -> None:
         self._app_log("export_abort_requested")
         try:
@@ -11343,5 +12946,3 @@ class MainWindow(QMainWindow):
                     self._set_export_processing(False)
         except Exception:
             pass
-
-

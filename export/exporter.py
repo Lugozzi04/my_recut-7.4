@@ -4,12 +4,14 @@ import threading
 import time
 from collections.abc import Callable
 import shutil
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextvars import copy_context
 from pathlib import Path
 import json
 import hashlib
 import bisect
 import math
+from dataclasses import replace
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -19,14 +21,16 @@ from utils.ffmpeg import (
     has_video_stream,
     ffprobe_keyframes,
     ffprobe_duration_seconds,
+    run_cmd,
     scan_splice_safe_pts,
 )
-from utils.subprocess_utils import run_no_window
+from utils.ffconcat import quote_ffconcat_path
 from ui.render_filters import (
     build_filter_complex,
     build_filter_complex_multi,
     build_filter_complex_video_only,
 )
+from export.settings import ExportSettings, RESOLUTION_HEIGHTS
 from .runtime_utils import (
     ExportCancelled as _ExportCancelled,
     SmartHybridFallback as _SmartHybridFallback,
@@ -66,6 +70,8 @@ class ExportWorker(ExportProcessMixin, QObject):
         input_paths: list[str] | None = None,
         segments: list[dict] | None = None,
         smart_render_pad: float = 0.5,
+        export_settings: ExportSettings | dict | None = None,
+        requested_export_settings: ExportSettings | dict | None = None,
     ):
         super().__init__()
         self.ffmpeg_path = ffmpeg_path
@@ -75,13 +81,36 @@ class ExportWorker(ExportProcessMixin, QObject):
             self.input_paths = [str(p) for p in input_paths if p]
         self.output_path = output_path
         self.keeps = keeps
-        self.codec = codec
-        self.use_hwaccel = use_hwaccel
-        self.export_method = export_method
+        if export_settings is None:
+            settings = replace(
+                ExportSettings.defaults(),
+                codec=str(codec),
+                method=str(export_method),
+                parallel_workers=max(0, int(parallel_workers or 0)),
+                chunk_count=max(0, int(chunk_count or 0)),
+                hwaccel_decode=bool(use_hwaccel),
+            ).normalized()
+        elif isinstance(export_settings, ExportSettings):
+            settings = export_settings.normalized()
+        else:
+            settings = ExportSettings.from_mapping(export_settings)
+        self.export_settings = settings
+        if requested_export_settings is None:
+            requested_settings = settings
+        elif isinstance(requested_export_settings, ExportSettings):
+            requested_settings = requested_export_settings.normalized()
+        else:
+            requested_settings = ExportSettings.from_mapping(requested_export_settings)
+        self.requested_export_settings = requested_settings
+        self.codec = str(settings.codec)
+        self.use_hwaccel = bool(settings.hwaccel_decode)
+        self.export_method = str(settings.method)
+        self.output_container = str(settings.container)
+        self.output_mode = str(settings.output_mode)
 
         # clamp di sicurezza (ma alto): l'utente può spingere, noi evitiamo numeri assurdi
         try:
-            pw = int(parallel_workers)
+            pw = int(settings.parallel_workers)
         except Exception:
             pw = 0
         self._parallel_auto = False
@@ -91,7 +120,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         self.parallel_workers = max(1, min(pw, 32))
 
         try:
-            cc = int(chunk_count)
+            cc = int(settings.chunk_count)
         except Exception:
             cc = 0
         self.chunk_count = max(0, min(cc, 200))
@@ -142,6 +171,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         self._chunk_cache_max_bytes: int | None = None
         self._input_sig_cache: dict[str, dict] = {}
         self._ffmpeg_version_cache: str | None = None
+        self._video_signature_cache: dict[str, dict] = {}
         self._perf_stats_lock = threading.Lock()
         self._render_media_seconds: float = 0.0
         self._render_wall_seconds: float = 0.0
@@ -149,6 +179,91 @@ class ExportWorker(ExportProcessMixin, QObject):
         self._reuse_chunk_media_seconds: float = 0.0
         self._reuse_hybrid_hits: int = 0
         self._reuse_hybrid_media_seconds: float = 0.0
+        self._active_child_worker: ExportWorker | None = None
+
+    def cancel(self) -> None:
+        super().cancel()
+        child = self._active_child_worker
+        if child is not None:
+            child.cancel()
+
+    def _run_per_clip_exports(self) -> None:
+        root = Path(self.output_path)
+        root.mkdir(parents=True, exist_ok=True)
+        segment_items = [[dict(item)] for item in self.segments]
+        keep_items = [[item] for item in self.keeps]
+        jobs: list[tuple[list[Segment], list[dict]]] = []
+        if segment_items:
+            jobs = [([], item) for item in segment_items]
+        else:
+            jobs = [(item, []) for item in keep_items]
+        if not jobs:
+            raise RuntimeError("No clips are available for per-clip export.")
+
+        child_settings = replace(
+            self.export_settings,
+            preset="custom",
+            output_mode="single",
+        ).normalized()
+        extension = child_settings.output_extension()
+        stem = Path(self.input_path).stem or "export"
+        self._log(f"per_clip_export start clips={len(jobs)} folder={root}")
+
+        for index, (keeps, segments) in enumerate(jobs):
+            self._check_cancelled()
+            target = root / f"{stem}_clip_{index + 1:03d}{extension}"
+            child = ExportWorker(
+                ffmpeg_path=self.ffmpeg_path,
+                input_path=self.input_path,
+                output_path=str(target),
+                keeps=keeps,
+                codec=self.codec,
+                use_hwaccel=self.use_hwaccel,
+                export_method=child_settings.method,
+                parallel_workers=child_settings.parallel_workers,
+                chunk_count=child_settings.chunk_count,
+                audio_gain_db=self.audio_gain_db,
+                normalize_lufs=self.normalize_lufs,
+                lufs_target=self.lufs_target,
+                lufs_true_peak=self.lufs_true_peak,
+                lufs_lra=self.lufs_lra,
+                apply_limiter=self.apply_limiter,
+                limiter_limit=self.limiter_limit,
+                cut_hq_enabled=self.cut_hq_enabled,
+                cut_hq_max_seconds=self.cut_hq_max_seconds,
+                input_paths=self.input_paths,
+                segments=segments,
+                smart_render_pad=self.smart_render_pad,
+                export_settings=child_settings,
+                requested_export_settings=child_settings,
+            )
+            child.debug = self.debug
+            errors: list[str] = []
+            child.error.connect(errors.append)
+            child.detail.connect(
+                lambda message, clip=index + 1: self._log(f"clip_{clip:03d} {message}")
+            )
+
+            def _child_progress(percent: int, _text: str, clip: int = index) -> None:
+                overall = int(((clip + (max(0, min(100, percent)) / 100.0)) / len(jobs)) * 100.0)
+                self.progress.emit(overall, f"Clip {clip + 1}/{len(jobs)} {percent}%")
+
+            child.progress.connect(_child_progress)
+            self._active_child_worker = child
+            child.run()
+            self._active_child_worker = None
+            if errors:
+                raise RuntimeError(errors[-1])
+            if not target.is_file():
+                raise RuntimeError(f"Clip export did not create {target.name}")
+            self.progress.emit(
+                int(((index + 1) / len(jobs)) * 100.0),
+                f"Clip {index + 1}/{len(jobs)} complete",
+            )
+
+        self._export_method_used = "per_clip"
+        self._log(f"per_clip_export done clips={len(jobs)} folder={root}")
+        self._finish_success()
 
     @staticmethod
     def _chunk_cache_dir_static() -> Path:
@@ -207,6 +322,116 @@ class ExportWorker(ExportProcessMixin, QObject):
         guess = max(1, min(8, int(math.ceil(budget / 4.0))))
         return self._cap_parallel_workers(guess, context="auto_default")
 
+    def _adaptive_worker_decision(
+        self,
+        current_workers: int,
+        max_workers: int,
+        recent_speeds: list[float],
+        remaining_jobs: int,
+        *,
+        available_ram_gb: float | None = None,
+        storage_tier: str | None = None,
+    ) -> tuple[int, str]:
+        current = max(1, int(current_workers))
+        cap = max(current, int(max_workers))
+        if remaining_jobs <= 0 or len(recent_speeds) < 2:
+            return current, "insufficient_samples"
+        ram = self._available_ram_gb() if available_ram_gb is None else available_ram_gb
+        tier = storage_tier or self._storage_tier()
+        if ram is not None and ram < 3.0 and current > 1:
+            return current - 1, "low_available_ram"
+        speeds = sorted(float(value) for value in recent_speeds[-8:] if value > 0.0)
+        if not speeds:
+            return current, "no_valid_samples"
+        middle = len(speeds) // 2
+        median_speed = speeds[middle] if len(speeds) % 2 else (speeds[middle - 1] + speeds[middle]) / 2.0
+        if median_speed < 0.50 and current > 1:
+            return current - 1, f"slow_chunks_{median_speed:.2f}x"
+        if median_speed >= 1.50 and tier != "hdd" and current < cap:
+            return current + 1, f"fast_chunks_{median_speed:.2f}x"
+        return current, f"stable_{median_speed:.2f}x"
+
+    def _execute_parallel_jobs(
+        self,
+        jobs: list[dict],
+        run_job: Callable[[dict], dict],
+        initial_workers: int,
+        media_seconds: Callable[[dict], float],
+        on_result: Callable[[dict], None],
+        label: str,
+    ) -> None:
+        if not jobs:
+            return
+        adaptive = bool(
+            self._parallel_auto
+            and _env("AUTO_CUTTER_ADAPTIVE_SCHEDULER", "1").strip().lower()
+            not in ("0", "false", "no", "off")
+        )
+        initial = max(1, min(int(initial_workers), len(jobs)))
+        pool_cap = initial
+        if adaptive:
+            pool_cap = min(len(jobs), self._cap_parallel_workers(initial + 2, context=f"{label}_adaptive"))
+        current_limit = initial
+        pending = iter(jobs)
+        active: dict = {}
+        speeds: list[float] = []
+        completed = 0
+        last_adjust_completed = 0
+        self._log(
+            f"adaptive_scheduler label={label} enabled={'yes' if adaptive else 'no'} "
+            f"initial={initial} cap={pool_cap} jobs={len(jobs)}"
+        )
+
+        with ThreadPoolExecutor(max_workers=pool_cap) as executor:
+            def _fill() -> None:
+                while len(active) < current_limit:
+                    try:
+                        job = next(pending)
+                    except StopIteration:
+                        break
+                    active[executor.submit(copy_context().run, run_job, job)] = job
+
+            _fill()
+            try:
+                while active:
+                    done, _pending_futures = wait(set(active), return_when=FIRST_COMPLETED)
+                    for future in done:
+                        job = active.pop(future)
+                        try:
+                            result = future.result()
+                        except Exception:
+                            self._terminate_all_procs()
+                            for other in active:
+                                other.cancel()
+                            raise
+                        elapsed = max(1e-6, float(result.get("elapsed_seconds", 0.0) or 0.0))
+                        media = max(0.0, float(media_seconds(job) or 0.0))
+                        if media > 0.0:
+                            speeds.append(media / elapsed)
+                        completed += 1
+                        on_result(result)
+
+                    remaining = max(0, len(jobs) - completed - len(active))
+                    adjust_every = max(2, current_limit)
+                    if adaptive and completed - last_adjust_completed >= adjust_every:
+                        new_limit, reason = self._adaptive_worker_decision(
+                            current_limit,
+                            pool_cap,
+                            speeds,
+                            remaining + len(active),
+                        )
+                        if new_limit != current_limit:
+                            self._log(
+                                f"adaptive_scheduler_adjust label={label} from={current_limit} "
+                                f"to={new_limit} reason={reason} completed={completed}"
+                            )
+                            current_limit = new_limit
+                        last_adjust_completed = completed
+                    _fill()
+            finally:
+                for future in active:
+                    future.cancel()
+
     def _log(self, msg: str) -> None:
         if self.debug:
             print(f"[export] {msg}", flush=True)
@@ -220,6 +445,70 @@ class ExportWorker(ExportProcessMixin, QObject):
             return " ".join([f"\"{c}\"" if " " in c or "\t" in c else c for c in cmd])
         except Exception:
             return str(cmd)
+
+    def _log_effective_export_configuration(self, source_fps: float = 0.0) -> None:
+        requested = self.requested_export_settings.to_mapping()
+        effective = self.export_settings.to_mapping()
+        self._log("export_config_begin")
+        self._log(
+            "export_config requested="
+            + json.dumps(requested, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        )
+        self._log(
+            "export_config effective="
+            + json.dumps(effective, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        )
+
+        effective_fps = self._effective_force_fps(source_fps)
+        hw_args = self._hwaccel_args()
+        input_args = [*hw_args, "-thread_queue_size", str(self._input_thread_queue_size())]
+        thread_args = self._ffmpeg_thread_args()
+        video_args = [] if self.output_mode == "audio_only" else self._video_args()
+        cut_hq_enabled, _cut_hq_max = self._cut_hq_policy()
+        cut_hq_video_args = (
+            self._video_args("cut_hq")
+            if cut_hq_enabled and self.output_mode != "audio_only"
+            else []
+        )
+        audio_args = [] if self.output_mode == "video_only" else self._audio_output_args()
+        timing_args = (
+            ["-fps_mode", "cfr", "-r", f"{effective_fps:.3f}"]
+            if self.output_mode != "audio_only" and effective_fps > 1.0
+            else (["-fps_mode", "vfr"] if self.export_settings.fps_mode == "vfr" else [])
+        )
+        mux_args = self._output_mux_args(self.output_path)
+        video_filter = self._video_post_filter() or "(none)"
+        delivery_audio_filter = self._audio_post_filter() or "(none)"
+        timeline_audio_filter = self._build_audio_filter_chain(include_legacy_gain_limiter=True) or "(none)"
+        compatibility = list(self.export_settings.compatibility_messages())
+
+        self._log(
+            f"export_config runtime codec={self.codec} method={self.export_method} "
+            f"container={self.output_container} output_mode={self.output_mode} "
+            f"workers={self.parallel_workers} threads_per={self._ffmpeg_threads_override or 0} "
+            f"chunks={self.chunk_count} hw_decode={'on' if hw_args else 'off'} "
+            f"source_fps={float(source_fps or 0.0):.3f} effective_fps={effective_fps:.3f} "
+            f"chunk_cache={'on' if self._chunk_cache_enabled() else 'off'}"
+        )
+        self._log(f"export_flags input={self._fmt_cmd(input_args)}")
+        self._log(f"export_flags threads={self._fmt_cmd(thread_args)}")
+        self._log(f"export_flags video={self._fmt_cmd(video_args) if video_args else '(disabled)'}")
+        self._log(
+            "export_flags video_cut_hq="
+            + (self._fmt_cmd(cut_hq_video_args) if cut_hq_video_args else "(disabled)")
+        )
+        self._log(f"export_flags audio={self._fmt_cmd(audio_args) if audio_args else '(disabled)'}")
+        self._log(f"export_flags timing={self._fmt_cmd(timing_args) if timing_args else '(none)'}")
+        self._log(f"export_flags mux={self._fmt_cmd(mux_args)}")
+        self._log(
+            f"export_filters video={video_filter} delivery_audio={delivery_audio_filter} "
+            f"timeline_audio={timeline_audio_filter}"
+        )
+        self._log(
+            "export_config compatibility="
+            + json.dumps(compatibility, ensure_ascii=True, separators=(",", ":"))
+        )
+        self._log("export_config_end")
 
     def _uses_gpu_encoder(self) -> bool:
         c = (self.codec or "").lower()
@@ -258,22 +547,22 @@ class ExportWorker(ExportProcessMixin, QObject):
         if not (self.use_hwaccel or self._uses_gpu_encoder() or self._hwaccel_forced is True):
             return []
         if os.name == "nt":
-            return ["-hwaccel", "d3d11va", "-hwaccel_output_format", "d3d11"]
+            # Keep decoded frames in system memory for compatibility with CPU
+            # trim/concat filters and software encoders.
+            return ["-hwaccel", "d3d11va"]
         return ["-hwaccel", "auto"]
 
     def _hwaccel_args_for_filtergraph(self) -> list[str]:
         """
-        Decode HW with d3d11va + CPU filtergraph is fragile on Windows and often stalls/fails.
-        For filter_complex paths we prefer stable CPU decode.
+        Hardware decode with an automatic transfer to system-memory frames is
+        compatible with CPU filtergraphs. A failed driver path is retried in software.
         """
         args = self._hwaccel_args()
         if not args:
             return []
-        if os.name == "nt":
-            if not self._hwaccel_filtergraph_logged:
-                self._hwaccel_filtergraph_logged = True
-                self._log("hwaccel_filtergraph_disabled reason=d3d11va_with_filtergraph")
-            return []
+        if os.name == "nt" and not self._hwaccel_filtergraph_logged:
+            self._hwaccel_filtergraph_logged = True
+            self._log("hwaccel_filtergraph_enabled mode=d3d11va_system_memory")
         return args
 
     def _cap_parallel_workers(self, workers: int, context: str = "") -> int:
@@ -598,11 +887,9 @@ class ExportWorker(ExportProcessMixin, QObject):
         if self._ffmpeg_version_cache is not None:
             return self._ffmpeg_version_cache
         try:
-            p = run_no_window(
+            p = run_cmd(
                 [self.ffmpeg_path, "-version"],
-                capture_output=True,
-                text=True,
-                timeout=3.0,
+                timeout_s=3.0,
             )
             line = ""
             if p.returncode == 0:
@@ -728,7 +1015,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             else:
                 audio_mode = "plain"
         payload = {
-            "v": 5,
+            "v": 6,
             "kind": "keeps_chunk",
             "source": self._source_signature(src),
             "keeps": [[self._snap_tick(s.start, q), self._snap_tick(s.end, q)] for s in keeps],
@@ -740,6 +1027,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             "video_only": bool(video_only),
             "audio_mode": audio_mode,
             "audio_chain": str(audio_chain),
+            "export_settings": self.export_settings.to_mapping(),
             "ffmpeg": self._ffmpeg_version_tag(),
         }
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
@@ -753,7 +1041,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         apply_audio_filters: bool,
     ) -> str:
         q = self._time_quantum(force_fps)
-        seg_rows: list[list[int]] = []
+        seg_rows: list[list[object]] = []
         for s in segs:
             try:
                 v_idx = int(s.get("v_idx", -1))
@@ -771,10 +1059,20 @@ class ExportWorker(ExportProcessMixin, QObject):
                 dur = float(s.get("duration", 0.0) or 0.0)
             except Exception:
                 continue
+            v_source = (
+                self._source_signature(self.input_paths[v_idx])
+                if 0 <= v_idx < len(self.input_paths)
+                else {"path": "", "size": 0, "mtime_ns": 0}
+            )
+            a_source = (
+                self._source_signature(self.input_paths[a_idx])
+                if 0 <= a_idx < len(self.input_paths)
+                else {"path": "", "size": 0, "mtime_ns": 0}
+            )
             seg_rows.append(
                 [
-                    v_idx,
-                    a_idx,
+                    v_source,
+                    a_source,
                     self._snap_tick(v_in, q),
                     self._snap_tick(v_out, q),
                     self._snap_tick(a_in, q),
@@ -785,9 +1083,8 @@ class ExportWorker(ExportProcessMixin, QObject):
 
         audio_chain = self._build_audio_filter_chain(include_legacy_gain_limiter=True) if apply_audio_filters else ""
         payload = {
-            "v": 5,
+            "v": 7,
             "kind": "segments_chunk",
-            "sources": [self._source_signature(p) for p in self.input_paths],
             "segments": seg_rows,
             "codec": str(self.codec),
             "video_args": self._video_args(),
@@ -796,6 +1093,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             "container": str(container),
             "audio_filters": bool(apply_audio_filters),
             "audio_chain": str(audio_chain),
+            "export_settings": self.export_settings.to_mapping(),
             "ffmpeg": self._ffmpeg_version_tag(),
         }
         raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
@@ -961,6 +1259,75 @@ class ExportWorker(ExportProcessMixin, QObject):
             i += 1
         return out
 
+    def _run_ffmpeg_with_hw_fallback(
+        self,
+        cmd: list[str],
+        context: str,
+    ) -> tuple[int, str, str]:
+        rc, stdout, stderr = self._run_ffmpeg(cmd)
+        if rc == 0 or "-hwaccel" not in cmd:
+            return rc, stdout, stderr
+        self._log(f"hwaccel_retry_software context={context}")
+        self._disable_hwaccel_for_export(context)
+        return self._run_ffmpeg(self._strip_hwaccel_args(cmd))
+
+    def _run_ffmpeg_progress_with_hw_fallback(
+        self,
+        cmd: list[str],
+        on_progress: Callable[[float], None],
+        context: str,
+    ) -> tuple[int, str]:
+        passlog = ""
+        if "-pass" in cmd:
+            try:
+                pass_idx = cmd.index("-pass")
+                if cmd[pass_idx + 1] == "2":
+                    first_cmd = list(cmd)
+                    first_cmd[pass_idx + 1] = "1"
+                    target = first_cmd[-1]
+                    first_cmd[-1:] = ["-an", "-f", "null", os.devnull]
+                    if "-passlogfile" in first_cmd:
+                        log_idx = first_cmd.index("-passlogfile")
+                        passlog = str(first_cmd[log_idx + 1])
+                    self._log(f"two_pass_start context={context} pass=1 target={target}")
+                    first_rc, _first_out, first_err = self._run_ffmpeg_with_hw_fallback(
+                        first_cmd,
+                        context=f"{context}_pass1",
+                    )
+                    if first_rc != 0:
+                        self._cleanup_two_pass_logs(passlog)
+                        return first_rc, first_err
+                    self._log(f"two_pass_start context={context} pass=2 target={target}")
+                    if self._hwaccel_forced is False:
+                        cmd = self._strip_hwaccel_args(cmd)
+            except (IndexError, ValueError):
+                pass
+
+        rc, stderr = self._run_ffmpeg_progress(cmd, on_progress=on_progress)
+        if rc == 0 or "-hwaccel" not in cmd:
+            self._cleanup_two_pass_logs(passlog)
+            return rc, stderr
+        self._log(f"hwaccel_retry_software context={context}")
+        self._disable_hwaccel_for_export(context)
+        result = self._run_ffmpeg_progress(
+            self._strip_hwaccel_args(cmd),
+            on_progress=on_progress,
+        )
+        self._cleanup_two_pass_logs(passlog)
+        return result
+
+    @staticmethod
+    def _cleanup_two_pass_logs(passlog: str) -> None:
+        if not passlog:
+            return
+        try:
+            path = Path(passlog)
+            for candidate in path.parent.glob(f"{path.name}*"):
+                if candidate.is_file():
+                    candidate.unlink(missing_ok=True)
+        except Exception:
+            pass
+
     def _disable_hwaccel_for_export(self, reason: str = "") -> None:
         with self._hwaccel_state_lock:
             self._hwaccel_forced = False
@@ -1023,7 +1390,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         def _run_test(cmd: list[str]) -> float | None:
             try:
                 t0 = time.perf_counter()
-                p = run_no_window(cmd, capture_output=True, text=True)
+                p = run_cmd(cmd)
                 if p.returncode != 0:
                     return None
                 return max(1e-6, time.perf_counter() - t0)
@@ -1197,7 +1564,14 @@ class ExportWorker(ExportProcessMixin, QObject):
                 return False
             dur = float(metrics.get("effective_duration", 0.0) or 0.0)
             has_video = bool(metrics.get("has_video", False))
-            return dur > 0.5 and has_video
+            has_audio = bool(metrics.get("has_audio", False))
+            # Very short clips are valid deliverables. Reject only empty/truncated
+            # outputs instead of imposing the old half-second minimum.
+            if self.output_mode == "audio_only":
+                return dur > 0.02 and has_audio
+            if self.output_mode == "video_only":
+                return dur > 0.02 and has_video
+            return dur > 0.02 and has_video
         except Exception:
             return False
 
@@ -1230,7 +1604,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             "-of", "json",
             path,
         ]
-        p = run_no_window(cmd, capture_output=True, text=True)
+        p = run_cmd(cmd)
         if p.returncode != 0 or not p.stdout:
             return {}
 
@@ -1242,6 +1616,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         format_start = _f(fmt.get("start_time"))
 
         has_video = False
+        has_audio = False
         max_stream_duration = 0.0
         starts: list[float] = []
         ends: list[float] = []
@@ -1252,6 +1627,8 @@ class ExportWorker(ExportProcessMixin, QObject):
             ctype = str(s.get("codec_type", "") or "")
             if ctype == "video":
                 has_video = True
+            elif ctype == "audio":
+                has_audio = True
             if ctype not in ("video", "audio"):
                 continue
             sd = _f(s.get("duration"))
@@ -1282,6 +1659,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             "min_stream_start": min_stream_start,
             "max_stream_end": max_stream_end,
             "has_video": bool(has_video),
+            "has_audio": bool(has_audio),
         }
 
     @staticmethod
@@ -1328,7 +1706,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "-of", "json",
                 p_abs,
             ]
-            p = run_no_window(cmd, capture_output=True, text=True)
+            p = run_cmd(cmd)
             if p.returncode != 0:
                 self._log(f"ts_debug[{label}] ffprobe_failed rc={p.returncode}")
                 return
@@ -1792,12 +2170,19 @@ class ExportWorker(ExportProcessMixin, QObject):
         item_count: int,
         total_output_s: float,
         input_duration_s: float | None,
+        requested_method: str | None = None,
     ) -> tuple[bool, str]:
         mode = self._max_conservative_fix_mode()
         if mode == "off":
             return False, "env_off"
         if mode == "force":
             return True, "env_force"
+
+        method = str(requested_method or self.export_method or "").strip().lower()
+        if method != "filter_concat":
+            # Auto and explicitly scalable methods must reach their own planner.
+            # The old ordering silently turned Auto into a serial filter graph.
+            return False, f"adaptive_respect_method_{method or 'unknown'}"
 
         items = max(0, int(item_count or 0))
         total = max(0.0, float(total_output_s or 0.0))
@@ -1817,6 +2202,203 @@ class ExportWorker(ExportProcessMixin, QObject):
 
         return True, "env_on"
 
+    def _effective_force_fps(self, source_fps: float) -> float:
+        requested = self.export_settings.requested_fps()
+        if requested > 1.0:
+            return requested
+        if self.export_settings.fps_mode == "vfr":
+            return 0.0
+        return max(0.0, float(source_fps or 0.0))
+
+    def _output_pixel_format(self) -> str:
+        depth = self.export_settings.pixel_depth
+        h264 = self.codec in {"h264_amf", "h264_nvenc", "h264_qsv", "libx264"}
+        if depth == "source":
+            depth = "8"
+            if not h264:
+                try:
+                    source = self.input_paths[0] if self.input_paths else self.input_path
+                    pix_fmt = str(self._probe_smart_media_signature(source).get("pix_fmt", ""))
+                    if "10" in pix_fmt or pix_fmt.startswith("p010"):
+                        depth = "10"
+                except Exception:
+                    depth = "8"
+        if depth == "10" and not h264:
+            return "p010le" if self._uses_gpu_encoder() else "yuv420p10le"
+        return "nv12" if self.codec.endswith("_qsv") else "yuv420p"
+
+    def _color_output_args(self) -> list[str]:
+        mode = self.export_settings.color_mode
+        if mode == "rec709":
+            return [
+                "-color_primaries", "bt709",
+                "-color_trc", "bt709",
+                "-colorspace", "bt709",
+                "-color_range", "tv",
+            ]
+        if mode == "rec2020":
+            return [
+                "-color_primaries", "bt2020",
+                "-color_trc", "bt2020-10",
+                "-colorspace", "bt2020nc",
+                "-color_range", "tv",
+            ]
+        try:
+            source = self.input_paths[0] if self.input_paths else self.input_path
+            signature = self._probe_smart_media_signature(source)
+        except Exception:
+            signature = {}
+        args: list[str] = []
+        for key, option in (
+            ("color_primaries", "-color_primaries"),
+            ("color_transfer", "-color_trc"),
+            ("color_space", "-colorspace"),
+            ("color_range", "-color_range"),
+        ):
+            value = str(signature.get(key) or "").strip().lower()
+            if value and value not in {"unknown", "unspecified", "reserved"}:
+                args += [option, value]
+        return args
+
+    def _target_video_bitrate_kbps(self) -> int:
+        settings = self.export_settings
+        if settings.rate_control == "bitrate":
+            return max(100, int(round(settings.video_bitrate_mbps * 1000.0)))
+        duration = float(self._summary_segments_total or self._summary_keeps_total or 0.0)
+        if settings.rate_control == "target_size" and duration > 0.1:
+            total_kbits = float(settings.target_size_mb) * 8000.0
+            audio_kbps = 0.0 if self.output_mode == "video_only" else float(settings.audio_bitrate_kbps)
+            return max(100, int((total_kbits / duration) - audio_kbps))
+        return max(100, int(round(settings.video_bitrate_mbps * 1000.0)))
+
+    def _video_post_filter(self) -> str:
+        settings = self.export_settings
+        filters: list[str] = []
+        height = int(RESOLUTION_HEIGHTS.get(settings.resolution, 0) or 0)
+        if height > 0:
+            if settings.aspect == "source":
+                target = int(height)
+                if settings.no_upscale:
+                    short_w = f"trunc(min(iw,{target})/2)*2"
+                    short_h = f"trunc(min(ih,{target})/2)*2"
+                else:
+                    short_w = str(target)
+                    short_h = str(target)
+                filters.append(
+                    "scale="
+                    f"w='if(gte(iw,ih),-2,{short_w})':"
+                    f"h='if(gte(iw,ih),{short_h},-2)':force_divisible_by=2"
+                )
+            else:
+                if settings.aspect == "vertical":
+                    target_w, target_h = height, int(round(height * 16.0 / 9.0))
+                elif settings.aspect == "square":
+                    target_w, target_h = height, height
+                else:
+                    target_w, target_h = int(round(height * 16.0 / 9.0)), height
+                target_w -= target_w % 2
+                target_h -= target_h % 2
+                scale_w = f"min(iw,{target_w})" if settings.no_upscale else str(target_w)
+                scale_h = f"min(ih,{target_h})" if settings.no_upscale else str(target_h)
+                filters.append(
+                    f"scale=w='{scale_w}':h='{scale_h}':"
+                    "force_original_aspect_ratio=decrease:force_divisible_by=2"
+                )
+                filters.append(
+                    f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:color=black"
+                )
+        if settings.color_mode == "rec709":
+            filters.append(
+                "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"
+            )
+        elif settings.color_mode == "rec2020":
+            filters.append(
+                "setparams=color_primaries=bt2020:color_trc=bt2020-10:"
+                "colorspace=bt2020nc:range=tv"
+            )
+        return ",".join(filters)
+
+    def _audio_post_filter(self) -> str:
+        filters: list[str] = []
+        if self.export_settings.sample_rate != "source":
+            filters.append(f"aresample={self.export_settings.sample_rate}")
+        if self.export_settings.channels == "mono":
+            filters.append("aformat=channel_layouts=mono")
+        elif self.export_settings.channels == "stereo":
+            filters.append("aformat=channel_layouts=stereo")
+        return ",".join(filters)
+
+    def _decorate_output_filtergraph(
+        self,
+        filt: str,
+        video_label: str | None,
+        audio_label: str | None,
+        *,
+        force_video_only: bool = False,
+    ) -> tuple[str, str | None, str | None]:
+        text = filt.rstrip().rstrip(";")
+        v_label = video_label
+        a_label = audio_label
+        video_filter = self._video_post_filter()
+        if v_label and video_filter:
+            text += f";[{v_label}]{video_filter}[outv_export]"
+            v_label = "outv_export"
+        audio_filter = self._audio_post_filter()
+        if a_label and audio_filter:
+            text += f";[{a_label}]{audio_filter}[outa_export]"
+            a_label = "outa_export"
+
+        media_mode = "video_only" if force_video_only else self.output_mode
+        if media_mode == "audio_only" and v_label:
+            text += f";[{v_label}]nullsink"
+            v_label = None
+        elif media_mode == "video_only" and a_label:
+            text += f";[{a_label}]anullsink"
+            a_label = None
+        return text, v_label, a_label
+
+    def _audio_output_args(self) -> list[str]:
+        settings = self.export_settings
+        codec = settings.audio_codec
+        if self.output_container == "webm":
+            codec = "opus"
+        if codec in {"auto", "copy"}:
+            codec = "aac"
+        if codec == "pcm_s24le":
+            args = ["-c:a", "pcm_s24le"]
+        elif codec == "opus":
+            args = ["-c:a", "libopus", "-b:a", f"{settings.audio_bitrate_kbps}k"]
+        else:
+            args = ["-c:a", "aac", "-b:a", f"{settings.audio_bitrate_kbps}k"]
+        if settings.sample_rate != "source":
+            args += ["-ar", settings.sample_rate]
+        if settings.channels == "mono":
+            args += ["-ac", "1"]
+        elif settings.channels == "stereo":
+            args += ["-ac", "2"]
+        return args
+
+    def _output_mux_args(self, target: str, container: str | None = None) -> list[str]:
+        actual = str(container or self.output_container or "mp4")
+        if self.output_mode == "audio_only":
+            if self.export_settings.audio_codec == "pcm_s24le":
+                return ["-f", "wav", target]
+            if self.export_settings.audio_codec == "opus":
+                return ["-f", "ogg", target]
+            return ["-movflags", "+faststart", target]
+        if actual == "ts":
+            return [
+                "-avoid_negative_ts", "make_zero",
+                "-max_interleave_delta", "0",
+                "-muxpreload", "0",
+                "-muxdelay", "0",
+                "-f", "mpegts",
+                target,
+            ]
+        if actual in {"mp4", "mov"}:
+            return ["-movflags", "+faststart", "-use_editlist", "0", target]
+        return [target]
+
     def _use_cut_hq_for_reencode(self, duration: float) -> bool:
         enabled, max_sec = self._cut_hq_policy()
         if not enabled:
@@ -1826,89 +2408,117 @@ class ExportWorker(ExportProcessMixin, QObject):
         return True
 
     def _video_args(self, preset: str = "balanced") -> list[str]:
-        """
-        Profilo HIGH QUALITY (AMF 'quality') con impostazioni che aumentano throughput senza
-        abbassare la qualità in modo evidente:
-          - GOP più lungo (meno I-frame)
-          - B-frames disabilitati (più veloce e più stabile vicino ai tagli)
-        """
         preset = (preset or "balanced").strip().lower()
         is_cut_hq = preset == "cut_hq"
+        quality = int(self.export_settings.quality_value())
+        if is_cut_hq:
+            quality = max(0, quality - 2)
+        pix_fmt = self._output_pixel_format()
+        pixel_and_color_args = ["-pix_fmt", pix_fmt, *self._color_output_args()]
+        rate_control = self.export_settings.rate_control
+        bitrate = self._target_video_bitrate_kbps()
+        maxrate = max(bitrate, int(round(bitrate * 1.30)))
+        bufsize = max(bitrate, int(round(bitrate * 2.0)))
+
+        def bitrate_args(mode: str = "") -> list[str]:
+            args: list[str] = []
+            if mode:
+                args += ["-rc", mode]
+            args += [
+                "-b:v", f"{bitrate}k",
+                "-maxrate", f"{maxrate}k",
+                "-bufsize", f"{bufsize}k",
+            ]
+            return args
 
         if self.codec == "h264_amf":
-            qp_i, qp_p, qp_b = (12, 14, 16) if is_cut_hq else (16, 18, 20)
+            qp_i, qp_p, qp_b = max(0, quality - 2), quality, min(51, quality + 2)
             return [
                 "-c:v", "h264_amf",
                 "-quality", ("quality" if is_cut_hq else "balanced"),
-                "-rc", "cqp",
-                "-qp_i", str(qp_i),
-                "-qp_p", str(qp_p),
-                "-qp_b", str(qp_b),
+                *(bitrate_args("vbr_peak") if rate_control != "quality" else [
+                    "-rc", "cqp", "-qp_i", str(qp_i), "-qp_p", str(qp_p),
+                    "-qp_b", str(qp_b),
+                ]),
                 "-g", "240",
                 "-bf", "0",
-                "-pix_fmt", "yuv420p",
+                *pixel_and_color_args,
             ]
 
         if self.codec == "hevc_amf":
-            qp_i, qp_p, qp_b = (14, 16, 18) if is_cut_hq else (18, 20, 22)
+            qp_i, qp_p, qp_b = max(0, quality - 2), quality, min(51, quality + 2)
             return [
                 "-c:v", "hevc_amf",
                 "-quality", ("quality" if is_cut_hq else "balanced"),
-                "-rc", "cqp",
-                "-qp_i", str(qp_i),
-                "-qp_p", str(qp_p),
-                "-qp_b", str(qp_b),
+                *(bitrate_args("vbr_peak") if rate_control != "quality" else [
+                    "-rc", "cqp", "-qp_i", str(qp_i), "-qp_p", str(qp_p),
+                    "-qp_b", str(qp_b),
+                ]),
                 "-g", "240",
                 "-bf", "0",
-                "-pix_fmt", "yuv420p",
+                *pixel_and_color_args,
             ]
 
         if self.codec == "av1_amf":
-            qp_i, qp_p, qp_b = (20, 22, 24) if is_cut_hq else (24, 26, 28)
+            av1_quality = min(51, quality + 6)
             return [
                 "-c:v", "av1_amf",
                 "-quality", ("quality" if is_cut_hq else "balanced"),
-                "-rc", "cqp",
-                "-qp_i", str(qp_i),
-                "-qp_p", str(qp_p),
-                "-qp_b", str(qp_b),
+                *(bitrate_args("vbr_peak") if rate_control != "quality" else [
+                    "-rc", "cqp", "-qp_i", str(max(0, av1_quality - 2)),
+                    "-qp_p", str(av1_quality), "-qp_b", str(min(51, av1_quality + 2)),
+                ]),
                 "-g", "240",
                 "-bf", "0",
-                "-pix_fmt", "yuv420p",
+                *pixel_and_color_args,
             ]
 
-        if self.codec == "h264_nvenc":
-            qp = "14" if is_cut_hq else "18"
+        if self.codec in {"h264_nvenc", "hevc_nvenc", "av1_nvenc"}:
+            nv_quality = quality + (6 if self.codec == "av1_nvenc" else 0)
             return [
-                "-c:v", "h264_nvenc",
+                "-c:v", self.codec,
                 "-preset", "p5",
                 "-tune", "hq",
-                "-rc", "constqp",
-                "-qp", qp,
+                *(bitrate_args("vbr") if rate_control != "quality" else [
+                    "-rc", "constqp", "-qp", str(nv_quality),
+                ]),
                 "-g", "240",
                 "-bf", "0",
-                "-pix_fmt", "yuv420p",
+                *pixel_and_color_args,
             ]
 
-        if self.codec == "h264_qsv":
-            quality = "14" if is_cut_hq else "18"
+        if self.codec in {"h264_qsv", "hevc_qsv", "av1_qsv"}:
+            qsv_quality = quality + (6 if self.codec == "av1_qsv" else 0)
             return [
-                "-c:v", "h264_qsv",
+                "-c:v", self.codec,
                 "-preset", "medium",
-                "-global_quality", quality,
+                *(bitrate_args() if rate_control != "quality" else [
+                    "-global_quality", str(qsv_quality),
+                ]),
                 "-g", "240",
                 "-bf", "0",
-                "-pix_fmt", "nv12",
+                *pixel_and_color_args,
             ]
 
-        # Fallback software
-        crf = "14" if is_cut_hq else "16"
-        return [
-            "-c:v", "libx264",
-            "-preset", "veryfast",
-            "-crf", crf,
-            "-pix_fmt", "yuv420p",
-        ]
+        if self.codec == "libx265":
+            args = ["-c:v", "libx265", "-preset", "fast"]
+            args += bitrate_args() if rate_control != "quality" else ["-crf", str(quality)]
+            return [*args, *pixel_and_color_args]
+
+        if self.codec == "libaom-av1":
+            av1_quality = min(63, quality + 6)
+            args = ["-c:v", "libaom-av1", "-cpu-used", "6"]
+            if rate_control != "quality":
+                args += bitrate_args()
+            else:
+                args += ["-crf", str(av1_quality), "-b:v", "0"]
+            return [*args, *pixel_and_color_args]
+
+        args = ["-c:v", "libx264", "-preset", "veryfast"]
+        args += bitrate_args() if rate_control != "quality" else ["-crf", str(quality)]
+        if self.export_settings.two_pass and rate_control != "quality":
+            args += ["-pass", "2", "-passlogfile", f"{self.output_path}.passlog"]
+        return [*args, *pixel_and_color_args]
 
     # -----------------------------
     # Multi-track layout helper
@@ -2044,7 +2654,9 @@ class ExportWorker(ExportProcessMixin, QObject):
         return float(best)
 
     def _segment_boundary_time(self, seg: dict, end: bool = True) -> float:
-        keys = ("end", "v_out", "a_out") if end else ("start", "v_in", "a_in")
+        # Chunk keyframes and source-span limits use media timestamps, not the
+        # flattened output timeline stored in start/end.
+        keys = ("v_out", "a_out", "end") if end else ("v_in", "a_in", "start")
         for k in keys:
             try:
                 v = seg.get(k, None)
@@ -2240,6 +2852,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         keyframes: list[float] | None = None,
         keyframe_tol: float = 0.050,
         max_source_span: float = 0.0,
+        split_on_input_change: bool = False,
     ) -> list[list[dict]]:
         if not segments:
             return []
@@ -2255,12 +2868,67 @@ class ExportWorker(ExportProcessMixin, QObject):
         total_dur = sum(float(s.get("duration", 0.0) or 0.0) for s in segs)
         total_dur = max(1e-6, total_dur)
 
-        def _src_span(seg: dict) -> tuple[float, float]:
-            start = self._segment_boundary_time(seg, end=False)
-            end = self._segment_boundary_time(seg, end=True)
-            if end < start:
-                end = start
-            return start, end
+        def _source_ranges(seg: dict) -> dict[int, tuple[float, float]]:
+            ranges: dict[int, tuple[float, float]] = {}
+
+            def _add(idx_key: str, start_key: str, end_key: str) -> None:
+                try:
+                    idx_raw = seg.get(idx_key, None)
+                    if idx_raw is None:
+                        return
+                    idx = int(idx_raw)
+                    start = float(seg.get(start_key, seg.get("start", 0.0)) or 0.0)
+                    end = float(seg.get(end_key, start) or start)
+                except Exception:
+                    return
+                end = max(start, end)
+                previous = ranges.get(idx)
+                if previous is None:
+                    ranges[idx] = (start, end)
+                else:
+                    ranges[idx] = (min(previous[0], start), max(previous[1], end))
+
+            _add("v_idx", "v_in", "v_out")
+            _add("a_idx", "a_in", "a_out")
+            if not ranges:
+                start = self._segment_boundary_time(seg, end=False)
+                end = max(start, self._segment_boundary_time(seg, end=True))
+                ranges[-1] = (start, end)
+            return ranges
+
+        def _merge_source_ranges(
+            current: dict[int, tuple[float, float]],
+            extra: dict[int, tuple[float, float]],
+        ) -> tuple[dict[int, tuple[float, float]], float]:
+            merged = dict(current)
+            for idx, (start, end) in extra.items():
+                previous = merged.get(idx)
+                if previous is None:
+                    merged[idx] = (start, end)
+                else:
+                    merged[idx] = (min(previous[0], start), max(previous[1], end))
+            span = max((end - start for start, end in merged.values()), default=0.0)
+            return merged, max(0.0, span)
+
+        def _has_backward_jump(
+            last_starts: dict[int, float],
+            current: dict[int, tuple[float, float]],
+        ) -> bool:
+            return any(
+                idx in last_starts and start < (last_starts[idx] - 1e-3)
+                for idx, (start, _end) in current.items()
+            )
+
+        def _input_key(seg: dict) -> tuple[int, int]:
+            try:
+                v_idx = int(seg.get("v_idx", -1))
+            except Exception:
+                v_idx = -1
+            try:
+                a_idx = int(seg.get("a_idx", -1))
+            except Exception:
+                a_idx = -1
+            return v_idx, a_idx
 
         if chunk_count and chunk_count > 0:
             chunk_count = max(1, int(chunk_count))
@@ -2269,22 +2937,25 @@ class ExportWorker(ExportProcessMixin, QObject):
             chunks: list[list[dict]] = []
             cur: list[dict] = []
             cur_dur = 0.0
-            cur_src_start: float | None = None
-            cur_src_end = 0.0
+            cur_source_ranges: dict[int, tuple[float, float]] = {}
+            cur_last_starts: dict[int, float] = {}
+            cur_input_key: tuple[int, int] | None = None
 
             for s in segs:
                 sdur = float(s.get("duration", 0.0) or 0.0)
                 projected = cur_dur + sdur
-                s_src_start, s_src_end = _src_span(s)
-                if cur_src_start is None:
-                    projected_span = max(0.0, s_src_end - s_src_start)
-                else:
-                    projected_span = max(0.0, max(cur_src_end, s_src_end) - cur_src_start)
+                source_ranges = _source_ranges(s)
+                input_key = _input_key(s)
+                projected_ranges, projected_span = _merge_source_ranges(
+                    cur_source_ranges, source_ranges
+                )
                 want_split_for_target = (len(chunks) < chunk_count - 1) and bool(cur) and (projected >= target)
                 want_split_for_safety = bool(cur) and (
                     len(cur) >= hard_max_segments
                     or projected > max_chunk_seconds
                     or projected_span > max_source_span
+                    or _has_backward_jump(cur_last_starts, source_ranges)
+                    or (split_on_input_change and cur_input_key != input_key)
                 )
 
                 if want_split_for_target and not want_split_for_safety:
@@ -2304,32 +2975,33 @@ class ExportWorker(ExportProcessMixin, QObject):
                     if can_split_after and after_score < before_score:
                         cur.append(s)
                         cur_dur = projected
-                        if cur_src_start is None:
-                            cur_src_start = s_src_start
-                            cur_src_end = s_src_end
-                        else:
-                            cur_src_end = max(cur_src_end, s_src_end)
+                        cur_source_ranges = projected_ranges
+                        cur_last_starts.update(
+                            {idx: bounds[0] for idx, bounds in source_ranges.items()}
+                        )
                         chunks.append(cur)
                         cur = []
                         cur_dur = 0.0
-                        cur_src_start = None
-                        cur_src_end = 0.0
+                        cur_source_ranges = {}
+                        cur_last_starts = {}
+                        cur_input_key = None
                         continue
 
                 if want_split_for_target or want_split_for_safety:
                     chunks.append(cur)
                     cur = []
                     cur_dur = 0.0
-                    cur_src_start = None
-                    cur_src_end = 0.0
+                    cur_source_ranges = {}
+                    cur_last_starts = {}
+                    cur_input_key = None
 
                 cur.append(s)
                 cur_dur += sdur
-                if cur_src_start is None:
-                    cur_src_start = s_src_start
-                    cur_src_end = s_src_end
-                else:
-                    cur_src_end = max(cur_src_end, s_src_end)
+                cur_source_ranges, _ = _merge_source_ranges(cur_source_ranges, source_ranges)
+                cur_last_starts.update(
+                    {idx: bounds[0] for idx, bounds in source_ranges.items()}
+                )
+                cur_input_key = input_key
 
             if cur:
                 chunks.append(cur)
@@ -2339,33 +3011,37 @@ class ExportWorker(ExportProcessMixin, QObject):
         chunks: list[list[dict]] = []
         cur: list[dict] = []
         cur_dur = 0.0
-        cur_src_start: float | None = None
-        cur_src_end = 0.0
+        cur_source_ranges: dict[int, tuple[float, float]] = {}
+        cur_last_starts: dict[int, float] = {}
+        cur_input_key: tuple[int, int] | None = None
         for s in segs:
             sdur = float(s.get("duration", 0.0) or 0.0)
             projected = cur_dur + sdur
-            s_src_start, s_src_end = _src_span(s)
-            if cur_src_start is None:
-                projected_span = max(0.0, s_src_end - s_src_start)
-            else:
-                projected_span = max(0.0, max(cur_src_end, s_src_end) - cur_src_start)
+            source_ranges = _source_ranges(s)
+            input_key = _input_key(s)
+            _projected_ranges, projected_span = _merge_source_ranges(
+                cur_source_ranges, source_ranges
+            )
             if cur and (
                 len(cur) >= hard_max_segments
                 or projected > max_chunk_seconds
                 or projected_span > max_source_span
+                or _has_backward_jump(cur_last_starts, source_ranges)
+                or (split_on_input_change and cur_input_key != input_key)
             ):
                 chunks.append(cur)
                 cur = []
                 cur_dur = 0.0
-                cur_src_start = None
-                cur_src_end = 0.0
+                cur_source_ranges = {}
+                cur_last_starts = {}
+                cur_input_key = None
             cur.append(s)
             cur_dur += sdur
-            if cur_src_start is None:
-                cur_src_start = s_src_start
-                cur_src_end = s_src_end
-            else:
-                cur_src_end = max(cur_src_end, s_src_end)
+            cur_source_ranges, _ = _merge_source_ranges(cur_source_ranges, source_ranges)
+            cur_last_starts.update(
+                {idx: bounds[0] for idx, bounds in source_ranges.items()}
+            )
+            cur_input_key = input_key
         if cur:
             chunks.append(cur)
         return chunks
@@ -2375,9 +3051,7 @@ class ExportWorker(ExportProcessMixin, QObject):
     # -----------------------------
     def _concat_ts_list(self, files: list[str], temp_files: list[str], out_ts: str) -> str:
         def _q(p: str) -> str:
-            p = os.path.abspath(p).replace("\\", "/")
-            p = p.replace("'", "''")
-            return f"'{p}'"
+            return quote_ffconcat_path(os.path.abspath(p))
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n") as f:
             for cf in files:
@@ -2420,9 +3094,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         apply_boundary_epsilon: bool = False,
     ) -> list[str]:
         def _q(path: str) -> str:
-            p = os.path.abspath(path).replace("\\", "/")
-            p = p.replace("'", "''")
-            return f"'{p}'"
+            return quote_ffconcat_path(os.path.abspath(path))
 
         if not ranges:
             raise RuntimeError("concat_copy_to_ts: empty ranges")
@@ -2648,9 +3320,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         use_ts: bool = False,
     ) -> None:
         def _q(p: str) -> str:
-            p = os.path.abspath(p).replace("\\", "/")
-            p = p.replace("'", "''")
-            return f"'{p}'"
+            return quote_ffconcat_path(os.path.abspath(p))
 
         # lista concat
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n") as f:
@@ -2954,6 +3624,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         temp_files: list[str],
         force_fps: float = 0.0,
     ) -> tuple[list[str], float]:
+        force_fps = self._effective_force_fps(force_fps)
         # preseek is unsafe for multi-input concat+mix (different timelines)
         keeps_shifted = keeps_sorted
 
@@ -2987,6 +3658,11 @@ class ExportWorker(ExportProcessMixin, QObject):
             audio_copy_ok=False,
             filters_in_segments=audio_processing,
         )
+        filt, video_label, final_audio_label = self._decorate_output_filtergraph(
+            filt,
+            "outv",
+            audio_label,
+        )
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n"
@@ -3005,24 +3681,16 @@ class ExportWorker(ExportProcessMixin, QObject):
             self.ffmpeg_path, "-hide_banner", "-v", "error", "-y", "-nostdin",
             "-thread_queue_size", str(self._input_thread_queue_size()),
         ]
-        cmd += self._hwaccel_args_for_filtergraph()
-
         for path in self.input_paths:
-            cmd += ["-i", path]
+            cmd += [*self._hwaccel_args_for_filtergraph(), "-i", path]
 
-        cmd += [
-            "-filter_complex_script", filter_file,
-            "-map", "[outv]", "-map", f"[{audio_label}]",
-            *self._ffmpeg_thread_args(),
-            *self._video_args(),
-            "-c:a", "aac", "-b:a", "320k",
-            "-max_muxing_queue_size", "4096",
-            "-movflags", "+faststart",
-            "-use_editlist", "0",
-            "-progress", "pipe:2",
-            "-nostats",
-            self.output_path
-        ]
+        cmd += ["-filter_complex_script", filter_file]
+        if video_label:
+            cmd += ["-map", f"[{video_label}]", *self._ffmpeg_thread_args(), *self._video_args()]
+        if final_audio_label:
+            cmd += ["-map", f"[{final_audio_label}]", *self._audio_output_args()]
+        cmd += ["-max_muxing_queue_size", "4096", "-progress", "pipe:2", "-nostats"]
+        cmd += self._output_mux_args(self.output_path)
         return cmd, total
 
     def _build_cmd_filter_concat_to(
@@ -3038,6 +3706,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         container: str = "mp4",
         video_preset: str = "balanced",
     ) -> tuple[list[str], float]:
+        force_fps = self._effective_force_fps(force_fps)
         preseek_pad = 2.0
         preseek = 0.0
         monotonic_starts = True
@@ -3139,6 +3808,13 @@ class ExportWorker(ExportProcessMixin, QObject):
                 filters_in_segments=bool(audio_processing),
             )
 
+        filt, video_label, final_audio_label = self._decorate_output_filtergraph(
+            filt,
+            "outv",
+            audio_label or None,
+            force_video_only=video_only,
+        )
+
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n",
             dir=tmp_dir if tmp_dir else None
@@ -3162,21 +3838,21 @@ class ExportWorker(ExportProcessMixin, QObject):
                 f"filter_concat_input_limit preseek={preseek:.3f}s t={input_read_limit:.3f}s"
             )
 
-        cmd += [
-            "-i", str(src_path or self.input_path),
-            "-filter_complex_script", filter_file,
-            "-map", "[outv]",
-        ]
-        if not video_only:
-            cmd += ["-map", f"[{audio_label}]"]
+        cmd += ["-i", str(src_path or self.input_path), "-filter_complex_script", filter_file]
+        if video_label:
+            cmd += [
+                "-map", f"[{video_label}]",
+                *self._ffmpeg_thread_args(),
+                *self._video_args(video_preset),
+                *self._drop_chapters_args(),
+            ]
+        else:
+            cmd += ["-vn", *self._drop_chapters_args()]
+        if final_audio_label:
+            cmd += ["-map", f"[{final_audio_label}]", *self._audio_output_args()]
         else:
             cmd += ["-an"]
-        cmd += [
-            *self._ffmpeg_thread_args(),
-            *self._video_args(video_preset),
-            *self._drop_chapters_args(),
-        ]
-        if force_fps and force_fps > 1.0:
+        if video_label and force_fps and force_fps > 1.0:
             cmd += ["-fps_mode", "cfr", "-r", f"{force_fps:.3f}"]
 
         cmd += [
@@ -3184,19 +3860,15 @@ class ExportWorker(ExportProcessMixin, QObject):
             "-progress", "pipe:2",
             "-nostats",
         ]
-        if not video_only:
-            cmd += ["-c:a", "aac", "-b:a", "320k"]
         if container == "ts":
-            cmd += [
-                "-avoid_negative_ts", "make_zero",
-                "-max_interleave_delta", "0",
-                "-muxpreload", "0",
-                "-muxdelay", "0",
-                "-f", "mpegts",
-                out_path,
-            ]
+            cmd += self._output_mux_args(out_path, "ts")
         else:
-            cmd += ["-movflags", "+faststart", "-use_editlist", "0", out_path]
+            final_container = (
+                self.output_container
+                if os.path.abspath(out_path) == os.path.abspath(self.output_path)
+                else container
+            )
+            cmd += self._output_mux_args(out_path, final_container)
         self._log(
             f"ffmpeg_cmd_chunk={self._fmt_cmd(cmd)} "
             f"preset={video_preset}"
@@ -3219,6 +3891,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         force_fps: float = 0.0,
         container: str = "mp4",
     ) -> tuple[list[str], float]:
+        force_fps = self._effective_force_fps(force_fps)
         segs = []
         for s in segments:
             try:
@@ -3364,6 +4037,11 @@ class ExportWorker(ExportProcessMixin, QObject):
         )
 
         filt = "".join(parts)
+        filt, video_label, final_audio_label = self._decorate_output_filtergraph(
+            filt,
+            "outv",
+            audio_label,
+        )
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n",
             dir=tmp_dir if tmp_dir else None
@@ -3377,12 +4055,10 @@ class ExportWorker(ExportProcessMixin, QObject):
             self.ffmpeg_path, "-hide_banner", "-v", "error", "-y", "-nostdin",
             "-thread_queue_size", str(self._input_thread_queue_size()),
         ]
-        cmd += self._hwaccel_args_for_filtergraph()
-
         # Limit input read window when preseek is active:
         # this avoids decoding from seek point to EOF when only a bounded range is needed.
         input_limits: dict[int, float] = {}
-        if input_preseek:
+        if input_preseek is not None:
             try:
                 t_pad = float(_env("AUTO_CUTTER_SEG_INPUT_T_PAD", "2.0").strip() or "2.0")
             except Exception:
@@ -3415,8 +4091,6 @@ class ExportWorker(ExportProcessMixin, QObject):
                     seek_ts = float(input_preseek.get(idx_i, 0.0) or 0.0)
                 except Exception:
                     seek_ts = 0.0
-                if seek_ts <= 1e-6:
-                    continue
                 if end_ts <= seek_ts + 1e-6:
                     continue
                 lim = max(0.1, (float(end_ts) - float(seek_ts)) + float(t_pad))
@@ -3431,6 +4105,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                     pass
 
         for idx, path in enumerate(self.input_paths):
+            cmd += self._hwaccel_args_for_filtergraph()
             pre = 0.0
             if input_preseek:
                 try:
@@ -3439,38 +4114,38 @@ class ExportWorker(ExportProcessMixin, QObject):
                     pre = 0.0
             if pre > 1e-6:
                 cmd += ["-ss", f"{pre:.3f}"]
-                t_lim = float(input_limits.get(idx, 0.0) or 0.0)
-                if t_lim > 1e-6:
-                    cmd += ["-t", f"{t_lim:.3f}"]
+            t_lim = float(input_limits.get(idx, 0.0) or 0.0)
+            if t_lim > 1e-6:
+                cmd += ["-t", f"{t_lim:.3f}"]
             cmd += ["-i", path]
 
-        cmd += [
-            "-filter_complex_script", filter_file,
-            "-map", "[outv]", "-map", f"[{audio_label}]",
-            *self._ffmpeg_thread_args(),
-            *self._video_args(),
-            *self._drop_chapters_args(),
-        ]
-        if force_fps and force_fps > 1.0:
+        cmd += ["-filter_complex_script", filter_file]
+        if video_label:
+            cmd += [
+                "-map", f"[{video_label}]",
+                *self._ffmpeg_thread_args(),
+                *self._video_args(),
+                *self._drop_chapters_args(),
+            ]
+        else:
+            cmd += ["-vn", *self._drop_chapters_args()]
+        if final_audio_label:
+            cmd += ["-map", f"[{final_audio_label}]", *self._audio_output_args()]
+        else:
+            cmd += ["-an"]
+        if video_label and force_fps and force_fps > 1.0:
             cmd += ["-fps_mode", "cfr", "-r", f"{force_fps:.3f}"]
         cmd += [
-            "-c:a", "aac", "-b:a", "320k",
             "-max_muxing_queue_size", "4096",
             "-progress", "pipe:2",
             "-nostats",
         ]
         target = out_path if out_path else self.output_path
         if container == "ts":
-            cmd += [
-                "-avoid_negative_ts", "make_zero",
-                "-max_interleave_delta", "0",
-                "-muxpreload", "0",
-                "-muxdelay", "0",
-                "-f", "mpegts",
-                target,
-            ]
+            cmd += self._output_mux_args(target, "ts")
         else:
-            cmd += ["-movflags", "+faststart", "-use_editlist", "0", target]
+            final_container = self.output_container if out_path is None else container
+            cmd += self._output_mux_args(target, final_container)
         self._log(f"ffmpeg_cmd_segments={self._fmt_cmd(cmd)}")
         return cmd, total
 
@@ -3575,12 +4250,13 @@ class ExportWorker(ExportProcessMixin, QObject):
             chunk_count=plan_chunks,
             keyframes=chunk_keyframes if chunk_keyframes else None,
             max_source_span=chunk_source_span,
+            split_on_input_change=hybrid_mode,
         )
         if not chunks:
             raise RuntimeError("Chunking (segments) ha prodotto 0 chunk.")
 
         def _seg_start(seg: dict) -> float:
-            for k in ("start", "v_in", "a_in"):
+            for k in ("v_in", "a_in", "start"):
                 try:
                     v = seg.get(k, None)
                     if v is not None:
@@ -3795,6 +4471,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                                 "rep": i,
                                 "indices": idxs,
                                 "out_path": final_out,
+                                "elapsed_seconds": elapsed,
                             }
                         except _SmartHybridFallback:
                             self._log("smart_hybrid_chunk_fallback -> filter_segments")
@@ -3832,7 +4509,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                         )
                     _emit_global_locked()
 
-            rc, err = self._run_ffmpeg_progress(cmd, on_progress=_on_progress)
+            rc, err = self._run_ffmpeg_progress_with_hw_fallback(
+                cmd,
+                on_progress=_on_progress,
+                context="segments_chunk",
+            )
             if rc != 0:
                 err = (err or "").strip()
                 raise RuntimeError(err or f"FFmpeg chunk {i} failed")
@@ -3850,44 +4531,42 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "rep": i,
                 "indices": idxs,
                 "out_path": final_out,
+                "elapsed_seconds": elapsed,
             }
 
+        def _on_job_result(res: dict) -> None:
+            i = int(res.get("rep", 0))
+            idxs = [int(x) for x in list(res.get("indices") or [i])]
+            out_path = str(res.get("out_path") or "")
+            with progress_lock:
+                for j in idxs:
+                    if 0 <= j < len(chunk_out):
+                        chunk_out[j] = chunk_durs[j]
+                        chunk_files[j] = out_path
+                state["finished"] += len(idxs)
+                _emit_global_locked()
+            pct = int(max(0.0, min(99.0, (sum(chunk_out) / total_all) * 100.0)))
+            self._log(
+                f"chunk_done {i+1}/{len(chunks)} rendered={len(idxs)} "
+                f"pct={pct}% path={out_path}"
+            )
+            self.progress.emit(pct, f"Chunk {state['finished']}/{len(chunks)} completati...")
+
         try:
-            if render_jobs:
-                with ThreadPoolExecutor(max_workers=workers) as ex:
-                    futs = [ex.submit(_render_one, j) for j in render_jobs]
-                    try:
-                        for fut in as_completed(futs):
-                            try:
-                                res = fut.result()
-                            except Exception:
-                                # Fail-fast: stop other ffmpeg processes to avoid apparent "hang".
-                                self._terminate_all_procs()
-                                for other in futs:
-                                    other.cancel()
-                                raise
-                            i = int(res.get("rep", 0))
-                            idxs = [int(x) for x in list(res.get("indices") or [i])]
-                            out_path = str(res.get("out_path") or "")
-                            with progress_lock:
-                                for j in idxs:
-                                    if 0 <= j < len(chunk_out):
-                                        chunk_out[j] = chunk_durs[j]
-                                        chunk_files[j] = out_path
-                                state["finished"] += len(idxs)
-                                _emit_global_locked()
-                            pct = int(max(0.0, min(99.0, (sum(chunk_out) / total_all) * 100.0)))
-                            self._log(
-                                f"chunk_done {i+1}/{len(chunks)} rendered={len(idxs)} "
-                                f"pct={pct}% path={out_path}"
-                            )
-                            self.progress.emit(pct, f"Chunk {state['finished']}/{len(chunks)} completati...")
-                    finally:
-                        for fut in futs:
-                            fut.cancel()
+            self._execute_parallel_jobs(
+                render_jobs,
+                _render_one,
+                workers,
+                lambda job: chunk_durs[int(job.get("rep", 0))],
+                _on_job_result,
+                "segments",
+            )
         finally:
             self._ffmpeg_threads_override = None
 
+        # Per-chunk smart-hybrid attempts update this field themselves; restore
+        # the top-level execution strategy reported in diagnostics.
+        self._export_method_used = "chunked_parallel_segments"
         self.progress.emit(99, "Concatenazione finale...")
         self._concat_chunks_copy(chunk_files, temp_files, use_ts=use_ts)
 
@@ -3903,6 +4582,14 @@ class ExportWorker(ExportProcessMixin, QObject):
         max_conservative_mode = self._max_conservative_fix_mode()
         max_conservative_requested = max_conservative_mode != "off"
         self._log("worker_run_begin")
+        if self.export_settings.requires_accurate_pipeline() and self.output_mode != "per_clip":
+            requested_method = self.export_method
+            self.export_method = "filter_concat"
+            if requested_method != "filter_concat":
+                self._log(
+                    f"export_settings_force_accurate requested={requested_method} "
+                    "reason=output_transform_or_delivery_constraint"
+                )
         try:
             self.progress.emit(0, "Initializing export...")
         except Exception:
@@ -3924,7 +4611,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                     last_pct = pct
                 self.progress.emit(pct, f"{label} {pct}%")
 
-            rc, err = self._run_ffmpeg_progress(cmd, on_progress=_on_progress)
+            rc, err = self._run_ffmpeg_progress_with_hw_fallback(
+                cmd,
+                on_progress=_on_progress,
+                context="single_export",
+            )
             if rc != 0:
                 raise RuntimeError((err or "").strip() or "FFmpeg export failed")
 
@@ -3949,6 +4640,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 f"cut_hq: enabled={'yes' if cut_hq_enabled else 'no'} "
                 f"max_seconds={cut_hq_max:.1f}"
             )
+            self._log_effective_export_configuration(force_fps)
 
         def _expected_output_duration_hint() -> float:
             try:
@@ -4302,7 +4994,8 @@ class ExportWorker(ExportProcessMixin, QObject):
             _rebuild_from_source_if_needed()
 
         def _finalize() -> None:
-            _repair_output_duration_if_needed()
+            if self.output_mode != "audio_only":
+                _repair_output_duration_if_needed()
             expected_s = _expected_output_duration_hint()
             mmf: dict = {}
             try:
@@ -4364,6 +5057,9 @@ class ExportWorker(ExportProcessMixin, QObject):
         self._export_start_ts = time.time()
 
         try:
+            if self.output_mode == "per_clip":
+                self._run_per_clip_exports()
+                return
             try:
                 if self.input_paths:
                     self._summary_input_duration = float(ffprobe_duration_seconds(self.input_paths[0]) or 0.0)
@@ -4420,6 +5116,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                     item_count=len(segments),
                     total_output_s=total_seg,
                     input_duration_s=self._summary_input_duration,
+                    requested_method=self.export_method,
                 )
                 self._log(
                     f"max_conservative decision context=segments apply="
@@ -4490,7 +5187,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                                 last_pct = pct
                                 self.progress.emit(pct, f"Export {pct}%")
 
-                        rc, err = self._run_ffmpeg_progress(cmd, on_progress=_on_block_progress)
+                        rc, err = self._run_ffmpeg_progress_with_hw_fallback(
+                            cmd,
+                            on_progress=_on_block_progress,
+                            context="conservative_segment_block",
+                        )
                         if rc != 0:
                             raise RuntimeError((err or "").strip() or "FFmpeg export block failed")
                         block_files.append(block_out)
@@ -4511,7 +5212,12 @@ class ExportWorker(ExportProcessMixin, QObject):
                         else:
                             segments_method = "chunked_parallel"
                     else:
-                        segments_method = "chunked_parallel"
+                        multi_hybrid, multi_hybrid_reason = self._multi_source_smart_hybrid_policy(segments)
+                        segments_method = "smart_hybrid_multi" if multi_hybrid else "chunked_parallel"
+                        self._log(
+                            f"multi_source_smart_hybrid apply={'yes' if multi_hybrid else 'no'} "
+                            f"reason={multi_hybrid_reason}"
+                        )
                     self._log(f"auto_method -> {segments_method} (segments)")
                 else:
                     idx = self._segments_single_input_idx(segments)
@@ -4520,7 +5226,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                     f"single_input_idx={idx if idx is not None else 'none'}"
                 )
 
-                if segments_method == "smart_hybrid":
+                if segments_method in ("smart_hybrid", "smart_hybrid_multi"):
                     # High-impact fast path for split/duplicate/reorder on single source:
                     # run one global hybrid render in timeline order (avoid N chunk edge re-encodes).
                     if idx is not None and 0 <= idx < len(self.input_paths):
@@ -4543,11 +5249,18 @@ class ExportWorker(ExportProcessMixin, QObject):
                                 self._log(f"smart_hybrid_segments_fallback -> chunked_parallel_segments ({e})")
                             except Exception as e:
                                 self._log(f"smart_hybrid_segments_failed -> chunked_parallel_segments ({e})")
+                    prefer_multi_hybrid = True
+                    if idx is None and segments_method == "smart_hybrid":
+                        prefer_multi_hybrid, explicit_reason = self._multi_source_smart_hybrid_policy(segments)
+                        self._log(
+                            f"explicit_multi_source_smart_hybrid "
+                            f"apply={'yes' if prefer_multi_hybrid else 'no'} reason={explicit_reason}"
+                        )
                     self._log("checklist step=run_chunked_parallel_segments_hybrid")
                     self._run_chunked_parallel_segments(
                         segments,
                         temp_files,
-                        prefer_hybrid=True,
+                        prefer_hybrid=prefer_multi_hybrid,
                     )
                     self.progress.emit(100, "100%")
                     _finalize()
@@ -4565,7 +5278,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                     return
 
                 idx = self._segments_single_input_idx(segments)
-                if idx is not None and 0 <= idx < len(self.input_paths):
+                if (
+                    segments_method != "filter_concat"
+                    and idx is not None
+                    and 0 <= idx < len(self.input_paths)
+                ):
                     self._log("segments_single_input=True -> concat demuxer path")
                     self._log("checklist step=segments_to_keeps_concat_demuxer")
                     keeps = self._segments_to_keeps_in_order(segments, fps=force_fps)
@@ -4669,6 +5386,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 item_count=len(keeps_sorted),
                 total_output_s=float(self._summary_keeps_total or 0.0),
                 input_duration_s=self._summary_input_duration,
+                requested_method=self.export_method,
             )
             self._log(
                 f"max_conservative decision context=keeps apply="
@@ -4681,6 +5399,19 @@ class ExportWorker(ExportProcessMixin, QObject):
                 self._export_method_used = "max_conservative_keeps"
                 self._log("max_conservative path=keeps force=filter_concat_single_pass")
                 cmd, total = self._build_cmd_filter_concat(keeps_sorted, temp_files, force_fps=force_fps)
+                _run_single(cmd, total, label="Export")
+                self.progress.emit(100, "100%")
+                _finalize()
+                return
+
+            if self.export_method == "filter_concat":
+                self._export_method_used = "filter_concat"
+                self._log("checklist step=run_filter_concat_accurate")
+                cmd, total = self._build_cmd_filter_concat(
+                    keeps_sorted,
+                    temp_files,
+                    force_fps=force_fps,
+                )
                 _run_single(cmd, total, label="Export")
                 self.progress.emit(100, "100%")
                 _finalize()
@@ -5041,7 +5772,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                         )
                     _emit_global_locked()
 
-            rc, err = self._run_ffmpeg_progress(cmd, on_progress=_on_progress)
+            rc, err = self._run_ffmpeg_progress_with_hw_fallback(
+                cmd,
+                on_progress=_on_progress,
+                context="keeps_chunk",
+            )
             if rc != 0:
                 err = (err or "").strip()
                 raise RuntimeError(err or f"FFmpeg chunk {i} failed")
@@ -5059,41 +5794,36 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "rep": i,
                 "indices": idxs,
                 "out_path": final_out,
+                "elapsed_seconds": elapsed,
             }
 
+        def _on_job_result(res: dict) -> None:
+            i = int(res.get("rep", 0))
+            idxs = [int(x) for x in list(res.get("indices") or [i])]
+            out_path = str(res.get("out_path") or "")
+            with progress_lock:
+                for j in idxs:
+                    if 0 <= j < len(chunk_out):
+                        chunk_out[j] = chunk_durs[j]
+                        chunk_files[j] = out_path
+                state["finished"] += len(idxs)
+                _emit_global_locked()
+            pct = int(max(0.0, min(99.0, (sum(chunk_out) / total_all) * 100.0)))
+            self._log(
+                f"chunk_done {i+1}/{len(chunks)} rendered={len(idxs)} "
+                f"pct={pct}% path={out_path}"
+            )
+            self.progress.emit(pct, f"Chunk {state['finished']}/{len(chunks)} completati...")
+
         try:
-            if render_jobs:
-                with ThreadPoolExecutor(max_workers=workers) as ex:
-                    futs = [ex.submit(_render_one, j) for j in render_jobs]
-                    try:
-                        for fut in as_completed(futs):
-                            try:
-                                res = fut.result()
-                            except Exception:
-                                # Fail-fast: stop other ffmpeg processes to avoid apparent "hang".
-                                self._terminate_all_procs()
-                                for other in futs:
-                                    other.cancel()
-                                raise
-                            i = int(res.get("rep", 0))
-                            idxs = [int(x) for x in list(res.get("indices") or [i])]
-                            out_path = str(res.get("out_path") or "")
-                            with progress_lock:
-                                for j in idxs:
-                                    if 0 <= j < len(chunk_out):
-                                        chunk_out[j] = chunk_durs[j]
-                                        chunk_files[j] = out_path
-                                state["finished"] += len(idxs)
-                                _emit_global_locked()
-                            pct = int(max(0.0, min(99.0, (sum(chunk_out) / total_all) * 100.0)))
-                            self._log(
-                                f"chunk_done {i+1}/{len(chunks)} rendered={len(idxs)} "
-                                f"pct={pct}% path={out_path}"
-                            )
-                            self.progress.emit(pct, f"Chunk {state['finished']}/{len(chunks)} completati...")
-                    finally:
-                        for fut in futs:
-                            fut.cancel()
+            self._execute_parallel_jobs(
+                render_jobs,
+                _render_one,
+                workers,
+                lambda job: chunk_durs[int(job.get("rep", 0))],
+                _on_job_result,
+                "keeps",
+            )
         finally:
             self._ffmpeg_threads_override = None
 
@@ -5193,7 +5923,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             ]
 
         self._log(f"ffmpeg_cmd_macro={self._fmt_cmd(cmd)}")
-        rc, _out, err = self._run_ffmpeg(cmd)
+        rc, _out, err = self._run_ffmpeg_with_hw_fallback(cmd, context="macro")
         if rc != 0:
             err = (err or "").strip()
             raise RuntimeError(err or "FFmpeg macro export failed.")
@@ -5216,9 +5946,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         - ffmpeg legge quel "EDL" e ricodifica una sola volta (qualità alta)
         """
         def _q(path: str) -> str:
-            p = os.path.abspath(path).replace("\\", "/")
-            p = p.replace("'", "''")
-            return f"'{p}'"
+            return quote_ffconcat_path(os.path.abspath(path))
 
         total = sum(s.dur for s in keeps_sorted)
         total = max(1e-6, total)
@@ -5388,6 +6116,120 @@ class ExportWorker(ExportProcessMixin, QObject):
                 return None
         return idx
 
+    def _segment_source_runs(self, segments: list[dict]) -> list[tuple[int, list[dict]]]:
+        runs: list[tuple[int, list[dict]]] = []
+        for seg in segments:
+            try:
+                v_idx = int(seg.get("v_idx", -1))
+                a_idx = int(seg.get("a_idx", -1))
+                v_in = float(seg.get("v_in", 0.0) or 0.0)
+                v_out = float(seg.get("v_out", 0.0) or 0.0)
+                a_in = float(seg.get("a_in", 0.0) or 0.0)
+                a_out = float(seg.get("a_out", 0.0) or 0.0)
+            except Exception:
+                return []
+            if v_idx < 0 or v_idx != a_idx:
+                return []
+            if abs(v_in - a_in) > 1e-3 or abs(v_out - a_out) > 1e-3:
+                return []
+            if runs and runs[-1][0] == v_idx:
+                runs[-1][1].append(seg)
+            else:
+                runs.append((v_idx, [seg]))
+        return runs
+
+    def _probe_smart_media_signature(self, path: str) -> dict:
+        cache_key = os.path.normcase(os.path.abspath(path))
+        cached = self._video_signature_cache.get(cache_key)
+        if cached is not None:
+            return dict(cached)
+        signature: dict = {}
+        try:
+            ffprobe = self._find_ffprobe()
+            if not ffprobe:
+                return {}
+            cmd = [
+                ffprobe,
+                "-v", "error",
+                "-show_entries",
+                "stream=index,codec_type,codec_name,width,height,pix_fmt,avg_frame_rate,"
+                "sample_rate,channels,color_primaries,color_transfer,color_space,color_range",
+                "-of", "json",
+                path,
+            ]
+            result = run_cmd(cmd)
+            if result.returncode != 0:
+                return {}
+            payload = json.loads(result.stdout or "{}")
+            streams = list(payload.get("streams") or [])
+            video = next((s for s in streams if s.get("codec_type") == "video"), None)
+            audio = next((s for s in streams if s.get("codec_type") == "audio"), None)
+            if not isinstance(video, dict):
+                return {}
+            signature = {
+                "video_codec": str(video.get("codec_name") or "").lower(),
+                "width": int(video.get("width") or 0),
+                "height": int(video.get("height") or 0),
+                "pix_fmt": str(video.get("pix_fmt") or "").lower(),
+                "fps": str(video.get("avg_frame_rate") or ""),
+                "color_primaries": str(video.get("color_primaries") or "").lower(),
+                "color_transfer": str(video.get("color_transfer") or "").lower(),
+                "color_space": str(video.get("color_space") or "").lower(),
+                "color_range": str(video.get("color_range") or "").lower(),
+                "audio_codec": str((audio or {}).get("codec_name") or "").lower(),
+                "sample_rate": int((audio or {}).get("sample_rate") or 0),
+                "channels": int((audio or {}).get("channels") or 0),
+            }
+        except Exception:
+            signature = {}
+        self._video_signature_cache[cache_key] = dict(signature)
+        return signature
+
+    def _multi_source_smart_hybrid_policy(self, segments: list[dict]) -> tuple[bool, str]:
+        runs = self._segment_source_runs(segments)
+        if not runs:
+            return False, "invalid_or_unaligned_segments"
+        used_indices = sorted({idx for idx, _run in runs})
+        if len(used_indices) < 2:
+            return False, "single_source"
+
+        signatures: list[dict] = []
+        for idx in used_indices:
+            if idx < 0 or idx >= len(self.input_paths):
+                return False, f"invalid_source_{idx}"
+            path = self.input_paths[idx]
+            if not self._smart_render_supported(path):
+                return False, f"unsupported_source_{idx}"
+            signature = self._probe_smart_media_signature(path)
+            if not signature:
+                return False, f"probe_failed_source_{idx}"
+            signatures.append(signature)
+
+        compare_keys = (
+            "video_codec", "width", "height", "pix_fmt", "fps",
+            "color_primaries", "color_transfer", "color_space", "color_range",
+            "audio_codec", "sample_rate", "channels",
+        )
+        reference = tuple(signatures[0].get(key) for key in compare_keys)
+        for signature in signatures[1:]:
+            if tuple(signature.get(key) for key in compare_keys) != reference:
+                return False, "incompatible_source_streams"
+
+        run_durations = [
+            sum(float(seg.get("duration", 0.0) or 0.0) for seg in run)
+            for _idx, run in runs
+        ]
+        total = max(1e-6, sum(run_durations))
+        min_useful_run = max(4.0, (2.0 * float(self.smart_render_pad)) + 2.0)
+        useful = sum(duration for duration in run_durations if duration >= min_useful_run)
+        useful_ratio = useful / total
+        startup_ratio = (len(runs) * 0.20) / total
+        if useful_ratio < 0.35:
+            return False, f"short_source_runs_{useful_ratio:.2f}"
+        if startup_ratio > 0.25:
+            return False, f"excessive_run_overhead_{startup_ratio:.2f}"
+        return True, f"compatible_runs_{len(runs)}_useful_{useful_ratio:.2f}"
+
     def _segments_base_fps(self, segments: list[dict]) -> float:
         """
         Pick a stable FPS from the first video input referenced by segments.
@@ -5463,7 +6305,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "-of", "default=nk=1:nw=1",
                 path,
             ]
-            p = run_no_window(cmd, capture_output=True, text=True)
+            p = run_cmd(cmd)
             if p.returncode != 0:
                 return ""
             return (p.stdout or "").strip().splitlines()[0].strip().lower()
@@ -5483,7 +6325,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "-of", "default=nk=1:nw=1",
                 path,
             ]
-            p = run_no_window(cmd, capture_output=True, text=True)
+            p = run_cmd(cmd)
             if p.returncode != 0:
                 return ""
             return (p.stdout or "").strip().splitlines()[0].strip().lower()
@@ -5506,9 +6348,9 @@ class ExportWorker(ExportProcessMixin, QObject):
             return False
         if self.codec in ("h264_amf", "h264_nvenc", "h264_qsv", "libx264") and src_codec == "h264":
             return True
-        if self.codec == "hevc_amf" and src_codec in ("hevc", "h265"):
+        if self.codec in ("hevc_amf", "hevc_nvenc", "hevc_qsv", "libx265") and src_codec in ("hevc", "h265"):
             return True
-        if self.codec == "av1_amf" and src_codec == "av1":
+        if self.codec in ("av1_amf", "av1_nvenc", "av1_qsv", "libaom-av1") and src_codec == "av1":
             return True
         return False
 
@@ -5652,7 +6494,6 @@ class ExportWorker(ExportProcessMixin, QObject):
             cmd = [
                 self.ffmpeg_path, "-hide_banner", "-v", "error", "-y", "-nostdin",
                 "-fflags", "+genpts",
-                *self._hwaccel_args(),
                 "-ss", f"{copy_ss:.6f}",
                 "-i", src_path,
                 "-t", f"{copy_dur:.6f}",
@@ -5838,7 +6679,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                 force_fps=force_fps,
             )
             self._log(f"smart_render_segment {i+1}/{len(segments)} mode={mode} {s:.3f}-{e:.3f}")
-            rc, _out, err = self._run_ffmpeg(cmd)
+            rc, _out, err = self._run_ffmpeg_with_hw_fallback(
+                cmd,
+                context="smart_render_segment",
+            )
             if rc != 0:
                 err = (err or "").strip()
                 raise RuntimeError(err or f"FFmpeg smart segment {i} failed")
@@ -6418,7 +7262,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                         f"dur={sum(max(0.0, s.end - s.start) for s in ckeeps):.3f}s"
                     )
                     t_piece = time.time()
-                    rc, _out, err = self._run_ffmpeg(cmd)
+                    rc, _out, err = self._run_ffmpeg_with_hw_fallback(
+                        cmd,
+                        context="smart_hybrid_cluster",
+                    )
                     if rc != 0:
                         err = (err or "").strip()
                         raise RuntimeError(err or f"FFmpeg hybrid cluster {idx} failed")
@@ -6448,7 +7295,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                     )
                     self._log(f"smart_hybrid_segment {idx+1}/{len(pieces)} mode={kind} {s:.3f}-{e:.3f}")
                     t_piece = time.time()
-                    rc, _out, err = self._run_ffmpeg(cmd)
+                    rc, _out, err = self._run_ffmpeg_with_hw_fallback(
+                        cmd,
+                        context="smart_hybrid_segment",
+                    )
                     if rc != 0:
                         err = (err or "").strip()
                         raise RuntimeError(err or f"FFmpeg hybrid segment {idx} failed")
@@ -6620,7 +7470,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                             f"pieces={len(ranges)} dur={pack_dur:.3f}s mode={copy_cmd_mode}"
                         )
                         t_pack = time.time()
-                        rc, _out, err = self._run_ffmpeg(cmd)
+                        rc, _out, err = self._run_ffmpeg_with_hw_fallback(
+                            cmd,
+                            context="smart_hybrid_pack_copy",
+                        )
                         if rc != 0:
                             err = (err or "").strip()
                             raise RuntimeError(err or f"FFmpeg hybrid pack copy {idx} failed")
@@ -6771,7 +7624,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                         f"preset={reencode_preset}"
                     )
                     t_pack = time.time()
-                    rc, _out, err = self._run_ffmpeg(cmd)
+                    rc, _out, err = self._run_ffmpeg_with_hw_fallback(
+                        cmd,
+                        context="smart_hybrid_pack_reencode",
+                    )
                     if rc != 0:
                         err = (err or "").strip()
                         raise RuntimeError(err or f"FFmpeg hybrid pack reencode {idx} failed")
@@ -6847,7 +7703,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "-of", "default=nk=1:nw=1",
                 path,
             ]
-            p = run_no_window(cmd, capture_output=True, text=True)
+            p = run_cmd(cmd)
             if p.returncode != 0:
                 return 0.0
             lines = [ln.strip() for ln in (p.stdout or "").splitlines() if ln.strip()]

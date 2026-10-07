@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QPushButton,
     QScrollArea,
@@ -64,53 +65,159 @@ def build_export_page(window) -> None:
             lay.addWidget(desc_lbl)
         return frame, lay
 
+    def field_widget(title: str, control: QWidget, tooltip: str = "") -> QWidget:
+        wrap = QWidget()
+        lay = QVBoxLayout(wrap)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(4)
+        label = section_title(title)
+        label.setObjectName("FieldTitle")
+        if tooltip:
+            label.setToolTip(tooltip)
+            control.setToolTip(tooltip)
+        lay.addWidget(label)
+        lay.addWidget(control)
+        return wrap
+
     # -------------------------
     # Quality & Compatibility
     # -------------------------
     qc_block, qc_l = block_frame(
         "Quality & Compatibility",
-        "Choose codec, export method, and cut-border quality.",
+        "Start from a profile, then customize only what the delivery needs.",
+        right_widget=window.btn_export_defaults,
     )
 
-    codec_wrap = QWidget()
-    codec_l = QVBoxLayout(codec_wrap)
-    codec_l.setContentsMargins(0, 0, 0, 0)
-    codec_l.setSpacing(4)
-    codec_title = section_title("Codec")
-    codec_title.setObjectName("FieldTitle")
-    codec_title.setToolTip("Choose the video format/encoder for export.")
-    codec_l.addWidget(codec_title)
-    codec_l.addWidget(window.codec_combo)
-    window.codec_combo.setToolTip("H.264 is most compatible; HEVC/AV1 are smaller but need newer players.")
-    qc_l.addWidget(codec_wrap)
+    qc_l.addWidget(field_widget("Profile", window.export_preset_combo))
 
-    method_wrap = QWidget()
-    method_l = QVBoxLayout(method_wrap)
-    method_l.setContentsMargins(0, 0, 0, 0)
-    method_l.setSpacing(4)
-    method_title = section_title("Export method")
-    method_title.setObjectName("FieldTitle")
-    method_title.setToolTip("Pick the export pipeline based on speed vs. accuracy.")
-    method_l.addWidget(method_title)
-    method_l.addWidget(window.export_method_combo)
-    window.export_method_combo.setToolTip(
-        "Auto selects a strategy. Smart render copies middle GOPs. Accurate is slower but precise."
+    basic_grid_widget = QWidget()
+    basic_grid = QGridLayout(basic_grid_widget)
+    basic_grid.setContentsMargins(0, 0, 0, 0)
+    basic_grid.setHorizontalSpacing(10)
+    basic_grid.setVerticalSpacing(10)
+    basic_grid.setColumnStretch(0, 1)
+    basic_grid.setColumnStretch(1, 1)
+    basic_grid.addWidget(
+        field_widget(
+            "Codec",
+            window.codec_combo,
+            "H.264 is most compatible; HEVC and AV1 produce smaller files.",
+        ),
+        0,
+        0,
     )
-    qc_l.addWidget(method_wrap)
+    basic_grid.addWidget(field_widget("Format", window.container_combo), 0, 1)
+    basic_grid.addWidget(field_widget("Resolution", window.resolution_combo), 1, 0)
+    basic_grid.addWidget(field_widget("Frame rate", window.fps_combo), 1, 1)
+    basic_grid.addWidget(field_widget("Video quality", window.video_quality_combo), 2, 0)
+    basic_grid.addWidget(field_widget("Output", window.output_mode_combo), 2, 1)
+    qc_l.addWidget(basic_grid_widget)
 
-    cutq_wrap = QWidget()
-    cutq_l = QVBoxLayout(cutq_wrap)
-    cutq_l.setContentsMargins(0, 0, 0, 0)
-    cutq_l.setSpacing(4)
-    cutq_title = section_title("Cut border quality")
-    cutq_title.setObjectName("FieldTitle")
-    cutq_title.setToolTip("Quality policy for non-keyframe cut borders (re-encoded regions only).")
-    cutq_l.addWidget(cutq_title)
-    cutq_l.addWidget(window.cut_quality_combo)
-    window.cut_quality_combo.setToolTip(
-        "Balanced keeps HQ on short cut borders. Faster modes reduce cut-border re-encode quality."
+    window.export_compatibility_label.setObjectName("FieldHint")
+    qc_l.addWidget(window.export_compatibility_label)
+
+    options_toggle = QToolButton()
+    options_toggle.setObjectName("AdvSectionToggle")
+    options_toggle.setText("Advanced output settings")
+    options_toggle.setCheckable(True)
+    options_toggle.setChecked(False)
+    options_toggle.setArrowType(Qt.RightArrow)
+    options_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+    window.export_options_toggle = options_toggle
+    qc_l.addWidget(options_toggle)
+
+    options_advanced = QWidget()
+    options_l = QVBoxLayout(options_advanced)
+    options_l.setContentsMargins(0, 4, 0, 0)
+    options_l.setSpacing(10)
+
+    transform_grid_widget = QWidget()
+    transform_grid = QGridLayout(transform_grid_widget)
+    transform_grid.setContentsMargins(0, 0, 0, 0)
+    transform_grid.setHorizontalSpacing(10)
+    transform_grid.setVerticalSpacing(10)
+    transform_grid.setColumnStretch(0, 1)
+    transform_grid.setColumnStretch(1, 1)
+    transform_grid.addWidget(field_widget("Aspect", window.aspect_combo), 0, 0)
+    transform_grid.addWidget(field_widget("FPS mode", window.fps_mode_combo), 0, 1)
+    transform_grid.addWidget(field_widget("Pixel depth", window.pixel_depth_combo), 1, 0)
+    transform_grid.addWidget(field_widget("Color", window.color_mode_combo), 1, 1)
+    transform_grid.addWidget(window.no_upscale_cb, 2, 0, 1, 2)
+    options_l.addWidget(transform_grid_widget)
+
+    rate_grid_widget = QWidget()
+    rate_grid = QGridLayout(rate_grid_widget)
+    rate_grid.setContentsMargins(0, 0, 0, 0)
+    rate_grid.setHorizontalSpacing(10)
+    rate_grid.setVerticalSpacing(10)
+    rate_grid.setColumnStretch(0, 1)
+    rate_grid.setColumnStretch(1, 1)
+    rate_grid.addWidget(field_widget("Rate control", window.rate_control_combo), 0, 0)
+    window.export_bitrate_wrap = field_widget("Video bitrate", window.video_bitrate_spin)
+    rate_grid.addWidget(window.export_bitrate_wrap, 0, 1)
+    window.export_target_size_wrap = field_widget("Approximate size", window.target_size_spin)
+    rate_grid.addWidget(window.export_target_size_wrap, 1, 0)
+    window.export_custom_quality_wrap = field_widget("CRF / QP", window.custom_quality_spin)
+    rate_grid.addWidget(window.export_custom_quality_wrap, 1, 1)
+    rate_grid.addWidget(window.two_pass_cb, 2, 0, 1, 2)
+    options_l.addWidget(rate_grid_widget)
+
+    audio_grid_widget = QWidget()
+    audio_grid = QGridLayout(audio_grid_widget)
+    audio_grid.setContentsMargins(0, 0, 0, 0)
+    audio_grid.setHorizontalSpacing(10)
+    audio_grid.setVerticalSpacing(10)
+    audio_grid.setColumnStretch(0, 1)
+    audio_grid.setColumnStretch(1, 1)
+    audio_grid.addWidget(field_widget("Audio codec", window.audio_codec_combo), 0, 0)
+    audio_grid.addWidget(field_widget("Audio bitrate", window.audio_bitrate_combo), 0, 1)
+    audio_grid.addWidget(field_widget("Sample rate", window.sample_rate_combo), 1, 0)
+    audio_grid.addWidget(field_widget("Channels", window.channels_combo), 1, 1)
+    options_l.addWidget(audio_grid_widget)
+
+    pipeline_grid_widget = QWidget()
+    pipeline_grid = QGridLayout(pipeline_grid_widget)
+    pipeline_grid.setContentsMargins(0, 0, 0, 0)
+    pipeline_grid.setHorizontalSpacing(10)
+    pipeline_grid.setVerticalSpacing(10)
+    pipeline_grid.setColumnStretch(0, 1)
+    pipeline_grid.setColumnStretch(1, 1)
+    pipeline_grid.addWidget(
+        field_widget(
+            "Export method",
+            window.export_method_combo,
+            "Auto chooses a strategy. Frame-changing options require accurate re-encoding.",
+        ),
+        0,
+        0,
     )
-    qc_l.addWidget(cutq_wrap)
+    pipeline_grid.addWidget(
+        field_widget("Cut border quality", window.cut_quality_combo),
+        0,
+        1,
+    )
+    options_l.addWidget(pipeline_grid_widget)
+
+    window.export_range_wrap = QWidget()
+    range_l = QGridLayout(window.export_range_wrap)
+    range_l.setContentsMargins(0, 0, 0, 0)
+    range_l.setHorizontalSpacing(10)
+    range_l.setColumnStretch(0, 1)
+    range_l.setColumnStretch(1, 1)
+    range_l.addWidget(field_widget("Range start", window.range_start_spin), 0, 0)
+    range_l.addWidget(field_widget("Range end", window.range_end_spin), 0, 1)
+    options_l.addWidget(window.export_range_wrap)
+
+    options_advanced.setVisible(False)
+    window.export_options_advanced = options_advanced
+
+    def _sync_options_advanced(_checked: bool) -> None:
+        open_now = bool(options_toggle.isChecked())
+        options_toggle.setArrowType(Qt.DownArrow if open_now else Qt.RightArrow)
+        options_advanced.setVisible(open_now)
+
+    options_toggle.toggled.connect(_sync_options_advanced)
+    qc_l.addWidget(options_advanced)
     root_l.addWidget(qc_block)
 
     # -------------------------
@@ -133,6 +240,28 @@ def build_export_page(window) -> None:
     window.hwaccel_cb.setText("Use hardware decode (d3d11va)")
     window.hwaccel_cb.setToolTip("Uses GPU decoding to speed up export (if supported).")
     perf_l.addWidget(window.hwaccel_cb)
+
+    advisor_wrap = QWidget()
+    advisor_l = QVBoxLayout(advisor_wrap)
+    advisor_l.setContentsMargins(0, 4, 0, 0)
+    advisor_l.setSpacing(6)
+    advisor_title = section_title("Settings advisor")
+    advisor_title.setObjectName("FieldTitle")
+    advisor_l.addWidget(advisor_title)
+    advisor_l.addWidget(hint("Optional benchmark. Review the result, then apply it explicitly."))
+    window.btn_export_advisor.setToolTip(
+        "Benchmark high-quality encoders on the current video and recommend codec, workers, and chunks."
+    )
+    window.export_advisor_result.setObjectName("FieldHint")
+    advisor_actions = QWidget()
+    advisor_actions_l = QHBoxLayout(advisor_actions)
+    advisor_actions_l.setContentsMargins(0, 0, 0, 0)
+    advisor_actions_l.setSpacing(8)
+    advisor_actions_l.addWidget(window.btn_export_advisor, stretch=1)
+    advisor_actions_l.addWidget(window.btn_export_advisor_apply)
+    advisor_l.addWidget(advisor_actions)
+    advisor_l.addWidget(window.export_advisor_result)
+    perf_l.addWidget(advisor_wrap)
 
     perf_adv = QWidget()
     perf_adv_l = QVBoxLayout(perf_adv)
@@ -169,6 +298,12 @@ def build_export_page(window) -> None:
     )
     perf_adv_l.addWidget(chunks_wrap)
 
+    window.btn_clear_export_cache.setObjectName("SmallSecondary")
+    window.btn_clear_export_cache.setToolTip(
+        "Delete cached render chunks and keyframe indexes. Future exports will rebuild them."
+    )
+    perf_adv_l.addWidget(window.btn_clear_export_cache)
+
     perf_adv.setVisible(False)
     window.export_perf_advanced = perf_adv
 
@@ -186,10 +321,10 @@ def build_export_page(window) -> None:
     # -------------------------
     actions_block, actions_l = block_frame(
         "Export",
-        "Export MP4 is the main action. EDL is optional for external editors.",
+        "The main action follows the selected format and output mode. EDL remains optional.",
     )
 
-    window.btn_export.setToolTip("Start rendering the final MP4 file.")
+    window.btn_export.setToolTip("Start rendering with the selected output settings.")
     window.btn_export_edl.setToolTip("Export an EDL file to use in other editors.")
     window.export_status.setObjectName("ExportStatus")
 
