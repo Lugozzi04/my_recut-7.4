@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "profile": "hearthstone",
+  "reference_size": [
+    960,
+    540
+  ],
+  "viewport": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "ambiguity_margin": 0.04,
+  "classes": {
+    "VS_SCREEN": {
+      "roi": [
+        0.4,
+        0.34,
+        0.2,
+        0.3
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        1,
+        1.1
+      ],
+      "directory": "templates/vs"
+    },
+    "VICTORY": {
+      "roi": [
+        0.35,
+        0.47,
+        0.3,
+        0.22
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        1,
+        1.1
+      ],
+      "directory": "templates/victory"
+    },
+    "DEFEAT": {
+      "roi": [
+        0.35,
+        0.47,
+        0.3,
+        0.22
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        1,
+        1.1
+      ],
+      "directory": "templates/defeat"
+    }
+  }
+}

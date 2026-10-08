@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "profile": "hearthstone",
+  "reference_size": [
+    960,
+    540
+  ],
+  "viewport": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "ambiguity_margin": 0.04,
+  "classes": {
+    "VS_SCREEN": {
+      "roi": [
+        0.4,
+        0.34,
+        0.2,
+        0.3
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        1,
+        1.1
+      ],
+      "directory": "templates/vs"
+    },
+    "VICTORY": {
+      "roi": [
+        0.35,
+        0.47,
+        0.3,
+        0.22
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        0.925,
+        0.95,
+        0.975,
+        1,
+        1.025,
+        1.05,
+        1.075,
+        1.1
+      ],
+      "directory": "templates/victory"
+    },
+    "DEFEAT": {
+      "roi": [
+        0.35,
+        0.47,
+        0.3,
+        0.22
+      ],
+      "threshold": 0.92,
+      "scales": [
+        0.9,
+        0.925,
+        0.95,
+        0.975,
+        1,
+        1.025,
+        1.05,
+        1.075,
+        1.1
+      ],
+      "directory": "templates/defeat"
+    }
+  },
+  "calibration_provenance": {
+    "video_file": "73.mp4",
+    "calibration_range": [
+      0,
+      1400
+    ],
+    "calibration_games": [
+      1,
+      2,
+      3
+    ],
+    "held_out_range": [
+      1400,
+      6819.999667
+    ],
+    "changed_fields": [
+      "classes.VICTORY.scales",
+      "classes.DEFEAT.scales"
+    ],
+    "unchanged_threshold": 0.92,
+    "unchanged_ambiguity_margin": 0.04,
+    "method": "Uniform 0.025 scale grid across original 0.9..1.1 range, selected using only first three calibration games before calibrated held-out inference.",
+    "frozen_at_utc": "2026-10-08T00:45:48.038Z"
+  }
+}

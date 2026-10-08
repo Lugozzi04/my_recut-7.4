@@ -1,0 +1,2 @@
+# Optional, offline video-only gameplay analysis. Headless avoids a second Qt runtime.
+opencv-python-headless==4.12.0.88

@@ -1,0 +1,97 @@
+{
+  "format": "recut_gameplay_ground_truth",
+  "version": 1,
+  "complete": false,
+  "video_file": "73.mp4",
+  "video_fingerprint": "69ab4eb4426b464b89643e86f4032791cc49328d08a70c75e6c659d87a4e0b24",
+  "annotated_range": [
+    0,
+    6819.999667
+  ],
+  "annotation_method": "Visual inspection of sampled video frames, with local denser review of VS and Italian result labels; independent of the template detector.",
+  "warnings": [
+    "Provisional coverage: coarse survey may miss short events.",
+    "Timestamps represent first observed anchor frames, not exact editorial boundaries.",
+    "No automatic precision or recall has been measured."
+  ],
+  "calibration_range": [
+    0,
+    1400
+  ],
+  "held_out_range": [
+    1400,
+    6819.999667
+  ],
+  "games": [
+    {
+      "start": 212,
+      "end": 440.1,
+      "result": "WIN"
+    },
+    {
+      "start": 514,
+      "end": 1009.3,
+      "result": "WIN"
+    },
+    {
+      "start": 1088,
+      "end": 1325,
+      "result": "LOSS"
+    },
+    {
+      "start": 1423.4,
+      "end": 1887.8,
+      "result": "WIN"
+    },
+    {
+      "start": 1993.6,
+      "end": 2305,
+      "result": "LOSS"
+    },
+    {
+      "start": 2339.2,
+      "end": 2886.4,
+      "result": "WIN"
+    },
+    {
+      "start": 2918.6,
+      "end": 3327,
+      "result": "WIN"
+    },
+    {
+      "start": 3374,
+      "end": 3752.1,
+      "result": "LOSS"
+    },
+    {
+      "start": 3796,
+      "end": 4061.4,
+      "result": "WIN"
+    },
+    {
+      "start": 4564,
+      "end": 5010.7,
+      "result": "LOSS"
+    },
+    {
+      "start": 5059,
+      "end": 5678,
+      "result": "WIN"
+    },
+    {
+      "start": 5730,
+      "end": 6062,
+      "result": "LOSS"
+    },
+    {
+      "start": 6095,
+      "end": 6354,
+      "result": "WIN"
+    },
+    {
+      "start": 6380,
+      "end": 6738,
+      "result": "WIN"
+    }
+  ]
+}

@@ -193,3 +193,14 @@ Gyan FFmpeg 8.0.1 essentials binaries report GPLv3-or-later. Release builds
 include the corresponding FFmpeg source archive and GPL text. Obtain legal
 review before public distribution, especially for statically linked external
 libraries.
+
+## Hearthstone gameplay analysis (video-only prototype)
+
+An optional headless prototype detects VS / VICTORY / DEFEAT and reconstructs games.
+It produces diagnostic JSON without changing editor cuts. Real templates and VOD
+calibration are required; see [setup, capture and validation](docs/GAMEPLAY.md).
+
+```powershell
+python -m pip install -r requirements-gameplay.txt
+python -m analysis.gameplay.hearthstone.debug_analyze "video.mp4" --output-dir "gameplay-debug"
+```

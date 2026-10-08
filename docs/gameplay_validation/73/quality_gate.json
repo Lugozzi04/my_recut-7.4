@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-08",
+  "python": "3.10.11",
+  "opencv": "4.12.0",
+  "gameplay": {
+    "passed": 192,
+    "failed": 0,
+    "skipped": 0,
+    "test_modules": [
+      "tests/test_gameplay_analyzer.py",
+      "tests/test_gameplay_assembler.py",
+      "tests/test_gameplay_cache.py",
+      "tests/test_gameplay_debug_cli.py",
+      "tests/test_gameplay_dense_analyzer.py",
+      "tests/test_gameplay_detector.py",
+      "tests/test_gameplay_evaluation.py",
+      "tests/test_gameplay_integration.py",
+      "tests/test_gameplay_models.py",
+      "tests/test_gameplay_sampler.py",
+      "tests/test_gameplay_templates.py"
+    ]
+  },
+  "full_suite": {
+    "passed": 641,
+    "failed": 0,
+    "skipped": 1,
+    "elapsed_seconds": 56.42,
+    "skip_reason": "googleapiclient.http unavailable (existing YouTube SDK test)"
+  },
+  "ruff": "PASS",
+  "mypy": {
+    "result": "PASS",
+    "source_files": 48
+  },
+  "compileall": "PASS",
+  "gui_smoke": {
+    "exit_code": 0,
+    "qt_platform": "offscreen"
+  },
+  "headless_gameplay_help": {
+    "exit_code": 0
+  },
+  "commands": [
+    "python -m pytest -o addopts= -q -rs tests/test_gameplay_analyzer.py tests/test_gameplay_assembler.py tests/test_gameplay_cache.py tests/test_gameplay_debug_cli.py tests/test_gameplay_dense_analyzer.py tests/test_gameplay_detector.py tests/test_gameplay_evaluation.py tests/test_gameplay_integration.py tests/test_gameplay_models.py tests/test_gameplay_sampler.py tests/test_gameplay_templates.py",
+    "python -m pytest -o addopts= -q -rs",
+    "python -m ruff check .",
+    "python -m mypy automation analysis/audio_service.py analysis/gameplay core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py analysis/classic.py core/config.py core/presets.py integrations utils/runtime_paths.py utils/console.py utils/credential_files.py utils/ffconcat.py utils/redaction.py utils/ffmpeg.py",
+    "python -m compileall -q analysis automation core export integrations ui utils widgets main.py",
+    "python main.py --smoke-test",
+    "python -m analysis.gameplay.hearthstone.debug_analyze --help"
+  ],
+  "test_environment": {
+    "QT_QPA_PLATFORM": "offscreen",
+    "QTWEBENGINE_CHROMIUM_FLAGS": "--disable-gpu",
+    "AUTO_CUTTER_EXPORT_DEBUG": "0",
+    "AUTO_CUTTER_CHUNK_CACHE_DIR": ".pytest_cache/gameplay-full-chunks"
+  },
+  "note": "pytest wrapper supplies workspace cache paths; tests use mocks or short generated media, not real account credentials."
+}
