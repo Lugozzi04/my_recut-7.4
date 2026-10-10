@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "recorded_date": "2026-10-09",
+  "origin_evidence": "user_attestation",
+  "user_statement": "vengono da un altro vod che ancora non ho scaricato",
+  "source": {
+    "relationship": "another VOD, not yet downloaded",
+    "vod_id": null,
+    "url": null,
+    "frame_timestamps": null,
+    "video_fingerprint": null
+  },
+  "status": "EXTERNAL_CALIBRATION_CANDIDATES",
+  "limitations": [
+    "Source video and timestamps are not yet available for independent verification.",
+    "Static references do not establish temporal trigger, sampling or event consolidation reliability."
+  ],
+  "frozen_configuration_impact": "none",
+  "prior_use": "general UI geometry only; no quantitative calibration or frozen asset creation",
+  "future_use": "Evaluate in a separate calibration cycle with documented provenance; never retune against the frozen 73.mp4 validation games.",
+  "images": [
+    {
+      "path": "templates/board.png",
+      "sha256": "9660ad9182cddba653de61892692e439abed3d38712948e7f736bc9c04a689d8"
+    },
+    {
+      "path": "templates/board1.png",
+      "sha256": "6df849b4b6f03bcc535cad0ef784c67f0c19741a2dc65cc14b062972fbe38d73"
+    },
+    {
+      "path": "templates/lose.png",
+      "sha256": "9acd8d9653fa97f5dcd2c92851ecf76c9b41997fe508f1f835194cd6770cdc70"
+    },
+    {
+      "path": "templates/queue.png",
+      "sha256": "27fd5876fd66b4214e482ae53db9371ac23cd77e94120e101b5a3f1fc5b97a25"
+    },
+    {
+      "path": "templates/vs.png",
+      "sha256": "0d814659b1d1c6bda35bce4c21fb4da6f8526d27482e1e34d71b6832592b70d9"
+    },
+    {
+      "path": "templates/win.png",
+      "sha256": "4a2e22bc9c10778686f3c3fe1837b27abf06582c953b776f121dbe935fae62c6"
+    }
+  ]
+}

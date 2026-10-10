@@ -5,6 +5,7 @@ import json
 import math
 import os
 import threading
+import time
 import uuid
 from collections import deque
 from collections.abc import Callable, Iterable, Mapping
@@ -114,6 +115,7 @@ class AnalysisProjectResult:
     duration_s: float
     cuts_count: int
     reused: bool = False
+    summary: dict[str, Any] | None = None  # job-level analysis summary (gameplay runs)
 
 
 BALANCED_ANALYSIS_PROFILE = ClassicAnalysisProfile()
@@ -139,6 +141,7 @@ def _compute_classic_cuts(
     result: AnalysisResult,
     profile: ClassicAnalysisProfile,
     manual_cuts: Iterable[Segment] = (),
+    gameplay_cuts: Iterable[Segment] = (),
 ) -> tuple[list[Segment], list[Segment]]:
     config = profile.to_project_config(_threshold_percent(result))
     config["intensity"] = max(0, min(100, int(profile.intensity)))
@@ -149,7 +152,49 @@ def _compute_classic_cuts(
         result.rms, float(result.duration), float(result.hop_s), config,
         manual_cuts=manual_cuts,
         threshold_amp=float(result.auto_threshold),
+        gameplay_cuts=gameplay_cuts,
     )
+
+
+def _intersect(segments: list[Segment], islands: list[Segment]) -> list[Segment]:
+    out = []
+    for segment in segments:
+        for island in islands:
+            start, end = max(segment.start, island.start), min(segment.end, island.end)
+            if end > start:
+                out.append(Segment(start, end))
+    return out
+
+
+def composition_report(duration: float, classic: list[Segment], gameplay_keeps: list[Segment],
+                       gameplay_cuts: list[Segment], manual: list[Segment], effective: list[Segment],
+                       keeps: list[Segment]) -> dict[str, Any]:
+    def seconds(segments: list[Segment]) -> float:
+        return round(sum(max(0.0, s.end - s.start) for s in segments), 3)
+
+    inside = _intersect(classic, gameplay_keeps)
+    return {"composition": {
+        "rule": ("gameplay_cuts = invert(gameplay_keeps); effective = merge(merge(classic + gameplay_cuts) - "
+                 "suppressed + manual); final keeps = invert(effective) = gameplay_keeps minus classic/manual cuts"),
+        "gameplay_keeps": _segments_payload(gameplay_keeps), "gameplay_cuts": _segments_payload(gameplay_cuts),
+        "classic_cuts_all": _segments_payload(classic), "classic_cuts_inside_keeps": _segments_payload(inside),
+        "manual_cuts": _segments_payload(manual), "effective_cuts": _segments_payload(effective),
+        "final_keeps": _segments_payload(keeps),
+        "seconds": {"duration": round(float(duration), 3), "gameplay_keeps": seconds(gameplay_keeps),
+                    "classic_inside_keeps": seconds(inside), "manual": seconds(manual),
+                    "effective_removed": seconds(effective), "final_kept": seconds(keeps)},
+    }}
+
+
+def summarize_gameplay_report(report: Mapping[str, Any]) -> dict[str, Any]:
+    games = [{"index": g["index"], "result": g["result"], "termination": g["termination"],
+              "disposition": g["disposition"]} for g in report.get("games", [])]
+    seconds = report.get("composition", {}).get("seconds", {})
+    return {"games": games, "kept_games": [g["index"] for g in games if g["disposition"] == "KEEP"],
+            "removed_games": [g["index"] for g in games if g["disposition"] != "KEEP"],
+            "gameplay_keeps": [[round(k["start"], 3), round(k["end"], 3)] for k in report.get("gameplay_keeps", [])],
+            "boundary_mode": report.get("settings", {}).get("boundary_mode"), "seconds": seconds,
+            "timings": report.get("timings", {}), "warnings": report.get("warnings", [])}
 
 
 class PipelineProjectAnalyzer:
@@ -190,37 +235,61 @@ class PipelineProjectAnalyzer:
             return cached
 
         last_progress = -1
+        gameplay_settings = self._gameplay_for_job(job)
+        audio_share = 95 if gameplay_settings is None else 25
 
         def report_audio(progress: int) -> None:
             nonlocal last_progress
-            value = max(0, min(95, int(max(0, min(100, int(progress))) * 0.95)))
+            value = max(0, min(audio_share, int(max(0, min(100, int(progress))) * audio_share / 100)))
             if value <= last_progress:
                 return
             last_progress = value
             self._emit_progress(on_progress, value)
 
         try:
+            started = time.perf_counter()
             result = self._analyze_fn(
                 AnalysisRequest(str(source)),
                 cancellation=token,
                 on_progress=report_audio,
             )
+            classic_seconds = time.perf_counter() - started
             token.raise_if_cancelled()
             if not math.isfinite(float(result.duration)) or float(result.duration) <= 0.0:
                 raise PipelineAnalysisError("invalid_analysis", "Audio analysis returned an invalid duration.")
             range_cuts = self._range_cuts(job, float(result.duration))
-            if preset is None:
-                cuts, keeps = _compute_classic_cuts(result, self.profile, range_cuts)
-            else:
-                cuts, keeps = compute_classic_cuts(
-                    result.rms, float(result.duration), float(result.hop_s), preset["config"],
-                    manual_cuts=range_cuts,
-                )
+            gameplay = None
+            if gameplay_settings is not None:
+                def report_gameplay(progress: int) -> None:
+                    nonlocal last_progress
+                    value = min(95, audio_share + int(max(0, min(100, int(progress))) * 0.7))
+                    if value > last_progress:
+                        last_progress = value
+                        self._emit_progress(on_progress, value)
+
+                gameplay = self._run_gameplay(source, gameplay_settings, token, report_gameplay)
+            gameplay_keeps = gameplay.gameplay_keeps if gameplay is not None else []
+            if gameplay is not None and not gameplay_keeps:
+                raise PipelineAnalysisError("no_publishable_games",
+                                            "No complete WIN was found: --keep-games wins would export nothing.")
+            gameplay_cuts = gameplay.gameplay_cuts if gameplay is not None else []
+            classic_only, _ = self._classic(result, preset, range_cuts, [])
+            cuts, keeps = self._classic(result, preset, range_cuts, gameplay_cuts)
             payload = self._project_payload(
                 job, source, result, cuts, keeps,
                 preset=preset, request_signature=request_signature,
-                manual_cuts=range_cuts,
+                manual_cuts=range_cuts, gameplay_cuts=gameplay_cuts, gameplay_keeps=gameplay_keeps,
             )
+            summary = None
+            if gameplay is not None:
+                report = gameplay.report()
+                report["timings"]["classic_analysis_s"] = round(classic_seconds, 3)
+                report.update(composition_report(result.duration, classic_only, gameplay_keeps, gameplay_cuts,
+                                                 range_cuts, cuts, keeps))
+                payload["gameplay"] = {"version": 2, "mode": "keep", "settings": report["settings"],
+                                       "games": report["games"], "keep_islands": report["keep_islands"],
+                                       "gameplay_keeps": report["gameplay_keeps"]}
+                summary = self._write_gameplay_report(job, report)
             portable = make_payload_portable(payload, output)
             token.raise_if_cancelled()
             self._write_project(output, portable)
@@ -237,6 +306,7 @@ class PipelineProjectAnalyzer:
                 duration_s=validated.duration_s,
                 cuts_count=validated.cuts_count,
                 reused=False,
+                summary=summary,
             )
         except AnalysisCancelled as exc:
             raise PipelineAnalysisCancelled() from exc
@@ -249,6 +319,58 @@ class PipelineProjectAnalyzer:
                 "analysis_failed",
                 f"Could not analyze the downloaded video: {exc}",
             ) from exc
+
+    def _classic(self, result: AnalysisResult, preset: dict[str, Any] | None, manual: list[Segment],
+                 gameplay: list[Segment]) -> tuple[list[Segment], list[Segment]]:
+        if preset is None:
+            return _compute_classic_cuts(result, self.profile, manual, gameplay)
+        return compute_classic_cuts(result.rms, float(result.duration), float(result.hop_s), preset["config"],
+                                    manual_cuts=manual, gameplay_cuts=gameplay)
+
+    @staticmethod
+    def _gameplay_for_job(job: PipelineJob) -> Any:
+        raw = job.metadata.get("gameplay")
+        if raw is None:
+            return None
+        from analysis.gameplay_editing import GameplayEditSettings
+
+        try:
+            return GameplayEditSettings.from_mapping(raw)
+        except (TypeError, ValueError, KeyError) as exc:
+            raise PipelineAnalysisError("invalid_gameplay", f"Invalid gameplay settings: {exc}") from exc
+
+    @staticmethod
+    def _run_gameplay(source: Path, settings: Any, token: AnalysisCancellation, on_progress: ProgressCallback) -> Any:
+        from analysis.gameplay_editing import GameplayEditingService
+
+        try:
+            return GameplayEditingService(settings).run(source, cancellation=token, on_progress=on_progress)
+        except (AnalysisCancelled, PipelineAnalysisError):
+            raise
+        except Exception as exc:
+            if token.is_cancelled:
+                raise AnalysisCancelled() from exc
+            raise PipelineAnalysisError("gameplay_analysis_failed", f"Gameplay analysis failed: {exc}") from exc
+
+    @staticmethod
+    def _write_gameplay_report(job: PipelineJob, report: dict[str, Any]) -> dict[str, Any]:
+        delivery = job.metadata.get("delivery")
+        raw = str(delivery.get("gameplay_report_path", "") or "") if isinstance(delivery, Mapping) else ""
+        summary = summarize_gameplay_report(report)
+        if raw:
+            target = Path(raw)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
+            try:
+                temporary.write_text(json.dumps(report, ensure_ascii=False, indent=1, allow_nan=False) + "\n",
+                                     encoding="utf-8")
+                os.replace(temporary, target)
+            except OSError as exc:
+                raise PipelineAnalysisError("report_write_failed", f"Could not save gameplay report {target}: {exc}") from exc
+            finally:
+                temporary.unlink(missing_ok=True)
+            summary["report_path"] = str(target)
+        return summary
 
     @staticmethod
     def _source_for_job(job: PipelineJob) -> Path:
@@ -297,13 +419,14 @@ class PipelineProjectAnalyzer:
     def _request_signature(job: PipelineJob, preset: dict[str, Any] | None) -> str | None:
         raw_export = job.metadata.get("export_settings")
         source_range = PipelineProjectAnalyzer._source_range(job)
-        if preset is None and not isinstance(raw_export, Mapping) and source_range is None:
+        if (preset is None and not isinstance(raw_export, Mapping) and source_range is None
+                and job.metadata.get("gameplay") is None):
             return None
         settings = ExportSettings.from_mapping(raw_export).to_mapping() if isinstance(raw_export, Mapping) else None
-        serialized = json.dumps(
-            {"preset": preset, "export_settings": settings, "source_range": source_range},
-            sort_keys=True, separators=(",", ":"),
-        )
+        identity: dict[str, Any] = {"preset": preset, "export_settings": settings, "source_range": source_range}
+        if job.metadata.get("gameplay") is not None:  # absent for legacy jobs: their signatures are unchanged
+            identity["gameplay"] = job.metadata["gameplay"]
+        serialized = json.dumps(identity, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     @staticmethod
@@ -350,6 +473,8 @@ class PipelineProjectAnalyzer:
         preset: dict[str, Any] | None = None,
         request_signature: str | None = None,
         manual_cuts: list[Segment] | None = None,
+        gameplay_cuts: list[Segment] | None = None,
+        gameplay_keeps: list[Segment] | None = None,
     ) -> dict[str, Any]:
         threshold_pct = _threshold_percent(result)
         config = self.profile.to_project_config(threshold_pct) if preset is None else preset["config"]
@@ -385,6 +510,13 @@ class PipelineProjectAnalyzer:
             "ai_manual_cuts": [],
             "ai_suppressed_cuts": [],
         }
+        if gameplay_cuts is not None and job.metadata.get("gameplay") is not None:
+            # Provenance kept apart from classic/manual; `cuts`/`keeps` are the composed result.
+            # gameplay_keeps is the source of truth; gameplay_cuts is its complement (what the editor composes).
+            track["gameplay_cuts_enabled"] = True
+            track["gameplay_mode"] = "keep"
+            track["gameplay_keeps"] = _segments_payload(gameplay_keeps or [])
+            track["gameplay_cuts"] = _segments_payload(gameplay_cuts)
         raw_export = job.metadata.get("export_settings")
         export_settings = ExportSettings.from_mapping(raw_export) if isinstance(raw_export, Mapping) else ExportSettings.defaults()
         source_stat = source.stat()
@@ -532,7 +664,13 @@ class PipelineAnalysisService:
                 cancellation=token,
                 on_progress=report,
             )
-            return self.manager.mark_analyzed(job.id, result.path)
+            analyzed = self.manager.mark_analyzed(job.id, result.path)
+            if result.summary is not None:
+                updates: dict[str, Any] = {"analysis_summary": result.summary}
+                if result.summary.get("report_path"):
+                    updates["gameplay_report_path"] = result.summary["report_path"]
+                analyzed = self.manager.update_metadata(job.id, updates)
+            return analyzed
         except PipelineAnalysisCancelled as exc:
             self._fail_active_job(job.id, exc.code, str(exc))
             raise

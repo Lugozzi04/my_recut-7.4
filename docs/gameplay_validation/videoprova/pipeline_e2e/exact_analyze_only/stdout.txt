@@ -1,0 +1,83 @@
+ANALYZED (not rendered)
+Project:
+C:\Users\jakub\Desktop\auto-cutter\auto-cutter\my_recut 7.4\docs\gameplay_validation\videoprova\pipeline_e2e\exact_analyze_only\artifacts\5839f5854cd0a64cbc84d294ecd872f81b7093edf58a3d2291e84e7e9dee0b85.autocutter
+Gameplay report:
+C:\Users\jakub\Desktop\auto-cutter\auto-cutter\my_recut 7.4\docs\gameplay_validation\videoprova\pipeline_e2e\exact_analyze_only\gameplay_report.json
+{
+  "boundary_mode": "exact",
+  "gameplay_cuts": [
+    [
+      630.583,
+      1301.083
+    ],
+    [
+      1819.75,
+      2791.983
+    ],
+    [
+      3628.933,
+      3750.0
+    ]
+  ],
+  "games": [
+    {
+      "disposition": "REMOVE",
+      "index": 1,
+      "result": "LOSS",
+      "termination": "COMPLETE"
+    },
+    {
+      "disposition": "KEEP",
+      "index": 2,
+      "result": "WIN",
+      "termination": "COMPLETE"
+    },
+    {
+      "disposition": "REMOVE",
+      "index": 3,
+      "result": "LOSS",
+      "termination": "COMPLETE"
+    },
+    {
+      "disposition": "KEEP",
+      "index": 4,
+      "result": "WIN",
+      "termination": "COMPLETE"
+    },
+    {
+      "disposition": "REMOVE_TO_EOF",
+      "index": 5,
+      "result": "UNKNOWN",
+      "termination": "IN_PROGRESS_AT_EOF"
+    }
+  ],
+  "kept_games": [
+    2,
+    4
+  ],
+  "removed_games": [
+    1,
+    3,
+    5
+  ],
+  "report_path": "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\docs\\gameplay_validation\\videoprova\\pipeline_e2e\\exact_analyze_only\\gameplay_report.json",
+  "seconds": {
+    "classic": 476.6,
+    "duration": 3750.021,
+    "effective_removed": 2004.583,
+    "gameplay": 1763.8,
+    "kept": 1745.417,
+    "manual": 0
+  },
+  "timings": {
+    "agent_cache_hits": 0.0,
+    "agent_calls": 0.0,
+    "boundary_analysis_s": 37.659,
+    "classic_analysis_s": 10.128,
+    "gameplay_detection_s": 108.354,
+    "resolver_fallbacks": 0.0,
+    "resolver_s": 0.0
+  },
+  "warnings": []
+}
+Render later with: resume 25b0edb8e1eb4593b59db6d35e8dbd90

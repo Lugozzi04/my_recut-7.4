@@ -1,0 +1,32 @@
+{
+ "analysis_s": 21.2,
+ "brief_s": 0.05,
+ "prompt_chars": 19593,
+ "system_prompt_chars": 597,
+ "schema_chars": 6316,
+ "images": 5,
+ "image_bytes": 1413036,
+ "images_desc": [
+  "game-a6c0f437acde505ac557: frames F001, F002, F005, F006, F009, F012, F015, F018",
+  "game-5ea93430b91b0da159e0: frames F021, F024, F027, F030, F033, F036, F039, F042",
+  "webcam crops W001, W002, W004, W005, W007, W008, W009, W010, W012",
+  "frame F005 (H02) full size with a 0.1 grid, for reading cards",
+  "frame F027 (H09) full size with a 0.1 grid, for reading cards"
+ ],
+ "games": 2,
+ "highlights": 14,
+ "transcript_lines_sent": 179,
+ "transcript_lines_total": 179,
+ "frames_listed": 44,
+ "webcam_listed": 13,
+ "timings": {
+  "timeline": 0.113,
+  "transcription": 0.003,
+  "audio_analysis": 0.006,
+  "visual_analysis": 0.001,
+  "games": 0.0,
+  "highlight_discovery": 0.001,
+  "frame_extraction": 20.911,
+  "contact_sheets": 0.118
+ }
+}

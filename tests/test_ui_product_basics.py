@@ -27,10 +27,13 @@ class _ButtonAccessibilityParser(HTMLParser):
 
 
 class UiProductBasicsTests(unittest.TestCase):
-    def test_only_layout_webviews_are_created(self) -> None:
+    def test_editor_chrome_is_native_without_webengine_views(self) -> None:
         source = (ROOT / "ui" / "main_window.py").read_text(encoding="utf-8")
 
-        self.assertEqual(source.count("QWebEngineView()"), 3)
+        # top bar, transport and stats are native Qt widgets now (ui/widgets/*)
+        self.assertEqual(source.count("QWebEngineView()"), 0)
+        for widget in ("TopBar()", "TransportBar(", "TimelineToolbar(", "EditStats()"):
+            self.assertIn(widget, source)
 
     def test_web_buttons_have_accessible_labels(self) -> None:
         for filename in ("topbar.html", "bottombar.html"):

@@ -76,10 +76,18 @@ class GameAssembler:
     template follows a WIN template. Editorial cut decisions belong elsewhere.
     """
 
-    def __init__(self, *, conflicting_result_window_s: float = 5.0) -> None:
+    def __init__(
+        self, *, conflicting_result_window_s: float = 5.0,
+        minimum_game_duration_s: float = 0.0, maximum_game_duration_s: float | None = None,
+    ) -> None:
         self.conflicting_result_window_s = _non_negative(
             conflicting_result_window_s, "conflicting_result_window_s",
         )
+        self.minimum_game_duration_s = _non_negative(minimum_game_duration_s, "minimum_game_duration_s")
+        self.maximum_game_duration_s = (None if maximum_game_duration_s is None else
+                                        _non_negative(maximum_game_duration_s, "maximum_game_duration_s"))
+        if self.maximum_game_duration_s is not None and self.maximum_game_duration_s <= self.minimum_game_duration_s:
+            raise ValueError("maximum_game_duration_s must exceed minimum_game_duration_s")
 
     @staticmethod
     def _game(index: int, start: GameEvent | None, outcomes: list[GameEvent]) -> GameSegment:
@@ -126,7 +134,17 @@ class GameAssembler:
         )
 
     def assemble(self, events: Iterable[GameEvent]) -> list[GameSegment]:
-        ordered = consolidate_events(events)
+        # An intervening start is a hard barrier: duplicate outcomes must never
+        # be consolidated across two different games, even one second apart.
+        raw = sorted(events, key=lambda event: (event.timestamp, event.type != GameEventType.VS_SCREEN))
+        ordered: list[GameEvent] = []
+        bucket: list[GameEvent] = []
+        for event in raw:
+            if bucket and ((event.type == GameEventType.VS_SCREEN) != (bucket[0].type == GameEventType.VS_SCREEN)):
+                ordered.extend(consolidate_events(bucket))
+                bucket = []
+            bucket.append(event)
+        ordered.extend(consolidate_events(bucket))
         games: list[GameSegment] = []
         start: GameEvent | None = None
         outcomes: list[GameEvent] = []
@@ -150,6 +168,15 @@ class GameAssembler:
                 last = max(_last_seen(outcome) for outcome in outcomes)
                 if event.timestamp - last > self.conflicting_result_window_s:
                     flush()
+            if start is not None and not outcomes:
+                duration = event.timestamp - start.timestamp
+                too_long = self.maximum_game_duration_s is not None and duration > self.maximum_game_duration_s
+                too_short = 0 < duration < self.minimum_game_duration_s
+                if too_long or too_short:
+                    flush()
+                    games[-1].metadata["issues"].append("implausible_result_duration")
+                    # Preserve the observed result as an explicit orphan. A
+                    # duration bound is a safety guard, not an inferred start.
             outcomes.append(event)
         flush()
         return games

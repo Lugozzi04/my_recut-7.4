@@ -1,0 +1,3278 @@
+{
+  "format": "recut_gameplay_analysis",
+  "schema_version": 1,
+  "video_path": "C:\\Users\\jakub\\Downloads\\74.mp4",
+  "duration": 7641.056667,
+  "events": [
+    {
+      "timestamp": 168.338,
+      "type": "VS_SCREEN",
+      "confidence": 0.9938053488731384,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9938053488731384,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9938053488731384,
+        "class_scores": {
+          "VS_SCREEN": 0.9938053488731384
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 30,
+        "first_seen": 168.338,
+        "last_seen": 173.171333,
+        "peak_timestamp": 170.504667,
+        "temporal_span_s": 4.83333300000001,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 820.152667,
+      "type": "VICTORY",
+      "confidence": 0.9987943768501282,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9987943768501282,
+        "second_best_similarity": 0.47702446579933167,
+        "class_margin": 0.5217699110507965,
+        "class_scores": {
+          "VICTORY": 0.9987943768501282,
+          "DEFEAT": 0.47702446579933167
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 75,
+        "first_seen": 820.152667,
+        "last_seen": 823.036,
+        "peak_timestamp": 821.336,
+        "temporal_span_s": 2.8833329999999933,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 1033.877333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9944180846214294,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9944180846214294,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9944180846214294,
+        "class_scores": {
+          "VS_SCREEN": 0.9944180846214294
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 31,
+        "first_seen": 1033.877333,
+        "last_seen": 1038.877333,
+        "peak_timestamp": 1038.877333,
+        "temporal_span_s": 5.0,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 1385.022667,
+      "type": "VICTORY",
+      "confidence": 0.9989316463470459,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9989316463470459,
+        "second_best_similarity": 0.47733256220817566,
+        "class_margin": 0.5215990841388702,
+        "class_scores": {
+          "VICTORY": 0.9989316463470459,
+          "DEFEAT": 0.47733256220817566
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 79,
+        "first_seen": 1385.022667,
+        "last_seen": 1387.922667,
+        "peak_timestamp": 1386.239333,
+        "temporal_span_s": 2.900000000000091,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 1566.898,
+      "type": "VS_SCREEN",
+      "confidence": 0.9949630498886108,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9949630498886108,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9949630498886108,
+        "class_scores": {
+          "VS_SCREEN": 0.9949630498886108
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 24,
+        "first_seen": 1566.898,
+        "last_seen": 1570.731333,
+        "peak_timestamp": 1568.731333,
+        "temporal_span_s": 3.8333330000000387,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 2197.748,
+      "type": "VICTORY",
+      "confidence": 0.9995130300521851,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9995130300521851,
+        "second_best_similarity": 0.47707322239875793,
+        "class_margin": 0.5224398076534271,
+        "class_scores": {
+          "VICTORY": 0.9995130300521851,
+          "DEFEAT": 0.47707322239875793
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 239,
+        "first_seen": 2197.748,
+        "last_seen": 2207.198,
+        "peak_timestamp": 2199.031333,
+        "temporal_span_s": 9.449999999999818,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 2207.764667,
+      "type": "VICTORY",
+      "confidence": 0.9220633506774902,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9220633506774902,
+        "second_best_similarity": 0.46707671880722046,
+        "class_margin": 0.4549866318702698,
+        "class_scores": {
+          "VICTORY": 0.9220633506774902,
+          "DEFEAT": 0.46707671880722046
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.46979166666666666,
+          0.5518518518518518,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 4,
+        "first_seen": 2207.764667,
+        "last_seen": 2207.814667,
+        "peak_timestamp": 2207.798,
+        "temporal_span_s": 0.0500000000001819,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 2210.364667,
+      "type": "VICTORY",
+      "confidence": 0.9992198944091797,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9992198944091797,
+        "second_best_similarity": 0.47782841324806213,
+        "class_margin": 0.5213914811611176,
+        "class_scores": {
+          "VICTORY": 0.9992198944091797,
+          "DEFEAT": 0.47782841324806213
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 283,
+        "first_seen": 2210.364667,
+        "last_seen": 2221.298,
+        "peak_timestamp": 2213.381333,
+        "temporal_span_s": 10.933332999999948,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 2422.599333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9950679540634155,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9950679540634155,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9950679540634155,
+        "class_scores": {
+          "VS_SCREEN": 0.9950679540634155
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 39,
+        "first_seen": 2422.599333,
+        "last_seen": 2428.932667,
+        "peak_timestamp": 2427.099333,
+        "temporal_span_s": 6.3333339999999225,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 2912.389333,
+      "type": "VICTORY",
+      "confidence": 0.999555766582489,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.999555766582489,
+        "second_best_similarity": 0.47804006934165955,
+        "class_margin": 0.5215156972408295,
+        "class_scores": {
+          "VICTORY": 0.999555766582489,
+          "DEFEAT": 0.47804006934165955
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 47,
+        "first_seen": 2912.389333,
+        "last_seen": 2914.289333,
+        "peak_timestamp": 2913.639333,
+        "temporal_span_s": 1.900000000000091,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3186.613333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9948465824127197,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9948465824127197,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9948465824127197,
+        "class_scores": {
+          "VS_SCREEN": 0.9948465824127197
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 19,
+        "first_seen": 3186.613333,
+        "last_seen": 3189.613333,
+        "peak_timestamp": 3187.946667,
+        "temporal_span_s": 3.0,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 3470.923333,
+      "type": "VICTORY",
+      "confidence": 0.9988614916801453,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9988614916801453,
+        "second_best_similarity": 0.4789169430732727,
+        "class_margin": 0.5199445486068726,
+        "class_scores": {
+          "VICTORY": 0.9988614916801453,
+          "DEFEAT": 0.4789169430732727
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 250,
+        "first_seen": 3470.923333,
+        "last_seen": 3480.39,
+        "peak_timestamp": 3472.04,
+        "temporal_span_s": 9.466666999999688,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3480.94,
+      "type": "VICTORY",
+      "confidence": 0.9216296076774597,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9216296076774597,
+        "second_best_similarity": 0.4679355025291443,
+        "class_margin": 0.45369410514831543,
+        "class_scores": {
+          "VICTORY": 0.9216296076774597,
+          "DEFEAT": 0.4679355025291443
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.46979166666666666,
+          0.5518518518518518,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 4,
+        "first_seen": 3480.94,
+        "last_seen": 3481.006667,
+        "peak_timestamp": 3480.99,
+        "temporal_span_s": 0.06666700000005221,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3483.573333,
+      "type": "VICTORY",
+      "confidence": 0.9223117828369141,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9223117828369141,
+        "second_best_similarity": 0.4631827771663666,
+        "class_margin": 0.4591290056705475,
+        "class_scores": {
+          "VICTORY": 0.9223117828369141,
+          "DEFEAT": 0.4631827771663666
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.46979166666666666,
+          0.5518518518518518,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 3,
+        "first_seen": 3483.573333,
+        "last_seen": 3483.606667,
+        "peak_timestamp": 3483.606667,
+        "temporal_span_s": 0.033334000000195374,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3484.14,
+      "type": "VICTORY",
+      "confidence": 0.9989280104637146,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9989280104637146,
+        "second_best_similarity": 0.4802206754684448,
+        "class_margin": 0.5187073349952698,
+        "class_scores": {
+          "VICTORY": 0.9989280104637146,
+          "DEFEAT": 0.4802206754684448
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 418,
+        "first_seen": 3484.14,
+        "last_seen": 3499.523333,
+        "peak_timestamp": 3491.14,
+        "temporal_span_s": 15.38333300000022,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3500.056667,
+      "type": "VICTORY",
+      "confidence": 0.9228433966636658,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9228433966636658,
+        "second_best_similarity": 0.4671322703361511,
+        "class_margin": 0.45571112632751465,
+        "class_scores": {
+          "VICTORY": 0.9228433966636658,
+          "DEFEAT": 0.4671322703361511
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.46979166666666666,
+          0.5518518518518518,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 3,
+        "first_seen": 3500.056667,
+        "last_seen": 3500.09,
+        "peak_timestamp": 3500.09,
+        "temporal_span_s": 0.033333000000311586,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3502.656667,
+      "type": "VICTORY",
+      "confidence": 0.9223630428314209,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9223630428314209,
+        "second_best_similarity": 0.4641055166721344,
+        "class_margin": 0.4582575261592865,
+        "class_scores": {
+          "VICTORY": 0.9223630428314209,
+          "DEFEAT": 0.4641055166721344
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.46979166666666666,
+          0.5518518518518518,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 3,
+        "first_seen": 3502.656667,
+        "last_seen": 3502.69,
+        "peak_timestamp": 3502.673333,
+        "temporal_span_s": 0.03333299999985684,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3503.223333,
+      "type": "VICTORY",
+      "confidence": 0.9989747405052185,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9989747405052185,
+        "second_best_similarity": 0.4784773886203766,
+        "class_margin": 0.5204973518848419,
+        "class_scores": {
+          "VICTORY": 0.9989747405052185,
+          "DEFEAT": 0.4784773886203766
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 158,
+        "first_seen": 3503.223333,
+        "last_seen": 3508.423333,
+        "peak_timestamp": 3508.24,
+        "temporal_span_s": 5.200000000000273,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3651.968667,
+      "type": "VS_SCREEN",
+      "confidence": 0.998095691204071,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.998095691204071,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.998095691204071,
+        "class_scores": {
+          "VS_SCREEN": 0.998095691204071
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 35,
+        "first_seen": 3651.968667,
+        "last_seen": 3657.635333,
+        "peak_timestamp": 3657.635333,
+        "temporal_span_s": 5.6666660000000775,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 3842.508,
+      "type": "VICTORY",
+      "confidence": 0.9988734722137451,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9988734722137451,
+        "second_best_similarity": 0.47746920585632324,
+        "class_margin": 0.5214042663574219,
+        "class_scores": {
+          "VICTORY": 0.9988734722137451,
+          "DEFEAT": 0.47746920585632324
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 150,
+        "first_seen": 3842.508,
+        "last_seen": 3848.391333,
+        "peak_timestamp": 3843.641333,
+        "temporal_span_s": 5.883333000000221,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 3979.808,
+      "type": "VS_SCREEN",
+      "confidence": 0.9939156770706177,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9939156770706177,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9939156770706177,
+        "class_scores": {
+          "VS_SCREEN": 0.9939156770706177
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 39,
+        "first_seen": 3979.808,
+        "last_seen": 3986.141333,
+        "peak_timestamp": 3985.141333,
+        "temporal_span_s": 6.333333000000039,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 4202.927333,
+      "type": "VICTORY",
+      "confidence": 0.9988768696784973,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9988768696784973,
+        "second_best_similarity": 0.47773632407188416,
+        "class_margin": 0.5211405456066132,
+        "class_scores": {
+          "VICTORY": 0.9988768696784973,
+          "DEFEAT": 0.47773632407188416
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 139,
+        "first_seen": 4202.927333,
+        "last_seen": 4207.844,
+        "peak_timestamp": 4204.277333,
+        "temporal_span_s": 4.916667000000416,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 4482.484,
+      "type": "VS_SCREEN",
+      "confidence": 0.9993321299552917,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9993321299552917,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9993321299552917,
+        "class_scores": {
+          "VS_SCREEN": 0.9993321299552917
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 35,
+        "first_seen": 4482.484,
+        "last_seen": 4488.150667,
+        "peak_timestamp": 4487.817333,
+        "temporal_span_s": 5.6666669999995065,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 4804.928667,
+      "type": "VICTORY",
+      "confidence": 0.9811562299728394,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9811562299728394,
+        "second_best_similarity": 0.47223907709121704,
+        "class_margin": 0.5089171528816223,
+        "class_scores": {
+          "VICTORY": 0.9811562299728394,
+          "DEFEAT": 0.47223907709121704
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45729166666666665,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 29,
+        "first_seen": 4804.928667,
+        "last_seen": 4806.428667,
+        "peak_timestamp": 4805.345333,
+        "temporal_span_s": 1.5,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 4917.670667,
+      "type": "VS_SCREEN",
+      "confidence": 0.997559130191803,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.997559130191803,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.997559130191803,
+        "class_scores": {
+          "VS_SCREEN": 0.997559130191803
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 32,
+        "first_seen": 4917.670667,
+        "last_seen": 4922.837333,
+        "peak_timestamp": 4922.504,
+        "temporal_span_s": 5.1666660000000775,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 5529.045333,
+      "type": "VICTORY",
+      "confidence": 0.9605624675750732,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9605624675750732,
+        "second_best_similarity": 0.5155301094055176,
+        "class_margin": 0.44503235816955566,
+        "class_scores": {
+          "VICTORY": 0.9605624675750732,
+          "DEFEAT": 0.5155301094055176
+        },
+        "threshold": 0.92,
+        "scale": 0.925,
+        "matched_rect_normalized": [
+          0.459375,
+          0.5666666666666667,
+          0.09791666666666667,
+          0.053703703703703705
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 3,
+        "first_seen": 5529.045333,
+        "last_seen": 5529.095333,
+        "peak_timestamp": 5529.045333,
+        "temporal_span_s": 0.0500000000001819,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 5700.519333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9950668811798096,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9950668811798096,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9950668811798096,
+        "class_scores": {
+          "VS_SCREEN": 0.9950668811798096
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 33,
+        "first_seen": 5700.519333,
+        "last_seen": 5705.852667,
+        "peak_timestamp": 5704.352667,
+        "temporal_span_s": 5.3333339999999225,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 6092.682,
+      "type": "DEFEAT",
+      "confidence": 0.9782602787017822,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/defeat_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9782602787017822,
+        "second_best_similarity": 0.3091234266757965,
+        "class_margin": 0.6691368520259857,
+        "class_scores": {
+          "DEFEAT": 0.9782602787017822,
+          "VICTORY": 0.3091234266757965
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45208333333333334,
+          0.5666666666666667,
+          0.1,
+          0.053703703703703705
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 14,
+        "first_seen": 6092.682,
+        "last_seen": 6092.965333,
+        "peak_timestamp": 6092.748667,
+        "temporal_span_s": 0.2833330000003116,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 6094.415333,
+      "type": "DEFEAT",
+      "confidence": 0.9567062854766846,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/external74_defeat_stable.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9567062854766846,
+        "second_best_similarity": 0.4697467088699341,
+        "class_margin": 0.4869595766067505,
+        "class_scores": {
+          "DEFEAT": 0.9567062854766846,
+          "VICTORY": 0.4697467088699341
+        },
+        "threshold": 0.92,
+        "scale": 0.975,
+        "matched_rect_normalized": [
+          0.44479166666666664,
+          0.5888888888888889,
+          0.115625,
+          0.05185185185185185
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 132,
+        "first_seen": 6094.415333,
+        "last_seen": 6098.632,
+        "peak_timestamp": 6096.382,
+        "temporal_span_s": 4.216666999999688,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 6099.465333,
+      "type": "DEFEAT",
+      "confidence": 0.9996457695960999,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/external74_defeat_stable.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9996457695960999,
+        "second_best_similarity": 0.4676201641559601,
+        "class_margin": 0.5320256054401398,
+        "class_scores": {
+          "DEFEAT": 0.9996457695960999,
+          "VICTORY": 0.4676201641559601
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.446875,
+          0.5814814814814815,
+          0.11875,
+          0.053703703703703705
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 1048,
+        "first_seen": 6099.465333,
+        "last_seen": 6138.182,
+        "peak_timestamp": 6119.032,
+        "temporal_span_s": 38.71666699999969,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 6598.223333,
+      "type": "VS_SCREEN",
+      "confidence": 0.95518958568573,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.95518958568573,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.95518958568573,
+        "class_scores": {
+          "VS_SCREEN": 0.95518958568573
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 24,
+        "first_seen": 6598.223333,
+        "last_seen": 6602.056667,
+        "peak_timestamp": 6600.556667,
+        "temporal_span_s": 3.8333339999999225,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 7095.049333,
+      "type": "VICTORY",
+      "confidence": 0.9951520562171936,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/victory/victory_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9951520562171936,
+        "second_best_similarity": 0.4816325604915619,
+        "class_margin": 0.5135194957256317,
+        "class_scores": {
+          "VICTORY": 0.9951520562171936,
+          "DEFEAT": 0.4816325604915619
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45625,
+          0.575925925925926,
+          0.10625,
+          0.05740740740740741
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 17,
+        "first_seen": 7095.049333,
+        "last_seen": 7095.532667,
+        "peak_timestamp": 7095.532667,
+        "temporal_span_s": 0.4833340000004682,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 7197.399333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9973872900009155,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9973872900009155,
+        "second_best_similarity": -1.0,
+        "class_margin": 1.9973872900009155,
+        "class_scores": {
+          "VS_SCREEN": 0.9973872900009155
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.44895833333333335,
+          0.37777777777777777,
+          0.128125,
+          0.24814814814814815
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 27,
+        "first_seen": 7197.399333,
+        "last_seen": 7201.732667,
+        "peak_timestamp": 7201.066,
+        "temporal_span_s": 4.3333339999999225,
+        "sampling_fps": 6.0
+      }
+    },
+    {
+      "timestamp": 7606.056667,
+      "type": "DEFEAT",
+      "confidence": 0.9783180356025696,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/defeat_01.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9783180356025696,
+        "second_best_similarity": 0.3144475817680359,
+        "class_margin": 0.6638704538345337,
+        "class_scores": {
+          "DEFEAT": 0.9783180356025696,
+          "VICTORY": 0.3144475817680359
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45208333333333334,
+          0.5666666666666667,
+          0.1,
+          0.053703703703703705
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 10,
+        "first_seen": 7606.056667,
+        "last_seen": 7606.406667,
+        "peak_timestamp": 7606.156667,
+        "temporal_span_s": 0.3500000000003638,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 7607.856667,
+      "type": "DEFEAT",
+      "confidence": 0.9565744400024414,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/external74_defeat_stable.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.9565744400024414,
+        "second_best_similarity": 0.4681509733200073,
+        "class_margin": 0.4884234666824341,
+        "class_scores": {
+          "DEFEAT": 0.9565744400024414,
+          "VICTORY": 0.4681509733200073
+        },
+        "threshold": 0.92,
+        "scale": 0.975,
+        "matched_rect_normalized": [
+          0.44479166666666664,
+          0.5888888888888889,
+          0.115625,
+          0.05185185185185185
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 127,
+        "first_seen": 7607.856667,
+        "last_seen": 7612.056667,
+        "peak_timestamp": 7609.79,
+        "temporal_span_s": 4.199999999999818,
+        "sampling_fps": 20.0
+      }
+    },
+    {
+      "timestamp": 7614.39,
+      "type": "DEFEAT",
+      "confidence": 0.979827344417572,
+      "source": "template_matching",
+      "metadata": {
+        "candidate_only": false,
+        "template_id": "templates/defeat/external74_defeat_stable.png",
+        "similarity_method": "TM_CCOEFF_NORMED",
+        "raw_similarity": 0.979827344417572,
+        "second_best_similarity": 0.44778475165367126,
+        "class_margin": 0.5320425927639008,
+        "class_scores": {
+          "DEFEAT": 0.979827344417572,
+          "VICTORY": 0.44778475165367126
+        },
+        "threshold": 0.92,
+        "scale": 1.0,
+        "matched_rect_normalized": [
+          0.45,
+          0.575925925925926,
+          0.11875,
+          0.053703703703703705
+        ],
+        "detector_version": "hearthstone-template-v3",
+        "observation_count": 10,
+        "first_seen": 7614.39,
+        "last_seen": 7614.606667,
+        "peak_timestamp": 7614.44,
+        "temporal_span_s": 0.21666699999968841,
+        "sampling_fps": 20.0
+      }
+    }
+  ],
+  "games": [
+    {
+      "id": "game-ff3a64b21482a05196d3",
+      "index": 1,
+      "start": 168.338,
+      "end": 820.152667,
+      "result": "WIN",
+      "start_confidence": 0.9938053488731384,
+      "end_confidence": 0.9987943768501282,
+      "result_confidence": 0.9987943768501282,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 168.338,
+          "type": "VS_SCREEN",
+          "confidence": 0.9938053488731384,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9938053488731384,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9938053488731384,
+            "class_scores": {
+              "VS_SCREEN": 0.9938053488731384
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 30,
+            "first_seen": 168.338,
+            "last_seen": 173.171333,
+            "peak_timestamp": 170.504667,
+            "temporal_span_s": 4.83333300000001,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 820.152667,
+          "type": "VICTORY",
+          "confidence": 0.9987943768501282,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9987943768501282,
+            "second_best_similarity": 0.47702446579933167,
+            "class_margin": 0.5217699110507965,
+            "class_scores": {
+              "VICTORY": 0.9987943768501282,
+              "DEFEAT": 0.47702446579933167
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 75,
+            "first_seen": 820.152667,
+            "last_seen": 823.036,
+            "peak_timestamp": 821.336,
+            "temporal_span_s": 2.8833329999999933,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-345b5e67b652aab61540",
+      "index": 2,
+      "start": 1033.877333,
+      "end": 1385.022667,
+      "result": "WIN",
+      "start_confidence": 0.9944180846214294,
+      "end_confidence": 0.9989316463470459,
+      "result_confidence": 0.9989316463470459,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 1033.877333,
+          "type": "VS_SCREEN",
+          "confidence": 0.9944180846214294,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9944180846214294,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9944180846214294,
+            "class_scores": {
+              "VS_SCREEN": 0.9944180846214294
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 31,
+            "first_seen": 1033.877333,
+            "last_seen": 1038.877333,
+            "peak_timestamp": 1038.877333,
+            "temporal_span_s": 5.0,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 1385.022667,
+          "type": "VICTORY",
+          "confidence": 0.9989316463470459,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9989316463470459,
+            "second_best_similarity": 0.47733256220817566,
+            "class_margin": 0.5215990841388702,
+            "class_scores": {
+              "VICTORY": 0.9989316463470459,
+              "DEFEAT": 0.47733256220817566
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 79,
+            "first_seen": 1385.022667,
+            "last_seen": 1387.922667,
+            "peak_timestamp": 1386.239333,
+            "temporal_span_s": 2.900000000000091,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-78d6ef97a72e64dc2079",
+      "index": 3,
+      "start": 1566.898,
+      "end": 2197.748,
+      "result": "WIN",
+      "start_confidence": 0.9949630498886108,
+      "end_confidence": 0.9995130300521851,
+      "result_confidence": 0.9995130300521851,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 1566.898,
+          "type": "VS_SCREEN",
+          "confidence": 0.9949630498886108,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9949630498886108,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9949630498886108,
+            "class_scores": {
+              "VS_SCREEN": 0.9949630498886108
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 24,
+            "first_seen": 1566.898,
+            "last_seen": 1570.731333,
+            "peak_timestamp": 1568.731333,
+            "temporal_span_s": 3.8333330000000387,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 2197.748,
+          "type": "VICTORY",
+          "confidence": 0.9995130300521851,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9995130300521851,
+            "second_best_similarity": 0.47707322239875793,
+            "class_margin": 0.5224398076534271,
+            "class_scores": {
+              "VICTORY": 0.9995130300521851,
+              "DEFEAT": 0.47707322239875793
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 243,
+            "first_seen": 2197.748,
+            "last_seen": 2207.814667,
+            "peak_timestamp": 2199.031333,
+            "temporal_span_s": 10.066667000000052,
+            "sampling_fps": 20.0
+          }
+        },
+        {
+          "timestamp": 2210.364667,
+          "type": "VICTORY",
+          "confidence": 0.9992198944091797,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9992198944091797,
+            "second_best_similarity": 0.47782841324806213,
+            "class_margin": 0.5213914811611176,
+            "class_scores": {
+              "VICTORY": 0.9992198944091797,
+              "DEFEAT": 0.47782841324806213
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 283,
+            "first_seen": 2210.364667,
+            "last_seen": 2221.298,
+            "peak_timestamp": 2213.381333,
+            "temporal_span_s": 10.933332999999948,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-ecd1620554b63da8a545",
+      "index": 4,
+      "start": 2422.599333,
+      "end": 2912.389333,
+      "result": "WIN",
+      "start_confidence": 0.9950679540634155,
+      "end_confidence": 0.999555766582489,
+      "result_confidence": 0.999555766582489,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 2422.599333,
+          "type": "VS_SCREEN",
+          "confidence": 0.9950679540634155,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9950679540634155,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9950679540634155,
+            "class_scores": {
+              "VS_SCREEN": 0.9950679540634155
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 39,
+            "first_seen": 2422.599333,
+            "last_seen": 2428.932667,
+            "peak_timestamp": 2427.099333,
+            "temporal_span_s": 6.3333339999999225,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 2912.389333,
+          "type": "VICTORY",
+          "confidence": 0.999555766582489,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.999555766582489,
+            "second_best_similarity": 0.47804006934165955,
+            "class_margin": 0.5215156972408295,
+            "class_scores": {
+              "VICTORY": 0.999555766582489,
+              "DEFEAT": 0.47804006934165955
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 47,
+            "first_seen": 2912.389333,
+            "last_seen": 2914.289333,
+            "peak_timestamp": 2913.639333,
+            "temporal_span_s": 1.900000000000091,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-e0330e397bca2e8a8963",
+      "index": 5,
+      "start": 3186.613333,
+      "end": 3470.923333,
+      "result": "WIN",
+      "start_confidence": 0.9948465824127197,
+      "end_confidence": 0.9988614916801453,
+      "result_confidence": 0.9989747405052185,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 3186.613333,
+          "type": "VS_SCREEN",
+          "confidence": 0.9948465824127197,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9948465824127197,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9948465824127197,
+            "class_scores": {
+              "VS_SCREEN": 0.9948465824127197
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 19,
+            "first_seen": 3186.613333,
+            "last_seen": 3189.613333,
+            "peak_timestamp": 3187.946667,
+            "temporal_span_s": 3.0,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 3470.923333,
+          "type": "VICTORY",
+          "confidence": 0.9988614916801453,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9988614916801453,
+            "second_best_similarity": 0.4789169430732727,
+            "class_margin": 0.5199445486068726,
+            "class_scores": {
+              "VICTORY": 0.9988614916801453,
+              "DEFEAT": 0.4789169430732727
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 254,
+            "first_seen": 3470.923333,
+            "last_seen": 3481.006667,
+            "peak_timestamp": 3472.04,
+            "temporal_span_s": 10.083333999999923,
+            "sampling_fps": 20.0
+          }
+        },
+        {
+          "timestamp": 3483.573333,
+          "type": "VICTORY",
+          "confidence": 0.9989280104637146,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9989280104637146,
+            "second_best_similarity": 0.4802206754684448,
+            "class_margin": 0.5187073349952698,
+            "class_scores": {
+              "VICTORY": 0.9989280104637146,
+              "DEFEAT": 0.4802206754684448
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 424,
+            "first_seen": 3483.573333,
+            "last_seen": 3500.09,
+            "peak_timestamp": 3491.14,
+            "temporal_span_s": 16.516667000000325,
+            "sampling_fps": 20.0
+          }
+        },
+        {
+          "timestamp": 3502.656667,
+          "type": "VICTORY",
+          "confidence": 0.9989747405052185,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9989747405052185,
+            "second_best_similarity": 0.4784773886203766,
+            "class_margin": 0.5204973518848419,
+            "class_scores": {
+              "VICTORY": 0.9989747405052185,
+              "DEFEAT": 0.4784773886203766
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 161,
+            "first_seen": 3502.656667,
+            "last_seen": 3508.423333,
+            "peak_timestamp": 3508.24,
+            "temporal_span_s": 5.7666659999999865,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-61d6a0412768cf8ec9af",
+      "index": 6,
+      "start": 3651.968667,
+      "end": 3842.508,
+      "result": "WIN",
+      "start_confidence": 0.998095691204071,
+      "end_confidence": 0.9988734722137451,
+      "result_confidence": 0.9988734722137451,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 3651.968667,
+          "type": "VS_SCREEN",
+          "confidence": 0.998095691204071,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.998095691204071,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.998095691204071,
+            "class_scores": {
+              "VS_SCREEN": 0.998095691204071
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 35,
+            "first_seen": 3651.968667,
+            "last_seen": 3657.635333,
+            "peak_timestamp": 3657.635333,
+            "temporal_span_s": 5.6666660000000775,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 3842.508,
+          "type": "VICTORY",
+          "confidence": 0.9988734722137451,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9988734722137451,
+            "second_best_similarity": 0.47746920585632324,
+            "class_margin": 0.5214042663574219,
+            "class_scores": {
+              "VICTORY": 0.9988734722137451,
+              "DEFEAT": 0.47746920585632324
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 150,
+            "first_seen": 3842.508,
+            "last_seen": 3848.391333,
+            "peak_timestamp": 3843.641333,
+            "temporal_span_s": 5.883333000000221,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-745bca68b5e9257b6725",
+      "index": 7,
+      "start": 3979.808,
+      "end": 4202.927333,
+      "result": "WIN",
+      "start_confidence": 0.9939156770706177,
+      "end_confidence": 0.9988768696784973,
+      "result_confidence": 0.9988768696784973,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 3979.808,
+          "type": "VS_SCREEN",
+          "confidence": 0.9939156770706177,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9939156770706177,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9939156770706177,
+            "class_scores": {
+              "VS_SCREEN": 0.9939156770706177
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 39,
+            "first_seen": 3979.808,
+            "last_seen": 3986.141333,
+            "peak_timestamp": 3985.141333,
+            "temporal_span_s": 6.333333000000039,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 4202.927333,
+          "type": "VICTORY",
+          "confidence": 0.9988768696784973,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9988768696784973,
+            "second_best_similarity": 0.47773632407188416,
+            "class_margin": 0.5211405456066132,
+            "class_scores": {
+              "VICTORY": 0.9988768696784973,
+              "DEFEAT": 0.47773632407188416
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 139,
+            "first_seen": 4202.927333,
+            "last_seen": 4207.844,
+            "peak_timestamp": 4204.277333,
+            "temporal_span_s": 4.916667000000416,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-971d481d4d3dad5ed5cd",
+      "index": 8,
+      "start": 4482.484,
+      "end": 4804.928667,
+      "result": "WIN",
+      "start_confidence": 0.9993321299552917,
+      "end_confidence": 0.9811562299728394,
+      "result_confidence": 0.9811562299728394,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 4482.484,
+          "type": "VS_SCREEN",
+          "confidence": 0.9993321299552917,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9993321299552917,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9993321299552917,
+            "class_scores": {
+              "VS_SCREEN": 0.9993321299552917
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 35,
+            "first_seen": 4482.484,
+            "last_seen": 4488.150667,
+            "peak_timestamp": 4487.817333,
+            "temporal_span_s": 5.6666669999995065,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 4804.928667,
+          "type": "VICTORY",
+          "confidence": 0.9811562299728394,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9811562299728394,
+            "second_best_similarity": 0.47223907709121704,
+            "class_margin": 0.5089171528816223,
+            "class_scores": {
+              "VICTORY": 0.9811562299728394,
+              "DEFEAT": 0.47223907709121704
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45729166666666665,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 29,
+            "first_seen": 4804.928667,
+            "last_seen": 4806.428667,
+            "peak_timestamp": 4805.345333,
+            "temporal_span_s": 1.5,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-516ed33946036f83f258",
+      "index": 9,
+      "start": 4917.670667,
+      "end": 5529.045333,
+      "result": "WIN",
+      "start_confidence": 0.997559130191803,
+      "end_confidence": 0.9605624675750732,
+      "result_confidence": 0.9605624675750732,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 4917.670667,
+          "type": "VS_SCREEN",
+          "confidence": 0.997559130191803,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.997559130191803,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.997559130191803,
+            "class_scores": {
+              "VS_SCREEN": 0.997559130191803
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 32,
+            "first_seen": 4917.670667,
+            "last_seen": 4922.837333,
+            "peak_timestamp": 4922.504,
+            "temporal_span_s": 5.1666660000000775,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 5529.045333,
+          "type": "VICTORY",
+          "confidence": 0.9605624675750732,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9605624675750732,
+            "second_best_similarity": 0.5155301094055176,
+            "class_margin": 0.44503235816955566,
+            "class_scores": {
+              "VICTORY": 0.9605624675750732,
+              "DEFEAT": 0.5155301094055176
+            },
+            "threshold": 0.92,
+            "scale": 0.925,
+            "matched_rect_normalized": [
+              0.459375,
+              0.5666666666666667,
+              0.09791666666666667,
+              0.053703703703703705
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 3,
+            "first_seen": 5529.045333,
+            "last_seen": 5529.095333,
+            "peak_timestamp": 5529.045333,
+            "temporal_span_s": 0.0500000000001819,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-11f55206f30c3ada0864",
+      "index": 10,
+      "start": 5700.519333,
+      "end": 6092.682,
+      "result": "LOSS",
+      "start_confidence": 0.9950668811798096,
+      "end_confidence": 0.9996457695960999,
+      "result_confidence": 0.9996457695960999,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 5700.519333,
+          "type": "VS_SCREEN",
+          "confidence": 0.9950668811798096,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9950668811798096,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9950668811798096,
+            "class_scores": {
+              "VS_SCREEN": 0.9950668811798096
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 33,
+            "first_seen": 5700.519333,
+            "last_seen": 5705.852667,
+            "peak_timestamp": 5704.352667,
+            "temporal_span_s": 5.3333339999999225,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 6092.682,
+          "type": "DEFEAT",
+          "confidence": 0.9996457695960999,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9996457695960999,
+            "second_best_similarity": 0.4676201641559601,
+            "class_margin": 0.5320256054401398,
+            "class_scores": {
+              "DEFEAT": 0.9996457695960999,
+              "VICTORY": 0.4676201641559601
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.446875,
+              0.5814814814814815,
+              0.11875,
+              0.053703703703703705
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 1194,
+            "first_seen": 6092.682,
+            "last_seen": 6138.182,
+            "peak_timestamp": 6119.032,
+            "temporal_span_s": 45.5,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-70fe86e114019848d230",
+      "index": 11,
+      "start": 6598.223333,
+      "end": 7095.049333,
+      "result": "WIN",
+      "start_confidence": 0.95518958568573,
+      "end_confidence": 0.9951520562171936,
+      "result_confidence": 0.9951520562171936,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 6598.223333,
+          "type": "VS_SCREEN",
+          "confidence": 0.95518958568573,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.95518958568573,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.95518958568573,
+            "class_scores": {
+              "VS_SCREEN": 0.95518958568573
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 24,
+            "first_seen": 6598.223333,
+            "last_seen": 6602.056667,
+            "peak_timestamp": 6600.556667,
+            "temporal_span_s": 3.8333339999999225,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 7095.049333,
+          "type": "VICTORY",
+          "confidence": 0.9951520562171936,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/victory/victory_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9951520562171936,
+            "second_best_similarity": 0.4816325604915619,
+            "class_margin": 0.5135194957256317,
+            "class_scores": {
+              "VICTORY": 0.9951520562171936,
+              "DEFEAT": 0.4816325604915619
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45625,
+              0.575925925925926,
+              0.10625,
+              0.05740740740740741
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 17,
+            "first_seen": 7095.049333,
+            "last_seen": 7095.532667,
+            "peak_timestamp": 7095.532667,
+            "temporal_span_s": 0.4833340000004682,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    },
+    {
+      "id": "game-696c59508e59a32cb514",
+      "index": 12,
+      "start": 7197.399333,
+      "end": 7606.056667,
+      "result": "LOSS",
+      "start_confidence": 0.9973872900009155,
+      "end_confidence": 0.9783180356025696,
+      "result_confidence": 0.979827344417572,
+      "start_source": "template_matching",
+      "end_source": "template_matching",
+      "result_source": "template_matching",
+      "markers": [
+        {
+          "timestamp": 7197.399333,
+          "type": "VS_SCREEN",
+          "confidence": 0.9973872900009155,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/vs/calibration_cursor_free.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9973872900009155,
+            "second_best_similarity": -1.0,
+            "class_margin": 1.9973872900009155,
+            "class_scores": {
+              "VS_SCREEN": 0.9973872900009155
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.44895833333333335,
+              0.37777777777777777,
+              0.128125,
+              0.24814814814814815
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 27,
+            "first_seen": 7197.399333,
+            "last_seen": 7201.732667,
+            "peak_timestamp": 7201.066,
+            "temporal_span_s": 4.3333339999999225,
+            "sampling_fps": 6.0
+          }
+        },
+        {
+          "timestamp": 7606.056667,
+          "type": "DEFEAT",
+          "confidence": 0.9783180356025696,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/defeat/defeat_01.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.9783180356025696,
+            "second_best_similarity": 0.3144475817680359,
+            "class_margin": 0.6638704538345337,
+            "class_scores": {
+              "DEFEAT": 0.9783180356025696,
+              "VICTORY": 0.3144475817680359
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45208333333333334,
+              0.5666666666666667,
+              0.1,
+              0.053703703703703705
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 137,
+            "first_seen": 7606.056667,
+            "last_seen": 7612.056667,
+            "peak_timestamp": 7606.156667,
+            "temporal_span_s": 6.0,
+            "sampling_fps": 20.0
+          }
+        },
+        {
+          "timestamp": 7614.39,
+          "type": "DEFEAT",
+          "confidence": 0.979827344417572,
+          "source": "template_matching",
+          "metadata": {
+            "candidate_only": false,
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity_method": "TM_CCOEFF_NORMED",
+            "raw_similarity": 0.979827344417572,
+            "second_best_similarity": 0.44778475165367126,
+            "class_margin": 0.5320425927639008,
+            "class_scores": {
+              "DEFEAT": 0.979827344417572,
+              "VICTORY": 0.44778475165367126
+            },
+            "threshold": 0.92,
+            "scale": 1.0,
+            "matched_rect_normalized": [
+              0.45,
+              0.575925925925926,
+              0.11875,
+              0.053703703703703705
+            ],
+            "detector_version": "hearthstone-template-v3",
+            "observation_count": 10,
+            "first_seen": 7614.39,
+            "last_seen": 7614.606667,
+            "peak_timestamp": 7614.44,
+            "temporal_span_s": 0.21666699999968841,
+            "sampling_fps": 20.0
+          }
+        }
+      ],
+      "user_override": false,
+      "metadata": {
+        "issues": [],
+        "boundary_kind": "visual_anchor"
+      }
+    }
+  ],
+  "detector_version": "hearthstone-template-v3",
+  "settings": {
+    "analyzer_version": "hearthstone-visual-v5",
+    "coarse_fps": 1.0,
+    "fine_fps": 6.0,
+    "fine_padding_s": 2.0,
+    "result_fps": 20.0,
+    "minimum_result_observations": 2,
+    "minimum_result_stability_s": 0.008333333333333333,
+    "result_refine_fps": 120.0,
+    "result_refine_padding_s": 0.15,
+    "candidate_similarity": 0.8,
+    "maximum_game_duration_s": 1800.0,
+    "max_width": 960,
+    "event_gap_s": 0.5,
+    "minimum_observations": 3,
+    "minimum_stability_s": 0.25,
+    "max_observations": 100000,
+    "single_frame_results": {
+      "victory": null,
+      "defeat": null,
+      "pack_fingerprint": "",
+      "calibration_id": ""
+    },
+    "detector": {
+      "detector_version": "hearthstone-template-v3",
+      "opencv_version": "4.12.0",
+      "method": "TM_CCOEFF_NORMED",
+      "color_space": "grayscale",
+      "confidence_meaning": "raw normalized template correlation; not a calibrated probability",
+      "schema_version": 1,
+      "profile": "hearthstone",
+      "reference_size": [
+        960,
+        540
+      ],
+      "viewport": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "ambiguity_margin": 0.04,
+      "threshold_calibration": "uncalibrated",
+      "pack_fingerprint": "4a481ff015e8e0bbe500fc098b1abee0d975f9af733c90b4adfcf6beb08e99fc",
+      "classes": {
+        "VS_SCREEN": {
+          "roi": [
+            0.4,
+            0.34,
+            0.2,
+            0.3
+          ],
+          "threshold": 0.92,
+          "scales": [
+            0.9,
+            1.0,
+            1.1
+          ],
+          "directory": "templates/vs",
+          "templates": [
+            {
+              "id": "templates/vs/calibration_cursor_free.png",
+              "path": "templates/vs/calibration_cursor_free.png",
+              "sha256": "09eba9d63c7a63790f014a80e4870e7a204a0690074b7dd99286716958a725c8"
+            },
+            {
+              "id": "templates/vs/vs_01.png",
+              "path": "templates/vs/vs_01.png",
+              "sha256": "7dce986e7a1881514a04022bcfdb9951b80840488833bac3d8b8f84428b5f185"
+            }
+          ]
+        },
+        "VICTORY": {
+          "roi": [
+            0.35,
+            0.47,
+            0.3,
+            0.22
+          ],
+          "threshold": 0.92,
+          "scales": [
+            0.9,
+            0.925,
+            0.95,
+            0.975,
+            1.0,
+            1.025,
+            1.05,
+            1.075,
+            1.1
+          ],
+          "directory": "templates/victory",
+          "templates": [
+            {
+              "id": "templates/victory/victory_01.png",
+              "path": "templates/victory/victory_01.png",
+              "sha256": "3b6618a8ba022cefee1248ce8d339a46b01f2e1824ba7b3b2faa11d1f103c594"
+            }
+          ]
+        },
+        "DEFEAT": {
+          "roi": [
+            0.35,
+            0.47,
+            0.3,
+            0.22
+          ],
+          "threshold": 0.92,
+          "scales": [
+            0.9,
+            0.925,
+            0.95,
+            0.975,
+            1.0,
+            1.025,
+            1.05,
+            1.075,
+            1.1
+          ],
+          "directory": "templates/defeat",
+          "templates": [
+            {
+              "id": "templates/defeat/calibration_phase_1324.900.png",
+              "path": "templates/defeat/calibration_phase_1324.900.png",
+              "sha256": "88bf6079c0b48dc6d2a23a6a0442aac8b497e8c44537a75bd18fc41d8fa88718"
+            },
+            {
+              "id": "templates/defeat/calibration_phase_1324.933.png",
+              "path": "templates/defeat/calibration_phase_1324.933.png",
+              "sha256": "438be7518484b811b22bc90ab46375075c9319f277a4a10de3a7c27566b6abcb"
+            },
+            {
+              "id": "templates/defeat/defeat_01.png",
+              "path": "templates/defeat/defeat_01.png",
+              "sha256": "2369d1727c5953ac1f3d0fdb842557846718b99caab7111e4cc5c97723e05025"
+            },
+            {
+              "id": "templates/defeat/external74_defeat_stable.png",
+              "path": "templates/defeat/external74_defeat_stable.png",
+              "sha256": "084f731aa04abe1841092fd0eb7546314f318f632225e6c5138cc6f4e61f3fbd"
+            },
+            {
+              "id": "templates/defeat/external86_defeat_late.png",
+              "path": "templates/defeat/external86_defeat_late.png",
+              "sha256": "6cc1346e3e7d198699f0d3e6f756fc7d6ff4293ad8dda0f88a42c12b100bd594"
+            }
+          ]
+        }
+      }
+    },
+    "sampling_strategy": "coarse_vs_dense_result_roi",
+    "weak_vs_candidates": true,
+    "weak_result_candidates": true
+  },
+  "metadata": {
+    "analyzer_version": "hearthstone-visual-v5",
+    "cache_key": "1040330e61aa527ff6b21313a3a58f9e9816024d589438fd43d927e2eb6402cc",
+    "cache_hit": false,
+    "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+    "coarse_frames": 7641,
+    "fine_frames": 588,
+    "sampling_strategy": "coarse_vs_dense_result_roi",
+    "dense_result_frames": 152820,
+    "dense_result_fps": 20.0,
+    "dense_geometry": {
+      "roi": [
+        0.35,
+        0.47,
+        0.29999999999999993,
+        0.21999999999999997
+      ],
+      "source_roi": [
+        0.35,
+        0.4685185185185185,
+        0.3,
+        0.2222222222222222
+      ],
+      "reference_size": [
+        960,
+        540
+      ],
+      "output_size": [
+        288,
+        120
+      ]
+    },
+    "result_refine_frames": 6615,
+    "result_refine_windows": [
+      [
+        819.986,
+        820.536
+      ],
+      [
+        821.586,
+        822.086
+      ],
+      [
+        822.2860000000001,
+        822.786
+      ],
+      [
+        1384.8893329999999,
+        1385.389333
+      ],
+      [
+        1386.489333,
+        1386.989333
+      ],
+      [
+        1387.1393329999999,
+        1387.639333
+      ],
+      [
+        1387.789333,
+        1388.239333
+      ],
+      [
+        2197.681333,
+        2198.1313330000003
+      ],
+      [
+        2199.181333,
+        2199.681333
+      ],
+      [
+        2199.881333,
+        2200.3813330000003
+      ],
+      [
+        2200.531333,
+        2201.031333
+      ],
+      [
+        2201.181333,
+        2201.731333
+      ],
+      [
+        2201.881333,
+        2202.3813330000003
+      ],
+      [
+        2202.531333,
+        2203.081333
+      ],
+      [
+        2203.2313329999997,
+        2203.731333
+      ],
+      [
+        2203.831333,
+        2204.431333
+      ],
+      [
+        2204.531333,
+        2205.081333
+      ],
+      [
+        2205.181333,
+        2205.781333
+      ],
+      [
+        2205.831333,
+        2211.781333
+      ],
+      [
+        2211.831333,
+        2212.431333
+      ],
+      [
+        2212.4813329999997,
+        2213.281333
+      ],
+      [
+        2213.4813329999997,
+        2213.781333
+      ],
+      [
+        2213.931333,
+        2214.6313330000003
+      ],
+      [
+        2214.781333,
+        2215.281333
+      ],
+      [
+        2215.4813329999997,
+        2215.931333
+      ],
+      [
+        2216.081333,
+        2216.6313330000003
+      ],
+      [
+        2216.781333,
+        2217.281333
+      ],
+      [
+        2217.381333,
+        2217.931333
+      ],
+      [
+        2218.031333,
+        2218.581333
+      ],
+      [
+        2218.681333,
+        2219.231333
+      ],
+      [
+        2219.331333,
+        2221.8813330000003
+      ],
+      [
+        2912.339333,
+        2912.789333
+      ],
+      [
+        2913.839333,
+        2914.339333
+      ],
+      [
+        3470.8399999999997,
+        3471.4900000000002
+      ],
+      [
+        3472.39,
+        3472.89
+      ],
+      [
+        3473.04,
+        3473.54
+      ],
+      [
+        3473.69,
+        3474.2400000000002
+      ],
+      [
+        3474.39,
+        3474.89
+      ],
+      [
+        3475.04,
+        3475.59
+      ],
+      [
+        3475.74,
+        3476.2400000000002
+      ],
+      [
+        3476.39,
+        3476.94
+      ],
+      [
+        3477.04,
+        3477.59
+      ],
+      [
+        3477.69,
+        3478.29
+      ],
+      [
+        3478.3399999999997,
+        3478.94
+      ],
+      [
+        3478.99,
+        3485.4900000000002
+      ],
+      [
+        3485.54,
+        3486.14
+      ],
+      [
+        3486.19,
+        3486.79
+      ],
+      [
+        3486.8399999999997,
+        3487.39
+      ],
+      [
+        3487.54,
+        3488.04
+      ],
+      [
+        3488.19,
+        3488.69
+      ],
+      [
+        3488.8399999999997,
+        3489.34
+      ],
+      [
+        3489.39,
+        3489.7400000000002
+      ],
+      [
+        3489.89,
+        3490.39
+      ],
+      [
+        3490.54,
+        3491.04
+      ],
+      [
+        3491.24,
+        3491.54
+      ],
+      [
+        3491.69,
+        3492.19
+      ],
+      [
+        3492.3399999999997,
+        3492.84
+      ],
+      [
+        3493.04,
+        3493.4900000000002
+      ],
+      [
+        3493.69,
+        3494.19
+      ],
+      [
+        3494.29,
+        3494.84
+      ],
+      [
+        3494.94,
+        3495.4900000000002
+      ],
+      [
+        3495.5899999999997,
+        3496.14
+      ],
+      [
+        3496.24,
+        3496.79
+      ],
+      [
+        3496.89,
+        3497.4900000000002
+      ],
+      [
+        3497.54,
+        3503.64
+      ],
+      [
+        3503.69,
+        3504.2400000000002
+      ],
+      [
+        3504.3399999999997,
+        3504.89
+      ],
+      [
+        3505.04,
+        3505.54
+      ],
+      [
+        3505.69,
+        3506.19
+      ],
+      [
+        3506.3399999999997,
+        3506.84
+      ],
+      [
+        3506.99,
+        3507.4900000000002
+      ],
+      [
+        3507.64,
+        3508.14
+      ],
+      [
+        3508.29,
+        3508.59
+      ],
+      [
+        3842.4413329999998,
+        3842.891333
+      ],
+      [
+        3843.9413329999998,
+        3844.441333
+      ],
+      [
+        3844.641333,
+        3845.141333
+      ],
+      [
+        3845.291333,
+        3845.941333
+      ],
+      [
+        3846.041333,
+        3846.641333
+      ],
+      [
+        3846.6913329999998,
+        3848.491333
+      ],
+      [
+        4202.877333,
+        4203.477333
+      ],
+      [
+        4204.377333,
+        4204.877332999999
+      ],
+      [
+        4205.027333,
+        4205.527333
+      ],
+      [
+        4205.727333000001,
+        4206.227333
+      ],
+      [
+        4206.377333,
+        4206.927333
+      ],
+      [
+        4207.077333,
+        4207.577332999999
+      ],
+      [
+        4207.727333000001,
+        4208.177333
+      ],
+      [
+        4804.828667000001,
+        4805.828667
+      ],
+      [
+        5528.878667,
+        5529.228666999999
+      ],
+      [
+        6092.482,
+        6094.531999999999
+      ],
+      [
+        6094.532,
+        6094.932
+      ],
+      [
+        6094.932000000001,
+        6095.632
+      ],
+      [
+        6095.682000000001,
+        6096.331999999999
+      ],
+      [
+        6096.432000000001,
+        6097.081999999999
+      ],
+      [
+        6097.1320000000005,
+        6097.781999999999
+      ],
+      [
+        6097.832,
+        6098.531999999999
+      ],
+      [
+        6098.532,
+        6099.581999999999
+      ],
+      [
+        6099.582,
+        6100.232
+      ],
+      [
+        6100.332,
+        6100.882
+      ],
+      [
+        6101.082,
+        6101.581999999999
+      ],
+      [
+        6101.782,
+        6102.281999999999
+      ],
+      [
+        6102.432000000001,
+        6102.982
+      ],
+      [
+        6103.1320000000005,
+        6103.632
+      ],
+      [
+        6103.782,
+        6104.182
+      ],
+      [
+        6104.282,
+        6104.831999999999
+      ],
+      [
+        6104.932000000001,
+        6105.482
+      ],
+      [
+        6105.6320000000005,
+        6106.132
+      ],
+      [
+        6106.282,
+        6106.831999999999
+      ],
+      [
+        6106.982,
+        6107.482
+      ],
+      [
+        6107.6320000000005,
+        6108.132
+      ],
+      [
+        6108.332,
+        6108.831999999999
+      ],
+      [
+        6108.982,
+        6109.531999999999
+      ],
+      [
+        6109.682000000001,
+        6110.182
+      ],
+      [
+        6110.3820000000005,
+        6110.882
+      ],
+      [
+        6111.032,
+        6111.581999999999
+      ],
+      [
+        6111.732,
+        6112.232
+      ],
+      [
+        6112.3820000000005,
+        6112.932
+      ],
+      [
+        6113.082,
+        6113.632
+      ],
+      [
+        6113.732,
+        6114.182
+      ],
+      [
+        6114.282,
+        6114.882
+      ],
+      [
+        6114.982,
+        6115.531999999999
+      ],
+      [
+        6115.682000000001,
+        6116.232
+      ],
+      [
+        6116.3820000000005,
+        6116.882
+      ],
+      [
+        6117.082,
+        6117.581999999999
+      ],
+      [
+        6117.732,
+        6118.232
+      ],
+      [
+        6118.432000000001,
+        6118.932
+      ],
+      [
+        6119.1320000000005,
+        6119.632
+      ],
+      [
+        6119.782,
+        6120.281999999999
+      ],
+      [
+        6120.482,
+        6120.982
+      ],
+      [
+        6121.1320000000005,
+        6121.632
+      ],
+      [
+        6121.782,
+        6122.331999999999
+      ],
+      [
+        6122.432000000001,
+        6122.982
+      ],
+      [
+        6123.1320000000005,
+        6123.682
+      ],
+      [
+        6123.782,
+        6124.182
+      ],
+      [
+        6124.282,
+        6124.831999999999
+      ],
+      [
+        6124.932000000001,
+        6125.482
+      ],
+      [
+        6125.6320000000005,
+        6126.132
+      ],
+      [
+        6126.332,
+        6126.831999999999
+      ],
+      [
+        6126.982,
+        6127.482
+      ],
+      [
+        6127.6320000000005,
+        6128.132
+      ],
+      [
+        6128.332,
+        6128.831999999999
+      ],
+      [
+        6128.982,
+        6129.531999999999
+      ],
+      [
+        6129.682000000001,
+        6130.182
+      ],
+      [
+        6130.3820000000005,
+        6130.882
+      ],
+      [
+        6131.032,
+        6131.581999999999
+      ],
+      [
+        6131.732,
+        6132.232
+      ],
+      [
+        6132.3820000000005,
+        6132.932
+      ],
+      [
+        6133.082,
+        6133.632
+      ],
+      [
+        6133.732,
+        6134.182
+      ],
+      [
+        6134.282,
+        6134.882
+      ],
+      [
+        6134.982,
+        6135.531999999999
+      ],
+      [
+        6135.682000000001,
+        6136.232
+      ],
+      [
+        6136.3820000000005,
+        6136.882
+      ],
+      [
+        6137.082,
+        6137.581999999999
+      ],
+      [
+        6137.782,
+        6138.281999999999
+      ],
+      [
+        7094.982667,
+        7095.432667
+      ],
+      [
+        7605.9400000000005,
+        7608.69
+      ],
+      [
+        7608.6900000000005,
+        7609.04
+      ],
+      [
+        7609.14,
+        7609.79
+      ],
+      [
+        7609.84,
+        7610.49
+      ],
+      [
+        7610.59,
+        7611.19
+      ],
+      [
+        7611.240000000001,
+        7611.94
+      ],
+      [
+        7611.9400000000005,
+        7612.24
+      ],
+      [
+        7614.490000000001,
+        7614.839999999999
+      ]
+    ],
+    "result_refine_fps": 120.0,
+    "rejected_events": [],
+    "single_frame_results_accepted": 0,
+    "single_frame_context_frames": 0,
+    "dense_frame_size": [
+      288,
+      120
+    ],
+    "coarse_elapsed_seconds": 270.1308035999973,
+    "fine_elapsed_seconds": 4.826289099997666,
+    "dense_elapsed_seconds": 2517.169789499996,
+    "global_dense_elapsed_seconds": 2384.3463645999946,
+    "refinement_elapsed_seconds": 132.82342490000156,
+    "weak_result_candidates": 1267,
+    "profiling": {
+      "coarse": {
+        "sampling_wait_seconds": 231.4784195996981,
+        "first_frame_wait_seconds": 0.15582010000071023,
+        "matching_seconds": 37.54246800020337,
+        "streams": 1.0
+      },
+      "fine": {
+        "sampling_wait_seconds": 2.125921400176594,
+        "first_frame_wait_seconds": 1.3385740000012447,
+        "matching_seconds": 2.6505519999409444,
+        "streams": 12.0
+      },
+      "dense": {
+        "sampling_wait_seconds": 4.903431600971089,
+        "first_frame_wait_seconds": 0.10172179999790387,
+        "matching_seconds": 2372.067214001254,
+        "streams": 1.0
+      },
+      "refinement": {
+        "sampling_wait_seconds": 22.7902335999388,
+        "first_frame_wait_seconds": 22.578202300042904,
+        "matching_seconds": 109.97051120030665,
+        "streams": 163.0
+      }
+    },
+    "fine_windows": [
+      [
+        167.004667,
+        175.004667
+      ],
+      [
+        1032.044,
+        1041.044
+      ],
+      [
+        1565.064667,
+        1572.064667
+      ],
+      [
+        2421.099333,
+        2430.099333
+      ],
+      [
+        3185.113333,
+        3191.113333
+      ],
+      [
+        3650.135333,
+        3659.135333
+      ],
+      [
+        3978.141333,
+        3988.141333
+      ],
+      [
+        4481.150667,
+        4490.150667
+      ],
+      [
+        4916.170667,
+        4924.170667
+      ],
+      [
+        5699.186,
+        5707.186
+      ],
+      [
+        6596.223333,
+        6604.223333
+      ],
+      [
+        7196.232667,
+        7203.232667
+      ]
+    ],
+    "fine_seconds": 98.0,
+    "elapsed_seconds": 2792.130743599999,
+    "debug_frames_saved": 0,
+    "rejected_clusters": 0
+  },
+  "warnings": [
+    "Template similarity is not a calibrated probability; no automatic cuts were generated."
+  ]
+}

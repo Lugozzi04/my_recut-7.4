@@ -1,0 +1,40 @@
+NOTE: --boundary-mode codex sends the local transcript/timing context around removed games to the provider configured in that CLI. Use --boundary-mode exact to send nothing.
+Job: 51b77695b5004f8a961e6df0078b28cd
+Source: videoprova
+Preset: Balanced (Default)
+[Analysis] 0%
+[Analysis] 5%
+[Analysis] 10%
+[Analysis] 15%
+[Analysis] 20%
+[Analysis] 25%
+[Analysis] 74%
+[Analysis] 81%
+[Analysis] 87%
+[Analysis] 95%
+[Analysis] 100%
+[Cuts] 88 cuts; 33.8 minutes removed
+[Export] 0%
+[Export] codec: libx264; method: auto
+[Export] 6%
+[Export] 11%
+[Export] 16%
+[Export] 21%
+[Export] 26%
+[Export] 31%
+[Export] 37%
+[Export] 42%
+[Export] 47%
+[Export] 53%
+[Export] 58%
+[Export] 63%
+[Export] 68%
+[Export] 73%
+[Export] 78%
+[Export] 87%
+[Export] 92%
+[Export] 99%
+[Export] 100%
+[Export] smart_hybrid; libx264
+[Validation] 100%
+[DONE] 100%

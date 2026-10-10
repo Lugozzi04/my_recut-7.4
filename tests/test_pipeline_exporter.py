@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import threading
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from automation.exporter import (
     ExportCancellation,
@@ -95,6 +97,12 @@ class BlockingProjectExporter:
 class PipelineExporterTests(unittest.TestCase):
     def setUp(self) -> None:
         FakeWorker.created.clear()
+        # Real renders must not write into the user's render cache (%LOCALAPPDATA%\Auto Cutter).
+        cache = tempfile.TemporaryDirectory(prefix="recut-test-chunk-cache-")
+        self.addCleanup(cache.cleanup)
+        env = patch.dict(os.environ, {"AUTO_CUTTER_CHUNK_CACHE_DIR": cache.name})
+        env.start()
+        self.addCleanup(env.stop)
 
     @staticmethod
     def _project_payload(source: Path, *, duration: float = 10.0) -> dict:

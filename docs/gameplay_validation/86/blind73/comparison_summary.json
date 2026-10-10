@@ -1,0 +1,940 @@
+{
+  "format": "recut_frozen_blind_comparison",
+  "version": 1,
+  "decision": "NEEDS_MORE_CALIBRATION_DATA",
+  "blind_run_count": 1,
+  "ground_truth_games": 11,
+  "before_source": "../../73/iteration2/after_evaluation.json",
+  "after_source": "gameplay_evaluation.json",
+  "before": {
+    "complete_games": "9/11",
+    "partial_games": 2,
+    "complete_game_precision": 1,
+    "complete_game_recall": 0.8181818181818182,
+    "vs_recall": 1,
+    "victory_recall": 1,
+    "defeat_recall": 0.5,
+    "result_recall": 0.8181818181818182,
+    "loss_recall": 0.5,
+    "loss_precision": 1,
+    "false_loss": 0,
+    "classification_accuracy": 1,
+    "classified_matched_games": 9,
+    "start_errors": {
+      "count": 11,
+      "mean_absolute_error_s": 0.22436363636358114,
+      "median_absolute_error_s": 0.09999999999990905,
+      "max_absolute_error_s": 0.7669999999998254
+    },
+    "result_errors": {
+      "count": 9,
+      "mean_absolute_error_s": 0.08711111111104704,
+      "median_absolute_error_s": 0.04999999999972715,
+      "max_absolute_error_s": 0.38400000000001455
+    },
+    "event_fp": 1,
+    "result_event_fp": 1,
+    "defeat_event_fp": 0
+  },
+  "after": {
+    "complete_games": "9/11",
+    "partial_games": 2,
+    "complete_game_precision": 1,
+    "complete_game_recall": 0.8181818181818182,
+    "vs_recall": 1,
+    "victory_recall": 1,
+    "defeat_recall": 0.5,
+    "result_recall": 0.8181818181818182,
+    "loss_recall": 0.5,
+    "loss_precision": 1,
+    "false_loss": 0,
+    "classification_accuracy": 1,
+    "classified_matched_games": 9,
+    "start_errors": {
+      "count": 11,
+      "mean_absolute_error_s": 0.22436363636358114,
+      "median_absolute_error_s": 0.09999999999990905,
+      "max_absolute_error_s": 0.7669999999998254
+    },
+    "result_errors": {
+      "count": 9,
+      "mean_absolute_error_s": 0.08522222222217755,
+      "median_absolute_error_s": 0.04999999999972715,
+      "max_absolute_error_s": 0.3670000000001892
+    },
+    "event_fp": 2,
+    "result_event_fp": 2,
+    "defeat_event_fp": 1
+  },
+  "pairing_errors_before": 0,
+  "pairing_errors_after": 0,
+  "pairing_audit": [
+    {
+      "id": "game-cd8e1b6458fec12f90f2",
+      "index": 4,
+      "start": 1423.4,
+      "end": 1887.85,
+      "start_gt": 1,
+      "end_gt": 1,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-107a4d9f3ec2af186f0d",
+      "index": 6,
+      "start": 2339.05,
+      "end": 2886.45,
+      "start_gt": 3,
+      "end_gt": 3,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-1b42f55077776185a52e",
+      "index": 7,
+      "start": 2918.583,
+      "end": 3326.983,
+      "start_gt": 4,
+      "end_gt": 4,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-7157a73edaf56e79e1ba",
+      "index": 8,
+      "start": 3373.933,
+      "end": 3752.133,
+      "start_gt": 5,
+      "end_gt": 5,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-ae1b3a7901e713e7c135",
+      "index": 9,
+      "start": 3796.1,
+      "end": 4061.333,
+      "start_gt": 6,
+      "end_gt": 6,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-d819db1f9ff16f3dbe6f",
+      "index": 11,
+      "start": 5059.4,
+      "end": 5678,
+      "start_gt": 8,
+      "end_gt": 8,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-34949a7d1a0e486dfc73",
+      "index": 12,
+      "start": 5730.283,
+      "end": 6061.633,
+      "start_gt": 9,
+      "end_gt": 9,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-24b12d45f430dac699e8",
+      "index": 13,
+      "start": 6094.233,
+      "end": 6354.016,
+      "start_gt": 10,
+      "end_gt": 10,
+      "wrong_pair": false
+    },
+    {
+      "id": "game-b313735688e9645abf55",
+      "index": 14,
+      "start": 6379.4,
+      "end": 6737.833,
+      "start_gt": 11,
+      "end_gt": 11,
+      "wrong_pair": false
+    }
+  ],
+  "pairing_definition": "Complete prediction start and end matched within 5 seconds to different annotated games; all nine complete predictions match the same game at both ends.",
+  "performance_before": {
+    "analyzer_version": "hearthstone-visual-v4",
+    "cache_key": "a4bf4297bb0147a1b1c3345f71fe4bfdae84cf0181edb2595796a6064959c08c",
+    "cache_hit": false,
+    "video_fingerprint": "69ab4eb4426b464b89643e86f4032791cc49328d08a70c75e6c659d87a4e0b24",
+    "coarse_frames": 6817,
+    "fine_frames": 722,
+    "sampling_strategy": "coarse_vs_dense_result_roi",
+    "dense_result_frames": 136280,
+    "dense_result_fps": 20,
+    "dense_geometry": {
+      "roi": [
+        0.35,
+        0.47,
+        0.29999999999999993,
+        0.21999999999999997
+      ],
+      "source_roi": [
+        0.35,
+        0.4685185185185185,
+        0.3,
+        0.2222222222222222
+      ],
+      "reference_size": [
+        960,
+        540
+      ],
+      "output_size": [
+        288,
+        120
+      ]
+    },
+    "result_refine_frames": 1656,
+    "result_refine_windows": [
+      [
+        440.033,
+        440.33299999999997
+      ],
+      [
+        1009.333,
+        1009.8829999999999
+      ],
+      [
+        1887.733,
+        1888.383
+      ],
+      [
+        2304.833,
+        2305.183
+      ],
+      [
+        2886.383,
+        2886.833
+      ],
+      [
+        2887.883,
+        2888.3830000000003
+      ],
+      [
+        2888.583,
+        2889.083
+      ],
+      [
+        2889.2329999999997,
+        2889.733
+      ],
+      [
+        2889.933,
+        2890.433
+      ],
+      [
+        2890.583,
+        2891.083
+      ],
+      [
+        2891.2329999999997,
+        2891.783
+      ],
+      [
+        2891.883,
+        2892.433
+      ],
+      [
+        2892.583,
+        2893.1330000000003
+      ],
+      [
+        2893.2329999999997,
+        2893.783
+      ],
+      [
+        3326.9829999999997,
+        3327.533
+      ],
+      [
+        3328.433,
+        3328.933
+      ],
+      [
+        3329.083,
+        3329.583
+      ],
+      [
+        3329.783,
+        3330.283
+      ],
+      [
+        3330.433,
+        3330.933
+      ],
+      [
+        3751.933,
+        3752.3830000000003
+      ],
+      [
+        4061.333,
+        4061.683
+      ],
+      [
+        4062.783,
+        4063.283
+      ],
+      [
+        4063.433,
+        4063.933
+      ],
+      [
+        4064.133,
+        4064.6330000000003
+      ],
+      [
+        4064.783,
+        4065.283
+      ],
+      [
+        4065.4829999999997,
+        4065.983
+      ],
+      [
+        4066.133,
+        4066.6330000000003
+      ],
+      [
+        4066.783,
+        4067.333
+      ],
+      [
+        4067.433,
+        4067.983
+      ],
+      [
+        5010.5830000000005,
+        5010.933
+      ],
+      [
+        5677.933,
+        5678.433
+      ],
+      [
+        5678.5830000000005,
+        5679.083
+      ],
+      [
+        5679.283,
+        5679.782999999999
+      ],
+      [
+        5679.933,
+        5680.433
+      ],
+      [
+        5680.5830000000005,
+        5681.133
+      ],
+      [
+        5681.283,
+        5681.782999999999
+      ],
+      [
+        5681.933,
+        5682.482999999999
+      ],
+      [
+        5682.5830000000005,
+        5683.133
+      ],
+      [
+        5683.233,
+        5683.833
+      ],
+      [
+        5683.883000000001,
+        5684.482999999999
+      ],
+      [
+        5684.533,
+        5689.282999999999
+      ],
+      [
+        6061.483,
+        6062.683
+      ],
+      [
+        6353.883000000001,
+        6354.383
+      ],
+      [
+        6355.483,
+        6355.982999999999
+      ],
+      [
+        6737.8330000000005,
+        6738.383
+      ]
+    ],
+    "result_refine_fps": 120,
+    "rejected_events": [
+      {
+        "timestamp": 2305.05,
+        "type": "DEFEAT",
+        "confidence": 0.9418808817863464,
+        "source": "template_matching",
+        "metadata": {
+          "candidate_only": false,
+          "template_id": "templates/defeat/defeat_01.png",
+          "similarity_method": "TM_CCOEFF_NORMED",
+          "raw_similarity": 0.9418808817863464,
+          "second_best_similarity": 0.3926818072795868,
+          "class_margin": 0.5491990745067596,
+          "class_scores": {
+            "DEFEAT": 0.9418808817863464,
+            "VICTORY": 0.3926818072795868
+          },
+          "threshold": 0.92,
+          "scale": 1.1,
+          "matched_rect_normalized": [
+            0.446875,
+            0.5777777777777777,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "detector_version": "hearthstone-template-v3",
+          "observation_count": 1,
+          "first_seen": 2305.05,
+          "last_seen": 2305.05,
+          "peak_timestamp": 2305.05,
+          "temporal_span_s": 0
+        }
+      },
+      {
+        "timestamp": 5689.15,
+        "type": "VICTORY",
+        "confidence": 0.9331769347190857,
+        "source": "template_matching",
+        "metadata": {
+          "candidate_only": false,
+          "template_id": "templates/victory/victory_01.png",
+          "similarity_method": "TM_CCOEFF_NORMED",
+          "raw_similarity": 0.9331769347190857,
+          "second_best_similarity": 0.4789988100528717,
+          "class_margin": 0.454178124666214,
+          "class_scores": {
+            "VICTORY": 0.9331769347190857,
+            "DEFEAT": 0.4789988100528717
+          },
+          "threshold": 0.92,
+          "scale": 0.9,
+          "matched_rect_normalized": [
+            0.4739583333333333,
+            0.5388888888888889,
+            0.09583333333333334,
+            0.05185185185185185
+          ],
+          "detector_version": "hearthstone-template-v3",
+          "observation_count": 1,
+          "first_seen": 5689.15,
+          "last_seen": 5689.15,
+          "peak_timestamp": 5689.15,
+          "temporal_span_s": 0
+        }
+      }
+    ],
+    "dense_frame_size": [
+      288,
+      120
+    ],
+    "coarse_elapsed_seconds": 151.58009029999994,
+    "fine_elapsed_seconds": 5.9821750000000975,
+    "dense_elapsed_seconds": 1440.6595597,
+    "global_dense_elapsed_seconds": 1417.2435541,
+    "refinement_elapsed_seconds": 23.416005600000062,
+    "weak_result_candidates": 301,
+    "profiling": {
+      "coarse": {
+        "sampling_wait_seconds": 128.3978600000014,
+        "first_frame_wait_seconds": 0.12586050000004434,
+        "matching_seconds": 22.648472800017544,
+        "streams": 1
+      },
+      "fine": {
+        "sampling_wait_seconds": 2.5964366000016526,
+        "first_frame_wait_seconds": 1.7103689000000486,
+        "matching_seconds": 2.906603300002871,
+        "streams": 14
+      },
+      "dense": {
+        "sampling_wait_seconds": 4.273587100082295,
+        "first_frame_wait_seconds": 0.12684469999999237,
+        "matching_seconds": 1405.7533431000481,
+        "streams": 1
+      },
+      "refinement": {
+        "sampling_wait_seconds": 6.533090100003847,
+        "first_frame_wait_seconds": 6.405521099999987,
+        "matching_seconds": 16.792840299991894,
+        "streams": 45
+      }
+    },
+    "fine_windows": [
+      [
+        210,
+        219
+      ],
+      [
+        512,
+        521
+      ],
+      [
+        1086,
+        1096
+      ],
+      [
+        1422,
+        1431
+      ],
+      [
+        1992,
+        2001
+      ],
+      [
+        2338,
+        2346
+      ],
+      [
+        2917,
+        2925
+      ],
+      [
+        3372,
+        3382
+      ],
+      [
+        3794,
+        3803
+      ],
+      [
+        4562,
+        4571
+      ],
+      [
+        5058,
+        5066
+      ],
+      [
+        5728,
+        5738
+      ],
+      [
+        6093,
+        6101
+      ],
+      [
+        6378,
+        6387
+      ]
+    ],
+    "fine_seconds": 125,
+    "elapsed_seconds": 1598.2239853,
+    "debug_frames_saved": 100,
+    "rejected_clusters": 2
+  },
+  "performance_after": {
+    "analyzer_version": "hearthstone-visual-v5",
+    "cache_key": "bba8446917a2733a67a7d9e33a117db1cbf72687bcfa15367596b035b4fac2ca",
+    "cache_hit": false,
+    "video_fingerprint": "69ab4eb4426b464b89643e86f4032791cc49328d08a70c75e6c659d87a4e0b24",
+    "coarse_frames": 6817,
+    "fine_frames": 722,
+    "sampling_strategy": "coarse_vs_dense_result_roi",
+    "dense_result_frames": 136280,
+    "dense_result_fps": 20,
+    "dense_geometry": {
+      "roi": [
+        0.35,
+        0.47,
+        0.29999999999999993,
+        0.21999999999999997
+      ],
+      "source_roi": [
+        0.35,
+        0.4685185185185185,
+        0.3,
+        0.2222222222222222
+      ],
+      "reference_size": [
+        960,
+        540
+      ],
+      "output_size": [
+        288,
+        120
+      ]
+    },
+    "result_refine_frames": 1863,
+    "result_refine_windows": [
+      [
+        440.033,
+        440.33299999999997
+      ],
+      [
+        1009.333,
+        1009.8829999999999
+      ],
+      [
+        1887.733,
+        1888.383
+      ],
+      [
+        2304.833,
+        2305.183
+      ],
+      [
+        2886.383,
+        2886.833
+      ],
+      [
+        2887.883,
+        2888.3830000000003
+      ],
+      [
+        2888.583,
+        2889.083
+      ],
+      [
+        2889.2329999999997,
+        2889.733
+      ],
+      [
+        2889.933,
+        2890.433
+      ],
+      [
+        2890.583,
+        2891.083
+      ],
+      [
+        2891.2329999999997,
+        2891.783
+      ],
+      [
+        2891.883,
+        2892.433
+      ],
+      [
+        2892.583,
+        2893.1330000000003
+      ],
+      [
+        2893.2329999999997,
+        2893.783
+      ],
+      [
+        3326.9829999999997,
+        3327.533
+      ],
+      [
+        3328.433,
+        3328.933
+      ],
+      [
+        3329.083,
+        3329.583
+      ],
+      [
+        3329.783,
+        3330.283
+      ],
+      [
+        3330.433,
+        3330.933
+      ],
+      [
+        3751.933,
+        3752.3830000000003
+      ],
+      [
+        4061.333,
+        4061.683
+      ],
+      [
+        4062.783,
+        4063.283
+      ],
+      [
+        4063.433,
+        4063.933
+      ],
+      [
+        4064.133,
+        4064.6330000000003
+      ],
+      [
+        4064.783,
+        4065.283
+      ],
+      [
+        4065.4829999999997,
+        4065.983
+      ],
+      [
+        4066.133,
+        4066.6330000000003
+      ],
+      [
+        4066.783,
+        4067.333
+      ],
+      [
+        4067.433,
+        4067.983
+      ],
+      [
+        5010.5830000000005,
+        5010.933
+      ],
+      [
+        5677.933,
+        5678.433
+      ],
+      [
+        5678.5830000000005,
+        5679.083
+      ],
+      [
+        5679.283,
+        5679.782999999999
+      ],
+      [
+        5679.933,
+        5680.433
+      ],
+      [
+        5680.5830000000005,
+        5681.133
+      ],
+      [
+        5681.283,
+        5681.782999999999
+      ],
+      [
+        5681.933,
+        5682.482999999999
+      ],
+      [
+        5682.5830000000005,
+        5683.133
+      ],
+      [
+        5683.233,
+        5683.833
+      ],
+      [
+        5683.883000000001,
+        5684.482999999999
+      ],
+      [
+        5684.533,
+        5689.282999999999
+      ],
+      [
+        6061.683,
+        6064.232999999999
+      ],
+      [
+        6064.233,
+        6064.633
+      ],
+      [
+        6064.683,
+        6065.333
+      ],
+      [
+        6065.433,
+        6066.032999999999
+      ],
+      [
+        6066.133000000001,
+        6066.583
+      ],
+      [
+        6353.883000000001,
+        6354.383
+      ],
+      [
+        6355.483,
+        6355.982999999999
+      ],
+      [
+        6737.8330000000005,
+        6738.383
+      ]
+    ],
+    "result_refine_fps": 120,
+    "rejected_events": [
+      {
+        "timestamp": 2305.05,
+        "type": "DEFEAT",
+        "confidence": 0.9418808817863464,
+        "source": "template_matching",
+        "metadata": {
+          "candidate_only": false,
+          "template_id": "templates/defeat/defeat_01.png",
+          "similarity_method": "TM_CCOEFF_NORMED",
+          "raw_similarity": 0.9418808817863464,
+          "second_best_similarity": 0.3926818072795868,
+          "class_margin": 0.5491990745067596,
+          "class_scores": {
+            "DEFEAT": 0.9418808817863464,
+            "VICTORY": 0.3926818072795868
+          },
+          "threshold": 0.92,
+          "scale": 1.1,
+          "matched_rect_normalized": [
+            0.446875,
+            0.5777777777777777,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "detector_version": "hearthstone-template-v3",
+          "observation_count": 1,
+          "first_seen": 2305.05,
+          "last_seen": 2305.05,
+          "peak_timestamp": 2305.05,
+          "temporal_span_s": 0,
+          "single_frame_rejection": "disabled"
+        }
+      },
+      {
+        "timestamp": 5689.15,
+        "type": "VICTORY",
+        "confidence": 0.9331769347190857,
+        "source": "template_matching",
+        "metadata": {
+          "candidate_only": false,
+          "template_id": "templates/victory/victory_01.png",
+          "similarity_method": "TM_CCOEFF_NORMED",
+          "raw_similarity": 0.9331769347190857,
+          "second_best_similarity": 0.4789988100528717,
+          "class_margin": 0.454178124666214,
+          "class_scores": {
+            "VICTORY": 0.9331769347190857,
+            "DEFEAT": 0.4789988100528717
+          },
+          "threshold": 0.92,
+          "scale": 0.9,
+          "matched_rect_normalized": [
+            0.4739583333333333,
+            0.5388888888888889,
+            0.09583333333333334,
+            0.05185185185185185
+          ],
+          "detector_version": "hearthstone-template-v3",
+          "observation_count": 1,
+          "first_seen": 5689.15,
+          "last_seen": 5689.15,
+          "peak_timestamp": 5689.15,
+          "temporal_span_s": 0,
+          "single_frame_rejection": "disabled"
+        }
+      }
+    ],
+    "single_frame_results_accepted": 0,
+    "single_frame_context_frames": 0,
+    "dense_frame_size": [
+      288,
+      120
+    ],
+    "coarse_elapsed_seconds": 181.18497399999978,
+    "fine_elapsed_seconds": 6.1448477000012645,
+    "dense_elapsed_seconds": 2150.4054441000008,
+    "global_dense_elapsed_seconds": 2116.645377300003,
+    "refinement_elapsed_seconds": 33.76006679999773,
+    "weak_result_candidates": 338,
+    "profiling": {
+      "coarse": {
+        "sampling_wait_seconds": 150.28846620008335,
+        "first_frame_wait_seconds": 0.139093400001002,
+        "matching_seconds": 30.131385000047885,
+        "streams": 1
+      },
+      "fine": {
+        "sampling_wait_seconds": 2.6280255000820034,
+        "first_frame_wait_seconds": 1.75195779999558,
+        "matching_seconds": 3.4527900000430236,
+        "streams": 14
+      },
+      "dense": {
+        "sampling_wait_seconds": 4.831667299989931,
+        "first_frame_wait_seconds": 0.134943299999577,
+        "matching_seconds": 2107.2577879998425,
+        "streams": 1
+      },
+      "refinement": {
+        "sampling_wait_seconds": 6.459040000012465,
+        "first_frame_wait_seconds": 6.399610100008431,
+        "matching_seconds": 27.227662200097257,
+        "streams": 49
+      }
+    },
+    "fine_windows": [
+      [
+        210,
+        219
+      ],
+      [
+        512,
+        521
+      ],
+      [
+        1086,
+        1096
+      ],
+      [
+        1422,
+        1431
+      ],
+      [
+        1992,
+        2001
+      ],
+      [
+        2338,
+        2346
+      ],
+      [
+        2917,
+        2925
+      ],
+      [
+        3372,
+        3382
+      ],
+      [
+        3794,
+        3803
+      ],
+      [
+        4562,
+        4571
+      ],
+      [
+        5058,
+        5066
+      ],
+      [
+        5728,
+        5738
+      ],
+      [
+        6093,
+        6101
+      ],
+      [
+        6378,
+        6387
+      ]
+    ],
+    "fine_seconds": 125,
+    "elapsed_seconds": 2337.7380706000004,
+    "debug_frames_saved": 0,
+    "rejected_clusters": 2
+  },
+  "event_note": "New unmatched DEFEAT anchor at6063.4 is a visually verified later phase of the same already reconstructed LOSS at6062, retained inside the same assembled game. It is counted as an extra event, not hidden as zero event false positives.",
+  "gate_note": "Candidate pack improves calibration phase coverage but not held-out LOSS recall; not promoted to installed default. No retuning after this blind result.",
+  "quality_source": "../quality_gate.json"
+}

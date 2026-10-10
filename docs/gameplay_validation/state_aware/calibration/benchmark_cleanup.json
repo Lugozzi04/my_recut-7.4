@@ -1,0 +1,13 @@
+{
+  "created_at_utc": "2026-10-09T00:08:50.376Z",
+  "role": "accidental_duplicate_benchmark_cleanup_only_not_parameter_selection",
+  "source_fingerprint_matches": true,
+  "events_identical": true,
+  "games_identical": true,
+  "first_elapsed_seconds": 2792.130743599999,
+  "repeat_elapsed_seconds": 2485.1425577000045,
+  "primary_comparison_remains_first_run": true,
+  "blind_runs": 1,
+  "remaining_session_jobs": [],
+  "exit_code": 0
+}

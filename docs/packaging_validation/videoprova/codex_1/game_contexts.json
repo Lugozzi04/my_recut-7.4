@@ -1,0 +1,592 @@
+{
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 1359.45,
+      "source_end": 1785.983,
+      "edited_start": 0.0,
+      "edited_end": 366.563,
+      "kept_seconds": 366.563,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0001",
+        "T0002",
+        "T0003",
+        "T0004",
+        "T0005",
+        "T0006",
+        "T0007",
+        "T0008",
+        "T0009",
+        "T0010",
+        "T0011",
+        "T0012",
+        "T0013",
+        "T0014",
+        "T0015",
+        "T0016",
+        "T0017",
+        "T0018",
+        "T0019",
+        "T0020",
+        "T0021",
+        "T0022",
+        "T0023",
+        "T0024",
+        "T0025",
+        "T0026",
+        "T0027",
+        "T0028",
+        "T0029",
+        "T0030",
+        "T0031",
+        "T0032",
+        "T0033",
+        "T0034",
+        "T0035",
+        "T0036",
+        "T0037",
+        "T0038",
+        "T0039",
+        "T0040",
+        "T0041",
+        "T0042",
+        "T0043",
+        "T0044",
+        "T0045",
+        "T0046",
+        "T0047",
+        "T0048",
+        "T0049",
+        "T0050",
+        "T0051",
+        "T0052",
+        "T0053",
+        "T0054",
+        "T0055",
+        "T0056",
+        "T0057",
+        "T0058",
+        "T0059"
+      ],
+      "transcript_excerpt": "Ho questa impressione che tutti giocheranno l'unter, non so il perch\u00e9. Ho questa impressione che oggi ci sar\u00e0 un po' di mirror hunter, mirror hunter. Che senso. Non lo so eh, non lo so ma mi viene in mente questa possibilit\u00e0. Ah, chippiamo tutto? A me no. Bene, questa \u00e8 in curva in realt\u00e0. No, \u00e8 in curva questa roba. il mimiron comunque mi ha sciolto e il mimiron mi ha davvero sciolto bella cerno ...",
+      "highlight_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ],
+      "frame_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004",
+        "F005",
+        "F006",
+        "F007",
+        "F008",
+        "F009",
+        "F010",
+        "F011",
+        "F012",
+        "F013",
+        "F014",
+        "F015",
+        "F016",
+        "F017",
+        "F018",
+        "F043"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 1359.45,
+          "edited": 0.0,
+          "exact": true
+        },
+        "result_screen": {
+          "source": 1785.983,
+          "edited": 366.563,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-a6c0f437acde505ac557",
+        "summary": "Mirror Cacciatore contro Kibler. Il creator valuta la curva, pianifica attacchi ed evocazioni e sviluppa una forte presenza sul tavolo. Nel finale critica un bombardamento sul Meccaciclo e definisce il Cacciatore \u00abrotto\u00bb. Il parlato intermedio include numerosi interventi sulla live e sull'evento.",
+        "specific_plays": [
+          {
+            "description": "Valuta la mano iniziale in funzione della curva. La lettura precedente di F004 e F005 documenta una sostituzione nel mulligan.",
+            "transcript_ids": [
+              "T0005",
+              "T0007",
+              "T0008"
+            ]
+          },
+          {
+            "description": "Commenta direttamente le animazioni durante un'azione sul tavolo. F007 documenta un grande effetto blu, senza identificare con certezza la carta responsabile.",
+            "transcript_ids": [
+              "T0023",
+              "T0024"
+            ]
+          },
+          {
+            "description": "Pianifica attacchi ed evocazioni, citando Assalto e valori 4/4, 3/3 e 5/5. Il parlato permette di seguire il calcolo, ma non identifica tutti i componenti della sequenza.",
+            "transcript_ids": [
+              "T0036",
+              "T0037",
+              "T0038",
+              "T0039",
+              "T0040"
+            ]
+          },
+          {
+            "description": "Annuncia un doppio, poi triplo 5/5 e riconsidera l'ordine di una precedente eliminazione. La lettura precedente di F016 documenta tre servitori alleati 5/5.",
+            "transcript_ids": [
+              "T0041",
+              "T0043",
+              "T0044"
+            ]
+          },
+          {
+            "description": "Dice di avere anche Mimiron e critica il bombardamento sul Meccaciclo. Nel tratto conclusivo definisce il mazzo \u00abrotto\u00bb e il Cacciatore completamente fuori di testa, chiudendo con ripetuti \u00abNon c'\u00e8!\u00bb e \u00abBene!\u00bb.",
+            "transcript_ids": [
+              "T0049",
+              "T0050",
+              "T0051",
+              "T0052",
+              "T0053",
+              "T0054",
+              "T0055",
+              "T0056",
+              "T0057",
+              "T0058",
+              "T0059"
+            ]
+          }
+        ],
+        "general_talk": [
+          {
+            "description": "Prevede molti mirror Cacciatore nella giornata. \u00c8 una sua aspettativa, non una misura della diffusione del mazzo.",
+            "transcript_ids": [
+              "T0001",
+              "T0002",
+              "T0004"
+            ]
+          },
+          {
+            "description": "Il riferimento a Mimiron che lo avrebbe \u00absciolto\u00bb \u00e8 retrospettivo e non dimostra una giocata della partita corrente.",
+            "transcript_ids": [
+              "T0009"
+            ]
+          },
+          {
+            "description": "Ringrazia un abbonato, scherza su Kibler e parla degli orari della live e dei prolungamenti legati agli abbonamenti.",
+            "transcript_ids": [
+              "T0010",
+              "T0011",
+              "T0012",
+              "T0013",
+              "T0014",
+              "T0015",
+              "T0016",
+              "T0018",
+              "T0019",
+              "T0020"
+            ]
+          },
+          {
+            "description": "Spiega la sfida streamer contro sviluppatori e le possibili ricompense per il pubblico. Precisa che Kibler non \u00e8 uno sviluppatore.",
+            "transcript_ids": [
+              "T0025",
+              "T0026",
+              "T0027",
+              "T0028",
+              "T0029",
+              "T0030",
+              "T0031"
+            ]
+          },
+          {
+            "description": "Parla dei codici per i bundle e promette un giveaway, ammettendo di non averne definito l'organizzazione. Mostra anche incertezza sul contenuto dei drop.",
+            "transcript_ids": [
+              "T0032",
+              "T0033",
+              "T0034",
+              "T0035",
+              "T0045",
+              "T0046",
+              "T0047",
+              "T0048"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria segnalata dal rilevatore locale a 06:06. Il culmine editoriale \u00e8 il verdetto esplicito sul Cacciatore, sostenuto dalla pressione documentata nella lettura precedente di F016. Il colpo finale non \u00e8 verificabile nelle due nuove immagini."
+      }
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 2863.75,
+      "source_end": 3525.5,
+      "edited_start": 366.563,
+      "edited_end": 971.943,
+      "kept_seconds": 605.38,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0060",
+        "T0061",
+        "T0062",
+        "T0063",
+        "T0064",
+        "T0065",
+        "T0066",
+        "T0067",
+        "T0068",
+        "T0069",
+        "T0070",
+        "T0071",
+        "T0072",
+        "T0073",
+        "T0074",
+        "T0075",
+        "T0076",
+        "T0077",
+        "T0078",
+        "T0079",
+        "T0080",
+        "T0081",
+        "T0082",
+        "T0083",
+        "T0084",
+        "T0085",
+        "T0086",
+        "T0087",
+        "T0088",
+        "T0089",
+        "T0090",
+        "T0091",
+        "T0092",
+        "T0093",
+        "T0094",
+        "T0095",
+        "T0096",
+        "T0097",
+        "T0098",
+        "T0099",
+        "T0100",
+        "T0101",
+        "T0102",
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0106",
+        "T0107",
+        "T0108",
+        "T0109",
+        "T0110",
+        "T0111",
+        "T0112",
+        "T0113",
+        "T0114",
+        "T0115",
+        "T0116",
+        "T0117",
+        "T0118",
+        "T0119",
+        "T0120",
+        "T0121",
+        "T0122",
+        "T0123",
+        "T0124",
+        "T0125",
+        "T0126",
+        "T0127",
+        "T0128",
+        "T0129",
+        "T0130",
+        "T0131",
+        "T0132",
+        "T0133",
+        "T0134",
+        "T0135",
+        "T0136",
+        "T0137",
+        "T0138",
+        "T0139",
+        "T0140",
+        "T0141",
+        "T0142",
+        "T0143",
+        "T0144",
+        "T0145",
+        "T0146",
+        "T0147",
+        "T0148",
+        "T0149",
+        "T0150",
+        "T0151",
+        "T0152",
+        "T0153",
+        "T0154",
+        "T0155",
+        "T0156",
+        "T0157",
+        "T0158",
+        "T0159",
+        "T0160",
+        "T0161",
+        "T0162",
+        "T0163",
+        "T0164",
+        "T0165",
+        "T0166",
+        "T0167",
+        "T0168",
+        "T0169",
+        "T0170",
+        "T0171",
+        "T0172",
+        "T0173",
+        "T0174",
+        "T0175",
+        "T0176",
+        "T0177",
+        "T0178",
+        "T0179"
+      ],
+      "transcript_excerpt": "Ok non \u00e8 un dev, meno male, meno male, meno male, roba per il thunder, alla roba dei mazzi conici, sincero mi ha scritto, ma \u00e8 tipo da un mese in realt\u00e0 che mi sta scrivendo di registrare insieme il tonalzo e sicuramente lo facciamo, \u00e8 che semplicemente abbiamo dei verani un po' di merda, abbiamo un po' dei verani di merda, per\u00f2 sicuramente si far\u00e0 un video a full -keep, sicuramente si far\u00e0 la ...",
+      "highlight_ids": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ],
+      "frame_ids": [
+        "F019",
+        "F020",
+        "F021",
+        "F022",
+        "F023",
+        "F024",
+        "F025",
+        "F026",
+        "F027",
+        "F028",
+        "F029",
+        "F030",
+        "F031",
+        "F032",
+        "F033",
+        "F034",
+        "F035",
+        "F036",
+        "F037",
+        "F038",
+        "F039",
+        "F040",
+        "F041",
+        "F042",
+        "F044"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 2863.75,
+          "edited": 366.563,
+          "exact": false
+        },
+        "result_screen": {
+          "source": 3525.5,
+          "edited": 971.943,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-5ea93430b91b0da159e0",
+        "summary": "Partita del Paladino contro Druido. Il creator valorizza Scudi Divini e scambi, sospetta un'omissione nella propria lista e critica quella avversaria. Gli effetti di H11 cambiano concretamente il tavolo. Pi\u00f9 avanti esplora un'interazione che commenta come potere eroe: l'interfaccia mostra \u00abScegli un rimpiazzo\u00bb e \u00abInnesto\u00bb, con condizioni ed effetti separati. Il Paladino riceve una valutazione positiva ma condizionata dalla buona partenza.",
+        "specific_plays": [
+          {
+            "description": "Dice \u00abkeep\u00bb nel mulligan. La lettura precedente di F019 e F020 documenta una mano iniziale con due Bruta Scarlatta e Manovre di Volo.",
+            "transcript_ids": [
+              "T0067"
+            ]
+          },
+          {
+            "description": "Valuta un effetto che aumenta l'attacco e fornisce Scudo Divino, poi ragiona su scambi sfruttando gli Scudi Divini. Definisce molto forte la giocata.",
+            "transcript_ids": [
+              "T0083",
+              "T0091",
+              "T0093",
+              "T0094"
+            ]
+          },
+          {
+            "description": "Controlla la presenza di Provocazione e definisce geniale una combo. I componenti completi non sono identificabili dal parlato.",
+            "transcript_ids": [
+              "T0095",
+              "T0096",
+              "T0097",
+              "T0098"
+            ]
+          },
+          {
+            "description": "Osserva che l'avversario pesca molto senza mostrare, fino a quel momento, buff o sviluppi particolari. A 09:52 reagisce con esclamazioni e poco dopo apprezza una spell, il cui nome e contributo preciso non sono verificati.",
+            "transcript_ids": [
+              "T0100",
+              "T0101",
+              "T0108",
+              "T0109",
+              "T0110"
+            ]
+          },
+          {
+            "description": "In F045 e F048 compaiono carte e grandi lampi arancioni presso il mazzo. Il servitore avversario presente in F046 non \u00e8 pi\u00f9 sul tavolo in F048; accanto al 2/2 alleato compare un 3/3 in F047, ancora presente in F050. Le parole \u00abfermatelo\u00bb e \u00abcontinua\u00bb accompagnano quindi una sequenza con cambiamenti visibili. F049 mostra inoltre una carta da quattro mana, 3/3, con un Grido di Battaglia condizionato al controllo di un'Aura; la sua comparsa non prova che venga giocata.",
+            "transcript_ids": [
+              "T0123",
+              "T0124",
+              "T0125",
+              "T0126"
+            ]
+          },
+          {
+            "description": "Subito dopo la sequenza si lamenta di un 3/3 associato a otto mana e rivede la propria interpretazione del doppio setup. I frame confermano il 3/3 sul tavolo, ma non il suo costo originario o l'intera spiegazione del setup.",
+            "transcript_ids": [
+              "T0127",
+              "T0128",
+              "T0129"
+            ]
+          },
+          {
+            "description": "Valuta uno scambio e cita Ursol insieme alla possibilit\u00e0 di giocare qualcosa per tre turni consecutivi. Il parlato non prova che tutti e tre i turni vengano eseguiti.",
+            "transcript_ids": [
+              "T0130",
+              "T0131",
+              "T0132"
+            ]
+          },
+          {
+            "description": "F052 mostra una carta da cinque mana, 4/4, dal nome non leggibile con sicurezza. In F054-F056 segue l'interfaccia \u00abScegli un rimpiazzo\u00bb, con il pulsante \u00abInnesto\u00bb. Al centro sono leggibili la condizione \u00abQuando lanci una Magia\u00bb e la generazione in mano di una Palla di Fuoco. A sinistra: dopo un attacco dell'eroe, evocazione di un Bruco 2/1 con Assalto. A destra: alla fine del turno, +1/+1 a ogni servitore alleato di tipo diverso. Il creator valuta anche l'abbinamento tra lancio di magie e bonus ai servitori; tale combinazione \u00e8 una sua proposta, mentre la scelta definitiva non compare nei frame allegati.",
+            "transcript_ids": [
+              "T0154",
+              "T0155",
+              "T0156",
+              "T0157",
+              "T0158",
+              "T0159",
+              "T0160",
+              "T0161",
+              "T0162",
+              "T0164",
+              "T0166",
+              "T0167",
+              "T0168",
+              "T0169",
+              "T0170",
+              "T0171"
+            ]
+          }
+        ],
+        "general_talk": [
+          {
+            "description": "Discute una futura collaborazione e vecchi mazzi Warlock, incluso il Cube. Sono idee per altri contenuti, non un cambio del mazzo giocato nella partita.",
+            "transcript_ids": [
+              "T0063",
+              "T0064",
+              "T0066",
+              "T0068",
+              "T0069",
+              "T0070",
+              "T0071",
+              "T0072",
+              "T0076",
+              "T0077",
+              "T0078"
+            ]
+          },
+          {
+            "description": "Risponde all'osservazione che si siano viste poche carte nuove, sostenendo che la lista ne contenga diverse. Le descrive tramite costi ed effetti, con nomi poco affidabili nell'ASR.",
+            "transcript_ids": [
+              "T0084",
+              "T0085",
+              "T0086",
+              "T0087"
+            ]
+          },
+          {
+            "description": "Sospetta che nella propria lista manchi una spell da un mana utile alla pesca. L'assenza resta un dubbio del creator, non una verifica della lista completa.",
+            "transcript_ids": [
+              "T0102",
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0106",
+              "T0112",
+              "T0113",
+              "T0114",
+              "T0115"
+            ]
+          },
+          {
+            "description": "Critica il Druido con Rantoli di Morte, la presenza di due Re delle Profondit\u00e0 e altre scelte nelle liste pubblicate dagli streamer. Sono sue valutazioni sulla costruzione dei mazzi.",
+            "transcript_ids": [
+              "T0116",
+              "T0117",
+              "T0118",
+              "T0119",
+              "T0146",
+              "T0147",
+              "T0148",
+              "T0149",
+              "T0150",
+              "T0151"
+            ]
+          },
+          {
+            "description": "Considera il Paladino apparentemente giocabile, riconoscendo per\u00f2 di essere partito molto bene. La valutazione contiene quindi una riserva esplicita.",
+            "transcript_ids": [
+              "T0132",
+              "T0133",
+              "T0134",
+              "T0135",
+              "T0136"
+            ]
+          },
+          {
+            "description": "Segue il punteggio collettivo: parla inizialmente di 2-3 e poi annuncia il 3-3 perch\u00e9 \u00e8 stato battuto un altro sviluppatore. Non attribuisce in modo verificabile il pareggio alla propria partita.",
+            "transcript_ids": [
+              "T0080",
+              "T0081",
+              "T0082",
+              "T0137",
+              "T0138",
+              "T0139",
+              "T0140",
+              "T0172"
+            ]
+          },
+          {
+            "description": "Nel finale parla di skin, pet e acquisti. Include una statistica sulla ludopatia priva di fonte nell'evidenza.",
+            "transcript_ids": [
+              "T0174",
+              "T0175",
+              "T0176",
+              "T0177",
+              "T0178",
+              "T0179"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria segnalata dal rilevatore locale a 16:11. La lettura precedente di F040 documenta un tavolo alleato pieno. Le nuove immagini rafforzano soprattutto il valore narrativo degli effetti di H11 e della scoperta dell'Innesto in H13; non verificano il colpo finale."
+      }
+    }
+  ]
+}

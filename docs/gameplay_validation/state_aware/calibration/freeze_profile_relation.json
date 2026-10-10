@@ -1,0 +1,9 @@
+{
+  "calibration_profile_file_sha256": "8aa2db5b0481cba900e025b9c285577e563523667cef19c9ed251eedc732a1e9",
+  "frozen_profile_file_sha256": "409593f27ab2e6645cc3530b78301eee96aa16e981adbc0fbb5ba966141b721c",
+  "metadata_only_changes": [
+    "status",
+    "board anchor provenance: actual sampled timestamps, video fingerprint, reference ROI"
+  ],
+  "operative_parameters_and_asset_bytes_unchanged": true
+}

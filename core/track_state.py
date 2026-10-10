@@ -55,3 +55,12 @@ class TrackState:
     ai_speaker_ids: list[int] | None = None
     copy_source_id: str | None = None
     copy_index: int = 0
+    # Generic gameplay editing (any game): automatic removal regions with their own provenance.
+    gameplay_cuts: list[Segment] = field(default_factory=list)
+    gameplay_cuts_enabled: bool = False
+    gameplay_keeps: list[Segment] = field(default_factory=list)  # source of truth when gameplay_mode == "keep"
+    gameplay_mode: str = ""  # "keep": gameplay_cuts is the complement of gameplay_keeps
+    # Islands as produced by the gameplay pipeline (manual boundary edits can be reset to these) and
+    # JSON-safe per-island metadata (game index, smart boundary sources, resolver) for the inspector.
+    gameplay_detected_keeps: list[Segment] = field(default_factory=list)
+    gameplay_islands: list[dict] = field(default_factory=list)

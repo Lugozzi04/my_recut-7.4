@@ -1,0 +1,18 @@
+{
+  "role": "calibration",
+  "video_fingerprint": "3cb1a4cda0156c1cf684380acf226c34ef45c35fa422e8ea7fe6b7b2aded034d",
+  "annotation_sha256": "aee5fcb430ec5d6c4718b6a3cf2041f4708ecfccef29a8c98397f7241d606d99",
+  "timestamp": 2300.633,
+  "roi": [
+    0.4583333333333333,
+    0.5407407407407407,
+    0.08541666666666667,
+    0.04259259259259259
+  ],
+  "reference_size": [
+    960,
+    540
+  ],
+  "patch_sha256": "bcb5975bc71c19bfe8cbe2bbbc056b0e49f0b97fc85687efb9a42f8264118ca4",
+  "nearest_templates": []
+}

@@ -1,0 +1,115 @@
+{
+  "date_utc": "2026-10-08T23:16:21.354779+00:00",
+  "baseline": {
+    "gameplay": 249,
+    "full": 698,
+    "skipped": 1
+  },
+  "gameplay": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "-o",
+      "addopts=",
+      "-q",
+      "tests\\test_gameplay_analyzer.py",
+      "tests\\test_gameplay_assembler.py",
+      "tests\\test_gameplay_cache.py",
+      "tests\\test_gameplay_calibration.py",
+      "tests\\test_gameplay_debug_cli.py",
+      "tests\\test_gameplay_dense_analyzer.py",
+      "tests\\test_gameplay_detector.py",
+      "tests\\test_gameplay_evaluation.py",
+      "tests\\test_gameplay_integration.py",
+      "tests\\test_gameplay_models.py",
+      "tests\\test_gameplay_result_policy.py",
+      "tests\\test_gameplay_sampler.py",
+      "tests\\test_gameplay_state_aware.py",
+      "tests\\test_gameplay_templates.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 6.778297800003202,
+    "stdout": "........................................................................ [ 22%]\n........................................................................ [ 45%]\n........................................................................ [ 68%]\n........................................................................ [ 91%]\n...........................                                              [100%]\n315 passed in 6.33s\n",
+    "stderr": ""
+  },
+  "full": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "-o",
+      "addopts=",
+      "-q",
+      "-rs"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 58.12783599999966,
+    "stdout": "........................................................................ [  9%]\n........................................................................ [ 18%]\n........................................................................ [ 28%]\n........................................................................ [ 37%]\n........................................................................ [ 47%]\n........................................................................ [ 56%]\n........................................................................ [ 65%]\n........................................................................ [ 75%]\n........................................................................ [ 84%]\n........................................................................ [ 94%]\n................................s............                            [100%]\n=========================== short test summary info ===========================\nSKIPPED [1] tests\\test_youtube_upload.py:406: could not import 'googleapiclient.http': No module named 'googleapiclient'\n764 passed, 1 skipped in 57.61s\n",
+    "stderr": ""
+  },
+  "ruff": {
+    "command": [
+      "python",
+      "-m",
+      "ruff",
+      "check",
+      "."
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.08007180000277003,
+    "stdout": "All checks passed!\n",
+    "stderr": ""
+  },
+  "mypy": {
+    "command": [
+      "python",
+      "-m",
+      "mypy",
+      "automation",
+      "analysis/audio_service.py",
+      "analysis/gameplay",
+      "core/project_file.py",
+      "core/project_session.py",
+      "utils/codec_detection.py",
+      "analysis/cancellation.py",
+      "analysis/classic.py",
+      "core/config.py",
+      "core/presets.py",
+      "integrations",
+      "utils/runtime_paths.py",
+      "utils/console.py",
+      "utils/credential_files.py",
+      "utils/ffconcat.py",
+      "utils/redaction.py",
+      "utils/ffmpeg.py",
+      "tools/gameplay/ocr_experiment.py"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.3085219999993569,
+    "stdout": "Success: no issues found in 59 source files\n",
+    "stderr": ""
+  },
+  "gui_smoke": {
+    "command": [
+      "python",
+      "main.py",
+      "--smoke-test"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.088227199994435,
+    "stdout": "",
+    "stderr": ""
+  },
+  "environment": {
+    "AUTO_CUTTER_CHUNK_CACHE_DIR": "<workspace>/.pytest_cache/gameplay-state-aware/quality-chunk-cache",
+    "gui_smoke": "QT_QPA_PLATFORM=offscreen; isolated AUTO_CUTTER_DATA_DIR and AUTO_CUTTER_PIPELINE_STORE"
+  },
+  "initial_environment_attempt": {
+    "passed": 761,
+    "failed": 1,
+    "skipped": 1,
+    "reason": "Existing export integration tried unwritable user-home legacy chunk cache; rerun with supported override passed. No exporter code change.",
+    "evidence": "quality_gate_initial_environment.json"
+  }
+}

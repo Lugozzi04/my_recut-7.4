@@ -1,0 +1,9 @@
+{
+  "format": "recut_single_frame_result_policy",
+  "version": 1,
+  "role": "calibration",
+  "pack_fingerprint": "9a3528d080912ef286cd90531cef65f52f9c9fc9ae57f73bdbdd8525756f5224",
+  "calibration_id": "74-provisional-brief-events-and-hard-negatives-still-needed",
+  "VICTORY": null,
+  "DEFEAT": null
+}

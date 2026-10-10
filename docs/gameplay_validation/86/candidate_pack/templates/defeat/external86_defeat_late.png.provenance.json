@@ -1,0 +1,29 @@
+{
+  "role": "calibration",
+  "video_fingerprint": "3cb1a4cda0156c1cf684380acf226c34ef45c35fa422e8ea7fe6b7b2aded034d",
+  "annotation_sha256": "aee5fcb430ec5d6c4718b6a3cf2041f4708ecfccef29a8c98397f7241d606d99",
+  "timestamp": 2300.666,
+  "roi": [
+    0.4427083333333333,
+    0.5907407407407408,
+    0.11875,
+    0.05185185185185185
+  ],
+  "reference_size": [
+    960,
+    540
+  ],
+  "patch_sha256": "6cc1346e3e7d198699f0d3e6f756fc7d6ff4293ad8dda0f88a42c12b100bd594",
+  "nearest_templates": [
+    {
+      "path": "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\docs\\gameplay_validation\\86\\candidate_pack\\templates\\defeat\\external86_defeat_early.png",
+      "pixel_duplicate": false,
+      "similarity": 0.03997370973229408
+    },
+    {
+      "path": "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\docs\\gameplay_validation\\86\\candidate_pack\\templates\\defeat\\calibration_phase_1324.933.png",
+      "pixel_duplicate": false,
+      "similarity": -0.14252981543540955
+    }
+  ]
+}

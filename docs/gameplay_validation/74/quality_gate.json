@@ -1,0 +1,38 @@
+{
+  "gameplay": {
+    "passed": 246,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 5.14,
+    "command": "python -m pytest -o addopts= -q tests/test_gameplay_*.py (glob expanded to 13 files)"
+  },
+  "full_suite": {
+    "passed": 695,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 47.97,
+    "command": "python -m pytest -o addopts= -q -rs",
+    "skip_reason": "Optional googleapiclient.http unavailable; pre-existing skip"
+  },
+  "ruff": {
+    "command": "python -m ruff check .",
+    "exit_code": 0
+  },
+  "mypy": {
+    "files": 51,
+    "exit_code": 0,
+    "command": "python -m mypy automation analysis/audio_service.py analysis/gameplay core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py analysis/classic.py core/config.py core/presets.py integrations utils/runtime_paths.py utils/console.py utils/credential_files.py utils/ffconcat.py utils/redaction.py utils/ffmpeg.py"
+  },
+  "gui_smoke": {
+    "command": "python main.py --smoke-test",
+    "exit_code": 0,
+    "environment": "QT_QPA_PLATFORM=offscreen; writable app data isolated in .pytest_cache/gameplay-smoke-iteration3"
+  },
+  "validation_73": {
+    "status": "FROZEN_NOT_RETESTED",
+    "reason": "No justified single-frame gates yet; no validation data used for tuning"
+  },
+  "production_single_frame_policy": "DISABLED",
+  "status": "NEEDS_MORE_CALIBRATION_DATA",
+  "dependencies_added": []
+}

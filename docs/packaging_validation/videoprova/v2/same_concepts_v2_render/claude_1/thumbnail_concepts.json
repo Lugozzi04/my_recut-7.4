@@ -1,0 +1,602 @@
+{
+  "format": "recut_thumbnail_concepts",
+  "prompt_version": "packaging_creative_v1",
+  "renderer": "thumbnail_renderer_v2",
+  "provider": "codex",
+  "preferred_concept_id": "C1",
+  "concepts": [
+    {
+      "concept_id": "C1",
+      "narrative_angle": "Kibler bombarda il Meccaciclo, il creator si sfoga in diretta (\"rotto questo deck\") e pochi secondi dopo esulta con \"Non c'\u00e8! Bene!\" e chiude la partita. Dallo sfogo alla vittoria.",
+      "direction": "emotional",
+      "title": "Kibler mi bombarda il Meccaciclo\u2026 e vinco lo stesso",
+      "thumbnail_text": "Non c'\u00e8! Bene!",
+      "highlight_ids": [
+        "H06"
+      ],
+      "source_frame_ids": [
+        "F016",
+        "F017"
+      ],
+      "webcam_frame_id": "W012",
+      "card_asset_ids": [
+        "K06"
+      ],
+      "composition_plan": {
+        "layout": "split_reaction",
+        "background_frame_id": "F016",
+        "focus_box": [
+          0.3,
+          0.05,
+          0.42,
+          0.62
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "right",
+        "webcam_side": "left",
+        "emphasis_word": "Bene",
+        "badge": "WIN",
+        "accent_color": "#FF3B30",
+        "text_color": "#FFFFFF",
+        "rationale": "F016 tiene grandi i tre 5/5 e il ritratto di Rexxar con il -5. A sinistra va il primo piano della webcam W012, a destra la citazione reale T0057-T0059. Il titolo racconta l'antefatto (il bombardamento), la miniatura la svolta. Il badge WIN \u00e8 corretto perch\u00e9 la partita \u00e8 una vittoria."
+      },
+      "evidence": [
+        {
+          "claim": "Kibler bombarda il Meccaciclo del creator",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0051"
+          ],
+          "frame_ids": [
+            "F016"
+          ]
+        },
+        {
+          "claim": "Il creator dice \"Non c'\u00e8! Bene!\" poco prima del risultato",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0057",
+            "T0058",
+            "T0059"
+          ],
+          "frame_ids": [
+            "F016",
+            "F018"
+          ]
+        },
+        {
+          "claim": "La partita contro Kibler \u00e8 una vittoria (WIN)",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0057",
+            "T0059"
+          ],
+          "frame_ids": [
+            "F016",
+            "F018"
+          ]
+        }
+      ],
+      "risk_notes": "Il testo non descrive il colpo letale e non dice che il creator era 'furioso': si attribuiscono solo citazioni reali. Non va detto che la vittoria abbia aggiornato il punteggio Streamers vs Devs, perch\u00e9 Kibler non \u00e8 un dev (T0060). Si cita Mimiron solo come carta incerta (K07), mai nei testi.",
+      "render": {
+        "concept_id": "C1",
+        "path": "thumbnails\\concept_01.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 715676,
+        "format": "png",
+        "layout": "reaction_focus",
+        "text": {
+          "font_px": 136.5,
+          "cap_px": 107.5,
+          "lines": [
+            "NON C'\u00c8!",
+            "BENE!"
+          ],
+          "fits": true,
+          "bounds": [
+            762.3,
+            109.6,
+            454.4,
+            291.9
+          ],
+          "timestamp_zone_clear": true,
+          "align": "right",
+          "px_at_320": 26.9
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 1625.9
+          },
+          {
+            "kind": "face",
+            "rect": [
+              105.2,
+              287.5,
+              380.8,
+              380.0
+            ]
+          },
+          {
+            "kind": "webcam",
+            "rect": [
+              0.0,
+              0.0,
+              588.8,
+              720.0
+            ],
+            "face": true
+          },
+          {
+            "kind": "badge",
+            "rect": [
+              559.4,
+              36.0,
+              119.1,
+              54.2
+            ]
+          },
+          {
+            "kind": "element",
+            "rect": [
+              833.7,
+              430.3,
+              164.7,
+              239.3
+            ]
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    },
+    {
+      "concept_id": "C2",
+      "narrative_angle": "Il creator prevede una giornata di mirror Hunter e subito dopo trova Kibler con Rexxar. Sull'apertura compare il fumetto \"Che la caccia abbia inizio!\".",
+      "direction": "narrative",
+      "title": "Avevo previsto il mirror Hunter\u2026 e mi capita Kibler",
+      "thumbnail_text": "Mirror Hunter",
+      "highlight_ids": [
+        "H01"
+      ],
+      "source_frame_ids": [
+        "F049",
+        "F002",
+        "F048"
+      ],
+      "webcam_frame_id": "W001",
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "cinematic_text",
+        "background_frame_id": "F001",
+        "focus_box": null,
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "right",
+        "webcam_side": "left",
+        "emphasis_word": "Hunter",
+        "badge": "Kibler",
+        "accent_color": "#3FD0FF",
+        "text_color": "#FFFFFF",
+        "rationale": "Il fulmine blu a tutto schermo e il fumetto reale \"Che la caccia abbia inizio!\" restano a sinistra. A destra un gradiente scuro regge due parole enormi. La bolla webcam W001 \u00e8 opzionale. Il badge con il nome dell'avversario d\u00e0 un aggancio concreto.",
+        "render_tuning": {
+          "original": {
+            "background_frame_id": "F049",
+            "focus_box": [
+              0.28,
+              0.1,
+              0.7,
+              0.85
+            ]
+          },
+          "auto": true
+        }
+      },
+      "evidence": [
+        {
+          "claim": "Il creator prevede un mirror Hunter",
+          "highlight_id": "H01",
+          "transcript_ids": [
+            "T0001",
+            "T0002",
+            "T0004"
+          ],
+          "frame_ids": [
+            "F002"
+          ]
+        },
+        {
+          "claim": "L'avversario \u00e8 Kibler con Rexxar, Cacciatore contro Cacciatore",
+          "highlight_id": "H01",
+          "transcript_ids": [
+            "T0002"
+          ],
+          "frame_ids": [
+            "F002"
+          ]
+        },
+        {
+          "claim": "Durante l'apertura compare il fumetto \"Che la caccia abbia inizio!\"",
+          "highlight_id": "H01",
+          "transcript_ids": [],
+          "frame_ids": [
+            "F048",
+            "F049",
+            "F050"
+          ]
+        }
+      ],
+      "risk_notes": "Non si attribuisce il fumetto a un eroe specifico. Non si cita il messaggio della chat sulla leggendaria del warlock. 'Mirror Hunter' \u00e8 verificato dalla schermata VS (Varian contro Rexxar, entrambi Cacciatore).",
+      "render": {
+        "concept_id": "C2",
+        "path": "thumbnails\\concept_02.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 860694,
+        "format": "png",
+        "layout": "story_focus",
+        "text": {
+          "font_px": 196.5,
+          "cap_px": 154.9,
+          "lines": [
+            "MIRROR",
+            "HUNTER"
+          ],
+          "fits": true,
+          "bounds": [
+            578.2,
+            155.0,
+            638.4,
+            377.7
+          ],
+          "timestamp_zone_clear": true,
+          "align": "right",
+          "px_at_320": 38.7
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 2957.9
+          },
+          {
+            "kind": "webcam",
+            "rect": [
+              64.0,
+              50.4,
+              230.4,
+              230.4
+            ],
+            "face": true
+          },
+          {
+            "kind": "badge",
+            "rect": [
+              576.0,
+              36.0,
+              195.6,
+              54.2
+            ]
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": [
+            "background_blurry: background -> F001"
+          ]
+        }
+      }
+    },
+    {
+      "concept_id": "C3",
+      "narrative_angle": "Taglio da guida: il mulligan nel mirror Hunter contro Kibler. Tiene Meccaciclo, Sputafuoco e Cane da Guardia, cambia una carta \"per stare in curva\" e pesca Prototipo Instabile.",
+      "direction": "educational",
+      "title": "Mulligan nel mirror Hunter contro Kibler: cosa tengo e perch\u00e9",
+      "thumbnail_text": "Tengo o cambio?",
+      "highlight_ids": [
+        "H02",
+        "H01"
+      ],
+      "source_frame_ids": [
+        "F003",
+        "F001",
+        "F004",
+        "F005"
+      ],
+      "webcam_frame_id": "W004",
+      "card_asset_ids": [
+        "K06",
+        "K05"
+      ],
+      "composition_plan": {
+        "layout": "card_spotlight",
+        "background_frame_id": "F003",
+        "focus_box": [
+          0.22,
+          0.1,
+          0.56,
+          0.6
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "left",
+        "webcam_side": "right",
+        "emphasis_word": "cambio",
+        "badge": null,
+        "accent_color": "#7CFF4F",
+        "text_color": "#FFFFFF",
+        "rationale": "Il mulligan di F003 resta sfocato sullo sfondo. In grande ci sono due carte leggibili davvero presenti in mano, Meccaciclo (K06) e Prototipo Instabile (K05). La domanda va a sinistra. La webcam W004, con la mano al mento, accompagna il momento della scelta senza attribuire emozioni."
+      },
+      "evidence": [
+        {
+          "claim": "Mulligan con Meccaciclo, Sputafuoco e Cane da Guardia tenuti",
+          "highlight_id": "H01",
+          "transcript_ids": [
+            "T0005"
+          ],
+          "frame_ids": [
+            "F001",
+            "F003"
+          ]
+        },
+        {
+          "claim": "Una carta viene sostituita per stare in curva e arriva Prototipo Instabile",
+          "highlight_id": "H02",
+          "transcript_ids": [
+            "T0008"
+          ],
+          "frame_ids": [
+            "F004",
+            "F005"
+          ]
+        },
+        {
+          "claim": "L'avversario \u00e8 Kibler",
+          "highlight_id": "H01",
+          "transcript_ids": [
+            "T0002"
+          ],
+          "frame_ids": [
+            "F002"
+          ]
+        }
+      ],
+      "risk_notes": "Il 'perch\u00e9' del titolo si basa solo su T0008 (\"\u00e8 in curva\"), senza inventare un ragionamento pi\u00f9 ampio. Si usano solo carte leggibili (K05, K06), nessun nome di carte incerte.",
+      "render": {
+        "concept_id": "C3",
+        "path": "thumbnails\\concept_03.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 851588,
+        "format": "png",
+        "layout": "board_focus",
+        "text": {
+          "font_px": 112.5,
+          "cap_px": 88.5,
+          "lines": [
+            "TENGO",
+            "O CAMBIO?"
+          ],
+          "fits": true,
+          "bounds": [
+            63.7,
+            33.2,
+            510.7,
+            215.9
+          ],
+          "timestamp_zone_clear": true,
+          "align": "left",
+          "px_at_320": 22.1
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 3691.0
+          },
+          {
+            "kind": "card",
+            "rect": [
+              601.3,
+              128.8,
+              288.5,
+              419.3
+            ]
+          },
+          {
+            "kind": "card",
+            "rect": [
+              914.9,
+              129.6,
+              288.5,
+              417.7
+            ]
+          },
+          {
+            "kind": "webcam",
+            "rect": [
+              64.0,
+              388.8,
+              187.2,
+              187.2
+            ],
+            "face": true
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    },
+    {
+      "concept_id": "C4",
+      "narrative_angle": "Streamers vs Devs: con i dev avanti 2-3 il creator dice che \u00e8 \"recuperabile\", prova il Paladino con le carte nuove, critica le liste e chiude con una board enorme e l'avversario a 2 PV.",
+      "direction": "competitive",
+      "title": "Streamers vs Devs sotto 2-3: provo il Paladino e la chiudo",
+      "thumbnail_text": "Recuperabile?",
+      "highlight_ids": [
+        "H14",
+        "H09",
+        "H08"
+      ],
+      "source_frame_ids": [
+        "F040",
+        "F025"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "board_focus",
+        "background_frame_id": "F040",
+        "focus_box": [
+          0.2,
+          0.05,
+          0.6,
+          0.65
+        ],
+        "inset_id": "F025",
+        "inset_box": [
+          0.8,
+          0.03,
+          0.19,
+          0.17
+        ],
+        "text_side": "bottom",
+        "webcam_side": "right",
+        "emphasis_word": "Recuperabile",
+        "badge": "WIN",
+        "accent_color": "#FFD23F",
+        "text_color": "#FFFFFF",
+        "rationale": "F040 \u00e8 il frame pi\u00f9 spettacolare: sette minion potenziati e l'avversario a 2 PV. Il riquadro taglia l'area centrale di gioco e va controllato in render, perch\u00e9 non l'ho visto direttamente. L'inserto da F025 mostra il tabellone 2-3 come contesto. La parola reale \"recuperabile\" va nella banda in basso. Il badge WIN \u00e8 valido per la partita 4."
+      },
+      "evidence": [
+        {
+          "claim": "Il punteggio dell'evento \u00e8 2-3 per i dev e il creator lo chiama recuperabile",
+          "highlight_id": "H09",
+          "transcript_ids": [
+            "T0137",
+            "T0083"
+          ],
+          "frame_ids": [
+            "F025"
+          ]
+        },
+        {
+          "claim": "Il creator gioca un Paladino con carte nuove",
+          "highlight_id": "H08",
+          "transcript_ids": [
+            "T0084",
+            "T0085",
+            "T0086",
+            "T0087"
+          ],
+          "frame_ids": [
+            "F022",
+            "F024"
+          ]
+        },
+        {
+          "claim": "Partita chiusa con una board enorme, l'avversario a 2 PV e il risultato WIN",
+          "highlight_id": "H14",
+          "transcript_ids": [
+            "T0175"
+          ],
+          "frame_ids": [
+            "F040",
+            "F042"
+          ]
+        }
+      ],
+      "risk_notes": "Non si dice che questa vittoria abbia portato il tabellone sul 3-3: l'avversario Nosferatu non \u00e8 identificato come dev e il pareggio pu\u00f2 venire da altre partite. Non si nomina la classe avversaria. Non si usa la statistica sulla ludopatia. Le carte della partita 2 sono incerte e restano fuori dai testi.",
+      "render": {
+        "concept_id": "C4",
+        "path": "thumbnails\\concept_04.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 1049234,
+        "format": "png",
+        "layout": "board_focus",
+        "text": {
+          "font_px": 142.5,
+          "cap_px": 112.3,
+          "lines": [
+            "RECUPERABILE?"
+          ],
+          "fits": true,
+          "bounds": [
+            66.3,
+            527.0,
+            893.4,
+            141.2
+          ],
+          "timestamp_zone_clear": true,
+          "align": "left",
+          "px_at_320": 28.1
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 1230.8
+          },
+          {
+            "kind": "element",
+            "rect": [
+              729.2,
+              49.1,
+              460.8,
+              232.9
+            ]
+          },
+          {
+            "kind": "badge",
+            "rect": [
+              64.0,
+              356.4,
+              119.1,
+              54.2
+            ]
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    }
+  ]
+}

@@ -283,6 +283,23 @@ class GameplayEvaluationTests(unittest.TestCase):
             with self.subTest(tolerance=tolerance), self.assertRaises(ValueError):
                 evaluate_analysis(self.analysis(), self.truth(), tolerance_s=tolerance)
 
+    def test_partial_recall_reserves_complete_matches_and_counts_missing_start_separately(self) -> None:
+        result = evaluate_analysis(self.analysis((10, 20, "WIN"), (None, 20, "WIN"), (None, 50, "LOSS")),
+                                   self.truth((10, 20, "WIN"), (40, 50, "LOSS")))
+        self.assertEqual(result["complete_matched_games"], 1)
+        self.assertEqual(result["partial_matched_games"], 1)
+        self.assertEqual(result["partial_game_reconstruction_recall"], 0.5)
+        self.assertEqual(result["any_game_reconstruction_recall"], 1)
+        self.assertEqual(result["partial_game_comparisons"][0]["status"], "RESULT_DETECTED_START_MISSING")
+        self.assertEqual(result["game_result_classification_accuracy"], 1)
+
+    def test_partial_start_only_does_not_claim_observed_result(self) -> None:
+        result = evaluate_analysis(self.analysis((10, None, "UNKNOWN")), self.truth((10, 20, "LOSS")))
+        self.assertEqual(result["partial_matched_games"], 1)
+        self.assertEqual(result["partial_game_comparisons"][0]["status"], "START_DETECTED_RESULT_MISSING")
+        self.assertIsNone(result["game_result_classification_accuracy"])
+        self.assertEqual(result["result_detection_recall"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

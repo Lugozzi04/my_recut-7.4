@@ -1,0 +1,877 @@
+{
+  "format": "recut_result_decision_calibration_study",
+  "version": 1,
+  "role": "calibration",
+  "videos": [
+    "74.mp4",
+    "86.mp4"
+  ],
+  "excluded": "73.mp4 (frozen validation) is never read",
+  "policy": {
+    "version": "result-decision-v1",
+    "evidence_score": 0.65,
+    "minimum_observations": 2,
+    "minimum_span_s": 0.008333333333333333,
+    "cluster_gap_s": 0.5,
+    "minimum_peak_margin": 0.04
+  },
+  "parameter_provenance": {
+    "evidence_score": "existing monitor weak_score (0.65), frozen in iteration 5 before the 73 blind run",
+    "minimum_observations": "existing ordinary support: 2 distinct source PTS",
+    "minimum_span_s": "existing 1/120 s span",
+    "cluster_gap_s": "existing result_gap_s 0.5 s",
+    "minimum_peak_margin": "existing profile ambiguity margin 0.04"
+  },
+  "frame_level": {
+    "best_score_by_label": {
+      "DEFEAT": {
+        "count": 499,
+        "min": 0.10170669853687286,
+        "p10": 0.5323367118835449,
+        "median": 0.8155986070632935,
+        "p90": 0.9675359725952148,
+        "p99": 0.997859001159668,
+        "max": 0.9999794960021973
+      },
+      "NEGATIVE": {
+        "count": 377,
+        "min": 0.10110752284526825,
+        "p10": 0.14866016805171967,
+        "median": 0.22224122285842896,
+        "p90": 0.2973061501979828,
+        "p99": 0.4369794726371765,
+        "max": 0.4780443012714386
+      },
+      "VICTORY": {
+        "count": 635,
+        "min": 0.10518310964107513,
+        "p10": 0.8344919085502625,
+        "median": 0.9424518942832947,
+        "p90": 0.9870551824569702,
+        "p99": 0.9939627647399902,
+        "max": 0.9999791979789734
+      }
+    },
+    "negative_max_margin": 0.09936180710792542,
+    "hardest_negatives": [
+      {
+        "group": "86_hard_14",
+        "timestamp": 7915.3,
+        "scores": {
+          "VICTORY": 0.4121285378932953,
+          "DEFEAT": 0.4780443012714386
+        }
+      },
+      {
+        "group": "86_hard_01",
+        "timestamp": 506.333,
+        "scores": {
+          "VICTORY": 0.43697988986968994,
+          "DEFEAT": 0.39173996448516846
+        }
+      },
+      {
+        "group": "86_hard_01",
+        "timestamp": 506.383,
+        "scores": {
+          "VICTORY": 0.43697988986968994,
+          "DEFEAT": 0.39173951745033264
+        }
+      },
+      {
+        "group": "86_hard_01",
+        "timestamp": 506.433,
+        "scores": {
+          "VICTORY": 0.4369797110557556,
+          "DEFEAT": 0.39173629879951477
+        }
+      },
+      {
+        "group": "86_hard_01",
+        "timestamp": 506.3,
+        "scores": {
+          "VICTORY": 0.4369794726371765,
+          "DEFEAT": 0.3917391002178192
+        }
+      }
+    ],
+    "transitional_wrong_class_frames": 41,
+    "transitional_wrong_class_max_best": 0.5109049677848816,
+    "hardest_transitional": [
+      {
+        "group": "86_game_09",
+        "timestamp": 5285.983,
+        "label": "DEFEAT",
+        "scores": {
+          "VICTORY": 0.5109049677848816,
+          "DEFEAT": 0.5086049437522888
+        }
+      },
+      {
+        "group": "74_window_08",
+        "timestamp": 6093.015333,
+        "label": "DEFEAT",
+        "scores": {
+          "VICTORY": 0.5089714527130127,
+          "DEFEAT": 0.5069650411605835
+        }
+      },
+      {
+        "group": "86_game_03",
+        "timestamp": 1983.2,
+        "label": "DEFEAT",
+        "scores": {
+          "VICTORY": 0.5082804560661316,
+          "DEFEAT": 0.5069087743759155
+        }
+      },
+      {
+        "group": "74_window_10",
+        "timestamp": 7606.44,
+        "label": "DEFEAT",
+        "scores": {
+          "VICTORY": 0.49990764260292053,
+          "DEFEAT": 0.4992733299732208
+        }
+      },
+      {
+        "group": "86_game_13",
+        "timestamp": 7374.016,
+        "label": "VICTORY",
+        "scores": {
+          "VICTORY": 0.34387415647506714,
+          "DEFEAT": 0.4670849144458771
+        }
+      }
+    ],
+    "per_frame_argmax_correct_on_labeled_results": 1093,
+    "labeled_result_frames": 1134
+  },
+  "event_level": {
+    "result_traces": 20,
+    "correct": 20,
+    "independent_of_templates": 16,
+    "classified_clusters": 22,
+    "peak_score": {
+      "count": 22,
+      "min": 0.9015875458717346,
+      "p10": 0.9061232805252075,
+      "median": 0.9934486746788025,
+      "p90": 0.9999760389328003,
+      "p99": 0.9999794960021973,
+      "max": 0.9999794960021973
+    },
+    "peak_margin": {
+      "count": 22,
+      "min": 0.47630560398101807,
+      "p10": 0.48632240295410156,
+      "median": 0.6033532619476318,
+      "p90": 0.6452089548110962,
+      "p99": 0.6617070138454437,
+      "max": 0.6617070138454437
+    },
+    "supporting_frames": {
+      "count": 22,
+      "min": 6.0,
+      "p10": 9.0,
+      "median": 36.0,
+      "p90": 88.0,
+      "p99": 120.0,
+      "max": 120.0
+    },
+    "events": [
+      {
+        "group": "74_window_02",
+        "truth": "VICTORY",
+        "independent_of_templates": false,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 820.136,
+            "last_seen": 821.586,
+            "supporting_frames": 88,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 820.602667,
+              "scores": {
+                "VICTORY": 0.9999760389328003,
+                "DEFEAT": 0.38923346996307373
+              },
+              "winner": "VICTORY",
+              "margin": 0.6107425689697266
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 5,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "74_window_04",
+        "truth": "VICTORY",
+        "independent_of_templates": false,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 1385.006,
+            "last_seen": 1386.489333,
+            "supporting_frames": 90,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 1385.056,
+              "scores": {
+                "VICTORY": 0.9999791979789734,
+                "DEFEAT": 0.408390611410141
+              },
+              "winner": "VICTORY",
+              "margin": 0.5915885865688324
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 2,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "74_window_06",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 2197.748,
+            "last_seen": 2199.198,
+            "supporting_frames": 88,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 2198.198,
+              "scores": {
+                "VICTORY": 0.9943240284919739,
+                "DEFEAT": 0.39419880509376526
+              },
+              "winner": "VICTORY",
+              "margin": 0.6001252233982086
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 5,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "74_window_08",
+        "truth": "DEFEAT",
+        "independent_of_templates": false,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6092.615333,
+            "last_seen": 6092.798667,
+            "supporting_frames": 10,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6092.748667,
+              "scores": {
+                "VICTORY": 0.3382611572742462,
+                "DEFEAT": 0.9999681711196899
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6617070138454437
+            }
+          },
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6093.582,
+            "last_seen": 6094.098667,
+            "supporting_frames": 32,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6094.098667,
+              "scores": {
+                "VICTORY": 0.41526514291763306,
+                "DEFEAT": 0.9015875458717346
+              },
+              "winner": "DEFEAT",
+              "margin": 0.48632240295410156
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 29,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "74_window_09",
+        "truth": "DEFEAT",
+        "independent_of_templates": false,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6118.015333,
+            "last_seen": 6119.998667,
+            "supporting_frames": 120,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6119.015333,
+              "scores": {
+                "VICTORY": 0.448326975107193,
+                "DEFEAT": 0.9999794960021973
+              },
+              "winner": "DEFEAT",
+              "margin": 0.5516525208950043
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 0,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "74_window_10",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 7606.056667,
+            "last_seen": 7606.223333,
+            "supporting_frames": 9,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 7606.156667,
+              "scores": {
+                "VICTORY": 0.34016701579093933,
+                "DEFEAT": 0.9887086749076843
+              },
+              "winner": "DEFEAT",
+              "margin": 0.648541659116745
+            }
+          },
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 7607.006667,
+            "last_seen": 7607.59,
+            "supporting_frames": 36,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 7607.573333,
+              "scores": {
+                "VICTORY": 0.42805683612823486,
+                "DEFEAT": 0.9043624401092529
+              },
+              "winner": "DEFEAT",
+              "margin": 0.47630560398101807
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 26,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_01",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 1119.183,
+            "last_seen": 1119.883,
+            "supporting_frames": 43,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 1119.666,
+              "scores": {
+                "VICTORY": 0.9938024282455444,
+                "DEFEAT": 0.3904491662979126
+              },
+              "winner": "VICTORY",
+              "margin": 0.6033532619476318
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 2,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_02",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 1847.483,
+            "last_seen": 1847.65,
+            "supporting_frames": 9,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 1847.6,
+              "scores": {
+                "VICTORY": 0.3460937440395355,
+                "DEFEAT": 0.9590578079223633
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6129640638828278
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 45,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_03",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 1982.8,
+            "last_seen": 1982.983,
+            "supporting_frames": 10,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 1982.933,
+              "scores": {
+                "VICTORY": 0.34140241146087646,
+                "DEFEAT": 0.9866113662719727
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6452089548110962
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 32,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_04",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 2128.816,
+            "last_seen": 2129.016,
+            "supporting_frames": 11,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 2128.933,
+              "scores": {
+                "VICTORY": 0.3357935845851898,
+                "DEFEAT": 0.9387450814247131
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6029514968395233
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 45,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_05",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 2300.65,
+            "last_seen": 2300.75,
+            "supporting_frames": 6,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 2300.716,
+              "scores": {
+                "VICTORY": 0.4279589354991913,
+                "DEFEAT": 0.9061232805252075
+              },
+              "winner": "DEFEAT",
+              "margin": 0.47816434502601624
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 56,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_06",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 2945.966,
+            "last_seen": 2946.15,
+            "supporting_frames": 11,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 2946.083,
+              "scores": {
+                "VICTORY": 0.3340488374233246,
+                "DEFEAT": 0.94960618019104
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6155573427677155
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 27,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_07",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 4116.716,
+            "last_seen": 4117.233,
+            "supporting_frames": 32,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 4117.183,
+              "scores": {
+                "VICTORY": 0.9936582446098328,
+                "DEFEAT": 0.39021384716033936
+              },
+              "winner": "VICTORY",
+              "margin": 0.6034443974494934
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 5,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_08",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 4727.533,
+            "last_seen": 4728.183,
+            "supporting_frames": 40,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 4728,
+              "scores": {
+                "VICTORY": 0.9952356815338135,
+                "DEFEAT": 0.3870072066783905
+              },
+              "winner": "VICTORY",
+              "margin": 0.608228474855423
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 4,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_09",
+        "truth": "DEFEAT",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "DEFEAT",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 5285.583,
+            "last_seen": 5285.766,
+            "supporting_frames": 10,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 5285.716,
+              "scores": {
+                "VICTORY": 0.34363633394241333,
+                "DEFEAT": 0.988248348236084
+              },
+              "winner": "DEFEAT",
+              "margin": 0.6446120142936707
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 23,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_10",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6052.766,
+            "last_seen": 6053.483,
+            "supporting_frames": 44,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6053.233,
+              "scores": {
+                "VICTORY": 0.9934486746788025,
+                "DEFEAT": 0.39152950048446655
+              },
+              "winner": "VICTORY",
+              "margin": 0.6019191741943359
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 3,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_11",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6530.766,
+            "last_seen": 6530.916,
+            "supporting_frames": 10,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6530.85,
+              "scores": {
+                "VICTORY": 0.9774295687675476,
+                "DEFEAT": 0.39529839158058167
+              },
+              "winner": "VICTORY",
+              "margin": 0.5821311771869659
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 9,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_12",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 6970.95,
+            "last_seen": 6971.683,
+            "supporting_frames": 45,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 6971.433,
+              "scores": {
+                "VICTORY": 0.9939627647399902,
+                "DEFEAT": 0.39326804876327515
+              },
+              "winner": "VICTORY",
+              "margin": 0.6006947159767151
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 3,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_13",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 7374.05,
+            "last_seen": 7374.783,
+            "supporting_frames": 45,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 7374.533,
+              "scores": {
+                "VICTORY": 0.9934835433959961,
+                "DEFEAT": 0.3900825083255768
+              },
+              "winner": "VICTORY",
+              "margin": 0.6034010350704193
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 3,
+        "wrong_winner_frames_at_or_above_floor": 0
+      },
+      {
+        "group": "86_game_14",
+        "truth": "VICTORY",
+        "independent_of_templates": true,
+        "decisions": [
+          {
+            "outcome": "VICTORY",
+            "reason": "event_peak_argmax",
+            "result_screen_confirmed": true,
+            "first_seen": 7896.033,
+            "last_seen": 7896.783,
+            "supporting_frames": 46,
+            "opposite_support": 0,
+            "peak": {
+              "timestamp": 7896.5,
+              "scores": {
+                "VICTORY": 0.9907593131065369,
+                "DEFEAT": 0.38808852434158325
+              },
+              "winner": "VICTORY",
+              "margin": 0.6026707887649536
+            }
+          }
+        ],
+        "correct": true,
+        "wrong_winner_frames_in_trace": 3,
+        "wrong_winner_frames_at_or_above_floor": 0
+      }
+    ]
+  },
+  "hard_negative_groups": {
+    "groups": 24,
+    "frames": 377,
+    "confirmed_result_screens": 0,
+    "decisions": []
+  },
+  "monitor_1fps": {
+    "86": {
+      "basis": "manual ground truth (complete)",
+      "frames": 7980,
+      "in_game": {
+        "best_score": {
+          "count": 6837,
+          "min": 0.06066995486617088,
+          "p10": 0.13838137686252594,
+          "median": 0.17995493113994598,
+          "p90": 0.23042985796928406,
+          "p99": 0.29757919907569885,
+          "max": 0.3343221843242645
+        },
+        "at_or_above_evidence_floor": 0,
+        "max_margin": 0.10643371939659119
+      },
+      "before_first_game": {
+        "best_score": {
+          "count": 539,
+          "min": 0.11755439639091492,
+          "p10": 0.16229946911334991,
+          "median": 0.22757765650749207,
+          "p90": 0.2560991048812866,
+          "p99": 0.34055307507514954,
+          "max": 0.43727728724479675
+        },
+        "at_or_above_evidence_floor": 0,
+        "max_margin": 0.09081964939832687
+      },
+      "post_result_until_next_vs": {
+        "best_score": {
+          "count": 589,
+          "min": 0.0,
+          "p10": 0.118548683822155,
+          "median": 0.30540114641189575,
+          "p90": 0.915328323841095,
+          "p99": 0.9904663562774658,
+          "max": 0.9963173270225525
+        },
+        "at_or_above_evidence_floor": 121,
+        "max_margin": 0.6067455410957336
+      },
+      "post_result_wrong_class_frames_best_ge_0_5": 0,
+      "post_result_frames_between_floor_and_old_gate": 21
+    },
+    "74": {
+      "basis": "visually verified candidate games (sparse annotations; not complete ground truth)",
+      "frames": 7641,
+      "in_game": {
+        "best_score": {
+          "count": 5028,
+          "min": 0.06895811855792999,
+          "p10": 0.13701635599136353,
+          "median": 0.17291326820850372,
+          "p90": 0.22512753307819366,
+          "p99": 0.2861510217189789,
+          "max": 0.349448561668396
+        },
+        "at_or_above_evidence_floor": 0,
+        "max_margin": 0.10555469989776611
+      },
+      "before_first_game": {
+        "best_score": {
+          "count": 168,
+          "min": 0.15554477274417877,
+          "p10": 0.15751297771930695,
+          "median": 0.17744266986846924,
+          "p90": 0.2434350848197937,
+          "p99": 0.33013013005256653,
+          "max": 0.33046844601631165
+        },
+        "at_or_above_evidence_floor": 0,
+        "max_margin": 0.04089152812957764
+      },
+      "post_result_until_next_vs": {
+        "best_score": {
+          "count": 2432,
+          "min": 0.0,
+          "p10": 0.1841398924589157,
+          "median": 0.24323350191116333,
+          "p90": 0.27483826875686646,
+          "p99": 0.9697979688644409,
+          "max": 0.9999791979789734
+        },
+        "at_or_above_evidence_floor": 134,
+        "max_margin": 0.6067268252372742
+      }
+    }
+  }
+}

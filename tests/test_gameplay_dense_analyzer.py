@@ -372,6 +372,113 @@ class GameplayDenseAnalyzerTests(unittest.TestCase):
             with self.subTest(options=options), self.assertRaises(ValueError):
                 HearthstoneSettings(**options)
 
+    def test_weak_result_seeds_native_scan_but_never_satisfies_final_stability(self) -> None:
+        class WeakDetector(DenseDetector):
+            def detect_roi_candidates(self, frame, timestamp, **options):
+                events = self.detect_roi(frame, timestamp, roi=options["roi"], event_types=options["event_types"])
+                if abs(timestamp - 3.1) < 1e-6:
+                    return [GameEvent(timestamp, GameEventType.DEFEAT, 0.85, metadata={"candidate_only": True})]
+                return events
+        result = self.analyzer(detector=WeakDetector(result_times=(3.1 + 1 / 60, 3.1 + 2 / 60))).analyze(self.source)
+        self.assertEqual(result.games[0].result, GameResult.LOSS)
+        self.assertEqual(result.metadata["weak_result_candidates"], 1)
+        self.assertGreater(result.metadata["result_refine_frames"], 0)
+        self.assertAlmostEqual(result.games[0].end, 3.1 + 1 / 60)
+        self.assertTrue(all(not e.metadata.get("candidate_only") for e in result.events))
+
+    def test_weak_result_alone_never_becomes_loss(self) -> None:
+        class WeakDetector(DenseDetector):
+            def detect_roi_candidates(self, frame, timestamp, **options):
+                if abs(timestamp - 3.1) < 1e-6:
+                    return [GameEvent(timestamp, GameEventType.DEFEAT, 0.85, metadata={"candidate_only": True})]
+                return []
+        result = self.analyzer(detector=WeakDetector(result_times=())).analyze(self.source)
+        self.assertEqual(result.games[0].result, GameResult.UNKNOWN)
+        self.assertEqual(result.metadata["weak_result_candidates"], 1)
+        self.assertFalse(any(e.type == GameEventType.DEFEAT for e in result.events))
+
+    def test_weak_vs_seed_is_refined_and_not_copied_to_events(self) -> None:
+        class WeakDetector(DenseDetector):
+            def detect_candidates(self, frame, timestamp, **options):
+                if timestamp == 1:
+                    return [GameEvent(timestamp, GameEventType.VS_SCREEN, 0.85, metadata={"candidate_only": True})]
+                return []
+        result = self.analyzer(detector=WeakDetector()).analyze(self.source)
+        self.assertEqual(result.games[0].result, GameResult.LOSS)
+        self.assertTrue(result.metadata["fine_windows"])
+        self.assertGreater(result.events[0].confidence, 0.92)
+
+    def test_profile_reports_sampling_and_matching_separately(self) -> None:
+        result = self.analyzer().analyze(self.source)
+        profile = result.metadata["profiling"]
+        self.assertEqual(set(profile), {"coarse", "fine", "dense", "refinement"})
+        self.assertEqual(profile["coarse"]["streams"], 1)
+        self.assertEqual(profile["dense"]["streams"], 1)
+        self.assertGreater(profile["dense"]["matching_seconds"], 0)
+        self.assertGreaterEqual(profile["dense"]["sampling_wait_seconds"], 0)
+        self.assertGreater(profile["dense"]["first_frame_wait_seconds"], 0)
+
+    def test_invalid_weak_gate_and_duration_settings(self) -> None:
+        for options in ({"candidate_similarity": 0}, {"candidate_similarity": 1.1},
+                        {"candidate_similarity": True}, {"candidate_similarity": float("nan")},
+                        {"maximum_game_duration_s": 0}, {"maximum_game_duration_s": float("inf")}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                HearthstoneSettings(**options)
+
+    def test_optional_candidate_capability_changes_cache_identity(self) -> None:
+        baseline = self.analyzer(use_cache=True).analyze(self.source)
+
+        class WeakVsDetector(DenseDetector):
+            def detect_candidates(self, frame, timestamp, **options):
+                return []
+        actual = self.analyzer(detector=WeakVsDetector(), use_cache=True).analyze(self.source)
+        self.assertNotEqual(actual.metadata["cache_key"], baseline.metadata["cache_key"])
+        self.assertFalse(actual.metadata["cache_hit"])
+        self.assertIsNone(actual.games[0].start)
+        self.assertTrue(actual.settings["weak_vs_candidates"])
+        self.assertFalse(actual.settings["weak_result_candidates"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GameplaySingleFrameRuntimeTests(unittest.TestCase):
+    setUp = GameplayDenseAnalyzerTests.setUp
+    analyzer = GameplayDenseAnalyzerTests.analyzer
+
+    def test_enabled_policy_reuses_native_scores_and_preserves_vs_temporal_gate(self):
+        from analysis.gameplay.hearthstone.result_policy import SingleFrameResultPolicy, SingleFrameRule
+
+        class ScoredDetector(DenseDetector):
+            pack_fingerprint = 'a' * 64
+            observe_count = 0
+
+            def describe(self):
+                return {**super().describe(), 'ambiguity_margin': .04,
+                        'classes': {kind: {'threshold': .92} for kind in ('VICTORY', 'DEFEAT')}}
+
+            def observe_roi(self, frame, timestamp, **kwargs):
+                self.observe_count += 1
+                self.roi_calls.append((timestamp, frame.shape, kwargs['roi'], kwargs['event_types']))
+                matches = [event for event in self.events(timestamp) if event.type in kwargs['event_types']]
+                score = .98 if matches else .85 if abs(timestamp - 3.1) < .03 else .30
+                return matches, {'timestamp': timestamp, 'classes': {
+                    'DEFEAT': {'similarity': score}, 'VICTORY': {'similarity': .20},
+                }}
+
+        detector = ScoredDetector(result_times=(3.1,))
+        policy = SingleFrameResultPolicy(defeat=SingleFrameRule(.97, .3, .8, .05),
+                                         pack_fingerprint='a' * 64, calibration_id='synthetic-runtime-only')
+        settings = HearthstoneSettings(single_frame_results=policy)
+        result = self.analyzer(detector=detector, settings=settings).analyze(self.source)
+        self.assertEqual([event.type for event in result.events], [GameEventType.VS_SCREEN, GameEventType.DEFEAT])
+        self.assertEqual(result.metadata['single_frame_results_accepted'], 1)
+        self.assertEqual(detector.observe_count, result.metadata['result_refine_frames'])
+        self.assertEqual(result.events[-1].metadata['observation_count'], 1)
+        self.assertEqual(len(detector.roi_calls), result.metadata['dense_result_frames'] + result.metadata['result_refine_frames'])
+
+    def test_default_disabled_policy_does_not_request_additional_score_context(self):
+        result = self.analyzer(detector=DenseDetector(result_times=(3.1,))).analyze(self.source)
+        self.assertEqual(result.metadata['single_frame_context_frames'], 0)
+        self.assertEqual(result.metadata['single_frame_results_accepted'], 0)

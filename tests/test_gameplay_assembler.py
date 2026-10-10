@@ -134,6 +134,42 @@ class GameplayAssemblerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             GameAssembler(conflicting_result_window_s=-1.0)
 
+    def test_missing_vs_does_not_shift_following_pair(self) -> None:
+        games = GameAssembler().assemble([event(10, GameEventType.VS_SCREEN), event(100, GameEventType.VICTORY),
+                                          event(200, GameEventType.DEFEAT), event(250, GameEventType.VS_SCREEN),
+                                          event(400, GameEventType.VICTORY)])
+        self.assertEqual([(g.start, g.end, g.result.value) for g in games],
+                         [(10, 100, "WIN"), (None, 200, "LOSS"), (250, 400, "WIN")])
+
+    def test_same_class_results_never_merge_across_intervening_start(self) -> None:
+        games = GameAssembler().assemble([event(10, GameEventType.VS_SCREEN), event(100, GameEventType.VICTORY),
+                                          event(100.5, GameEventType.VS_SCREEN), event(101, GameEventType.VICTORY)])
+        self.assertEqual([(g.start, g.end) for g in games], [(10, 100), (100.5, 101)])
+
+    def test_starts_never_merge_across_intervening_result(self) -> None:
+        games = GameAssembler().assemble([event(10, GameEventType.VS_SCREEN), event(10.5, GameEventType.VICTORY),
+                                          event(11, GameEventType.VS_SCREEN), event(100, GameEventType.DEFEAT)])
+        self.assertEqual([(g.start, g.end) for g in games], [(10, 10.5), (11, 100)])
+
+    def test_expired_start_becomes_partial_and_never_consumes_later_game(self) -> None:
+        games = GameAssembler(maximum_game_duration_s=300).assemble([
+            event(10, GameEventType.VS_SCREEN), event(500, GameEventType.DEFEAT),
+            event(600, GameEventType.VS_SCREEN), event(800, GameEventType.VICTORY)])
+        self.assertEqual([(g.start, g.end, g.result.value) for g in games],
+                         [(10, None, "UNKNOWN"), (None, 500, "LOSS"), (600, 800, "WIN")])
+        self.assertIn("implausible_result_duration", games[0].metadata["issues"])
+
+    def test_minimum_duration_is_configurable_not_a_universal_game_rule(self) -> None:
+        games = GameAssembler(minimum_game_duration_s=20).assemble([
+            event(10, GameEventType.VS_SCREEN), event(15, GameEventType.DEFEAT)])
+        self.assertEqual([(g.start, g.end) for g in games], [(10, None), (None, 15)])
+
+    def test_invalid_duration_guards(self) -> None:
+        for options in ({"maximum_game_duration_s": 0}, {"maximum_game_duration_s": float("nan")},
+                        {"minimum_game_duration_s": True}, {"minimum_game_duration_s": 5, "maximum_game_duration_s": 5}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                GameAssembler(**options)
+
 
 if __name__ == "__main__":
     unittest.main()

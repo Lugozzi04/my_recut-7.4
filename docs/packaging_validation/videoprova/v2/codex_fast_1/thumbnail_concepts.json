@@ -1,0 +1,385 @@
+{
+  "format": "recut_thumbnail_concepts",
+  "prompt_version": "packaging_creative_v1",
+  "renderer": "thumbnail_renderer_v2",
+  "provider": "codex",
+  "preferred_concept_id": "C1",
+  "concepts": [
+    {
+      "concept_id": "C1",
+      "narrative_angle": "A1",
+      "direction": "competitive",
+      "title": "Bombardamento su Meccaciclo e vittoria contro Kibler",
+      "thumbnail_text": "Proprio su questo?",
+      "highlight_ids": [
+        "H05",
+        "H06"
+      ],
+      "source_frame_ids": [
+        "F005",
+        "F018"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [
+        "K01"
+      ],
+      "composition_plan": {
+        "layout": "board_focus",
+        "background_frame_id": "F018",
+        "focus_box": [
+          0.28,
+          0.27,
+          0.48,
+          0.42
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "right",
+        "webcam_side": "left",
+        "emphasis_word": "questo",
+        "badge": null,
+        "accent_color": "#FFD43B",
+        "text_color": "#FFFFFF",
+        "rationale": "Meccaciclo, ritagliato da O1, occupa il lato sinistro; il campo finale resta riconoscibile sullo sfondo. La domanda a destra richiama il giudizio sulla giocata senza inventare danni o causalit\u00e0."
+      },
+      "evidence": [
+        {
+          "claim": "Il creator critica il Bombardamento contro Meccaciclo.",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0051",
+            "T0052",
+            "T0054"
+          ],
+          "frame_ids": [
+            "F005",
+            "F018"
+          ]
+        },
+        {
+          "claim": "La partita contro Kibler termina con una vittoria secondo il risultato locale del brief.",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0012",
+            "T0042",
+            "T0051"
+          ],
+          "frame_ids": [
+            "F005",
+            "F018"
+          ]
+        }
+      ],
+      "risk_notes": "O1 proviene dalla mano iniziale: usarlo come riferimento della carta, senza presentarlo come fotogramma del Bombardamento. Non aggiungere frecce di attacco o numeri di danno.",
+      "render": {
+        "concept_id": "C1",
+        "path": "thumbnails\\concept_01.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 727692,
+        "format": "png",
+        "layout": "board_focus",
+        "text": {
+          "font_px": 103.0,
+          "cap_px": 81.0,
+          "lines": [
+            "PROPRIO",
+            "SU QUESTO?"
+          ],
+          "fits": true,
+          "bounds": [
+            709.1,
+            34.2,
+            504.5,
+            205.7
+          ],
+          "timestamp_zone_clear": true,
+          "align": "right",
+          "px_at_320": 20.2
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 1591.6
+          },
+          {
+            "kind": "card",
+            "rect": [
+              203.6,
+              72.0,
+              360.8,
+              532.8
+            ]
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    },
+    {
+      "concept_id": "C2",
+      "narrative_angle": "A2",
+      "direction": "narrative",
+      "title": "Vinco col Paladino, ma nella lista manca una carta?",
+      "thumbnail_text": "Dov'\u00e8 quella magia?",
+      "highlight_ids": [
+        "H09",
+        "H14"
+      ],
+      "source_frame_ids": [
+        "F030",
+        "F042"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "story_focus",
+        "background_frame_id": "F042",
+        "focus_box": [
+          0.25,
+          0.24,
+          0.51,
+          0.48
+        ],
+        "inset_id": "F030",
+        "inset_box": [
+          0.29,
+          0.23,
+          0.44,
+          0.46
+        ],
+        "text_side": "top",
+        "webcam_side": "left",
+        "emphasis_word": "Dov'\u00e8",
+        "badge": null,
+        "accent_color": "#FFE066",
+        "text_color": "#FFFFFF",
+        "rationale": "Una divisione diagonale confronta il campo precedente di F030 con quello pi\u00f9 popolato di F042. Il testo in alto introduce il dubbio sulla magia senza raffigurarne una carta non identificata."
+      },
+      "evidence": [
+        {
+          "claim": "Il creator dubita della presenza di una magia da un mana nella propria lista.",
+          "highlight_id": "H09",
+          "transcript_ids": [
+            "T0103",
+            "T0104",
+            "T0105",
+            "T0106"
+          ],
+          "frame_ids": [
+            "F030"
+          ]
+        },
+        {
+          "claim": "Il creator sta giocando il Paladino e riconosce una buona partenza.",
+          "highlight_id": "H11",
+          "transcript_ids": [
+            "T0132",
+            "T0133",
+            "T0134",
+            "T0135"
+          ],
+          "frame_ids": [
+            "F030"
+          ]
+        },
+        {
+          "claim": "La seconda partita termina con una vittoria secondo il risultato locale del brief.",
+          "highlight_id": "H14",
+          "transcript_ids": [],
+          "frame_ids": [
+            "F042"
+          ]
+        }
+      ],
+      "risk_notes": "Mantenere la domanda nel titolo: l'assenza della magia non \u00e8 verificata. Il confronto dei campi illustra lo sviluppo della partita, senza attribuirlo a una specifica combo.",
+      "render": {
+        "concept_id": "C2",
+        "path": "thumbnails\\concept_02.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 1040046,
+        "format": "png",
+        "layout": "story_focus",
+        "text": {
+          "font_px": 134.0,
+          "cap_px": 105.5,
+          "lines": [
+            "DOV'\u00c8 QUELLA MAGIA?"
+          ],
+          "fits": true,
+          "bounds": [
+            67.8,
+            37.6,
+            1147.5,
+            162.1
+          ],
+          "timestamp_zone_clear": true,
+          "align": "center",
+          "px_at_320": 26.4
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              742.4,
+              720.0
+            ],
+            "sharpness": 1204.7
+          },
+          {
+            "kind": "inset",
+            "rect": [
+              588.8,
+              0.0,
+              691.2,
+              720.0
+            ],
+            "sharpness": 1293.5
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    },
+    {
+      "concept_id": "C3",
+      "narrative_angle": "A3",
+      "direction": "informative",
+      "title": "Palla di Fuoco o buff? Valuto le opzioni durante la partita",
+      "thumbnail_text": "Quale tengo?",
+      "highlight_ids": [
+        "H13"
+      ],
+      "source_frame_ids": [
+        "F039"
+      ],
+      "webcam_frame_id": "W010",
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "reaction_focus",
+        "background_frame_id": "F039",
+        "focus_box": [
+          0.18,
+          0.1,
+          0.63,
+          0.7
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "left",
+        "webcam_side": "right",
+        "emphasis_word": "Quale",
+        "badge": null,
+        "accent_color": "#C77DFF",
+        "text_color": "#FFFFFF",
+        "rationale": "La webcam W010 \u00e8 grande sulla destra; le opzioni reali di F039 restano visibili a sinistra, sotto una domanda breve. Il volto accompagna il momento senza dichiarare un'emozione."
+      },
+      "evidence": [
+        {
+          "claim": "Il creator valuta un effetto che aggiunge una Palla di Fuoco dopo aver lanciato una magia.",
+          "highlight_id": "H13",
+          "transcript_ids": [
+            "T0155",
+            "T0156"
+          ],
+          "frame_ids": [
+            "F039"
+          ]
+        },
+        {
+          "claim": "Valuta anche il potenziamento dei servitori e la schermata presenta pi\u00f9 opzioni.",
+          "highlight_id": "H13",
+          "transcript_ids": [
+            "T0157"
+          ],
+          "frame_ids": [
+            "F039",
+            "W010"
+          ]
+        }
+      ],
+      "risk_notes": "Non indicare una scelta finale n\u00e9 nominare la carta centrale: il nome non \u00e8 verificato con sufficiente chiarezza. Non aggiungere effetti grafici che simulino l'attivazione di un'opzione.",
+      "render": {
+        "concept_id": "C3",
+        "path": "thumbnails\\concept_03.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 609796,
+        "format": "png",
+        "layout": "reaction_focus",
+        "text": {
+          "font_px": 187.2,
+          "cap_px": 147.8,
+          "lines": [
+            "QUALE",
+            "TENGO?"
+          ],
+          "fits": true,
+          "bounds": [
+            57.8,
+            25.6,
+            595.5,
+            360.3
+          ],
+          "timestamp_zone_clear": true,
+          "align": "left",
+          "px_at_320": 37.0
+        },
+        "warnings": [],
+        "subjects": [
+          {
+            "kind": "background",
+            "rect": [
+              0.0,
+              0.0,
+              1280.0,
+              720.0
+            ],
+            "sharpness": 2762.2
+          },
+          {
+            "kind": "face",
+            "rect": [
+              768.9,
+              212.5,
+              438.5,
+              437.5
+            ]
+          },
+          {
+            "kind": "webcam",
+            "rect": [
+              691.2,
+              0.0,
+              588.8,
+              720.0
+            ],
+            "face": true
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "issues": [],
+          "fixes": []
+        }
+      }
+    }
+  ]
+}

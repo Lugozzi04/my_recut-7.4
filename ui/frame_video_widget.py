@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import math
 
-from PySide6.QtCore import Qt, QRect, QTimer
+from PySide6.QtCore import Qt, QRect, QRectF, QTimer
 from PySide6.QtGui import (
     QColor,
     QDragEnterEvent,
     QDropEvent,
+    QFont,
     QFontMetrics,
     QImage,
-    QLinearGradient,
     QPainter,
     QPen,
 )
@@ -32,7 +32,8 @@ class FrameVideoWidget(QWidget):
         self.setMouseTracking(True)
         self._image: QImage | None = None
         self._overlay_text: str | None = None
-        self._overlay_color = QColor(220, 60, 60)
+        self._overlay_color = QColor(77, 141, 255)
+        self._pal = None
         self._overlay_alpha = 1.0
         self._overlay_phase = 0.0
         self._empty_card_rect = QRect()
@@ -65,145 +66,97 @@ class FrameVideoWidget(QWidget):
         self._image = None
         self.update()
 
+    def set_palette_tokens(self, pal) -> None:
+        """Adopt the editor palette (ui.design_tokens.Palette) for empty state, matte and overlays."""
+        self._pal = pal
+        self.update()
+
+    def _tok(self, name: str, default: str) -> QColor:
+        return QColor(getattr(self._pal, name, default) if self._pal is not None else default)
+
     def _paint_empty_state(self, p: QPainter) -> None:
-        r = self.rect().adjusted(18, 18, -18, -18)
-        if r.width() < 120 or r.height() < 120:
+        r = self.rect().adjusted(24, 24, -24, -24)
+        if r.width() < 160 or r.height() < 140:
             self._empty_card_rect = QRect()
             self._empty_browse_rect = QRect()
             return
+        accent = self._tok("accent", "#4D8DFF")
+        text = self._tok("text", "#E9EDF3")
+        text_2 = self._tok("text_2", "#A3ACB9")
+        text_3 = self._tok("text_3", "#6A7383")
+        border = self._tok("border_strong", "#323843")
 
-        card_w = min(560, max(160, r.width() - 8))
-        card_h = min(220, max(130, r.height() - 8))
-        card = QRect(
-            r.center().x() - (card_w // 2),
-            r.center().y() - (card_h // 2),
-            card_w,
-            card_h,
-        )
-        card = card.intersected(r)
+        card_w = min(460, r.width())
+        card_h = min(250, r.height())
+        card = QRect(r.center().x() - card_w // 2, r.center().y() - card_h // 2, card_w, card_h)
         self._empty_card_rect = card
-
-        bg = QColor(14, 16, 20)
-        if self._drag_hover:
-            bg = QColor(17, 26, 38)
-        border = QColor(56, 66, 84)
-        if self._drag_hover:
-            border = QColor(90, 150, 255)
-
         p.setRenderHint(QPainter.Antialiasing, True)
-        p.setPen(QPen(border, 1))
-        p.setBrush(bg)
+
+        # dashed drop zone (accent while dragging)
+        zone_pen = QPen(accent if self._drag_hover else border, 1.5 if self._drag_hover else 1.2)
+        zone_pen.setStyle(Qt.DashLine)
+        zone_pen.setDashPattern([5, 4])
+        p.setPen(zone_pen)
+        fill = QColor(accent)
+        fill.setAlpha(22 if self._drag_hover else 8)
+        p.setBrush(fill)
         p.drawRoundedRect(card, 14, 14)
 
-        # Inner dashed drop zone
-        inner = card.adjusted(12, 12, -12, -12)
-        dash_pen = QPen(QColor(74, 84, 104), 1)
-        dash_pen.setStyle(Qt.DashLine)
-        p.setPen(dash_pen)
-        p.setBrush(Qt.NoBrush)
-        p.drawRoundedRect(inner, 10, 10)
+        cx = card.center().x()
+        top = card.top() + 30
+        # icon badge
+        badge = QRect(cx - 24, top, 48, 48)
+        bg = QColor(accent)
+        bg.setAlpha(36)
+        p.setPen(Qt.NoPen)
+        p.setBrush(bg)
+        p.drawEllipse(badge)
+        try:
+            from ui.widgets.glyphs import draw_glyph
 
-        cx = inner.center().x()
-        top = inner.top() + 18
+            draw_glyph(p, "import", QRectF(cx - 12, top + 12, 24, 24), accent, 1.9)
+        except Exception:
+            pass
 
-        # Simple upload icon
-        p.setPen(QPen(QColor(123, 171, 255), 2))
-        p.setBrush(Qt.NoBrush)
-        p.drawRoundedRect(QRect(cx - 20, top + 18, 40, 24), 6, 6)
-        p.drawLine(cx, top - 4, cx, top + 22)
-        p.drawLine(cx, top - 4, cx - 8, top + 4)
-        p.drawLine(cx, top - 4, cx + 8, top + 4)
+        f = QFont(self.font())
+        f.setPixelSize(16)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(text)
+        p.drawText(QRect(card.left(), top + 60, card.width(), 24), Qt.AlignCenter,
+                   "Release to import" if self._drag_hover else "Drop a video here")
+        f.setPixelSize(12)
+        f.setBold(False)
+        p.setFont(f)
+        p.setPen(text_3)
+        p.drawText(QRect(card.left(), top + 88, card.width(), 18), Qt.AlignCenter, "or")
 
-        title_font = p.font()
-        title_font.setBold(True)
-        title_font.setPointSize(max(11, title_font.pointSize() + 2))
-        p.setFont(title_font)
-        p.setPen(QColor(236, 242, 248))
-        title_rect = QRect(inner.left() + 16, top + 56, inner.width() - 32, 22)
-        p.drawText(title_rect, Qt.AlignCenter, "Drop video here")
-
-        sub_font = p.font()
-        sub_font.setBold(False)
-        sub_font.setPointSize(max(9, sub_font.pointSize() - 1))
-        p.setFont(sub_font)
-        p.setPen(QColor(150, 162, 180))
-        sub_rect = QRect(inner.left() + 18, top + 82, inner.width() - 36, 18)
-        p.drawText(sub_rect, Qt.AlignCenter, "or click Browse to select files")
-
-        # CTA button
-        browse_w = 108
-        browse_h = 30
-        browse_rect = QRect(cx - (browse_w // 2), top + 108, browse_w, browse_h)
-        self._empty_browse_rect = browse_rect
-        p.setPen(QPen(QColor(94, 164, 255), 1))
-        p.setBrush(QColor(36, 70, 116, 180))
-        p.drawRoundedRect(browse_rect, 8, 8)
-        p.setPen(QColor(244, 248, 255))
-        p.drawText(browse_rect, Qt.AlignCenter, "Browse...")
-
-        p.setPen(QColor(125, 136, 152))
-        hint_rect = QRect(inner.left() + 16, top + 146, inner.width() - 32, 34)
-        p.drawText(
-            hint_rect,
-            Qt.AlignCenter | Qt.TextWordWrap,
-            "Supports MP4, MOV, MKV, M4V  -  Tip: drag files directly into this preview area",
-        )
+        browse = QRect(cx - 62, top + 112, 124, 32)
+        self._empty_browse_rect = browse
+        hover = browse.contains(self.mapFromGlobal(self.cursor().pos()))
+        p.setPen(Qt.NoPen)
+        p.setBrush(accent.lighter(112) if hover else accent)
+        p.drawRoundedRect(browse, 7, 7)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(QColor("#FFFFFF"))
+        p.drawText(browse, Qt.AlignCenter, "Choose file")
+        f.setBold(False)
+        f.setPixelSize(11)
+        p.setFont(f)
+        p.setPen(text_2)
+        p.drawText(QRect(card.left(), top + 156, card.width(), 18), Qt.AlignCenter, "MP4 · MOV · MKV · M4V")
+        p.setFont(QFont(self.font()))
 
     def _paint_background_matte(self, p: QPainter) -> None:
-        r = self.rect()
-        bg = QLinearGradient(0, float(r.top()), 0, float(r.bottom()))
-        bg.setColorAt(0.0, QColor(12, 18, 28))
-        bg.setColorAt(0.55, QColor(9, 14, 22))
-        bg.setColorAt(1.0, QColor(7, 11, 17))
-        p.fillRect(r, bg)
-
-    def _paint_letterbox_matte(self, p: QPainter, target: QRect, content: QRect) -> None:
-        if not target.isValid() or not content.isValid():
-            return
-        if content == target:
-            return
-
-        dark = QColor(8, 12, 18, 228)
-        near = QColor(24, 34, 48, 190)
-
-        left_w = content.left() - target.left()
-        if left_w > 0:
-            left = QRect(target.left(), target.top(), left_w, target.height())
-            g = QLinearGradient(float(left.right()), 0.0, float(left.left()), 0.0)
-            g.setColorAt(0.0, near)
-            g.setColorAt(1.0, dark)
-            p.fillRect(left, g)
-
-        right_w = target.right() - content.right()
-        if right_w > 0:
-            right = QRect(content.right() + 1, target.top(), right_w, target.height())
-            g = QLinearGradient(float(right.left()), 0.0, float(right.right()), 0.0)
-            g.setColorAt(0.0, near)
-            g.setColorAt(1.0, dark)
-            p.fillRect(right, g)
-
-        top_h = content.top() - target.top()
-        if top_h > 0:
-            top = QRect(content.left(), target.top(), content.width(), top_h)
-            g = QLinearGradient(0.0, float(top.bottom()), 0.0, float(top.top()))
-            g.setColorAt(0.0, near)
-            g.setColorAt(1.0, dark)
-            p.fillRect(top, g)
-
-        bot_h = target.bottom() - content.bottom()
-        if bot_h > 0:
-            bottom = QRect(content.left(), content.bottom() + 1, content.width(), bot_h)
-            g = QLinearGradient(0.0, float(bottom.top()), 0.0, float(bottom.bottom()))
-            g.setColorAt(0.0, near)
-            g.setColorAt(1.0, dark)
-            p.fillRect(bottom, g)
+        p.fillRect(self.rect(), self._tok("viewer", "#08090B"))
 
     def paintEvent(self, event):
         p = QPainter(self)
         self._paint_background_matte(p)
 
         if self._image:
-            p.setRenderHint(QPainter.SmoothPixmapTransform, False)
+            p.setRenderHint(QPainter.SmoothPixmapTransform, True)
             target = self.rect()
             img = self._image
             iw = img.width()
@@ -215,35 +168,31 @@ class FrameVideoWidget(QWidget):
                 x = target.x() + (target.width() - w) // 2
                 y = target.y() + (target.height() - h) // 2
                 fitted = QRect(x, y, w, h)
-                self._paint_letterbox_matte(p, target, fitted)
                 p.drawImage(fitted, img)
-                p.setPen(QPen(QColor(240, 246, 255, 28), 1))
-                p.setBrush(Qt.NoBrush)
-                p.drawRoundedRect(fitted.adjusted(0, 0, -1, -1), 2, 2)
         else:
             self._paint_empty_state(p)
 
         if self._overlay_text:
-            text = self._overlay_text
-            font = p.font()
-            font.setPointSize(max(12, font.pointSize() + 6))
-            font.setBold(True)
-            p.setFont(font)
-            fm = QFontMetrics(font)
-            max_w = max(40, int(self.width() * 0.8))
-            max_h = max(40, int(self.height() * 0.5))
-            text_rect = fm.boundingRect(0, 0, max_w, max_h, Qt.AlignCenter, text)
-            text_rect.moveCenter(self.rect().center())
-            pad = 12
-            box = text_rect.adjusted(-pad, -pad, pad, pad)
+            p.setRenderHint(QPainter.Antialiasing, True)
+            f = QFont(self.font())
+            f.setPixelSize(13)
+            f.setBold(True)
+            p.setFont(f)
+            fm = QFontMetrics(f)
+            lines = str(self._overlay_text).splitlines() or [""]
+            tw = max(fm.horizontalAdvance(line) for line in lines)
+            th = fm.height() * len(lines)
+            box = QRect(0, 0, tw + 56, th + 24)
+            box.moveCenter(self.rect().center())
             p.setPen(Qt.NoPen)
-            bg = QColor(0, 0, 0, max(0, min(255, int(170 * self._overlay_alpha))))
-            p.setBrush(bg)
-            p.drawRoundedRect(box, 8, 8)
-            c = QColor(self._overlay_color)
-            c.setAlpha(max(0, min(255, int(255 * self._overlay_alpha))))
-            p.setPen(c)
-            p.drawText(text_rect, Qt.AlignCenter, text)
+            p.setBrush(QColor(10, 12, 16, 215))
+            p.drawRoundedRect(box, 10, 10)
+            dot = QColor(self._overlay_color)
+            dot.setAlpha(max(60, min(255, int(255 * self._overlay_alpha))))
+            p.setBrush(dot)
+            p.drawEllipse(QRectF(box.left() + 18, box.center().y() - 4, 8, 8))
+            p.setPen(QColor(236, 240, 246))
+            p.drawText(box.adjusted(34, 0, -14, 0), Qt.AlignVCenter | Qt.AlignLeft, "\n".join(lines))
 
         p.end()
 
@@ -280,6 +229,7 @@ class FrameVideoWidget(QWidget):
             self.setCursor(Qt.PointingHandCursor)
         else:
             self.unsetCursor()
+        self.update()  # hover state of the "Choose file" button
         return super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-from PySide6.QtCore import QEvent, QLocale, QObject, QPointF, QRect, Qt, Slot
-from PySide6.QtGui import QColor, QCursor, QPainter, QValidator, QWheelEvent
+from PySide6.QtCore import QEvent, QLocale, QObject, QPointF, QRect, Qt, Signal
+from PySide6.QtGui import QColor, QPainter, QValidator, QWheelEvent
 from PySide6.QtWidgets import (
-    QAbstractSpinBox,
-    QApplication,
     QCheckBox,
     QDoubleSpinBox,
     QSizePolicy,
@@ -15,9 +13,6 @@ from PySide6.QtWidgets import (
 )
 
 from analysis.cut_engine import Segment
-
-if TYPE_CHECKING:
-    from .main_window import MainWindow
 
 
 try:
@@ -268,112 +263,26 @@ class WheelOnlyIfFocusedFilter(QObject):
         return super().eventFilter(obj, event)
 
 
-class GlobalWheelBlocker(QObject):
-    """Block wheel changes on spin boxes until the user focuses them."""
+class GuiInvoker(QObject):
+    """Receiver that lives on the GUI thread.
 
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Wheel:
-            widget = QApplication.widgetAt(QCursor.pos())
-            while widget is not None and not isinstance(widget, QAbstractSpinBox):
-                widget = widget.parentWidget()
-            if isinstance(widget, QAbstractSpinBox) and not widget.hasFocus():
-                return True
-        return super().eventFilter(obj, event)
+    PySide delivers a signal connected to a bare lambda in the *sender's* thread, so worker/thread
+    signals wired to lambdas ran UI code on background threads (random access violations).
+    Connecting to ``GuiInvoker(fn, gui_parent).call`` makes Qt queue the call to the GUI thread.
+    """
+
+    def __init__(self, fn, parent: QObject | None = None):
+        super().__init__(parent)
+        self._fn = fn
+
+    def call(self, *args) -> None:
+        self._fn(*args)
 
 
-class WebUiBridge(QObject):
-    def __init__(self, window: MainWindow):
-        super().__init__()
-        self.w = window
+class UiMessageRelay(QObject):
+    """Thread-safe bridge: plain Python threads emit, slots run on the GUI thread (queued)."""
 
-    @Slot()
-    def importClicked(self) -> None:
-        self.w.open_file()
-
-    @Slot()
-    def resetClicked(self) -> None:
-        self.w.reset_workspace()
-
-    @Slot()
-    def projectSaveClicked(self) -> None:
-        self.w.save_project_file()
-
-    @Slot()
-    def projectLoadClicked(self) -> None:
-        self.w.load_project_file()
-
-    @Slot()
-    def exportClicked(self) -> None:
-        self.w.export_mp4()
-
-    @Slot(bool)
-    def autoSkipChanged(self, enabled: bool) -> None:
-        self.w.chk_skip.setChecked(bool(enabled))
-        self.w._on_skip_changed()
-
-    @Slot()
-    def openMenu(self) -> None:
-        self.w._open_top_menu()
-
-    @Slot()
-    def playPause(self) -> None:
-        self.w.toggle_play()
-
-    @Slot()
-    def zoomIn(self) -> None:
-        self.w.zoom_in()
-
-    @Slot()
-    def zoomOut(self) -> None:
-        self.w.zoom_out()
-
-    @Slot()
-    def zoomReset(self) -> None:
-        self.w.zoom_reset()
-
-    @Slot()
-    def toggleSplitTool(self) -> None:
-        self.w._toggle_split_tool()
-
-    @Slot()
-    def toggleCutTool(self) -> None:
-        self.w._toggle_cut_tool()
-
-    @Slot()
-    def prevCut(self) -> None:
-        self.w.jump_to_previous_cut()
-
-    @Slot()
-    def nextCut(self) -> None:
-        self.w.jump_to_next_cut()
-
-    @Slot()
-    def seekBackward(self) -> None:
-        self.w.transport_seek_backward()
-
-    @Slot()
-    def seekForward(self) -> None:
-        self.w.transport_seek_forward()
-
-    @Slot(bool)
-    def snapChanged(self, enabled: bool) -> None:
-        self.w._snap_enabled = bool(enabled)
-        if hasattr(self.w, "timeline"):
-            try:
-                self.w.timeline.setSnapEnabled(bool(enabled))
-            except Exception:
-                pass
-
-    @Slot(int)
-    def previewVolumeChanged(self, value: int) -> None:
-        try:
-            self.w._set_preview_volume_from_web(int(value))
-        except Exception:
-            pass
-
-    @Slot()
-    def requestUiState(self) -> None:
-        self.w._web_push_full_state()
+    message = Signal(str)
 
 
 class ToggleSwitch(QCheckBox):

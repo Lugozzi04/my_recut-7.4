@@ -258,6 +258,20 @@ def evaluate_analysis(
                            for ti, pi in complete_matched.items())
     complete_predicted_losses = sum(item["result"] == GameResult.LOSS.value for item in complete_predicted)
     complete_false_losses = complete_predicted_losses - complete_loss_tp
+    # Reserve complete matches first, then assign partial boundary observations
+    # only to the remaining games. Partial recall never inflates complete recall.
+    remaining_truth_indices = [index for index in range(len(truth)) if index not in complete_matched]
+    remaining_truth = [truth[index] for index in remaining_truth_indices]
+    partial_predicted = [item for item in predicted if item["start"] is None or item["end"] is None]
+    partial_matches = _match(partial_predicted, remaining_truth, tolerance_s)
+    end_predictions = [{**item, "start": None} for item in predicted if item["end"] is not None]
+    end_matches = _match(end_predictions, truth, tolerance_s)
+    end_correct = sum(end_predictions[pi]["result"] == truth[ti]["result"] for ti, pi in end_matches.items())
+    partial_comparisons = _game_comparisons(partial_predicted, remaining_truth, partial_matches, tolerance_s)
+    for comparison in partial_comparisons:
+        if comparison["detected"] is not None:
+            comparison["status"] = ("RESULT_DETECTED_START_MISSING" if comparison["detected"]["start"] is None
+                                    else "START_DETECTED_RESULT_MISSING")
 
     return {
         "format": "recut_gameplay_evaluation", "version": 1, "tolerance_s": tolerance_s,
@@ -271,6 +285,13 @@ def evaluate_analysis(
         "false_positive_loss_fraction": _ratio(loss_fp, loss_tp + loss_fp),
         "false_positive_loss_rate": _ratio(nonloss_misclassified, actual_wins),
         "start_timestamp_error": _timestamp_metrics(start_errors), "end_timestamp_error": _timestamp_metrics(end_errors),
+        "partial_predicted_games": len(partial_predicted),
+        "partial_matched_games": len(partial_matches),
+        "partial_game_reconstruction_recall": _ratio(len(partial_matches), len(truth)),
+        "any_game_reconstruction_recall": _ratio(len(complete_matched) + len(partial_matches), len(truth)),
+        "game_result_classification_accuracy": _ratio(end_correct, len(end_matches)),
+        "game_results_matched": len(end_matches),
+        "partial_game_comparisons": partial_comparisons,
         "complete_predicted_games": len(complete_predicted), "complete_matched_games": len(complete_matched),
         "complete_game_detection_precision": _ratio(len(complete_matched), len(complete_predicted)),
         "complete_game_detection_recall": _ratio(len(complete_matched), len(truth)),
@@ -290,6 +311,9 @@ def evaluate_analysis(
             "win_loss_accuracy": "Correct result / matched games; UNKNOWN counts as incorrect",
             "matched_games": "Legacy metric: all available boundaries match; incomplete predictions can match",
             "complete_game_detection_recall": "Both start and end within tolerance / all annotated games",
+            "partial_game_reconstruction_recall": "Unmatched annotated games with a matched partial prediction / all annotated games; complete matches reserved first",
+            "any_game_reconstruction_recall": "Disjoint complete plus partial matches / all annotated games",
+            "game_result_classification_accuracy": "Correct assembled result / end-anchor matched games, independent of start; UNKNOWN incorrect",
             "complete_loss_recall": "Correct LOSS with both matched boundaries / all annotated LOSS",
             "complete_loss_precision": "Correct LOSS with both matched boundaries / complete predicted LOSS",
             "result_detection_recall": "Result anchor observed within tolerance, independent of VICTORY/DEFEAT label",

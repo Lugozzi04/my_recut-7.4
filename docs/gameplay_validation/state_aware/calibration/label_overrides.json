@@ -1,0 +1,14 @@
+{
+  "base": "docs/gameplay_validation/86/study_frame_labels.json",
+  "role": "calibration",
+  "overrides": [
+    {
+      "index": 1145,
+      "group": "86_hard_08",
+      "timestamp": 7390.583,
+      "previous_label": "NEGATIVE",
+      "label": "VICTORY",
+      "reason": "Manual visual review: readable Vittoria banner moving upward during exit; historical labels preserved."
+    }
+  ]
+}

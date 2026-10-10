@@ -1,0 +1,99 @@
+{
+  "date_utc": "2026-10-08T17:27:26.488Z",
+  "gameplay": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "-o",
+      "addopts=",
+      "-q",
+      "tests/test_gameplay_analyzer.py",
+      "tests/test_gameplay_assembler.py",
+      "tests/test_gameplay_cache.py",
+      "tests/test_gameplay_calibration.py",
+      "tests/test_gameplay_debug_cli.py",
+      "tests/test_gameplay_dense_analyzer.py",
+      "tests/test_gameplay_detector.py",
+      "tests/test_gameplay_evaluation.py",
+      "tests/test_gameplay_integration.py",
+      "tests/test_gameplay_models.py",
+      "tests/test_gameplay_result_policy.py",
+      "tests/test_gameplay_sampler.py",
+      "tests/test_gameplay_templates.py"
+    ],
+    "passed": 249,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 6.38,
+    "log": "........................................................................ [ 28%]\r\n........................................................................ [ 57%]\r\n........................................................................ [ 86%]\r\n.................................                                        [100%]\r\n249 passed in 6.38s\r\n"
+  },
+  "full": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "-o",
+      "addopts=",
+      "-q",
+      "-rs"
+    ],
+    "passed": 698,
+    "failed": 0,
+    "skipped": 1,
+    "elapsed_seconds": 87.27,
+    "skip_reason": "Optional googleapiclient.http unavailable; pre-existing",
+    "log": "........................................................................ [ 10%]\r\n........................................................................ [ 20%]\r\n........................................................................ [ 30%]\r\n........................................................................ [ 41%]\r\n........................................................................ [ 51%]\r\n........................................................................ [ 61%]\r\n........................................................................ [ 72%]\r\n........................................................................ [ 82%]\r\n........................................................................ [ 92%]\r\n......................................s............                      [100%]\r\n=========================== short test summary info ===========================\r\nSKIPPED [1] tests\\test_youtube_upload.py:406: could not import 'googleapiclient.http': No module named 'googleapiclient'\r\n698 passed, 1 skipped in 87.27s (0:01:27)\r\n"
+  },
+  "ruff": {
+    "command": [
+      "python",
+      "-m",
+      "ruff",
+      "check",
+      "."
+    ],
+    "exit_code": 0
+  },
+  "mypy": {
+    "files": 51,
+    "exit_code": 0,
+    "command": [
+      "python",
+      "-m",
+      "mypy",
+      "automation",
+      "analysis/audio_service.py",
+      "analysis/gameplay",
+      "core/project_file.py",
+      "core/project_session.py",
+      "utils/codec_detection.py",
+      "analysis/cancellation.py",
+      "analysis/classic.py",
+      "core/config.py",
+      "core/presets.py",
+      "integrations",
+      "utils/runtime_paths.py",
+      "utils/console.py",
+      "utils/credential_files.py",
+      "utils/ffconcat.py",
+      "utils/redaction.py",
+      "utils/ffmpeg.py"
+    ]
+  },
+  "gui_smoke": {
+    "command": [
+      "python",
+      "main.py",
+      "--smoke-test"
+    ],
+    "QT_QPA_PLATFORM": "offscreen",
+    "isolated_writable_appdata": true,
+    "exit_code": 0
+  },
+  "baseline": {
+    "gameplay": 246,
+    "full": 695,
+    "skipped": 1
+  }
+}

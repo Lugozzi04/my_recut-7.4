@@ -1,0 +1,234 @@
+PROMPT_VERSION: packaging_fast_v1
+LANGUAGE of every free-text field, title and thumbnail text: it (natural and idiomatic)
+
+PART 1 - UNDERSTAND: main topic, themes, why someone would watch; per game a short summary, the key moments (highlight ids) and deck/matchup talk kept apart from specific plays (the creator often plays the SAME deck: read what is said, do not infer topic changes from class or keywords); strongest highlights; 2-4 clearly different narrative angles; card readings only when a name is legible in a listed frame (box on that frame; grid images have lines every 0.1), else name null; risky_claims = what is tempting but not verifiable here.
+
+PART 2 - PACKAGE:
+- exactly 3 concepts, each a different angle, and exactly 6 titles in total (each concept's title included), varied: competitive, informative, surprising, narrative.
+- YouTube TITLE: descriptive and specific, natural spoken language, <= 70 characters preferred (never > 100), concrete about what happens, curiosity without misleading; no ALL CAPS.
+- THUMBNAIL TEXT is a different thing: 2-4 words (5 only if indispensable), punchy, spoken, adds something the title does not say, never a copy of the title, no generic slogans.
+- ARCHETYPES (composition_plan.layout):
+  * reaction_focus: the creator's webcam face is the subject (large, one side), the moment behind it, one optional complementary element (card crop K.. or a frame region via inset_id/inset_box), very short headline. Needs webcam_frame_id with a visible face.
+  * board_focus: the card, combo or board situation is the subject: focus_box zooms the board region, or 1-2 real card crops (card_asset_ids) are shown large. Webcam small (bubble) or absent.
+  * story_focus: one decisive, recognisable moment with a strong text side, or two moments split diagonally (background + inset_id frame: before/after, conflict). Optional badge only if evidenced.
+- Use at least two different archetypes. Pick the archetype that fits the angle; do NOT force the webcam or a card into every concept; a badge only when evidenced (e.g. WIN only for a WIN game); no decoration for its own sake.
+- background_frame_id: a listed gameplay frame; focus_box crops what matters (expanded to 16:9; null = whole frame); prefer settled, readable moments over animations.
+- card_asset_ids hold obs_id values of your card_observations; uncertain readings are never named.
+- inset_id: another listed frame for a story_focus split (before/after, conflict) or a board_focus inset.
+- emphasis_word: one word of the thumbnail text; colours #RRGGBB with high contrast.
+- evidence: cite highlight, transcript and frame ids for every factual claim.
+- deepen_requests: at most 1, ONLY if one concrete fact is truly missing (an unreadable card, an unclear play) for a concept; <= 20 s of edited time. Normally empty.
+
+CREATOR STYLE: no profile (assume no preference).
+
+GAMES:
+- game-a6c0f437acde505ac557: index 2, result WIN (local detector), edited 00:00-06:06, 367 s kept, markers {"vs_screen": "00:00", "result_screen": "06:06"}, highlights H01, H02, H03, H04, H05, H06
+- game-5ea93430b91b0da159e0: index 4, result WIN (local detector), edited 06:06-16:11, 605 s kept, markers {"vs_screen": "06:06", "result_screen": "16:11"}, highlights H07, H08, H09, H10, H11, H12, H13, H14
+
+HIGHLIGHTS (local signals rank candidates only; frames are already selected: best first):
+- H01 game=game-a6c0f437acde505ac557 00:01-00:20 signals=audio_peak+game_intro+pause_break+visual_change | +9.0 dB above baseline; keyframe change 0.97; 2.7 s pause before speech; start of game 2 | frames F001,F002 context F003,F004 | webcam W001 | lines T0001,T0002,T0003,T0004,T0005,T0006
+- H02 game=game-a6c0f437acde505ac557 00:34-00:54 signals=audio_peak+pause_break+speech_burst+visual_change | +8.8 dB above baseline; 3.3 words/s (video mean 1.8); 9.0 s pause before speech; keyframe change 0.70 | frames F005,F006 context F007,F008 | webcam W002,W003 | lines T0008,T0009,T0010,T0011
+- H03 game=game-a6c0f437acde505ac557 02:17-02:29 signals=audio_peak+pause_break+reaction | +9.7 dB above baseline; reaction words: insane; 7.3 s pause before speech | frames F009 context F010,F011 | webcam - | lines T0022,T0023,T0024
+- H04 game=game-a6c0f437acde505ac557 03:23-03:40 signals=audio_peak+explanation+speech_burst | +9.6 dB above baseline; 3.5 words/s (video mean 1.8); 27 s of continuous speech | frames F012 context F013,F014 | webcam W004 | lines T0032,T0033,T0034,T0035
+- H05 game=game-a6c0f437acde505ac557 04:50-05:08 signals=audio_peak+explanation+speech_burst | +9.5 dB above baseline; 3.8 words/s (video mean 1.8); 32 s of continuous speech | frames F015 context F016,F017 | webcam - | lines T0041,T0042,T0043,T0044,T0045,T0046
+- H06 game=game-a6c0f437acde505ac557 05:42-06:05 signals=explanation+near_result+reaction+visual_change | reaction words: ma; seconds before the WIN result of game 2; 35 s of continuous speech; keyframe change 0.49 | frames F018 context F019,F020 | webcam W005,W006 | lines T0051,T0052,T0053,T0054,T0055,T0056
+- H07 game=game-5ea93430b91b0da159e0 06:37-07:00 signals=audio_peak+pause_break+reaction+visual_change | +9.3 dB above baseline; reaction words: incredibile; 2.7 s pause before speech; keyframe change 0.30 | frames F021 context F022,F023 | webcam - | lines T0066,T0067,T0068,T0069,T0070,T0071
+- H08 game=game-5ea93430b91b0da159e0 07:42-08:02 signals=audio_peak+explanation+speech_burst | +8.6 dB above baseline; 3.7 words/s (video mean 1.8); 46 s of continuous speech | frames F024 context F025,F026 | webcam - | lines T0083,T0084,T0085,T0086,T0087
+- H09 game=game-5ea93430b91b0da159e0 09:15-09:36 signals=audio_peak+explanation+reaction+speech_burst | +9.4 dB above baseline; reaction words: incredibile, si; 3.7 words/s (video mean 1.8); 27 s of continuous speech | frames F027 context F028,F029 | webcam W007 | lines T0101,T0102,T0103,T0104,T0105,T0106
+- H10 game=game-5ea93430b91b0da159e0 09:41-10:04 signals=audio_peak+pause_break+visual_change | +10.5 dB above baseline; keyframe change 0.75; 7.3 s pause before speech | frames F030 context F031,F032 | webcam - | lines T0106,T0107,T0108,T0109,T0110,T0111
+- H11 game=game-5ea93430b91b0da159e0 11:06-11:27 signals=audio_peak+pause_break+reaction+visual_change | +9.4 dB above baseline; reaction words: no; keyframe change 0.27; 5.0 s pause before speech | frames F033 context F034,F035 | webcam W008 | lines T0122,T0123,T0124,T0125,T0126,T0127
+- H12 game=game-5ea93430b91b0da159e0 12:19-12:41 signals=audio_peak+pause_break+reaction | +8.9 dB above baseline; reaction words: wow; 4.6 s pause before speech | frames F036 context F037,F038 | webcam W009 | lines T0136,T0137,T0138,T0139,T0140,T0141
+- H13 game=game-5ea93430b91b0da159e0 14:14-14:29 signals=audio_peak+reaction+visual_change | +8.6 dB above baseline; reaction words: incredibile; keyframe change 0.78 | frames F039 context F040,F041 | webcam W010,W011 | lines T0153,T0154,T0155,T0156,T0157
+- H14 game=game-5ea93430b91b0da159e0 15:49-16:11 signals=audio_peak+explanation+near_result | +8.7 dB above baseline; seconds before the WIN result of game 4; 31 s of continuous speech | frames F042 context F043,F044 | webcam W012,W013 | lines T0175,T0176,T0177,T0178,T0179
+
+TRANSCRIPT (kept content; 179 of 179 lines selected: all lines near highlights plus an even sample over each game; ASR may mis-hear names):
+[game-a6c0f437acde505ac557]
+T0001 [00:01] Ho questa impressione che tutti giocheranno l'unter, non so il perché.
+T0002 [00:06] Ho questa impressione che oggi ci sarà un po' di mirror hunter, mirror hunter.
+T0003 [00:12] Che senso.
+T0004 [00:15] Non lo so eh, non lo so ma mi viene in mente questa possibilità.
+T0005 [00:21] Ah, chippiamo tutto?
+T0006 [00:24] A me no.
+T0007 [00:28] Bene, questa è in curva in realtà.
+T0008 [00:39] No, è in curva questa roba.
+T0009 [00:42] il mimiron comunque mi ha sciolto e il mimiron mi ha davvero sciolto bella cerno billa bella bro cerno billi
+T0010 [00:51] in realtà ti chiamo sempre cerno bill però mi sono reso conto adesso che ti chiami cerno billi grazie
+T0011 [00:56] mille per il terzo mese caro grazie mille bentornato men grazie mille cucciolo
+T0012 [01:03] Kibler, ciao. Kibler, mio padre, mio nonno, dite? Eh, Kibler, mi so, ormai è un po' mio nonno, eh.
+T0013 [01:08] Kibler, ormai è un po' mio nonno, è vero.
+T0014 [01:12] Io, sono sincero, sotto il recrafting noi possiamo giocare sia oggi sia domani anche.
+T0015 [01:18] E... io non so in bene i orari, credo forse da... cioè, possiamo addirittura fare after, nel senso...
+T0016 [01:26] Non faremo after, ma intendo dire si può fare di tutto.
+T0017 [01:29] molto liberi credo
+T0018 [01:36] ma la tua 24 ore subgole ogni sub si aggiungono 5 minuti alla live
+T0019 [01:43] ogni sub 5 minuti che monograbbate alcuni lo fanno e alcuni fa un di peggio
+T0020 [01:52] alcuni fa un di peggio monograbber su questa piattaforma voglia quanti ce ne sono
+T0021 [01:57] vediamo
+T0022 [01:58] un po potrei pensare di squainare il carro arma giusto ma
+T0023 [02:22] dove la che animazioni insane queste
+T0024 [02:25] Ma che animati mi sono?
+T0025 [02:44] Come gestici il give away allora i drop sono già attivi giusto i drop dovrebbero essere già attivi oggi sono tre cose in realtà drop
+T0026 [02:52] più il fatto che siamo dev contro
+T0027 [02:56] Strimer e quindi se andiamo in positivo quindi i streamer vincono rispetto ai dev
+T0028 [03:01] Speriamo che i dev non abbiamo davvero le mani
+T0029 [03:04] Andiamo a vincere per voi quindi lo facciamo per voi
+T0030 [03:08] Delle ricompense delle ricompense incredibili che non sono nemmeno i quali siano ok
+T0031 [03:14] Kibler non è un Dev, si, come Kubon non era un Dev, vediamo se lo score si aggiornerà prima o poi
+T0032 [03:21] E poi ho anche i bundles da darvi, e per i go away però posso dirvi una cosa sincera, non ho minimamente idea di come cazzo farli
+T0033 [03:30] Mi hanno dato i codici, l'applizzare quindi posso, posso, sì, cioè vi regalerò sicuramente oggi un bundle
+T0034 [03:38] Poi non so, magari un altro me lo tengo per un altro live, però uno sicuramente oggi parte
+T0035 [03:42] e non so bene quando come perché però lo faremo
+T0036 [03:52] ben allora faremoci seriamente dagli
+T0037 [03:57] assalto noi
+T0038 [04:00] qua abbiamo una bella dagli assalto attaccare
+T0039 [04:03] evocare lui come il 4 4 e attaccare quello poi questo qua diventa un 3 3 diventa un 5 5
+T0040 [04:10] scusate mi posso anche escoinarlo ma non sembra male
+T0041 [04:39] Eccolo qua 5-5 fa male questo doppio 5-5 triplo 5-5 anche farà male caro chi blerze
+T0042 [04:46] caro chi blerze caro chi blerze
+T0043 [04:51] no non l 'ha effettivamente ammazzato prima l 'uno tra
+T0044 [04:54] si poteva anche ammazzare prima se va anche ammazzare prima effettivamente che drop ci
+T0045 [04:58] sono ci sono i drop di odio c'è c'è scritto in live toricamente sopra ho vista la scritta
+T0046 [05:03] non so cosa, che drop ci sono, chazzo sicuramente che sono dei drop, l'avevo visti prima in chat
+T0047 [05:09] l 'annuncio,
+T0048 [05:13] la bustina, la bustina, ah c 'è solo una busta, un po' poverata, però ci
+T0049 [05:18] so, bene come fa lui a vincere se li metto questa roba qua adesso, ho anche mimiron
+T0050 [05:30] scusate miltossicismo, scusate miltossicismo men, scusate miltossicismo, però cazzo
+T0051 [05:35] chi bler chi bler il bombardamento sul mecca il ciclo non me lo puoi fare ma chi
+T0052 [05:39] plei di merda è scusami cazzo ma che plei di merda scusami ma che plei di
+T0053 [05:43] merda è che è sta roba
+T0054 [05:46] ma donna ma non lo so già ma non lo so se il bombardamento
+T0055 [05:49] continua cazzo ma smagamem bro rotto rotto questo decco
+T0056 [05:56] completamente fuori di testa completamente fuori di testa l'anter
+T0057 [06:00] Non c'è! Non c'è!
+T0058 [06:04] Non c'è!
+T0059 [06:05] Bene!
+[game-5ea93430b91b0da159e0]
+T0060 [06:07] Ok non è un dev, meno male, meno male, meno male,
+T0061 [06:16] roba per il thunder, alla roba dei mazzi
+T0062 [06:19] conici, sincero mi ha
+T0063 [06:21] scritto, ma è tipo da un mese in realtà che mi sta
+T0064 [06:24] scrivendo di registrare insieme il tonalzo e sicuramente lo facciamo, è che
+T0065 [06:29] semplicemente abbiamo dei verani un po' di merda, abbiamo un po' dei verani di merda,
+T0066 [06:33] però sicuramente si farà un video a full
+T0067 [06:38] -keep,
+T0068 [06:39] sicuramente si farà la roba del... lo faremo, lo faremo.
+T0069 [06:47] Il fatto è che non so che mazzi conico scegliere, perché posso dire che forse un
+T0070 [06:50] mi ha rubato il content
+T0071 [06:54] io amante incredibile del lock, figa
+T0072 [06:57] il cube è stato già giocato, malissimo
+T0073 [07:00] malissimo, cosa si gioca allora?
+T0074 [07:06] cosa si gioca allora?
+T0075 [07:09] io
+T0076 [07:13] un deck che ho adorato era live al lock
+T0077 [07:16] però è nuioso, c'è un c'è niente di
+T0078 [07:17] troppo fresco
+T0079 [07:20] questo fa un po' schifo
+T0080 [07:28] dai siamo due tre comunque
+T0081 [07:30] streamer, siamo due tre
+T0082 [07:33] recuperabile, recuperabile
+T0083 [07:35] recuperabile vedo ma quanto figa questa anche prossimo tornare più un attacco e scudo divino
+T0084 [07:47] se me il druido ha perso insieme non abbiamo giocato una carta nuova e posso dire un'altra
+T0085 [07:53] cosa non c'è una carta nuova nella mia mano però io vi confermo che questa roba qua la
+T0086 [07:58] spela 8 nuova che fa 8 danni con furto vitale abbiamo il 7 mana che trasforma le robe lì
+T0087 [08:04] abbiamo rei abbiamo un po di cose nuove poi non vi è già in questo modo la lista però
+T0088 [08:10] Eccolo
+T0089 [08:12] qua eccolo qua
+T0090 [08:13] parlando del diavolo ma
+T0091 [08:17] qua un più un attacco
+T0092 [08:18] come casa?
+T0093 [08:26] molto forte sta play
+T0094 [08:28] trade trade abbiamo i scudo divini quanto è forte sta roba?
+T0095 [08:41] questa roba a taunt?
+T0096 [08:44] bella sta combo
+T0097 [08:46] bella questa idea geniale posso dire posso definirla
+T0098 [08:50] geniale questa idea? io però se uno posso giocare
+T0099 [08:54] amitut.
+T0100 [09:05] Pesca un po' tanto, pesca un po' tanto, ma... boh, per adesso in realtà non è che
+T0101 [09:10] abbia fatto di buff o cose particolari.
+T0102 [09:15] Ne si iniziamo a pescar le carte giuste,
+T0103 [09:17] con lei è incredibile. È un problema, mi sai, in questa lista. Non si trova la spela 1 che
+T0104 [09:23] ti pesca una spell e non fa parte del tuo deck? Chi è che ha deck buildato questa cosa?
+T0105 [09:29] non mi sa che devo devo riguardarli liste perché non hanno inserito la carta uno mana
+T0106 [09:36] più forte che fa funzionare sta lista cioè magari perché sono partito bene vincolo stesso ma
+T0107 [09:42] li è
+T0108 [09:49] 3
+T0109 [09:52] oh oh oh, oh mio
+T0110 [09:59] bella questa, chi è che culo? bella spell
+T0111 [10:04] no
+T0112 [10:04] c 'è quella spell in standard a uno mana che ti pesca una carta tua e una carta non presente nel tuo d 'ecco originale
+T0113 [10:11] Un po forte no in questa lista. Mi sa che non c'è
+T0114 [10:14] sa che non c'è
+T0115 [10:17] Questa cosa qua è insana uno mana ti pesca tre carte
+T0116 [10:22] Allui non ha trovato nella sei mana che ti raddoppia le stazze
+T0117 [10:26] Quella dei dead rattles o me fa un po schifo. Se non so se qualcuno ha provato a giocare il dead rattle druide
+T0118 [10:39] Ma perché gioca a doppio re della profondità, ma questo è una lista...
+T0119 [10:47] Cioè... come... come mi permette di mettere a doppio re della profondità, mi chiedo?
+T0120 [10:55] Questa è insana, ma non credo adesso.
+T0121 [10:59] Cioè, si è fatto un botto di armo, né?
+T0122 [11:01] Non posso dir di no, però...
+T0123 [11:08] uno?
+T0124 [11:12] No, fermatelo, fermatelo!
+T0125 [11:18] C'è questa roba.
+T0126 [11:22] Continua, continua!
+T0127 [11:26] Ma cos'è questa merda? Perché come 8 mani avevo che è il 3-3? Dico dio porco, dai. Perché
+T0128 [11:34] è doppiao? Ah sì, perché avevamo setappato la nostra e mi è setappato quella pescata,
+T0129 [11:39] ok?
+T0130 [11:44] Volevo dire che questa play, ok. Non so di
+T0131 [11:46] scambiare questa dai facciamolo bello abbiamo ursol che
+T0132 [11:53] che gioca tre turni di fila questa roba qua posso dire con questa partenza avremo battuto
+T0133 [11:59] un bel dev io visto così sto paladin non sa nemmeno di merda sincero è visto così sto paladin
+T0134 [12:06] sembra pure giocabile siamo
+T0135 [12:09] partiti o sono partito io stra bene non
+T0136 [12:14] sembra buono adesso
+T0137 [12:16] comunque siamo ancora 2-3 e a me c'è qualche dev che sta giocando
+T0138 [12:19] un po' di... controlliamo un attimo
+T0139 [12:23] perché i dev hanno detto abbiamo già fatto 2-3 e la cigliamo ora
+T0140 [12:29] non ci sono dev, non ci sono dev
+T0141 [12:36] wow
+T0142 [12:38] wow
+T0143 [12:39] che player
+T0144 [13:08] ventiti
+T0145 [13:16] ah cazzo 2 c'è no di queste cose che merda
+T0146 [13:19] c'è dire che opponent non sta facendo nulla
+T0147 [13:26] Cioè dire che Opponent ha una lista veramente di merda, io ve l 'ho detto che ho guardato le liste che hanno pubblicato sul
+T0148 [13:33] Discord di altri streamer, vero? Dico. C 'è di quella roba che veramente è su cosa giù si merda.
+T0149 [13:43] C'è doppio re della profondità,
+T0150 [13:46] l'esil filatrice gioca o, man, di me neanche razzi a tempo. Non so un carte brutte e razzi a tempo il re.
+T0151 [13:54] Anche questa si potrebbe giocare però capito che questa combo insieme sa proprio di un meccanin merda
+T0152 [14:02] me
+T0153 [14:05] E farà passare un altro turno bu questo trade anche non ha senso perché adesso posso tradare
+T0154 [14:15] Diamo un attimo rai
+T0155 [14:17] Ben l'iro power incredibile attenzione aspetta
+T0156 [14:23] Già quando lancio una magia metto una palla di fuoco a me sembra forte
+T0157 [14:28] quando lancio a magia più uno più uno ai tuoi servitori anche
+T0158 [14:33] dalle armi gli effetti pure
+T0159 [14:36] dall'arma mai sembra forte antonino canna da vacciolo no cioè già così antonino non mi sembra
+T0160 [14:43] ok anche a fine del totoro cioè quando lancio a magia più uno sarebbe devastante questa roba
+T0161 [14:50] ma è che io devo comunque scegliere per fo... ah non posso lasciarlo così
+T0162 [14:56] mi sei che faccio così allora
+T0163 [14:59] però posso dirmi una cosa sincera
+T0164 [15:01] ma mi pareva che nel video quello che hanno fatto vedere poteri
+T0165 [15:08] ah devo tradare, vabbè
+T0166 [15:10] nel video che avevano mostrato
+T0167 [15:12] mi pare che c'era la scelta di
+T0168 [15:14] c'era la scelta chat
+T0169 [15:16] anche di scegliere proprio quello base
+T0170 [15:18] quello prescelto
+T0171 [15:20] poh, mi fa risbaglio
+T0172 [15:27] Uh, 3 -3! Stato battuto un altro dev!
+T0173 [15:36] Tutto corretto, eh?
+T0174 [15:39] Che povertano, skinnopet, no, è diverso, Prime.
+T0175 [15:42] Io mi rendo conto che la vita può essere dura e che bisogna
+T0176 [15:48] stare attenti specialmente adesso, dove sei guardi le statistiche.
+T0177 [15:52] I giovani d'oggi, non solo in Italia, proprio del mondo,
+T0178 [15:56] il steward di davvero statisticamente il 1 su 2,5 è l'udopatico non voglio
+T0179 [16:07] promuovere la vendita di pet oppure di skin
+
+ATTACHED IMAGES (in order):
+- image 1: game-a6c0f437acde505ac557: frames F001, F002, F005, F006, F009, F012, F015, F018 (id + edited time)
+- image 2: game-5ea93430b91b0da159e0: frames F021, F024, F027, F030, F033, F036, F039, F042 (id + edited time)
+- image 3: webcam crops W001, W002, W004, W005, W007, W008, W009, W010, W012
+- image 4: frame F005 (H02) full size with a 0.1 grid, for reading cards
+- image 5: frame F027 (H09) full size with a 0.1 grid, for reading cards
+
+Answer with the JSON object only.

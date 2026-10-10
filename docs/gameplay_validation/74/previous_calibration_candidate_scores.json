@@ -1,0 +1,152 @@
+{
+  "role": "calibration",
+  "source": "73 first three games ONLY; no validation frames",
+  "pack_fingerprint": "0eb1c441279a75fd2ea56e0dda96d547ebee65ee5119c51bde40723a5fa919c8",
+  "batches": {
+    "calibration_coarse": {
+      "VICTORY": {
+        "count": 783,
+        "min": 0.12381525337696075,
+        "median": 0.17184549570083618,
+        "max": 0.43824440240859985,
+        "at_or_above_0_80": 0,
+        "at_or_above_0_92": 0,
+        "peak": {
+          "timestamp": 562.0,
+          "similarity": 0.43824440240859985,
+          "threshold": 0.92,
+          "margin": -0.012114405632019043,
+          "template_id": "templates/victory/victory_01.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.521875,
+            0.6296296296296297,
+            0.10104166666666667,
+            0.053703703703703705
+          ],
+          "passes_threshold": false
+        }
+      },
+      "DEFEAT": {
+        "count": 783,
+        "min": 0.08074799180030823,
+        "median": 0.17772075533866882,
+        "max": 0.45076313614845276,
+        "at_or_above_0_80": 0,
+        "at_or_above_0_92": 0,
+        "peak": {
+          "timestamp": 561.0,
+          "similarity": 0.45076313614845276,
+          "threshold": 0.92,
+          "margin": 0.012564241886138916,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.5208333333333334,
+            0.6314814814814815,
+            0.10208333333333333,
+            0.053703703703703705
+          ],
+          "passes_threshold": false
+        }
+      }
+    },
+    "victory_short": {
+      "VICTORY": {
+        "count": 60,
+        "min": 0.12827880680561066,
+        "median": 0.1748749539256096,
+        "max": 0.9694083333015442,
+        "at_or_above_0_80": 5,
+        "at_or_above_0_92": 3,
+        "peak": {
+          "timestamp": 440.183,
+          "similarity": 0.9694083333015442,
+          "threshold": 0.92,
+          "margin": 0.4959048628807068,
+          "template_id": "templates/victory/victory_01.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.45729166666666665,
+            0.5722222222222222,
+            0.103125,
+            0.05555555555555555
+          ],
+          "passes_threshold": true
+        }
+      },
+      "DEFEAT": {
+        "count": 60,
+        "min": 0.17776082456111908,
+        "median": 0.19608423113822937,
+        "max": 0.4903589189052582,
+        "at_or_above_0_80": 0,
+        "at_or_above_0_92": 0,
+        "peak": {
+          "timestamp": 440.166,
+          "similarity": 0.4903589189052582,
+          "threshold": 0.92,
+          "margin": -0.41671469807624817,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.44166666666666665,
+            0.5648148148148148,
+            0.1125,
+            0.05
+          ],
+          "passes_threshold": false
+        }
+      }
+    },
+    "victory_long": {
+      "VICTORY": {
+        "count": 162,
+        "min": 0.11993847787380219,
+        "median": 0.8593490123748779,
+        "max": 0.9999364614486694,
+        "at_or_above_0_80": 82,
+        "at_or_above_0_92": 71,
+        "peak": {
+          "timestamp": 1010.233,
+          "similarity": 0.9999364614486694,
+          "threshold": 0.92,
+          "margin": 0.521177351474762,
+          "template_id": "templates/victory/victory_01.png",
+          "scale": 1.0,
+          "matched_rect_normalized": [
+            0.45625,
+            0.575925925925926,
+            0.10625,
+            0.05740740740740741
+          ],
+          "passes_threshold": true
+        }
+      },
+      "DEFEAT": {
+        "count": 162,
+        "min": 0.16543978452682495,
+        "median": 0.43804432451725006,
+        "max": 0.5131132006645203,
+        "at_or_above_0_80": 0,
+        "at_or_above_0_92": 0,
+        "peak": {
+          "timestamp": 1009.333,
+          "similarity": 0.5131132006645203,
+          "threshold": 0.92,
+          "margin": -0.45006805658340454,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.44166666666666665,
+            0.562962962962963,
+            0.1125,
+            0.05
+          ],
+          "passes_threshold": false
+        }
+      }
+    }
+  },
+  "elapsed_seconds": 11.417253799999344
+}

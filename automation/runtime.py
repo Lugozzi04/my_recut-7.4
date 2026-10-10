@@ -5,6 +5,7 @@ import importlib
 import json
 import math
 import threading
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -24,7 +25,7 @@ from automation.locking import FileLockBusyError
 from automation.models import PipelineJob, PipelineState
 from automation.paths import output_execution_lock, reserve_output, safe_output_name
 from core.config import get_setting
-from core.presets import PRESET_VERSION, PresetRepository, default_preset_name
+from core.presets import PRESET_VERSION, PresetRepository, default_preset_name, match_preset_name
 from export.output_safety import ensure_output_is_safe
 from export.settings import VIDEO_QUALITY_CRF, ExportSettings
 from utils.ffmpeg import cancellable_probe_scope, ffprobe_duration_seconds, has_audio_stream, has_video_stream
@@ -174,7 +175,8 @@ class PipelineRuntime:
 
     def _preset(self, name: str | None) -> dict[str, Any]:
         try:
-            selected = name or default_preset_name(self.presets.load())
+            catalog = self.presets.load()
+            selected = match_preset_name(catalog, name) if name else default_preset_name(catalog)
             if not selected:
                 raise KeyError("No presets are available.")
             return {"name": selected, "config": self.presets.resolve(selected), "version": PRESET_VERSION}
@@ -229,7 +231,7 @@ class PipelineRuntime:
         preset: str | None = None, output: str | Path | None = None,
         output_dir: str | Path | None = None, youtube: bool = False, title: str | None = None,
         description: str = "", thumbnail: str | Path | None = None, keep_source: bool = False,
-        force: bool = False, quality: str | None = None,
+        force: bool = False, quality: str | None = None, gameplay: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         first, last, warnings = validate_range(float(media["duration_s"]), start=start, end=end, duration=duration)
         if output is not None and output_dir is not None:
@@ -271,12 +273,43 @@ class PipelineRuntime:
             "keep_source": bool(keep_source),
         }
         requested = {"start_s": start, "end_s": end, "duration_s": duration}
-        return {
+        plan = {
             "source_kind": kind, "source": source, "media": dict(media),
             "requested_range": requested, "range": {"start_s": first, "end_s": last},
             "preset": resolved_preset, "export_settings": settings,
             "delivery": delivery, "warnings": warnings,
         }
+        if gameplay is not None:
+            plan["gameplay"] = self._gameplay_plan(gameplay)
+            if gameplay.get("report"):
+                report = Path(str(gameplay["report"])).expanduser().resolve()
+                try:
+                    ensure_output_is_safe(report, protected)
+                except ValueError as exc:
+                    raise PipelineRuntimeError("invalid_output", str(exc), 60) from exc
+                delivery["gameplay_report_path"] = str(report)
+        return plan
+
+    @staticmethod
+    def _gameplay_plan(options: Mapping[str, Any]) -> dict[str, Any]:
+        """Validated, JSON-safe gameplay settings; the same mapping drives analysis and its cache signature."""
+        from analysis.boundaries.resolvers import ResolverOptions
+        from analysis.gameplay_editing import GameplayEditSettings
+
+        resolver = ResolverOptions(
+            **{name: value for name, value in (("timeout_s", options.get("agent_timeout")),
+                                                ("model", options.get("agent_model")),
+                                                ("effort", options.get("agent_effort"))) if value is not None})
+        if resolver.timeout_s <= 0:
+            raise PipelineRuntimeError("invalid_gameplay", "--agent-timeout must be positive.", 2)
+        try:
+            settings = GameplayEditSettings(game=str(options.get("game") or "hearthstone"),
+                                            keep_games=str(options.get("keep_games") or "wins"),
+                                            boundary_mode=str(options.get("boundary_mode") or "exact"),
+                                            resolver=resolver)
+        except ValueError as exc:
+            raise PipelineRuntimeError("invalid_gameplay", str(exc), 2) from exc
+        return settings.to_mapping()
 
     def create_job(self, plan: Mapping[str, Any]) -> PipelineJob:
         configured = deepcopy(dict(plan))
@@ -303,6 +336,10 @@ class PipelineRuntime:
         }
         if kind == "local":
             metadata["source_range"] = configured["range"]
+        if configured.get("gameplay"):
+            metadata["gameplay"] = configured["gameplay"]
+            delivery.setdefault("gameplay_report_path",
+                                str(self.manager.store.path.parent / "artifacts" / f"{fingerprint}.gameplay_report.json"))
         else:
             metadata["twitch"] = media
         job, _created = self.manager.create_configured_job(
@@ -318,6 +355,7 @@ class PipelineRuntime:
 
     def run(
         self, job_id: str, *, resume: bool = False, cancellation: PipelineCancellation | None = None,
+        stop_after_analysis: bool = False,
     ) -> PipelineJob:
         token = cancellation or PipelineCancellation()
         with self.manager.execution_lock(job_id), cancellable_probe_scope(token):
@@ -336,6 +374,10 @@ class PipelineRuntime:
             try:
                 while job.state != PipelineState.DONE:
                     token.raise_if_cancelled()
+                    if stop_after_analysis and job.state in {PipelineState.READY_EXPORT, PipelineState.EXPORTING,
+                                                             PipelineState.READY_UPLOAD, PipelineState.UPLOADING}:
+                        self._event(job.id, "done", progress=100, message="Analysis complete; rendering skipped.")
+                        return self.manager.get(job.id)
                     if job.state in {PipelineState.ANALYZING, PipelineState.READY_EXPORT, PipelineState.EXPORTING, PipelineState.READY_UPLOAD}:
                         job = self.manager.reconcile_artifacts(
                             job.id, strict_legacy=True, duration_probe=self._duration_probe,
@@ -412,6 +454,7 @@ class PipelineRuntime:
         self._event(job.id, stage, progress=0, message="Starting")
         if stage_token is not cancellation:
             cancellation.attach(stage_token)
+        started = time.perf_counter()
         try:
             cancellation.raise_if_cancelled()
             kwargs: dict[str, Any] = {
@@ -422,7 +465,9 @@ class PipelineRuntime:
                 kwargs["on_detail"] = lambda text: self._event(job.id, stage, message=text)
             completed: PipelineJob = factory(self.manager).execute(job.id, **kwargs)
             cancellation.raise_if_cancelled()
-            return completed
+            timings = dict(completed.metadata.get("stage_timings", {}))
+            timings[stage] = round(time.perf_counter() - started, 3)
+            return self.manager.update_metadata(completed.id, {"stage_timings": timings})
         finally:
             if stage_token is not cancellation:
                 cancellation.detach(stage_token)

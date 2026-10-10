@@ -1,0 +1,36 @@
+{
+  "format": "recut_gameplay_ground_truth",
+  "version": 1,
+  "complete": false,
+  "video_file": "73.mp4",
+  "video_fingerprint": "69ab4eb4426b464b89643e86f4032791cc49328d08a70c75e6c659d87a4e0b24",
+  "annotated_range": [
+    0,
+    1400
+  ],
+  "annotation_method": "Visual inspection of sampled video frames, with local denser review of VS and Italian result labels; independent of the template detector.",
+  "warnings": [
+    "Provisional manual visual annotations; calibration only."
+  ],
+  "calibration_range": [
+    0,
+    1400
+  ],
+  "games": [
+    {
+      "start": 212,
+      "end": 440.1,
+      "result": "WIN"
+    },
+    {
+      "start": 514,
+      "end": 1009.3,
+      "result": "WIN"
+    },
+    {
+      "start": 1088,
+      "end": 1325,
+      "result": "LOSS"
+    }
+  ]
+}

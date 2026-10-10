@@ -64,7 +64,7 @@ class TemplateVisualDetector:
     Templates and scale variants are prepared once, then reused across frames.
     """
 
-    detector_version = "hearthstone-template-v2"
+    detector_version = "hearthstone-template-v3"
 
     def __init__(self, pack: TemplatePack) -> None:
         self.pack = pack
@@ -149,6 +149,7 @@ class TemplateVisualDetector:
     def _matches_reference(
         self, gray: np.ndarray, bounds: tuple[int, int, int, int],
         event_types: tuple[GameEventType, ...],
+        template_scores: dict[str, dict[str, _ClassMatch]] | None = None,
     ) -> list[_ClassMatch]:
         """Match one full reference image or a reference-sized crop of it."""
         crop_left, crop_top, crop_right, crop_bottom = bounds
@@ -161,6 +162,7 @@ class TemplateVisualDetector:
                 raise ValueError(f"Scan ROI must contain the entire configured {config.event_type.value} search ROI")
             image = np.ascontiguousarray(gray[top - crop_top:bottom - crop_top, left - crop_left:right - crop_left])
             best: _ClassMatch | None = None
+            ranked: dict[str, _ClassMatch] = {}
             for template in self._prepared[config.event_type]:
                 result = self._cv.matchTemplate(image, template.image, self._cv.TM_CCOEFF_NORMED)
                 _minimum, maximum, _minimum_location, location = self._cv.minMaxLoc(result)
@@ -169,12 +171,19 @@ class TemplateVisualDetector:
                     continue
                 # OpenCV may return a tiny floating-point overshoot around 1.
                 score = max(-1.0, min(1.0, score))
-                if best is None or score > best.similarity:
+                if (best is None or score > best.similarity or template_scores is not None):
                     height, width = template.image.shape
-                    best = _ClassMatch(
+                    match = _ClassMatch(
                         config.event_type, score, config.threshold, template.template_id, template.scale,
                         (left + location[0], top + location[1], width, height),
                     )
+                    if best is None or score > best.similarity:
+                        best = match
+                    if template_scores is not None and (template.template_id not in ranked
+                            or score > ranked[template.template_id].similarity):
+                        ranked[template.template_id] = match
+            if template_scores is not None:
+                template_scores[config.event_type.value] = ranked
             if best is not None:
                 matches.append(best)
         return sorted(matches, key=lambda item: item.similarity, reverse=True)
@@ -189,6 +198,7 @@ class TemplateVisualDetector:
 
     def _roi_matches(
         self, frame: np.ndarray, roi: NormalizedROI, event_types: tuple[GameEventType, ...],
+        template_scores: dict[str, dict[str, _ClassMatch]] | None = None,
     ) -> list[_ClassMatch]:
         selected = self._event_types(event_types)
         if not isinstance(roi, NormalizedROI):
@@ -203,7 +213,7 @@ class TemplateVisualDetector:
                 f"({bottom - top}, {right - left}, 3); do not pass a full video frame"
             )
         gray = self._cv.cvtColor(frame, self._cv.COLOR_BGR2GRAY)
-        return self._matches_reference(gray, bounds, selected)
+        return self._matches_reference(gray, bounds, selected, template_scores)
 
     def _normalized_rectangle(self, match: _ClassMatch) -> list[float]:
         ref_width, ref_height = self.pack.reference_size
@@ -247,10 +257,22 @@ class TemplateVisualDetector:
             "detector_version": self.detector_version,
         }
 
-    def _events(self, matches: list[_ClassMatch], timestamp: float) -> list[GameEvent]:
+    def _events(
+        self, matches: list[_ClassMatch], timestamp: float, minimum_similarity: float | None = None,
+    ) -> list[GameEvent]:
         scores = self._scores(matches, timestamp)
+        if minimum_similarity is not None and (
+            isinstance(minimum_similarity, bool) or not isinstance(minimum_similarity, (int, float))
+            or not math.isfinite(minimum_similarity) or not 0 < minimum_similarity <= 1
+        ):
+            raise ValueError("minimum_similarity must be finite and within (0, 1]")
         if not scores["accepted"]:
-            return []
+            if minimum_similarity is None or not matches:
+                return []
+            best_scores = scores["classes"][matches[0].event_type.value]
+            if (matches[0].similarity < minimum_similarity or best_scores["margin"] <= 0
+                    or best_scores["margin"] < self.pack.ambiguity_margin):
+                return []
         best = matches[0]
         second = matches[1].similarity if len(matches) > 1 else -1.0
         return [GameEvent(
@@ -259,6 +281,7 @@ class TemplateVisualDetector:
             confidence=best.similarity,
             source=DetectionSource.TEMPLATE_MATCHING,
             metadata={
+                "candidate_only": not scores["accepted"],
                 "template_id": best.template_id,
                 "similarity_method": "TM_CCOEFF_NORMED",
                 "raw_similarity": best.similarity,
@@ -296,8 +319,45 @@ class TemplateVisualDetector:
 
     def score_roi(
         self, frame: np.ndarray, timestamp: float, *, roi: NormalizedROI,
-        event_types: tuple[GameEventType, ...],
+        event_types: tuple[GameEventType, ...], include_template_scores: bool = False,
     ) -> dict[str, Any]:
-        """Return class scores from the same ROI matcher used by detect_roi."""
+        """ROI diagnostics; optional distinct-template ranks reuse the same matching.
+
+        A template's rank uses its best scale, so second place is a different
+        patch, rather than another scale of the winning patch. Detection gates
+        and ordinary output stay unchanged when diagnostics are requested.
+        """
         checked_timestamp = self._timestamp(timestamp)
-        return self._scores(self._roi_matches(frame, roi, event_types), checked_timestamp)
+        ranks: dict[str, dict[str, _ClassMatch]] | None = {} if include_template_scores else None
+        result = self._scores(self._roi_matches(frame, roi, event_types, ranks), checked_timestamp)
+        if ranks is not None:
+            for kind, values in ranks.items():
+                ordered = sorted(values.values(), key=lambda item: item.similarity, reverse=True)
+                entries = [{"template_id": item.template_id, "similarity": item.similarity,
+                            "scale": item.scale} for item in ordered]
+                result["classes"][kind]["template_scores"] = entries
+                result["classes"][kind]["second_best_template"] = entries[1] if len(entries) > 1 else None
+        return result
+
+    def detect_candidates(
+        self, frame: np.ndarray, timestamp: float, *, minimum_similarity: float,
+        event_types: tuple[GameEventType, ...],
+    ) -> list[GameEvent]:
+        """One matching pass; weak matches only seed local decoding, never events."""
+        return self._events(self._full_matches(frame, event_types), self._timestamp(timestamp), minimum_similarity)
+
+    def detect_roi_candidates(
+        self, frame: np.ndarray, timestamp: float, *, roi: NormalizedROI, minimum_similarity: float,
+        event_types: tuple[GameEventType, ...],
+    ) -> list[GameEvent]:
+        """Return accepted observations or explicitly marked refinement-only seeds."""
+        return self._events(self._roi_matches(frame, roi, event_types), self._timestamp(timestamp), minimum_similarity)
+
+    def observe_roi(
+        self, frame: np.ndarray, timestamp: float, *, roi: NormalizedROI,
+        event_types: tuple[GameEventType, ...],
+    ) -> tuple[list[GameEvent], dict[str, Any]]:
+        """One matching pass supplies events AND subthreshold local evidence."""
+        checked = self._timestamp(timestamp)
+        matches = self._roi_matches(frame, roi, event_types)
+        return self._events(matches, checked), self._scores(matches, checked)

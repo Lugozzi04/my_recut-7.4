@@ -1,0 +1,103 @@
+{
+  "format": "recut_gameplay_ground_truth",
+  "version": 1,
+  "role": "validation",
+  "complete": true,
+  "video_file": "videoprova.mp4",
+  "video_sha256": "73b902ecf9b2b3a418cff5f817f6dfc8efcee771159b55746b7d5dd4197e4b4e",
+  "video_fingerprint": null,
+  "annotated_range": [
+    0.0,
+    3628.0
+  ],
+  "annotation_method": "Manual visual review BEFORE any detector run on this VOD: full-VOD contact sheets every 5 s (749 frames), then exact-seek frames at 2 FPS around every VS and every end of game, and 3-10 FPS around each result banner. Class read from the Italian banner text (Vittoria!/Sconfitta!) under the hero portrait, never from template scores. Gameplay detector output not consulted.",
+  "annotated_at_utc": "2026-10-09T13:31:22.539891+00:00",
+  "review_status": "single-reviewer manual; start = first frame of VS screen, result = first frame with readable banner (0.5 s sampling for VS, 0.1-0.5 s for results)",
+  "start_uncertainty_s": 0.5,
+  "result_uncertainty_s": 0.33,
+  "games": [
+    {
+      "id": "vp_game_01",
+      "start": 631.0,
+      "end": 1301.1,
+      "result": "LOSS",
+      "start_visible": [
+        631.0,
+        636.0
+      ],
+      "result_visible": [
+        1301.1,
+        1301.6
+      ],
+      "notes": "Ranked (Bronzo 10). Banner visible ~0.5 s."
+    },
+    {
+      "id": "vp_game_02",
+      "start": 1359.0,
+      "end": 1786.0,
+      "result": "WIN",
+      "start_visible": [
+        1359.0,
+        1365.0
+      ],
+      "result_visible": [
+        1786.0,
+        1790.0
+      ]
+    },
+    {
+      "id": "vp_game_03",
+      "start": 1820.0,
+      "end": 2792.0,
+      "result": "LOSS",
+      "start_visible": [
+        1820.0,
+        1825.0
+      ],
+      "result_visible": [
+        2792.0,
+        2792.3
+      ],
+      "notes": "Concede via menu at ~2782; long full-screen dragon animation 2784.5-2791.7; Sconfitta! banner only ~0.33-0.5 s."
+    },
+    {
+      "id": "vp_game_04",
+      "start": 2864.0,
+      "end": 3525.5,
+      "result": "WIN",
+      "start_visible": [
+        2864.0,
+        2866.5
+      ],
+      "result_visible": [
+        3525.5,
+        3530.0
+      ]
+    }
+  ],
+  "outside_annotated_range": [
+    {
+      "id": "vp_game_05",
+      "start": 3628.5,
+      "end": null,
+      "result": null,
+      "start_visible": [
+        3628.5,
+        3634.5
+      ],
+      "notes": "Game still in progress at VOD end (3750.0). No result exists in the video. Expected detector behaviour: start-only partial game, no result event. Evaluated manually because the evaluator requires known results."
+    }
+  ],
+  "totals": {
+    "games": 5,
+    "games_with_observable_result": 4,
+    "WIN": 2,
+    "LOSS": 2,
+    "no_result_vod_truncated": 1
+  },
+  "non_game_content": "0-631 deckbuilding/collection and menus (theorycrafting); between games: rank/reward screens, deck picker, matchmaking. In-game hard conditions: full-screen 'Scegli un rimpiazzo' discover overlays, in-game chat window over the board (~2260-2276), webcam overlay bottom-left, streamer overlay top-right.",
+  "warnings": [
+    "Only 2 LOSS and 2 WIN with observable results: small sample.",
+    "VS start = first visible VS frame at 0.5 s sampling."
+  ]
+}

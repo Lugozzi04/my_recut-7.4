@@ -425,3 +425,91 @@ class GameplayDebugCliTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("already exists", err)
         self.assertEqual(destination.read_bytes(), content)
+
+
+class GameplayCalibrationCliTests(unittest.TestCase):
+    setUp = GameplayDebugCliTests.setUp
+    invoke = GameplayDebugCliTests.invoke
+
+    def test_calibration_mode_scores_only_annotations_and_keeps_json_stdout_clean(self):
+        from analysis.gameplay.hearthstone.calibration import CalibrationAnalyzer
+        labels = self.root / 'calibration.json'
+        labels.write_text(json.dumps({'role': 'calibration', 'games': [{'result': 'loss', 'result_time': 10}]}), encoding='utf-8')
+        result = {'role': 'calibration', 'score_distributions': {'DEFEAT': {'count': 1}}, 'policy_enabled': False}
+        with patch('analysis.gameplay.hearthstone.visual.detector.TemplateVisualDetector'):
+            with patch.object(debug_analyze.TemplateRepository, 'load'):
+                with patch.object(CalibrationAnalyzer, 'analyze', return_value=result) as analyze:
+                    code, out, _err = self.invoke(self.arguments + ['--calibrate', str(labels), '--json'])
+        self.assertEqual(code, 0)
+        payload = json.loads(out)
+        self.assertEqual(payload['calibration'], result)
+        self.assertTrue((self.output / 'gameplay_calibration.json').is_file())
+        self.assertFalse((self.output / 'gameplay_analysis.json').exists())
+        self.assertEqual(analyze.call_count, 1)
+
+    def test_calibration_and_validation_or_policy_flags_are_mutually_exclusive(self):
+        for extra in (['--ground-truth', 'validation.json'], ['--single-frame-policy', 'policy.json'],
+                      ['--capture', 'DEFEAT', '--at', '1', '--roi', '0', '0', '1', '1']):
+            code, out, _err = self.invoke(self.arguments + ['--calibrate', 'labels.json', '--json', *extra])
+            self.assertEqual(code, 2)
+            self.assertEqual(json.loads(out)['exit_code'], 2)
+
+    def test_invalid_policy_returns_two_without_starting_analyzer(self):
+        policy = self.root / 'policy.json'
+        policy.write_text(json.dumps({'role': 'validation'}), encoding='utf-8')
+        code, out, err = self.invoke(self.arguments + ['--single-frame-policy', str(policy), '--json'])
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)['exit_code'], 2)
+        self.assertIn('calibration', err)
+
+    def test_capture_only_options_are_not_silently_ignored(self):
+        for extra in (['--allow-similar-template'], ['--capture-annotations', 'labels.json']):
+            code, _out, err = self.invoke(self.arguments + extra)
+            self.assertEqual(code, 2)
+            self.assertIn('require --capture', err)
+
+
+    @unittest.skipUnless(importlib.util.find_spec('cv2') is not None, 'OpenCV unavailable')
+    def test_capture_preserves_foreign_provenance_without_creating_template(self):
+        resource = Path(__file__).resolve().parents[1] / 'resources/gameplay/hearthstone/templates.json'
+        raw = json.loads(resource.read_text(encoding='utf-8'))
+        raw['reference_size'] = [96, 64]
+        pack = self.root / 'templates.json'
+        pack.write_text(json.dumps(raw), encoding='utf-8')
+        directory = pack.parent / raw['classes']['DEFEAT']['directory']
+        directory.mkdir(parents=True)
+        companion = directory / 'phase.png.provenance.json'
+        companion.write_bytes(b'foreign-metadata')
+        image = np.random.default_rng(123).integers(0, 256, (64, 96, 3), dtype=np.uint8)
+        args = self.arguments + ['--capture', 'DEFEAT', '--at', '1', '--roi', '.25', '.25', '.5', '.5',
+                                 '--template-pack', str(pack), '--name', 'phase', '--json']
+        with patch.object(debug_analyze, 'FFmpegFrameSampler') as factory:
+            factory.return_value.probe.return_value = VideoInfo(10, 96, 64)
+            factory.return_value.sample.side_effect = lambda *a, **kw: (item for item in [SampledFrame(1., image)])
+            code, _out, err = self.invoke(args)
+        self.assertEqual(code, 2)
+        self.assertIn('provenance already exists', err)
+        self.assertEqual(companion.read_bytes(), b'foreign-metadata')
+        self.assertFalse((directory / 'phase.png').exists())
+
+    @unittest.skipUnless(importlib.util.find_spec('cv2') is not None, 'OpenCV unavailable')
+    def test_capture_refuses_validation_provenance_before_creating_template(self):
+        from analysis.gameplay.cache import video_identity
+        resource = Path(__file__).resolve().parents[1] / 'resources/gameplay/hearthstone/templates.json'
+        raw = json.loads(resource.read_text(encoding='utf-8'))
+        raw['reference_size'] = [96, 64]
+        pack = self.root / 'templates.json'
+        pack.write_text(json.dumps(raw), encoding='utf-8')
+        labels = self.root / 'validation.json'
+        labels.write_text(json.dumps({'role': 'validation', 'video_fingerprint': video_identity(self.video)['fingerprint'],
+                                     'events': [{'type': 'DEFEAT', 'timestamp': 1}]}), encoding='utf-8')
+        image = np.random.default_rng(123).integers(0, 256, (64, 96, 3), dtype=np.uint8)
+        args = self.arguments + ['--capture', 'DEFEAT', '--at', '1', '--roi', '.25', '.25', '.5', '.5',
+                                 '--template-pack', str(pack), '--capture-annotations', str(labels), '--json']
+        with patch.object(debug_analyze, 'FFmpegFrameSampler') as factory:
+            factory.return_value.probe.return_value = VideoInfo(10, 96, 64)
+            factory.return_value.sample.side_effect = lambda *a, **kw: (item for item in [SampledFrame(1., image)])
+            code, _out, err = self.invoke(args)
+        self.assertEqual(code, 2)
+        self.assertIn('validation input is forbidden', err)
+        self.assertFalse((pack.parent / raw['classes']['DEFEAT']['directory']).exists())

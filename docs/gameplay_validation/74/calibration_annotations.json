@@ -1,0 +1,78 @@
+{
+  "format": "recut_gameplay_calibration",
+  "version": 1,
+  "role": "calibration",
+  "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+  "annotation_status": "provisional manual visual review; selected windows, not complete VOD ground truth",
+  "events": [
+    {
+      "type": "VS_SCREEN",
+      "timestamp": 170.5,
+      "visible_start": 170,
+      "visible_end": 171
+    },
+    {
+      "type": "VICTORY",
+      "timestamp": 820.6,
+      "visible_start": 820.103,
+      "visible_end": 821.103
+    },
+    {
+      "type": "VICTORY",
+      "timestamp": 1385.5,
+      "visible_start": 1385.006,
+      "visible_end": 1386.006
+    },
+    {
+      "type": "VICTORY",
+      "timestamp": 2198.2,
+      "visible_start": 2197.715,
+      "visible_end": 2198.715
+    },
+    {
+      "type": "DEFEAT",
+      "timestamp": 6093.1,
+      "visible_start": 6092.615,
+      "visible_end": 6093.615
+    },
+    {
+      "type": "DEFEAT",
+      "timestamp": 6119,
+      "visible_start": 6118.5,
+      "visible_end": 6119.5
+    },
+    {
+      "type": "DEFEAT",
+      "timestamp": 7606.6,
+      "visible_start": 7606.056,
+      "visible_end": 7607.056
+    }
+  ],
+  "negative_windows": [
+    {
+      "start": 300,
+      "end": 302,
+      "content": "ordinary gameplay"
+    },
+    {
+      "start": 900,
+      "end": 902,
+      "content": "main menu"
+    },
+    {
+      "start": 1605,
+      "end": 1607,
+      "content": "ordinary gameplay, other board"
+    },
+    {
+      "start": 5400,
+      "end": 5402,
+      "content": "ordinary gameplay, card animation"
+    }
+  ],
+  "notes": [
+    "Three DEFEAT windows sample TWO distinct losses: animation and stable phase of the first, and the second loss near 7606s.",
+    "Positive intervals are visible banner windows manually reviewed in contact sheets; approximate boundaries.",
+    "Do not use 73 validation frames or labels in this calibration."
+  ]
+}

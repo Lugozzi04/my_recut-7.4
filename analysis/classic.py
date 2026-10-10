@@ -75,15 +75,23 @@ def compute_classic_cuts(
     rms_min: float | None = None,
     rms_max: float | None = None,
     rms_eps: float | None = None,
+    gameplay_cuts: Iterable[Segment] = (),
 ) -> tuple[list[Segment], list[Segment]]:
-    """Compute the editor's classic workspace without widgets or thread state."""
+    """Compute the editor's classic workspace without widgets or thread state.
+
+    Composition (user has the last word):
+        automatic = merge(classic silence cuts + gameplay cuts) - suppressed
+        effective = merge(automatic + manual)
+    Gameplay cuts are automatic cuts with their own provenance (kept separately
+    by callers); with no gameplay cuts the result is exactly the legacy one.
+    """
     config = normalize_preset_cfg(cfg)
     intensity = int(config["intensity"])
     manual = merge_overlaps(list(manual_cuts))
-    if intensity < 10:
-        return manual, invert_to_keeps(float(duration), manual, min_keep=0.0)
-    if rms.size == 0 or duration <= 0.0:
-        return manual, invert_to_keeps(float(duration), manual, min_keep=0.0)
+    gameplay = merge_overlaps([Segment(float(s.start), float(s.end)) for s in gameplay_cuts if s.end > s.start])
+    if intensity < 10 or rms.size == 0 or duration <= 0.0:
+        cuts = merge_overlaps(subtract_segments(gameplay, suppressed_cuts) + manual) if gameplay else manual
+        return cuts, invert_to_keeps(float(duration), cuts, min_keep=0.0)
     if hop_s <= 0.0:
         raise ValueError("Analysis hop must be positive.")
 
@@ -108,6 +116,6 @@ def compute_classic_cuts(
         attack_ms=float(config["attack_ms"]), release_ms=float(config["release_ms"]),
         merge_short_pauses_ms=float(config["merge_pauses_ms"]),
     )
-    auto = subtract_segments(auto, suppressed_cuts)
+    auto = subtract_segments(merge_overlaps(auto + gameplay), suppressed_cuts)
     cuts = merge_overlaps(auto + manual)
     return cuts, invert_to_keeps(float(duration), cuts, min_keep=float(min_keep))

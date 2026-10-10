@@ -1,0 +1,24 @@
+{
+  "role": "calibration",
+  "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+  "annotation_sha256": "f272a89cc1841d00a4033641fffde4e1bf76159ae39f4624925d3691cc9b5768",
+  "timestamp": 6119.015333,
+  "roi": [
+    0.446875,
+    0.5814814814814815,
+    0.11875,
+    0.053703703703703705
+  ],
+  "reference_size": [
+    960,
+    540
+  ],
+  "patch_sha256": "084f731aa04abe1841092fd0eb7546314f318f632225e6c5138cc6f4e61f3fbd",
+  "nearest_templates": [
+    {
+      "path": "templates/defeat/calibration_phase_1324.933.png",
+      "pixel_duplicate": false,
+      "similarity": 0.25057896971702576
+    }
+  ]
+}

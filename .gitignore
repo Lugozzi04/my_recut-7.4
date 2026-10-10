@@ -38,6 +38,19 @@ cache/splice_points/
 *.orig
 *.rej
 
+# Rendered / downloaded media (GitHub rejects files > 100 MB)
+*.mp4
+*.mkv
+*.mov
+*.flv
+*.webm
+
+# Pipeline runtime state copied into validation folders
+.autocutter-locks/
+store.lock
+store.locks/
+docs/**/pipeline_e2e/**/store
+
 # Local secrets and certificates
 cert/
 cert-test/

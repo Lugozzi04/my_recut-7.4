@@ -1,0 +1,387 @@
+{
+  "cards": [
+    {
+      "id": "K01",
+      "name": "Meccaciclo",
+      "status": "legible",
+      "frame_id": "F001",
+      "box": [
+        0.24,
+        0.3,
+        0.12,
+        0.32
+      ],
+      "path": "cards/K01_F001.png",
+      "source_time": 1370.3,
+      "confidence": 0.9,
+      "legibility": "clear",
+      "transcript_ids": [
+        "T0051"
+      ],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F001",
+        "source_time": 1370.3,
+        "box": [
+          0.24,
+          0.3,
+          0.12,
+          0.32
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K02",
+      "name": "Cinghiali Meccanici",
+      "status": "legible",
+      "frame_id": "F001",
+      "box": [
+        0.37,
+        0.32,
+        0.12,
+        0.3
+      ],
+      "path": "cards/K02_F001.png",
+      "source_time": 1370.3,
+      "confidence": 0.85,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F001",
+        "source_time": 1370.3,
+        "box": [
+          0.37,
+          0.32,
+          0.12,
+          0.3
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K03",
+      "name": "Sputafuoco",
+      "status": "legible",
+      "frame_id": "F001",
+      "box": [
+        0.51,
+        0.32,
+        0.12,
+        0.3
+      ],
+      "path": "cards/K03_F001.png",
+      "source_time": 1370.3,
+      "confidence": 0.9,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F001",
+        "source_time": 1370.3,
+        "box": [
+          0.51,
+          0.32,
+          0.12,
+          0.3
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K04",
+      "name": "Cane da Guardia",
+      "status": "legible",
+      "frame_id": "F001",
+      "box": [
+        0.64,
+        0.31,
+        0.12,
+        0.31
+      ],
+      "path": "cards/K04_F001.png",
+      "source_time": 1370.3,
+      "confidence": 0.9,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F001",
+        "source_time": 1370.3,
+        "box": [
+          0.64,
+          0.31,
+          0.12,
+          0.31
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K05",
+      "name": "Prototipo Instabile",
+      "status": "legible",
+      "frame_id": "F004",
+      "box": [
+        0.37,
+        0.31,
+        0.12,
+        0.31
+      ],
+      "path": "cards/K05_F004.png",
+      "source_time": 1416.85,
+      "confidence": 0.9,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F004",
+        "source_time": 1416.85,
+        "box": [
+          0.37,
+          0.31,
+          0.12,
+          0.31
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K06",
+      "name": "Meccaciclo",
+      "status": "legible",
+      "frame_id": "F004",
+      "box": [
+        0.24,
+        0.31,
+        0.12,
+        0.31
+      ],
+      "path": "cards/K06_F004.png",
+      "source_time": 1416.85,
+      "confidence": 0.9,
+      "legibility": "clear",
+      "transcript_ids": [
+        "T0051"
+      ],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F004",
+        "source_time": 1416.85,
+        "box": [
+          0.24,
+          0.31,
+          0.12,
+          0.31
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K07",
+      "name": "Mimiron",
+      "status": "uncertain",
+      "frame_id": "F016",
+      "box": [
+        0.5,
+        0.86,
+        0.06,
+        0.12
+      ],
+      "path": "cards/K07_F016.png",
+      "source_time": 1776.033,
+      "confidence": 0.6,
+      "legibility": "partial",
+      "transcript_ids": [
+        "T0009",
+        "T0049"
+      ],
+      "transcript_match": "mimiron",
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F016",
+        "source_time": 1776.033,
+        "box": [
+          0.5,
+          0.86,
+          0.06,
+          0.12
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K08",
+      "name": "Manovre di Volo",
+      "status": "uncertain",
+      "frame_id": "F021",
+      "box": [
+        0.46,
+        0.12,
+        0.16,
+        0.46
+      ],
+      "path": "cards/K08_F021.png",
+      "source_time": 2918.583,
+      "confidence": 0.7,
+      "legibility": "partial",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F021",
+        "source_time": 2918.583,
+        "box": [
+          0.46,
+          0.12,
+          0.16,
+          0.46
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K09",
+      "name": "Re delle Profondit\u00e0",
+      "status": "uncertain",
+      "frame_id": "F027",
+      "box": [
+        0.19,
+        0.12,
+        0.15,
+        0.43
+      ],
+      "path": "cards/K09_F027.png",
+      "source_time": 3090.4,
+      "confidence": 0.65,
+      "legibility": "partial",
+      "transcript_ids": [
+        "T0118",
+        "T0119",
+        "T0149"
+      ],
+      "transcript_match": "della profondita",
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F027",
+        "source_time": 3090.4,
+        "box": [
+          0.19,
+          0.12,
+          0.15,
+          0.43
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K10",
+      "name": "Treant di Vilbosco",
+      "status": "uncertain",
+      "frame_id": "F024",
+      "box": [
+        0.18,
+        0.12,
+        0.16,
+        0.45
+      ],
+      "path": "cards/K10_F024.png",
+      "source_time": 2988.633,
+      "confidence": 0.55,
+      "legibility": "partial",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F024",
+        "source_time": 2988.633,
+        "box": [
+          0.18,
+          0.12,
+          0.16,
+          0.45
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K11",
+      "name": "Manovre di Volo",
+      "status": "uncertain",
+      "frame_id": "F025",
+      "box": [
+        0.34,
+        0.86,
+        0.07,
+        0.12
+      ],
+      "path": "cards/K11_F025.png",
+      "source_time": 3086.533,
+      "confidence": 0.55,
+      "legibility": "partial",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F025",
+        "source_time": 3086.533,
+        "box": [
+          0.34,
+          0.86,
+          0.07,
+          0.12
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K12",
+      "name": null,
+      "status": "uncertain",
+      "frame_id": "F023",
+      "box": [
+        0.4,
+        0.33,
+        0.1,
+        0.38
+      ],
+      "path": "cards/K12_F023.png",
+      "source_time": 2970.8,
+      "confidence": 0.3,
+      "legibility": "unreadable",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 12,
+      "provenance": {
+        "type": "video_crop",
+        "frame_id": "F023",
+        "source_time": 2970.8,
+        "box": [
+          0.4,
+          0.33,
+          0.1,
+          0.38
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    }
+  ]
+}

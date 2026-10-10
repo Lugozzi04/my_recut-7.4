@@ -1,0 +1,23 @@
+{
+  "started_at_utc": "2026-10-09T13:31:45.427529+00:00",
+  "attempt": 1,
+  "no_retuning": true,
+  "manifest_sha256": "2f17b04f190c4a58ce38cb6921250938cbacc1f6d60da3c919e3ee8f73fdf3af",
+  "command": [
+    "python",
+    "-m",
+    "analysis.gameplay.hearthstone.debug_analyze",
+    "C:/Users/jakub/Downloads/videoprova.mp4",
+    "--strategy",
+    "state-aware",
+    "--state-profile",
+    "docs/gameplay_validation/state_aware/iteration5_frozen/profile.json",
+    "--template-pack",
+    "docs/gameplay_validation/86/iteration4_frozen/templates.json",
+    "--ground-truth",
+    "docs/gameplay_validation/videoprova/ground_truth_manual.json",
+    "--output-dir",
+    "docs/gameplay_validation/videoprova/run",
+    "--no-cache"
+  ]
+}

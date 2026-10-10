@@ -1,0 +1,28 @@
+{
+  "started_at_utc": "2026-10-08T23:50:20.920988+00:00",
+  "comparison_complete": true,
+  "manifest_sha256": "013877aa77dacb78e27c8290ae5a088211767ba7942561b115b7e7a012ea86e7",
+  "profile_fingerprint": "4aaeed45c036d569d5db00d6d2ae84775be5e21300b341b6819fcf0bc5031bdb",
+  "command": [
+    "python",
+    "-m",
+    "analysis.gameplay.hearthstone.debug_analyze",
+    "C:\\Users\\jakub\\Downloads\\73.mp4",
+    "--strategy",
+    "state-aware",
+    "--state-profile",
+    "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\docs\\gameplay_validation\\state_aware\\iteration5_frozen\\profile.json",
+    "--template-pack",
+    "docs/gameplay_validation/86/iteration4_frozen/templates.json",
+    "--ground-truth",
+    "tests/fixtures/gameplay/73_held_out_ground_truth.json",
+    "--output-dir",
+    "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\.pytest_cache\\gameplay-state-aware\\blind73",
+    "--no-cache",
+    "--debug-frames",
+    "--max-debug-frames",
+    "60"
+  ],
+  "attempt": 1,
+  "no_retuning": true
+}

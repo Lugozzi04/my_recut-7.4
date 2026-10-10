@@ -100,6 +100,22 @@ def default_preset_name(catalog: Mapping[str, Any]) -> str | None:
     return sorted(catalog, key=lambda name: name.lower())[0]
 
 
+def match_preset_name(catalog: Mapping[str, Any], name: str) -> str:
+    """Exact name, else case-insensitive name, else a unique case-insensitive prefix ('Balanced')."""
+    if name in catalog:
+        return name
+    wanted = name.strip().lower()
+    exact = [candidate for candidate in catalog if candidate.lower() == wanted]
+    if len(exact) == 1:
+        return exact[0]
+    prefixed = [candidate for candidate in catalog if candidate.lower().startswith(wanted)] if wanted else []
+    if len(prefixed) == 1:
+        return prefixed[0]
+    if prefixed:
+        raise KeyError(f"Ambiguous preset '{name}': {', '.join(sorted(prefixed))}")
+    raise KeyError(f"Unknown preset: {name}")
+
+
 class PresetRepository:
     """Read and save the same user catalog used by the desktop editor."""
 

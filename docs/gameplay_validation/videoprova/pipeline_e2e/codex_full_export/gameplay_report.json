@@ -1,0 +1,2623 @@
+{
+ "format": "recut_gameplay_edit_report",
+ "version": 1,
+ "settings": {
+  "game": "hearthstone",
+  "keep_games": "wins",
+  "boundary_mode": "codex",
+  "resolver": {
+   "timeout_s": 600.0,
+   "fallback": "exact",
+   "model": null,
+   "effort": null,
+   "executable": null,
+   "use_cache": true,
+   "cache_directory": null,
+   "log_path": null
+  },
+  "state_profile": null,
+  "template_pack": null,
+  "windows": {
+   "start_before_s": 45.0,
+   "start_after_s": 10.0,
+   "end_before_s": 10.0,
+   "end_after_s": 60.0
+  }
+ },
+ "remote_context_sent": true,
+ "detector": {
+  "version": "hearthstone-state-aware-v2",
+  "fingerprint": "8b10c5daef4d6d20724d788171d5ccde0da72ddb9599987fce8f5efbc7788ed4"
+ },
+ "duration": 3749.999667,
+ "games": [
+  {
+   "id": "game-80a368caf59a27e3543a",
+   "index": 1,
+   "start": 630.583,
+   "end": 1301.083,
+   "result": "LOSS",
+   "termination": "COMPLETE",
+   "disposition": "REMOVE",
+   "reason": "complete LOSS; start and result observed",
+   "raw_anchors": {
+    "start": 630.583,
+    "end": 1301.083
+   },
+   "removal_anchors": {
+    "start": 630.583,
+    "start_kind": "game_start",
+    "end": 1301.083,
+    "end_kind": "game_end"
+   },
+   "boundaries": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 630.583,
+     "candidate_index": 38,
+     "confidence": 0.86,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "The pre-VS talk concerns deck choice, the event, and drops; opponent-specific reactions begin after VS. Candidate 38 falls in silence and preserves the preceding commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "ee9af732580c8ac5",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38
+      ],
+      "runtime_s": 40.879,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "UNCERTAIN",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME"
+      ]
+     },
+     "candidate": {
+      "timestamp": 630.583,
+      "sources": [
+       "GAME_START_ANCHOR",
+       "SILENCE_MID"
+      ]
+     },
+     "window": {
+      "start": 585.583,
+      "end": 640.583
+     },
+     "candidates_total": 51,
+     "segment_labels": [
+      {
+       "start": 585.853,
+       "end": 589.3929999999999,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 591.5029999999999,
+       "end": 597.2629999999999,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 598.223,
+       "end": 599.563,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 603.853,
+       "end": 605.713,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 609.2629999999999,
+       "end": 610.983,
+       "label": "UNCERTAIN"
+      },
+      {
+       "start": 611.583,
+       "end": 617.303,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 617.303,
+       "end": 620.3829999999999,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 620.3829999999999,
+       "end": 626.783,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 627.2429999999999,
+       "end": 629.083,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 631.183,
+       "end": 633.423,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 634.043,
+       "end": 635.2429999999999,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 637.063,
+       "end": 639.103,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 639.303,
+       "end": 640.563,
+       "label": "CURRENT_REMOVED_GAME"
+      }
+     ]
+    },
+    "END": {
+     "boundary_type": "END",
+     "timestamp": 1310.073,
+     "candidate_index": 11,
+     "confidence": 0.94,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "S0–S1 react to the removed game's ending. Candidate 11 falls in the following silence, preserving the pack-opening activity, next-game wishes, and general Hunter commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "feffae9f514d2b3e",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       26,
+       27,
+       29,
+       30,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       43,
+       44,
+       45,
+       46,
+       48,
+       49,
+       52
+      ],
+      "runtime_s": 28.398,
+      "segment_labels": [
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "NEXT_CONTENT",
+       "NEXT_CONTENT",
+       "NEXT_CONTENT",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY"
+      ]
+     },
+     "candidate": {
+      "timestamp": 1310.073,
+      "sources": [
+       "TRANSCRIPT_SEGMENT_START",
+       "SILENCE_MID"
+      ]
+     },
+     "window": {
+      "start": 1291.083,
+      "end": 1359.45
+     },
+     "candidates_total": 53,
+     "segment_labels": [
+      {
+       "start": 1291.083,
+       "end": 1301.333,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 1302.333,
+       "end": 1309.453,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 1310.073,
+       "end": 1312.0330000000001,
+       "label": "NEXT_CONTENT"
+      },
+      {
+       "start": 1329.0030000000002,
+       "end": 1332.403,
+       "label": "NEXT_CONTENT"
+      },
+      {
+       "start": 1335.383,
+       "end": 1340.0030000000002,
+       "label": "NEXT_CONTENT"
+      },
+      {
+       "start": 1340.7630000000001,
+       "end": 1344.143,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1346.893,
+       "end": 1350.073,
+       "label": "GENERAL_COMMENTARY"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "game-a6c0f437acde505ac557",
+   "index": 2,
+   "start": 1359.45,
+   "end": 1785.983,
+   "result": "WIN",
+   "termination": "COMPLETE",
+   "disposition": "KEEP",
+   "reason": "complete WIN; start and result observed",
+   "raw_anchors": {
+    "start": 1359.45,
+    "end": 1785.983
+   }
+  },
+  {
+   "id": "game-82939f183be9891293e8",
+   "index": 3,
+   "start": 1819.75,
+   "end": 2791.983,
+   "result": "LOSS",
+   "termination": "COMPLETE",
+   "disposition": "REMOVE",
+   "reason": "complete LOSS; start and result observed",
+   "raw_anchors": {
+    "start": 1819.75,
+    "end": 2791.983
+   },
+   "removal_anchors": {
+    "start": 1819.75,
+    "start_kind": "game_start",
+    "end": 2791.983,
+    "end_kind": "game_end"
+   },
+   "boundaries": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 1817.733,
+     "candidate_index": 29,
+     "confidence": 0.8,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "Keep the general deck and nerf commentary through S9. Cut before S10, which crosses the VS screen and shifts into identifying the opponent, avoiding a split sentence.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "f1d57d1080a0588d",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31
+      ],
+      "runtime_s": 52.004,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "UNCERTAIN",
+       "UNCERTAIN",
+       "UNCERTAIN",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME"
+      ]
+     },
+     "candidate": {
+      "timestamp": 1817.733,
+      "sources": [
+       "TRANSCRIPT_SEGMENT_END",
+       "TRANSCRIPT_SEGMENT_START"
+      ]
+     },
+     "window": {
+      "start": 1785.983,
+      "end": 1829.75
+     },
+     "candidates_total": 39,
+     "segment_labels": [
+      {
+       "start": 1785.983,
+       "end": 1787.223,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1788.203,
+       "end": 1791.0629999999999,
+       "label": "UNCERTAIN"
+      },
+      {
+       "start": 1791.0629999999999,
+       "end": 1793.923,
+       "label": "UNCERTAIN"
+      },
+      {
+       "start": 1794.703,
+       "end": 1795.183,
+       "label": "UNCERTAIN"
+      },
+      {
+       "start": 1798.623,
+       "end": 1800.783,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1801.383,
+       "end": 1804.863,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1805.663,
+       "end": 1808.1029999999998,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1809.183,
+       "end": 1811.1029999999998,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1811.943,
+       "end": 1813.283,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1816.033,
+       "end": 1817.733,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 1817.733,
+       "end": 1822.213,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 1822.773,
+       "end": 1826.273,
+       "label": "CURRENT_REMOVED_GAME"
+      }
+     ]
+    },
+    "END": {
+     "boundary_type": "END",
+     "timestamp": 2803.858,
+     "candidate_index": 24,
+     "confidence": 0.98,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "Candidate 24 falls in the silence after the final apology about the removed game, preserving the next-deck question and subsequent general discussion.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "aaf2e698584f443d",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       40,
+       41,
+       42,
+       43,
+       45,
+       46,
+       48,
+       49,
+       50,
+       51
+      ],
+      "runtime_s": 16.453,
+      "segment_labels": [
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "NEXT_CONTENT",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "NEXT_CONTENT"
+      ]
+     },
+     "candidate": {
+      "timestamp": 2803.858,
+      "sources": [
+       "SILENCE_MID"
+      ]
+     },
+     "window": {
+      "start": 2781.983,
+      "end": 2851.983
+     },
+     "candidates_total": 53,
+     "segment_labels": [
+      {
+       "start": 2781.983,
+       "end": 2784.7430000000004,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2784.8830000000003,
+       "end": 2786.8830000000003,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2787.523,
+       "end": 2787.943,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2788.3630000000003,
+       "end": 2789.8230000000003,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2790.563,
+       "end": 2791.963,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2792.723,
+       "end": 2793.8430000000003,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2794.8430000000003,
+       "end": 2795.3430000000003,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2797.223,
+       "end": 2798.123,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2799.063,
+       "end": 2802.523,
+       "label": "CURRENT_REMOVED_GAME"
+      },
+      {
+       "start": 2804.713,
+       "end": 2805.5530000000003,
+       "label": "NEXT_CONTENT"
+      },
+      {
+       "start": 2806.353,
+       "end": 2807.973,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 2808.393,
+       "end": 2811.313,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 2815.2630000000004,
+       "end": 2826.083,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 2826.083,
+       "end": 2829.8830000000003,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 2829.8830000000003,
+       "end": 2831.2830000000004,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 2847.2830000000004,
+       "end": 2849.3630000000003,
+       "label": "NEXT_CONTENT"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "game-5ea93430b91b0da159e0",
+   "index": 4,
+   "start": 2863.75,
+   "end": 3525.5,
+   "result": "WIN",
+   "termination": "COMPLETE",
+   "disposition": "KEEP",
+   "reason": "complete WIN; start and result observed",
+   "raw_anchors": {
+    "start": 2863.75,
+    "end": 3525.5
+   }
+  },
+  {
+   "id": "game-3130997a102d87b94be6",
+   "index": 5,
+   "start": 3628.933,
+   "end": null,
+   "result": "UNKNOWN",
+   "termination": "IN_PROGRESS_AT_EOF",
+   "disposition": "REMOVE_TO_EOF",
+   "reason": "last game without a result; board still present at EOF: last 2 board scores [0.397, 0.401] vs board_high 0.38",
+   "raw_anchors": {
+    "start": 3628.933,
+    "end": null
+   },
+   "removal_anchors": {
+    "start": 3628.933,
+    "start_kind": "game_start",
+    "end": 3749.999667,
+    "end_kind": "end_of_file"
+   },
+   "boundaries": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 3628.458,
+     "candidate_index": 18,
+     "confidence": 0.88,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "S0–S2 discuss possible decks to play later; S3 comments on the current game's advantage. Candidate 18 falls in the pause before the VS screen and preserves the preceding commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "1fef0f25827d0e10",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19
+      ],
+      "runtime_s": 20.449,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME"
+      ]
+     },
+     "candidate": {
+      "timestamp": 3628.458,
+      "sources": [
+       "SILENCE_MID"
+      ]
+     },
+     "window": {
+      "start": 3583.933,
+      "end": 3638.933
+     },
+     "candidates_total": 26,
+     "segment_labels": [
+      {
+       "start": 3613.933,
+       "end": 3617.713,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 3618.373,
+       "end": 3622.313,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 3623.013,
+       "end": 3627.133,
+       "label": "GENERAL_COMMENTARY"
+      },
+      {
+       "start": 3630.483,
+       "end": 3638.903,
+       "label": "CURRENT_REMOVED_GAME"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "gameplay_cuts": [
+  {
+   "start": 630.583,
+   "end": 1310.073,
+   "game": {
+    "id": "game-80a368caf59a27e3543a",
+    "index": 1,
+    "start": 630.583,
+    "end": 1301.083,
+    "result": "LOSS",
+    "termination": "COMPLETE",
+    "disposition": "REMOVE",
+    "reason": "complete LOSS; start and result observed"
+   },
+   "start_source": "decision",
+   "end_source": "decision",
+   "decisions": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 630.583,
+     "candidate_index": 38,
+     "confidence": 0.86,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "The pre-VS talk concerns deck choice, the event, and drops; opponent-specific reactions begin after VS. Candidate 38 falls in silence and preserves the preceding commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "ee9af732580c8ac5",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38
+      ],
+      "runtime_s": 40.879,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "UNCERTAIN",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME"
+      ]
+     }
+    },
+    "END": {
+     "boundary_type": "END",
+     "timestamp": 1310.073,
+     "candidate_index": 11,
+     "confidence": 0.94,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "S0–S1 react to the removed game's ending. Candidate 11 falls in the following silence, preserving the pack-opening activity, next-game wishes, and general Hunter commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "feffae9f514d2b3e",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       26,
+       27,
+       29,
+       30,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       39,
+       40,
+       41,
+       43,
+       44,
+       45,
+       46,
+       48,
+       49,
+       52
+      ],
+      "runtime_s": 28.398,
+      "segment_labels": [
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "NEXT_CONTENT",
+       "NEXT_CONTENT",
+       "NEXT_CONTENT",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY"
+      ]
+     }
+    }
+   },
+   "adjustments": []
+  },
+  {
+   "start": 1817.733,
+   "end": 2803.858,
+   "game": {
+    "id": "game-82939f183be9891293e8",
+    "index": 3,
+    "start": 1819.75,
+    "end": 2791.983,
+    "result": "LOSS",
+    "termination": "COMPLETE",
+    "disposition": "REMOVE",
+    "reason": "complete LOSS; start and result observed"
+   },
+   "start_source": "decision",
+   "end_source": "decision",
+   "decisions": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 1817.733,
+     "candidate_index": 29,
+     "confidence": 0.8,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "Keep the general deck and nerf commentary through S9. Cut before S10, which crosses the VS screen and shifts into identifying the opponent, avoiding a split sentence.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "f1d57d1080a0588d",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31
+      ],
+      "runtime_s": 52.004,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "UNCERTAIN",
+       "UNCERTAIN",
+       "UNCERTAIN",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME"
+      ]
+     }
+    },
+    "END": {
+     "boundary_type": "END",
+     "timestamp": 2803.858,
+     "candidate_index": 24,
+     "confidence": 0.98,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "Candidate 24 falls in the silence after the final apology about the removed game, preserving the next-deck question and subsequent general discussion.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "aaf2e698584f443d",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19,
+       20,
+       21,
+       22,
+       23,
+       24,
+       25,
+       26,
+       27,
+       28,
+       29,
+       30,
+       31,
+       32,
+       33,
+       34,
+       35,
+       36,
+       37,
+       38,
+       40,
+       41,
+       42,
+       43,
+       45,
+       46,
+       48,
+       49,
+       50,
+       51
+      ],
+      "runtime_s": 16.453,
+      "segment_labels": [
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "CURRENT_REMOVED_GAME",
+       "NEXT_CONTENT",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "NEXT_CONTENT"
+      ]
+     }
+    }
+   },
+   "adjustments": []
+  },
+  {
+   "start": 3628.458,
+   "end": 3749.999667,
+   "game": {
+    "id": "game-3130997a102d87b94be6",
+    "index": 5,
+    "start": 3628.933,
+    "end": null,
+    "result": "UNKNOWN",
+    "termination": "IN_PROGRESS_AT_EOF",
+    "disposition": "REMOVE_TO_EOF",
+    "reason": "last game without a result; board still present at EOF: last 2 board scores [0.397, 0.401] vs board_high 0.38"
+   },
+   "start_source": "decision",
+   "end_source": "end_of_file",
+   "decisions": {
+    "START": {
+     "boundary_type": "START",
+     "timestamp": 3628.458,
+     "candidate_index": 18,
+     "confidence": 0.88,
+     "resolver": "codex",
+     "requested_resolver": "codex",
+     "fallback": false,
+     "detail": "S0–S2 discuss possible decks to play later; S3 comments on the current game's advantage. Candidate 18 falls in the pause before the VS screen and preserves the preceding commentary.",
+     "metadata": {
+      "prompt_version": "boundary_agent_prompt_v2",
+      "context_id": "1fef0f25827d0e10",
+      "model": null,
+      "effort": null,
+      "cache_hit": false,
+      "shown_candidates": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       15,
+       16,
+       17,
+       18,
+       19
+      ],
+      "runtime_s": 20.449,
+      "segment_labels": [
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "GENERAL_COMMENTARY",
+       "CURRENT_REMOVED_GAME"
+      ]
+     }
+    }
+   },
+   "adjustments": []
+  }
+ ],
+ "gameplay_segments": [
+  {
+   "start": 630.583,
+   "end": 1310.073
+  },
+  {
+   "start": 1817.733,
+   "end": 2803.858
+  },
+  {
+   "start": 3628.458,
+   "end": 3749.999667
+  }
+ ],
+ "removed_seconds": 1787.1566670000002,
+ "timings": {
+  "gameplay_detection_s": 0.169,
+  "boundary_analysis_s": 8.46,
+  "resolver_s": 158.198,
+  "agent_calls": 5.0,
+  "agent_cache_hits": 0.0,
+  "resolver_fallbacks": 0.0,
+  "classic_analysis_s": 9.589
+ },
+ "warnings": [],
+ "composition": {
+  "rule": "effective = merge(merge(classic + gameplay) - suppressed + manual); keeps = invert(effective)",
+  "classic_cuts": [
+   {
+    "start": 9.14,
+    "end": 13.11
+   },
+   {
+    "start": 17.3,
+    "end": 22.89
+   },
+   {
+    "start": 36.83,
+    "end": 37.14
+   },
+   {
+    "start": 39.71,
+    "end": 43.41
+   },
+   {
+    "start": 54.32,
+    "end": 62.58
+   },
+   {
+    "start": 125.09,
+    "end": 125.25
+   },
+   {
+    "start": 137.84,
+    "end": 144.9
+   },
+   {
+    "start": 153.56,
+    "end": 164.25
+   },
+   {
+    "start": 183.65,
+    "end": 188.82
+   },
+   {
+    "start": 229.22,
+    "end": 231.09
+   },
+   {
+    "start": 236.15,
+    "end": 237.0
+   },
+   {
+    "start": 239.33,
+    "end": 240.6
+   },
+   {
+    "start": 276.23,
+    "end": 286.11
+   },
+   {
+    "start": 288.92,
+    "end": 292.23
+   },
+   {
+    "start": 344.18,
+    "end": 344.7
+   },
+   {
+    "start": 350.54,
+    "end": 353.73
+   },
+   {
+    "start": 418.97,
+    "end": 421.41
+   },
+   {
+    "start": 434.81,
+    "end": 435.63
+   },
+   {
+    "start": 495.32,
+    "end": 497.31
+   },
+   {
+    "start": 504.38,
+    "end": 511.14
+   },
+   {
+    "start": 525.26,
+    "end": 530.58
+   },
+   {
+    "start": 533.3,
+    "end": 533.7
+   },
+   {
+    "start": 535.91,
+    "end": 536.25
+   },
+   {
+    "start": 553.25,
+    "end": 554.85
+   },
+   {
+    "start": 558.83,
+    "end": 560.43
+   },
+   {
+    "start": 564.74,
+    "end": 565.56
+   },
+   {
+    "start": 571.58,
+    "end": 572.85
+   },
+   {
+    "start": 584.0,
+    "end": 585.39
+   },
+   {
+    "start": 601.67,
+    "end": 603.42
+   },
+   {
+    "start": 607.1,
+    "end": 608.55
+   },
+   {
+    "start": 622.76,
+    "end": 624.21
+   },
+   {
+    "start": 630.41,
+    "end": 630.69
+   },
+   {
+    "start": 674.15,
+    "end": 675.0
+   },
+   {
+    "start": 693.74,
+    "end": 696.33
+   },
+   {
+    "start": 717.89,
+    "end": 719.04
+   },
+   {
+    "start": 726.62,
+    "end": 726.75
+   },
+   {
+    "start": 751.22,
+    "end": 752.22
+   },
+   {
+    "start": 754.4,
+    "end": 761.16
+   },
+   {
+    "start": 768.08,
+    "end": 769.11
+   },
+   {
+    "start": 828.86,
+    "end": 830.88
+   },
+   {
+    "start": 847.82,
+    "end": 853.11
+   },
+   {
+    "start": 857.03,
+    "end": 857.7
+   },
+   {
+    "start": 879.29,
+    "end": 880.26
+   },
+   {
+    "start": 905.18,
+    "end": 906.12
+   },
+   {
+    "start": 911.69,
+    "end": 912.84
+   },
+   {
+    "start": 921.59,
+    "end": 924.75
+   },
+   {
+    "start": 955.25,
+    "end": 955.62
+   },
+   {
+    "start": 979.1,
+    "end": 981.09
+   },
+   {
+    "start": 990.26,
+    "end": 991.44
+   },
+   {
+    "start": 1069.82,
+    "end": 1075.56
+   },
+   {
+    "start": 1080.32,
+    "end": 1081.86
+   },
+   {
+    "start": 1085.48,
+    "end": 1086.39
+   },
+   {
+    "start": 1095.47,
+    "end": 1100.34
+   },
+   {
+    "start": 1142.51,
+    "end": 1145.52
+   },
+   {
+    "start": 1149.5,
+    "end": 1152.42
+   },
+   {
+    "start": 1195.43,
+    "end": 1197.99
+   },
+   {
+    "start": 1204.4,
+    "end": 1206.42
+   },
+   {
+    "start": 1222.7,
+    "end": 1231.08
+   },
+   {
+    "start": 1252.94,
+    "end": 1253.49
+   },
+   {
+    "start": 1260.26,
+    "end": 1262.4
+   },
+   {
+    "start": 1345.49,
+    "end": 1346.4
+   },
+   {
+    "start": 1351.85,
+    "end": 1352.88
+   },
+   {
+    "start": 1355.27,
+    "end": 1358.94
+   },
+   {
+    "start": 1374.41,
+    "end": 1374.99
+   },
+   {
+    "start": 1380.59,
+    "end": 1382.25
+   },
+   {
+    "start": 1388.18,
+    "end": 1396.83
+   },
+   {
+    "start": 1401.77,
+    "end": 1404.36
+   },
+   {
+    "start": 1435.52,
+    "end": 1441.29
+   },
+   {
+    "start": 1471.28,
+    "end": 1474.5
+   },
+   {
+    "start": 1499.24,
+    "end": 1503.42
+   },
+   {
+    "start": 1522.1,
+    "end": 1526.37
+   },
+   {
+    "start": 1544.42,
+    "end": 1544.7
+   },
+   {
+    "start": 1549.07,
+    "end": 1557.27
+   },
+   {
+    "start": 1631.09,
+    "end": 1635.87
+   },
+   {
+    "start": 1640.18,
+    "end": 1640.43
+   },
+   {
+    "start": 1643.69,
+    "end": 1645.59
+   },
+   {
+    "start": 1659.77,
+    "end": 1660.68
+   },
+   {
+    "start": 1685.15,
+    "end": 1687.23
+   },
+   {
+    "start": 1700.15,
+    "end": 1707.06
+   },
+   {
+    "start": 1729.04,
+    "end": 1731.03
+   },
+   {
+    "start": 1763.99,
+    "end": 1765.74
+   },
+   {
+    "start": 1839.08,
+    "end": 1843.98
+   },
+   {
+    "start": 1862.42,
+    "end": 1865.55
+   },
+   {
+    "start": 1878.59,
+    "end": 1879.38
+   },
+   {
+    "start": 1898.54,
+    "end": 1901.22
+   },
+   {
+    "start": 1911.05,
+    "end": 1914.36
+   },
+   {
+    "start": 1918.58,
+    "end": 1919.31
+   },
+   {
+    "start": 1927.64,
+    "end": 1932.57
+   },
+   {
+    "start": 1936.43,
+    "end": 1936.98
+   },
+   {
+    "start": 1945.34,
+    "end": 1951.95
+   },
+   {
+    "start": 1965.05,
+    "end": 1965.93
+   },
+   {
+    "start": 1975.34,
+    "end": 1977.81
+   },
+   {
+    "start": 2011.49,
+    "end": 2012.31
+   },
+   {
+    "start": 2019.86,
+    "end": 2020.95
+   },
+   {
+    "start": 2037.77,
+    "end": 2037.93
+   },
+   {
+    "start": 2042.6,
+    "end": 2043.3
+   },
+   {
+    "start": 2050.85,
+    "end": 2052.06
+   },
+   {
+    "start": 2060.99,
+    "end": 2067.6
+   },
+   {
+    "start": 2085.17,
+    "end": 2097.45
+   },
+   {
+    "start": 2100.2,
+    "end": 2100.48
+   },
+   {
+    "start": 2104.46,
+    "end": 2105.31
+   },
+   {
+    "start": 2116.76,
+    "end": 2117.04
+   },
+   {
+    "start": 2161.73,
+    "end": 2163.45
+   },
+   {
+    "start": 2167.82,
+    "end": 2168.01
+   },
+   {
+    "start": 2177.9,
+    "end": 2178.3
+   },
+   {
+    "start": 2284.58,
+    "end": 2284.74
+   },
+   {
+    "start": 2311.01,
+    "end": 2313.93
+   },
+   {
+    "start": 2318.96,
+    "end": 2319.66
+   },
+   {
+    "start": 2350.37,
+    "end": 2357.37
+   },
+   {
+    "start": 2393.09,
+    "end": 2394.06
+   },
+   {
+    "start": 2404.1,
+    "end": 2406.3
+   },
+   {
+    "start": 2424.65,
+    "end": 2425.44
+   },
+   {
+    "start": 2452.82,
+    "end": 2453.16
+   },
+   {
+    "start": 2457.5,
+    "end": 2457.99
+   },
+   {
+    "start": 2477.54,
+    "end": 2482.8
+   },
+   {
+    "start": 2488.76,
+    "end": 2493.48
+   },
+   {
+    "start": 2495.99,
+    "end": 2498.76
+   },
+   {
+    "start": 2514.62,
+    "end": 2515.47
+   },
+   {
+    "start": 2525.87,
+    "end": 2526.03
+   },
+   {
+    "start": 2557.13,
+    "end": 2558.67
+   },
+   {
+    "start": 2570.93,
+    "end": 2572.17
+   },
+   {
+    "start": 2581.88,
+    "end": 2582.97
+   },
+   {
+    "start": 2599.16,
+    "end": 2599.62
+   },
+   {
+    "start": 2601.83,
+    "end": 2605.32
+   },
+   {
+    "start": 2616.02,
+    "end": 2633.04
+   },
+   {
+    "start": 2644.07,
+    "end": 2648.73
+   },
+   {
+    "start": 2652.92,
+    "end": 2653.56
+   },
+   {
+    "start": 2656.28,
+    "end": 2657.79
+   },
+   {
+    "start": 2660.21,
+    "end": 2662.08
+   },
+   {
+    "start": 2665.28,
+    "end": 2671.5
+   },
+   {
+    "start": 2700.65,
+    "end": 2701.92
+   },
+   {
+    "start": 2736.59,
+    "end": 2736.81
+   },
+   {
+    "start": 2740.79,
+    "end": 2750.58
+   },
+   {
+    "start": 2770.28,
+    "end": 2774.28
+   },
+   {
+    "start": 2812.88,
+    "end": 2814.81
+   },
+   {
+    "start": 2819.96,
+    "end": 2824.92
+   },
+   {
+    "start": 2832.2,
+    "end": 2845.2
+   },
+   {
+    "start": 2860.34,
+    "end": 2863.92
+   },
+   {
+    "start": 2873.27,
+    "end": 2874.36
+   },
+   {
+    "start": 2895.74,
+    "end": 2895.99
+   },
+   {
+    "start": 2924.72,
+    "end": 2928.6
+   },
+   {
+    "start": 2933.6,
+    "end": 2937.36
+   },
+   {
+    "start": 2947.13,
+    "end": 2947.41
+   },
+   {
+    "start": 2954.42,
+    "end": 2955.51
+   },
+   {
+    "start": 3003.98,
+    "end": 3004.23
+   },
+   {
+    "start": 3008.75,
+    "end": 3010.26
+   },
+   {
+    "start": 3023.93,
+    "end": 3025.11
+   },
+   {
+    "start": 3047.09,
+    "end": 3047.61
+   },
+   {
+    "start": 3052.79,
+    "end": 3055.41
+   },
+   {
+    "start": 3068.99,
+    "end": 3070.47
+   },
+   {
+    "start": 3132.08,
+    "end": 3138.93
+   },
+   {
+    "start": 3143.87,
+    "end": 3147.09
+   },
+   {
+    "start": 3180.26,
+    "end": 3181.11
+   },
+   {
+    "start": 3185.12,
+    "end": 3188.31
+   },
+   {
+    "start": 3193.52,
+    "end": 3194.37
+   },
+   {
+    "start": 3200.03,
+    "end": 3200.19
+   },
+   {
+    "start": 3233.33,
+    "end": 3236.4
+   },
+   {
+    "start": 3261.89,
+    "end": 3262.95
+   },
+   {
+    "start": 3267.95,
+    "end": 3270.66
+   },
+   {
+    "start": 3286.28,
+    "end": 3291.72
+   },
+   {
+    "start": 3295.76,
+    "end": 3299.58
+   },
+   {
+    "start": 3322.58,
+    "end": 3322.71
+   },
+   {
+    "start": 3409.22,
+    "end": 3409.74
+   },
+   {
+    "start": 3415.16,
+    "end": 3418.2
+   },
+   {
+    "start": 3423.02,
+    "end": 3425.58
+   },
+   {
+    "start": 3491.24,
+    "end": 3492.06
+   },
+   {
+    "start": 3544.4,
+    "end": 3544.56
+   },
+   {
+    "start": 3647.0,
+    "end": 3654.75
+   },
+   {
+    "start": 3658.07,
+    "end": 3662.64
+   },
+   {
+    "start": 3685.91,
+    "end": 3686.79
+   },
+   {
+    "start": 3720.23,
+    "end": 3724.08
+   },
+   {
+    "start": 3726.5,
+    "end": 3728.37
+   },
+   {
+    "start": 3740.15,
+    "end": 3749.13
+   }
+  ],
+  "manual_cuts": [],
+  "effective_cuts": [
+   {
+    "start": 9.14,
+    "end": 13.11
+   },
+   {
+    "start": 17.3,
+    "end": 22.89
+   },
+   {
+    "start": 36.83,
+    "end": 37.14
+   },
+   {
+    "start": 39.71,
+    "end": 43.41
+   },
+   {
+    "start": 54.32,
+    "end": 62.58
+   },
+   {
+    "start": 125.09,
+    "end": 125.25
+   },
+   {
+    "start": 137.84,
+    "end": 144.9
+   },
+   {
+    "start": 153.56,
+    "end": 164.25
+   },
+   {
+    "start": 183.65,
+    "end": 188.82
+   },
+   {
+    "start": 229.22,
+    "end": 231.09
+   },
+   {
+    "start": 236.15,
+    "end": 237.0
+   },
+   {
+    "start": 239.33,
+    "end": 240.6
+   },
+   {
+    "start": 276.23,
+    "end": 286.11
+   },
+   {
+    "start": 288.92,
+    "end": 292.23
+   },
+   {
+    "start": 344.18,
+    "end": 344.7
+   },
+   {
+    "start": 350.54,
+    "end": 353.73
+   },
+   {
+    "start": 418.97,
+    "end": 421.41
+   },
+   {
+    "start": 434.81,
+    "end": 435.63
+   },
+   {
+    "start": 495.32,
+    "end": 497.31
+   },
+   {
+    "start": 504.38,
+    "end": 511.14
+   },
+   {
+    "start": 525.26,
+    "end": 530.58
+   },
+   {
+    "start": 533.3,
+    "end": 533.7
+   },
+   {
+    "start": 535.91,
+    "end": 536.25
+   },
+   {
+    "start": 553.25,
+    "end": 554.85
+   },
+   {
+    "start": 558.83,
+    "end": 560.43
+   },
+   {
+    "start": 564.74,
+    "end": 565.56
+   },
+   {
+    "start": 571.58,
+    "end": 572.85
+   },
+   {
+    "start": 584.0,
+    "end": 585.39
+   },
+   {
+    "start": 601.67,
+    "end": 603.42
+   },
+   {
+    "start": 607.1,
+    "end": 608.55
+   },
+   {
+    "start": 622.76,
+    "end": 624.21
+   },
+   {
+    "start": 630.41,
+    "end": 1310.073
+   },
+   {
+    "start": 1345.49,
+    "end": 1346.4
+   },
+   {
+    "start": 1351.85,
+    "end": 1352.88
+   },
+   {
+    "start": 1355.27,
+    "end": 1358.94
+   },
+   {
+    "start": 1374.41,
+    "end": 1374.99
+   },
+   {
+    "start": 1380.59,
+    "end": 1382.25
+   },
+   {
+    "start": 1388.18,
+    "end": 1396.83
+   },
+   {
+    "start": 1401.77,
+    "end": 1404.36
+   },
+   {
+    "start": 1435.52,
+    "end": 1441.29
+   },
+   {
+    "start": 1471.28,
+    "end": 1474.5
+   },
+   {
+    "start": 1499.24,
+    "end": 1503.42
+   },
+   {
+    "start": 1522.1,
+    "end": 1526.37
+   },
+   {
+    "start": 1544.42,
+    "end": 1544.7
+   },
+   {
+    "start": 1549.07,
+    "end": 1557.27
+   },
+   {
+    "start": 1631.09,
+    "end": 1635.87
+   },
+   {
+    "start": 1640.18,
+    "end": 1640.43
+   },
+   {
+    "start": 1643.69,
+    "end": 1645.59
+   },
+   {
+    "start": 1659.77,
+    "end": 1660.68
+   },
+   {
+    "start": 1685.15,
+    "end": 1687.23
+   },
+   {
+    "start": 1700.15,
+    "end": 1707.06
+   },
+   {
+    "start": 1729.04,
+    "end": 1731.03
+   },
+   {
+    "start": 1763.99,
+    "end": 1765.74
+   },
+   {
+    "start": 1817.733,
+    "end": 2803.858
+   },
+   {
+    "start": 2812.88,
+    "end": 2814.81
+   },
+   {
+    "start": 2819.96,
+    "end": 2824.92
+   },
+   {
+    "start": 2832.2,
+    "end": 2845.2
+   },
+   {
+    "start": 2860.34,
+    "end": 2863.92
+   },
+   {
+    "start": 2873.27,
+    "end": 2874.36
+   },
+   {
+    "start": 2895.74,
+    "end": 2895.99
+   },
+   {
+    "start": 2924.72,
+    "end": 2928.6
+   },
+   {
+    "start": 2933.6,
+    "end": 2937.36
+   },
+   {
+    "start": 2947.13,
+    "end": 2947.41
+   },
+   {
+    "start": 2954.42,
+    "end": 2955.51
+   },
+   {
+    "start": 3003.98,
+    "end": 3004.23
+   },
+   {
+    "start": 3008.75,
+    "end": 3010.26
+   },
+   {
+    "start": 3023.93,
+    "end": 3025.11
+   },
+   {
+    "start": 3047.09,
+    "end": 3047.61
+   },
+   {
+    "start": 3052.79,
+    "end": 3055.41
+   },
+   {
+    "start": 3068.99,
+    "end": 3070.47
+   },
+   {
+    "start": 3132.08,
+    "end": 3138.93
+   },
+   {
+    "start": 3143.87,
+    "end": 3147.09
+   },
+   {
+    "start": 3180.26,
+    "end": 3181.11
+   },
+   {
+    "start": 3185.12,
+    "end": 3188.31
+   },
+   {
+    "start": 3193.52,
+    "end": 3194.37
+   },
+   {
+    "start": 3200.03,
+    "end": 3200.19
+   },
+   {
+    "start": 3233.33,
+    "end": 3236.4
+   },
+   {
+    "start": 3261.89,
+    "end": 3262.95
+   },
+   {
+    "start": 3267.95,
+    "end": 3270.66
+   },
+   {
+    "start": 3286.28,
+    "end": 3291.72
+   },
+   {
+    "start": 3295.76,
+    "end": 3299.58
+   },
+   {
+    "start": 3322.58,
+    "end": 3322.71
+   },
+   {
+    "start": 3409.22,
+    "end": 3409.74
+   },
+   {
+    "start": 3415.16,
+    "end": 3418.2
+   },
+   {
+    "start": 3423.02,
+    "end": 3425.58
+   },
+   {
+    "start": 3491.24,
+    "end": 3492.06
+   },
+   {
+    "start": 3544.4,
+    "end": 3544.56
+   },
+   {
+    "start": 3628.458,
+    "end": 3749.999667
+   }
+  ],
+  "keeps": [
+   {
+    "start": 0.0,
+    "end": 9.14
+   },
+   {
+    "start": 13.11,
+    "end": 17.3
+   },
+   {
+    "start": 22.89,
+    "end": 36.83
+   },
+   {
+    "start": 37.14,
+    "end": 39.71
+   },
+   {
+    "start": 43.41,
+    "end": 54.32
+   },
+   {
+    "start": 62.58,
+    "end": 125.09
+   },
+   {
+    "start": 125.25,
+    "end": 137.84
+   },
+   {
+    "start": 144.9,
+    "end": 153.56
+   },
+   {
+    "start": 164.25,
+    "end": 183.65
+   },
+   {
+    "start": 188.82,
+    "end": 229.22
+   },
+   {
+    "start": 231.09,
+    "end": 236.15
+   },
+   {
+    "start": 237.0,
+    "end": 239.33
+   },
+   {
+    "start": 240.6,
+    "end": 276.23
+   },
+   {
+    "start": 286.11,
+    "end": 288.92
+   },
+   {
+    "start": 292.23,
+    "end": 344.18
+   },
+   {
+    "start": 344.7,
+    "end": 350.54
+   },
+   {
+    "start": 353.73,
+    "end": 418.97
+   },
+   {
+    "start": 421.41,
+    "end": 434.81
+   },
+   {
+    "start": 435.63,
+    "end": 495.32
+   },
+   {
+    "start": 497.31,
+    "end": 504.38
+   },
+   {
+    "start": 511.14,
+    "end": 525.26
+   },
+   {
+    "start": 530.58,
+    "end": 533.3
+   },
+   {
+    "start": 533.7,
+    "end": 535.91
+   },
+   {
+    "start": 536.25,
+    "end": 553.25
+   },
+   {
+    "start": 554.85,
+    "end": 558.83
+   },
+   {
+    "start": 560.43,
+    "end": 564.74
+   },
+   {
+    "start": 565.56,
+    "end": 571.58
+   },
+   {
+    "start": 572.85,
+    "end": 584.0
+   },
+   {
+    "start": 585.39,
+    "end": 601.67
+   },
+   {
+    "start": 603.42,
+    "end": 607.1
+   },
+   {
+    "start": 608.55,
+    "end": 622.76
+   },
+   {
+    "start": 624.21,
+    "end": 630.41
+   },
+   {
+    "start": 1310.073,
+    "end": 1345.49
+   },
+   {
+    "start": 1346.4,
+    "end": 1351.85
+   },
+   {
+    "start": 1352.88,
+    "end": 1355.27
+   },
+   {
+    "start": 1358.94,
+    "end": 1374.41
+   },
+   {
+    "start": 1374.99,
+    "end": 1380.59
+   },
+   {
+    "start": 1382.25,
+    "end": 1388.18
+   },
+   {
+    "start": 1396.83,
+    "end": 1401.77
+   },
+   {
+    "start": 1404.36,
+    "end": 1435.52
+   },
+   {
+    "start": 1441.29,
+    "end": 1471.28
+   },
+   {
+    "start": 1474.5,
+    "end": 1499.24
+   },
+   {
+    "start": 1503.42,
+    "end": 1522.1
+   },
+   {
+    "start": 1526.37,
+    "end": 1544.42
+   },
+   {
+    "start": 1544.7,
+    "end": 1549.07
+   },
+   {
+    "start": 1557.27,
+    "end": 1631.09
+   },
+   {
+    "start": 1635.87,
+    "end": 1640.18
+   },
+   {
+    "start": 1640.43,
+    "end": 1643.69
+   },
+   {
+    "start": 1645.59,
+    "end": 1659.77
+   },
+   {
+    "start": 1660.68,
+    "end": 1685.15
+   },
+   {
+    "start": 1687.23,
+    "end": 1700.15
+   },
+   {
+    "start": 1707.06,
+    "end": 1729.04
+   },
+   {
+    "start": 1731.03,
+    "end": 1763.99
+   },
+   {
+    "start": 1765.74,
+    "end": 1817.733
+   },
+   {
+    "start": 2803.858,
+    "end": 2812.88
+   },
+   {
+    "start": 2814.81,
+    "end": 2819.96
+   },
+   {
+    "start": 2824.92,
+    "end": 2832.2
+   },
+   {
+    "start": 2845.2,
+    "end": 2860.34
+   },
+   {
+    "start": 2863.92,
+    "end": 2873.27
+   },
+   {
+    "start": 2874.36,
+    "end": 2895.74
+   },
+   {
+    "start": 2895.99,
+    "end": 2924.72
+   },
+   {
+    "start": 2928.6,
+    "end": 2933.6
+   },
+   {
+    "start": 2937.36,
+    "end": 2947.13
+   },
+   {
+    "start": 2947.41,
+    "end": 2954.42
+   },
+   {
+    "start": 2955.51,
+    "end": 3003.98
+   },
+   {
+    "start": 3004.23,
+    "end": 3008.75
+   },
+   {
+    "start": 3010.26,
+    "end": 3023.93
+   },
+   {
+    "start": 3025.11,
+    "end": 3047.09
+   },
+   {
+    "start": 3047.61,
+    "end": 3052.79
+   },
+   {
+    "start": 3055.41,
+    "end": 3068.99
+   },
+   {
+    "start": 3070.47,
+    "end": 3132.08
+   },
+   {
+    "start": 3138.93,
+    "end": 3143.87
+   },
+   {
+    "start": 3147.09,
+    "end": 3180.26
+   },
+   {
+    "start": 3181.11,
+    "end": 3185.12
+   },
+   {
+    "start": 3188.31,
+    "end": 3193.52
+   },
+   {
+    "start": 3194.37,
+    "end": 3200.03
+   },
+   {
+    "start": 3200.19,
+    "end": 3233.33
+   },
+   {
+    "start": 3236.4,
+    "end": 3261.89
+   },
+   {
+    "start": 3262.95,
+    "end": 3267.95
+   },
+   {
+    "start": 3270.66,
+    "end": 3286.28
+   },
+   {
+    "start": 3291.72,
+    "end": 3295.76
+   },
+   {
+    "start": 3299.58,
+    "end": 3322.58
+   },
+   {
+    "start": 3322.71,
+    "end": 3409.22
+   },
+   {
+    "start": 3409.74,
+    "end": 3415.16
+   },
+   {
+    "start": 3418.2,
+    "end": 3423.02
+   },
+   {
+    "start": 3425.58,
+    "end": 3491.24
+   },
+   {
+    "start": 3492.06,
+    "end": 3544.4
+   },
+   {
+    "start": 3544.56,
+    "end": 3628.458
+   }
+  ],
+  "seconds": {
+   "duration": 3750.021,
+   "classic": 476.6,
+   "gameplay": 1787.157,
+   "manual": 0,
+   "effective_removed": 2027.94,
+   "kept": 1722.06
+  }
+ }
+}

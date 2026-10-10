@@ -81,6 +81,22 @@ def initialize_qt_settings() -> None:
         QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(custom))
 
 
+def app_settings():
+    """The application's QSettings.
+
+    Without overrides this is exactly ``QSettings("Auto Cutter", "Auto Cutter")`` (native store, e.g.
+    the Windows registry). With AUTO_CUTTER_CONFIG_DIR it is an INI file inside that directory —
+    the explicit (organization, application) constructor always uses the native store, so it used to
+    ignore the override and tests/automation wrote to the user's real settings.
+    """
+    from PySide6.QtCore import QSettings
+
+    custom = _override("AUTO_CUTTER_CONFIG_DIR")
+    if custom is not None:
+        return QSettings(str(custom / "Auto Cutter" / "Auto Cutter.ini"), QSettings.Format.IniFormat)
+    return QSettings("Auto Cutter", "Auto Cutter")
+
+
 def cache_root() -> Path:
     """Return a writable, user-local cache directory."""
     custom = str(os.environ.get("AUTO_CUTTER_CACHE_DIR", "") or "").strip()

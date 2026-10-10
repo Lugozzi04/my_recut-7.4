@@ -1,0 +1,683 @@
+{
+  "format": "recut_local_calibration_sampling_manifest",
+  "version": 1,
+  "role": "calibration",
+  "reference_size": [
+    960,
+    540
+  ],
+  "source_roi": [
+    0.35,
+    0.4685185185185185,
+    0.3,
+    0.2222222222222222
+  ],
+  "output_size": [
+    288,
+    120
+  ],
+  "samples": [
+    {
+      "video": "86.mp4",
+      "group": "86_game_01",
+      "cache_file": "native_01.npz",
+      "fps": 60,
+      "start_s": 1118.8,
+      "end_s": 1119.9,
+      "label": "VICTORY",
+      "visible": [
+        1119.116,
+        1119.883
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_02",
+      "cache_file": "native_02.npz",
+      "fps": 60,
+      "start_s": 1847.1,
+      "end_s": 1848.2,
+      "label": "DEFEAT",
+      "visible": [
+        1847.45,
+        1847.783
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_03",
+      "cache_file": "native_03.npz",
+      "fps": 60,
+      "start_s": 1982.3999999999999,
+      "end_s": 1983.5,
+      "label": "DEFEAT",
+      "visible": [
+        1982.733,
+        1983.383
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_04",
+      "cache_file": "native_04.npz",
+      "fps": 60,
+      "start_s": 2128.4,
+      "end_s": 2129.5,
+      "label": "DEFEAT",
+      "visible": [
+        2128.733,
+        2129.1
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_05",
+      "cache_file": "native_05.npz",
+      "fps": 60,
+      "start_s": 2300.2999999999997,
+      "end_s": 2301.3999999999996,
+      "label": "DEFEAT",
+      "visible": [
+        2300.6,
+        2300.75
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_06",
+      "cache_file": "native_06.npz",
+      "fps": 60,
+      "start_s": 2945.5,
+      "end_s": 2946.6,
+      "label": "DEFEAT",
+      "visible": [
+        2945.933,
+        2946.583
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_07",
+      "cache_file": "native_07.npz",
+      "fps": 60,
+      "start_s": 4116.3,
+      "end_s": 4117.4,
+      "label": "VICTORY",
+      "visible": [
+        4116.633,
+        4117.266
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_08",
+      "cache_file": "native_08.npz",
+      "fps": 60,
+      "start_s": 4727.1,
+      "end_s": 4728.2,
+      "label": "VICTORY",
+      "visible": [
+        4727.433,
+        4728.183
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_09",
+      "cache_file": "native_09.npz",
+      "fps": 60,
+      "start_s": 5285.200000000001,
+      "end_s": 5286.3,
+      "label": "DEFEAT",
+      "visible": [
+        5285.516,
+        5286.283
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_10",
+      "cache_file": "native_10.npz",
+      "fps": 60,
+      "start_s": 6052.400000000001,
+      "end_s": 6053.5,
+      "label": "VICTORY",
+      "visible": [
+        6052.716,
+        6053.483
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_11",
+      "cache_file": "native_11.npz",
+      "fps": 60,
+      "start_s": 6530.400000000001,
+      "end_s": 6531.5,
+      "label": "VICTORY",
+      "visible": [
+        6530.716,
+        6530.95
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_12",
+      "cache_file": "native_12.npz",
+      "fps": 60,
+      "start_s": 6970.6,
+      "end_s": 6971.7,
+      "label": "VICTORY",
+      "visible": [
+        6970.916,
+        6971.683
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_13",
+      "cache_file": "native_13.npz",
+      "fps": 60,
+      "start_s": 7373.700000000001,
+      "end_s": 7374.8,
+      "label": "VICTORY",
+      "visible": [
+        7374,
+        7374.783
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_14",
+      "cache_file": "native_14.npz",
+      "fps": 60,
+      "start_s": 7895.700000000001,
+      "end_s": 7896.8,
+      "label": "VICTORY",
+      "visible": [
+        7896,
+        7896.783
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_06_stable",
+      "cache_file": "native_06_stable.npz",
+      "fps": 60,
+      "start_s": 2961,
+      "end_s": 2962,
+      "label": "DEFEAT",
+      "visible": [
+        2961,
+        2962
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_game_06_exit",
+      "cache_file": "native_06_exit.npz",
+      "fps": 60,
+      "start_s": 2976,
+      "end_s": 2977.3,
+      "label": "DEFEAT",
+      "visible": [
+        2976,
+        2977.283
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_01",
+      "cache_file": "hard_roi_01.npz",
+      "fps": 20,
+      "start_s": 506.3,
+      "end_s": 506.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_02",
+      "cache_file": "hard_roi_02.npz",
+      "fps": 20,
+      "start_s": 7898.3,
+      "end_s": 7898.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_03",
+      "cache_file": "hard_roi_03.npz",
+      "fps": 20,
+      "start_s": 4767.3,
+      "end_s": 4767.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_04",
+      "cache_file": "hard_roi_04.npz",
+      "fps": 20,
+      "start_s": 4747.3,
+      "end_s": 4747.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_05",
+      "cache_file": "hard_roi_05.npz",
+      "fps": 20,
+      "start_s": 7376.3,
+      "end_s": 7376.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_06",
+      "cache_file": "hard_roi_06.npz",
+      "fps": 20,
+      "start_s": 4730.3,
+      "end_s": 4730.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_07",
+      "cache_file": "hard_roi_07.npz",
+      "fps": 20,
+      "start_s": 6973.3,
+      "end_s": 6973.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_08",
+      "cache_file": "hard_roi_08.npz",
+      "fps": 20,
+      "start_s": 7390.3,
+      "end_s": 7390.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": [
+        {
+          "after": 7390.55,
+          "label": "NEGATIVE",
+          "content": "rank badge after victory banner exits"
+        }
+      ]
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_09",
+      "cache_file": "hard_roi_09.npz",
+      "fps": 20,
+      "start_s": 4780.3,
+      "end_s": 4780.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_10",
+      "cache_file": "hard_roi_10.npz",
+      "fps": 20,
+      "start_s": 519.3,
+      "end_s": 519.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_11",
+      "cache_file": "hard_roi_11.npz",
+      "fps": 20,
+      "start_s": 6053.3,
+      "end_s": 6053.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_12",
+      "cache_file": "hard_roi_12.npz",
+      "fps": 20,
+      "start_s": 1120.3,
+      "end_s": 1120.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_13",
+      "cache_file": "hard_roi_13.npz",
+      "fps": 20,
+      "start_s": 4757.3,
+      "end_s": 4757.8,
+      "label": "VICTORY",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_14",
+      "cache_file": "hard_roi_14.npz",
+      "fps": 20,
+      "start_s": 7915.3,
+      "end_s": 7915.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_15",
+      "cache_file": "hard_roi_15.npz",
+      "fps": 20,
+      "start_s": 566.3,
+      "end_s": 566.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_16",
+      "cache_file": "hard_roi_16.npz",
+      "fps": 20,
+      "start_s": 552.3,
+      "end_s": 552.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_17",
+      "cache_file": "hard_roi_17.npz",
+      "fps": 20,
+      "start_s": 2016.3,
+      "end_s": 2016.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_18",
+      "cache_file": "hard_roi_18.npz",
+      "fps": 20,
+      "start_s": 2332.3,
+      "end_s": 2332.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_19",
+      "cache_file": "hard_roi_19.npz",
+      "fps": 20,
+      "start_s": 4825.3,
+      "end_s": 4825.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_20",
+      "cache_file": "hard_roi_20.npz",
+      "fps": 20,
+      "start_s": 6580.3,
+      "end_s": 6580.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_21",
+      "cache_file": "hard_roi_21.npz",
+      "fps": 20,
+      "start_s": 7498.3,
+      "end_s": 7498.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_22",
+      "cache_file": "hard_roi_22.npz",
+      "fps": 20,
+      "start_s": 2169.3,
+      "end_s": 2169.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_23",
+      "cache_file": "hard_roi_23.npz",
+      "fps": 20,
+      "start_s": 7488.3,
+      "end_s": 7488.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_24",
+      "cache_file": "hard_roi_24.npz",
+      "fps": 20,
+      "start_s": 1889.3,
+      "end_s": 1889.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_25",
+      "cache_file": "hard_roi_25.npz",
+      "fps": 20,
+      "start_s": 3019.3,
+      "end_s": 3019.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_26",
+      "cache_file": "hard_roi_26.npz",
+      "fps": 20,
+      "start_s": 6114.3,
+      "end_s": 6114.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_27",
+      "cache_file": "hard_roi_27.npz",
+      "fps": 20,
+      "start_s": 1193.3,
+      "end_s": 1193.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_28",
+      "cache_file": "hard_roi_28.npz",
+      "fps": 20,
+      "start_s": 4123.3,
+      "end_s": 4123.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_29",
+      "cache_file": "hard_roi_29.npz",
+      "fps": 20,
+      "start_s": 6535.3,
+      "end_s": 6535.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "86.mp4",
+      "group": "86_hard_30",
+      "cache_file": "hard_roi_30.npz",
+      "fps": 20,
+      "start_s": 2144.3,
+      "end_s": 2144.8,
+      "label": "NEGATIVE",
+      "visible": null,
+      "frame_label_overrides": []
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_01",
+      "cache_file": "74_window_01.npz",
+      "fps": 20,
+      "start_s": 300.0,
+      "end_s": 302.0,
+      "label": "NEGATIVE",
+      "visible": null
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_02",
+      "cache_file": "74_window_02.npz",
+      "fps": 60,
+      "start_s": 819.6,
+      "end_s": 821.6,
+      "label": "VICTORY",
+      "visible": [
+        820.103,
+        821.103
+      ]
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_03",
+      "cache_file": "74_window_03.npz",
+      "fps": 20,
+      "start_s": 900.0,
+      "end_s": 902.0,
+      "label": "NEGATIVE",
+      "visible": null
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_04",
+      "cache_file": "74_window_04.npz",
+      "fps": 60,
+      "start_s": 1384.5,
+      "end_s": 1386.5,
+      "label": "VICTORY",
+      "visible": [
+        1385.006,
+        1386.006
+      ]
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_05",
+      "cache_file": "74_window_05.npz",
+      "fps": 20,
+      "start_s": 1605.0,
+      "end_s": 1607.0,
+      "label": "NEGATIVE",
+      "visible": null
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_06",
+      "cache_file": "74_window_06.npz",
+      "fps": 60,
+      "start_s": 2197.2,
+      "end_s": 2199.2,
+      "label": "VICTORY",
+      "visible": [
+        2197.715,
+        2198.715
+      ]
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_07",
+      "cache_file": "74_window_07.npz",
+      "fps": 20,
+      "start_s": 5400.0,
+      "end_s": 5402.0,
+      "label": "NEGATIVE",
+      "visible": null
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_08",
+      "cache_file": "74_window_08.npz",
+      "fps": 60,
+      "start_s": 6092.1,
+      "end_s": 6094.1,
+      "label": "DEFEAT",
+      "visible": [
+        6092.615,
+        6093.615
+      ]
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_09",
+      "cache_file": "74_window_09.npz",
+      "fps": 60,
+      "start_s": 6118.0,
+      "end_s": 6120.0,
+      "label": "DEFEAT",
+      "visible": [
+        6118.5,
+        6119.5
+      ]
+    },
+    {
+      "video": "74.mp4",
+      "group": "74_window_10",
+      "cache_file": "74_window_10.npz",
+      "fps": 60,
+      "start_s": 7605.6,
+      "end_s": 7607.6,
+      "label": "DEFEAT",
+      "visible": [
+        7606.056,
+        7607.056
+      ]
+    }
+  ]
+}

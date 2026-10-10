@@ -1,0 +1,131 @@
+{
+  "format": "recut_title_candidates",
+  "prompt_version": "packaging_creative_v1",
+  "provider": "codex",
+  "language": "it",
+  "preferred_title_id": "TI01",
+  "titles": [
+    {
+      "title_id": "TI01",
+      "title": "Cacciatore contro Kibler: il mio verdetto \u00e8 \u00abrotto\u00bb",
+      "concept_id": "C01",
+      "style": "competitive",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0051",
+        "T0055",
+        "T0056"
+      ],
+      "rationale": "Unisce l'avversario identificato al giudizio pi\u00f9 netto del video, attribuendolo esplicitamente al creator."
+    },
+    {
+      "title_id": "TI02",
+      "title": "Contro Kibler finisco per chiamare il Cacciatore \u00abrotto\u00bb",
+      "concept_id": "C01",
+      "style": "narrative",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0051",
+        "T0055",
+        "T0056"
+      ],
+      "rationale": "Presenta il verdetto come approdo della partita, mantenendo la prospettiva personale."
+    },
+    {
+      "title_id": "TI03",
+      "title": "Paladino: Scudi Divini forti, ma manca una carta?",
+      "concept_id": "C02",
+      "style": "question",
+      "highlight_ids": [
+        "H08",
+        "H09"
+      ],
+      "transcript_ids": [
+        "T0083",
+        "T0103",
+        "T0104",
+        "T0105"
+      ],
+      "rationale": "Accosta un effetto apprezzato al dubbio concreto sulla costruzione della lista, lasciando aperta l'omissione."
+    },
+    {
+      "title_id": "TI04",
+      "title": "Il Paladino parte bene, ma la lista mi lascia dubbi",
+      "concept_id": "C02",
+      "style": "informative",
+      "highlight_ids": [
+        "H09"
+      ],
+      "transcript_ids": [
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0106"
+      ],
+      "rationale": "Conserva la riserva esplicita sulla buona partenza e distingue il risultato della prova dalla qualit\u00e0 della lista."
+    },
+    {
+      "title_id": "TI05",
+      "title": "Innesto: Palla di Fuoco o bonus ai servitori?",
+      "concept_id": "C03",
+      "style": "educational",
+      "highlight_ids": [
+        "H13"
+      ],
+      "transcript_ids": [
+        "T0155",
+        "T0156",
+        "T0157"
+      ],
+      "rationale": "Nomina gli effetti leggibili e introduce il confronto senza anticipare una scelta definitiva."
+    },
+    {
+      "title_id": "TI06",
+      "title": "Innesto: confronto le condizioni e gli effetti disponibili",
+      "concept_id": "C03",
+      "style": "informative",
+      "highlight_ids": [
+        "H13"
+      ],
+      "transcript_ids": [
+        "T0155",
+        "T0156",
+        "T0157"
+      ],
+      "rationale": "Promette la lettura delle alternative effettivamente mostrate nell'interfaccia."
+    },
+    {
+      "title_id": "TI07",
+      "title": "Gli effetti continuano e il tavolo del Paladino cambia",
+      "concept_id": "C04",
+      "style": "surprising",
+      "highlight_ids": [
+        "H11"
+      ],
+      "transcript_ids": [
+        "T0124",
+        "T0125",
+        "T0126"
+      ],
+      "rationale": "Collega la continuit\u00e0 commentata dal creator alle conseguenze visibili sul tavolo."
+    },
+    {
+      "title_id": "TI08",
+      "title": "\u00abContinua, continua!\u00bb: sparisce un servitore avversario",
+      "concept_id": "C04",
+      "style": "emotional",
+      "highlight_ids": [
+        "H11"
+      ],
+      "transcript_ids": [
+        "T0124",
+        "T0126"
+      ],
+      "rationale": "Usa un'esclamazione reale e una conseguenza verificata tra i frame, senza assegnarle una causa specifica."
+    }
+  ]
+}

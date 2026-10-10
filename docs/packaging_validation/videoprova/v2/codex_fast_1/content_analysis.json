@@ -1,0 +1,1692 @@
+{
+  "format": "recut_packaging_content_analysis",
+  "version": 1,
+  "input": {
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null
+  },
+  "timeline": {
+    "origin": "project",
+    "project": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\inputs\\videoprova_wins.autocutter",
+    "sources": [
+      "C:\\Users\\jakub\\Downloads\\videoprova.mp4"
+    ],
+    "edited_duration": 971.943,
+    "pieces": [
+      {
+        "source_index": 0,
+        "source_start": 1359.45,
+        "source_end": 1374.41,
+        "edited_start": 0.0,
+        "edited_end": 14.96
+      },
+      {
+        "source_index": 0,
+        "source_start": 1374.99,
+        "source_end": 1380.59,
+        "edited_start": 14.96,
+        "edited_end": 20.56
+      },
+      {
+        "source_index": 0,
+        "source_start": 1382.25,
+        "source_end": 1388.18,
+        "edited_start": 20.56,
+        "edited_end": 26.49
+      },
+      {
+        "source_index": 0,
+        "source_start": 1396.83,
+        "source_end": 1401.77,
+        "edited_start": 26.49,
+        "edited_end": 31.43
+      },
+      {
+        "source_index": 0,
+        "source_start": 1404.36,
+        "source_end": 1435.52,
+        "edited_start": 31.43,
+        "edited_end": 62.59
+      },
+      {
+        "source_index": 0,
+        "source_start": 1441.29,
+        "source_end": 1471.28,
+        "edited_start": 62.59,
+        "edited_end": 92.58
+      },
+      {
+        "source_index": 0,
+        "source_start": 1474.5,
+        "source_end": 1499.24,
+        "edited_start": 92.58,
+        "edited_end": 117.32
+      },
+      {
+        "source_index": 0,
+        "source_start": 1503.42,
+        "source_end": 1522.1,
+        "edited_start": 117.32,
+        "edited_end": 136.0
+      },
+      {
+        "source_index": 0,
+        "source_start": 1526.37,
+        "source_end": 1544.42,
+        "edited_start": 136.0,
+        "edited_end": 154.05
+      },
+      {
+        "source_index": 0,
+        "source_start": 1544.7,
+        "source_end": 1549.07,
+        "edited_start": 154.05,
+        "edited_end": 158.42
+      },
+      {
+        "source_index": 0,
+        "source_start": 1557.27,
+        "source_end": 1631.09,
+        "edited_start": 158.42,
+        "edited_end": 232.24
+      },
+      {
+        "source_index": 0,
+        "source_start": 1635.87,
+        "source_end": 1640.18,
+        "edited_start": 232.24,
+        "edited_end": 236.55
+      },
+      {
+        "source_index": 0,
+        "source_start": 1640.43,
+        "source_end": 1643.69,
+        "edited_start": 236.55,
+        "edited_end": 239.81
+      },
+      {
+        "source_index": 0,
+        "source_start": 1645.59,
+        "source_end": 1659.77,
+        "edited_start": 239.81,
+        "edited_end": 253.99
+      },
+      {
+        "source_index": 0,
+        "source_start": 1660.68,
+        "source_end": 1685.15,
+        "edited_start": 253.99,
+        "edited_end": 278.46
+      },
+      {
+        "source_index": 0,
+        "source_start": 1687.23,
+        "source_end": 1700.15,
+        "edited_start": 278.46,
+        "edited_end": 291.38
+      },
+      {
+        "source_index": 0,
+        "source_start": 1707.06,
+        "source_end": 1729.04,
+        "edited_start": 291.38,
+        "edited_end": 313.36
+      },
+      {
+        "source_index": 0,
+        "source_start": 1731.03,
+        "source_end": 1763.99,
+        "edited_start": 313.36,
+        "edited_end": 346.32
+      },
+      {
+        "source_index": 0,
+        "source_start": 1765.74,
+        "source_end": 1785.983,
+        "edited_start": 346.32,
+        "edited_end": 366.563
+      },
+      {
+        "source_index": 0,
+        "source_start": 2863.92,
+        "source_end": 2873.27,
+        "edited_start": 366.563,
+        "edited_end": 375.913
+      },
+      {
+        "source_index": 0,
+        "source_start": 2874.36,
+        "source_end": 2895.74,
+        "edited_start": 375.913,
+        "edited_end": 397.293
+      },
+      {
+        "source_index": 0,
+        "source_start": 2895.99,
+        "source_end": 2924.72,
+        "edited_start": 397.293,
+        "edited_end": 426.023
+      },
+      {
+        "source_index": 0,
+        "source_start": 2928.6,
+        "source_end": 2933.6,
+        "edited_start": 426.023,
+        "edited_end": 431.023
+      },
+      {
+        "source_index": 0,
+        "source_start": 2937.36,
+        "source_end": 2947.13,
+        "edited_start": 431.023,
+        "edited_end": 440.793
+      },
+      {
+        "source_index": 0,
+        "source_start": 2947.41,
+        "source_end": 2954.42,
+        "edited_start": 440.793,
+        "edited_end": 447.803
+      },
+      {
+        "source_index": 0,
+        "source_start": 2955.51,
+        "source_end": 3003.98,
+        "edited_start": 447.803,
+        "edited_end": 496.273
+      },
+      {
+        "source_index": 0,
+        "source_start": 3004.23,
+        "source_end": 3008.75,
+        "edited_start": 496.273,
+        "edited_end": 500.793
+      },
+      {
+        "source_index": 0,
+        "source_start": 3010.26,
+        "source_end": 3023.93,
+        "edited_start": 500.793,
+        "edited_end": 514.463
+      },
+      {
+        "source_index": 0,
+        "source_start": 3025.11,
+        "source_end": 3047.09,
+        "edited_start": 514.463,
+        "edited_end": 536.443
+      },
+      {
+        "source_index": 0,
+        "source_start": 3047.61,
+        "source_end": 3052.79,
+        "edited_start": 536.443,
+        "edited_end": 541.623
+      },
+      {
+        "source_index": 0,
+        "source_start": 3055.41,
+        "source_end": 3068.99,
+        "edited_start": 541.623,
+        "edited_end": 555.203
+      },
+      {
+        "source_index": 0,
+        "source_start": 3070.47,
+        "source_end": 3132.08,
+        "edited_start": 555.203,
+        "edited_end": 616.813
+      },
+      {
+        "source_index": 0,
+        "source_start": 3138.93,
+        "source_end": 3143.87,
+        "edited_start": 616.813,
+        "edited_end": 621.753
+      },
+      {
+        "source_index": 0,
+        "source_start": 3147.09,
+        "source_end": 3180.26,
+        "edited_start": 621.753,
+        "edited_end": 654.923
+      },
+      {
+        "source_index": 0,
+        "source_start": 3181.11,
+        "source_end": 3185.12,
+        "edited_start": 654.923,
+        "edited_end": 658.933
+      },
+      {
+        "source_index": 0,
+        "source_start": 3188.31,
+        "source_end": 3193.52,
+        "edited_start": 658.933,
+        "edited_end": 664.143
+      },
+      {
+        "source_index": 0,
+        "source_start": 3194.37,
+        "source_end": 3200.03,
+        "edited_start": 664.143,
+        "edited_end": 669.803
+      },
+      {
+        "source_index": 0,
+        "source_start": 3200.19,
+        "source_end": 3233.33,
+        "edited_start": 669.803,
+        "edited_end": 702.943
+      },
+      {
+        "source_index": 0,
+        "source_start": 3236.4,
+        "source_end": 3261.89,
+        "edited_start": 702.943,
+        "edited_end": 728.433
+      },
+      {
+        "source_index": 0,
+        "source_start": 3262.95,
+        "source_end": 3267.95,
+        "edited_start": 728.433,
+        "edited_end": 733.433
+      },
+      {
+        "source_index": 0,
+        "source_start": 3270.66,
+        "source_end": 3286.28,
+        "edited_start": 733.433,
+        "edited_end": 749.053
+      },
+      {
+        "source_index": 0,
+        "source_start": 3291.72,
+        "source_end": 3295.76,
+        "edited_start": 749.053,
+        "edited_end": 753.093
+      },
+      {
+        "source_index": 0,
+        "source_start": 3299.58,
+        "source_end": 3322.58,
+        "edited_start": 753.093,
+        "edited_end": 776.093
+      },
+      {
+        "source_index": 0,
+        "source_start": 3322.71,
+        "source_end": 3409.22,
+        "edited_start": 776.093,
+        "edited_end": 862.603
+      },
+      {
+        "source_index": 0,
+        "source_start": 3409.74,
+        "source_end": 3415.16,
+        "edited_start": 862.603,
+        "edited_end": 868.023
+      },
+      {
+        "source_index": 0,
+        "source_start": 3418.2,
+        "source_end": 3423.02,
+        "edited_start": 868.023,
+        "edited_end": 872.843
+      },
+      {
+        "source_index": 0,
+        "source_start": 3425.58,
+        "source_end": 3491.24,
+        "edited_start": 872.843,
+        "edited_end": 938.503
+      },
+      {
+        "source_index": 0,
+        "source_start": 3492.06,
+        "source_end": 3525.5,
+        "edited_start": 938.503,
+        "edited_end": 971.943
+      }
+    ],
+    "digest": "054ebd12a28f779bc827b3b622e0bd0635f0dabb4e429981f956c18b7546258c"
+  },
+  "evidence": {
+    "transcript": {
+      "status": "cached",
+      "engine": "faster-whisper",
+      "chunks": 11,
+      "detail": "",
+      "options": {
+        "model": "small",
+        "language": "it",
+        "device": "cpu",
+        "compute_type": "int8",
+        "beam_size": 5,
+        "vad_filter": true
+      },
+      "packaging_cache": "hit"
+    },
+    "audio": {
+      "status": "cached",
+      "detail": "",
+      "hop_s": 0.05,
+      "spans": 2,
+      "baseline_db": -33.3,
+      "loud_db_p95": -22.83
+    },
+    "visual": {
+      "status": "ok",
+      "detail": "",
+      "keyframes": 483,
+      "engine": "ffmpeg keyframes 160x90"
+    },
+    "webcam": {
+      "status": "ok",
+      "origin": "auto",
+      "roi": [
+        0.0042,
+        0.513,
+        0.2021,
+        0.2667
+      ],
+      "message": "auto-detected: stable face, overlay borders left=edge, right=edge, top=edge, bottom=edge",
+      "detection": {
+        "frames": 24,
+        "faces": 30,
+        "stable_share": 1.0,
+        "face_box": [
+          0.0682,
+          0.6139,
+          0.0755,
+          0.1343
+        ],
+        "borders": {
+          "left": "edge",
+          "right": "edge",
+          "top": "edge",
+          "bottom": "edge"
+        }
+      }
+    }
+  },
+  "frames": [
+    {
+      "id": "F001",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1370.25,
+      "edited_time": 10.8,
+      "path": "frames/F001_001370.25s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2966.7839,
+        "brightness": 0.2243,
+        "contrast": 0.4294,
+        "score": 0.7605,
+        "selection": 0.7856
+      },
+      "highlight_id": "H01",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F002",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1372.0,
+      "edited_time": 12.55,
+      "path": "frames/F002_001372.00s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2810.0522,
+        "brightness": 0.2107,
+        "contrast": 0.4335,
+        "score": 0.7537,
+        "selection": 0.7363
+      },
+      "highlight_id": "H01",
+      "role": "alt",
+      "notes": ""
+    },
+    {
+      "id": "F003",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1361.45,
+      "edited_time": 2.0,
+      "path": "frames/F003_001361.45s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 1978.2635,
+        "brightness": 0.1959,
+        "contrast": 0.4056,
+        "score": 0.74,
+        "selection": 0.782
+      },
+      "highlight_id": "H01",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F004",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1379.283,
+      "edited_time": 19.253,
+      "path": "frames/F004_001379.28s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3018.7648,
+        "brightness": 0.2113,
+        "contrast": 0.4266,
+        "score": 0.7527,
+        "selection": 0.8051
+      },
+      "highlight_id": "H01",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F005",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1415.8,
+      "edited_time": 42.87,
+      "path": "frames/F005_001415.80s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2631.1784,
+        "brightness": 0.1795,
+        "contrast": 0.3748,
+        "score": 0.7247,
+        "selection": 0.78
+      },
+      "highlight_id": "H02",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F006",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1418.05,
+      "edited_time": 45.12,
+      "path": "frames/F006_001418.05s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 1340.0394,
+        "brightness": 0.1489,
+        "contrast": 0.2984,
+        "score": 0.6924,
+        "selection": 0.5241
+      },
+      "highlight_id": "H02",
+      "role": "alt",
+      "notes": ""
+    },
+    {
+      "id": "F007",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1407.983,
+      "edited_time": 35.053,
+      "path": "frames/F007_001407.98s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3177.9856,
+        "brightness": 0.2261,
+        "contrast": 0.4396,
+        "score": 0.7635,
+        "selection": 0.7847
+      },
+      "highlight_id": "H02",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F008",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1425.75,
+      "edited_time": 52.82,
+      "path": "frames/F008_001425.75s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2518.2998,
+        "brightness": 0.3731,
+        "contrast": 0.4057,
+        "score": 0.8384,
+        "selection": 0.7625
+      },
+      "highlight_id": "H02",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F009",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1535.0,
+      "edited_time": 144.63,
+      "path": "frames/F009_001535.00s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2297.3473,
+        "brightness": 0.3596,
+        "contrast": 0.3898,
+        "score": 0.8278,
+        "selection": 0.6994
+      },
+      "highlight_id": "H03",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F010",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1528.683,
+      "edited_time": 138.313,
+      "path": "frames/F010_001528.68s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3197.8083,
+        "brightness": 0.3787,
+        "contrast": 0.431,
+        "score": 0.8466,
+        "selection": 0.8086
+      },
+      "highlight_id": "H03",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F011",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1539.1,
+      "edited_time": 148.73,
+      "path": "frames/F011_001539.10s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2929.937,
+        "brightness": 0.3708,
+        "contrast": 0.4067,
+        "score": 0.8373,
+        "selection": 0.7763
+      },
+      "highlight_id": "H03",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F012",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1607.5,
+      "edited_time": 208.65,
+      "path": "frames/F012_001607.50s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3250.7931,
+        "brightness": 0.3945,
+        "contrast": 0.4209,
+        "score": 0.8533,
+        "selection": 0.7478
+      },
+      "highlight_id": "H04",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F013",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1603.5,
+      "edited_time": 204.65,
+      "path": "frames/F013_001603.50s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3400.5651,
+        "brightness": 0.4016,
+        "contrast": 0.437,
+        "score": 0.8605,
+        "selection": 0.7445
+      },
+      "highlight_id": "H04",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F014",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1618.266,
+      "edited_time": 219.416,
+      "path": "frames/F014_001618.27s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3148.8813,
+        "brightness": 0.3956,
+        "contrast": 0.4215,
+        "score": 0.8541,
+        "selection": 0.7484
+      },
+      "highlight_id": "H04",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F015",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1717.5,
+      "edited_time": 301.82,
+      "path": "frames/F015_001717.50s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3132.3259,
+        "brightness": 0.3777,
+        "contrast": 0.4187,
+        "score": 0.8436,
+        "selection": 0.7814
+      },
+      "highlight_id": "H05",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F016",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1700.033,
+      "edited_time": 291.263,
+      "path": "frames/F016_001700.03s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2392.5897,
+        "brightness": 0.3682,
+        "contrast": 0.4003,
+        "score": 0.8346,
+        "selection": 0.7545
+      },
+      "highlight_id": "H05",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F017",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1722.433,
+      "edited_time": 306.753,
+      "path": "frames/F017_001722.43s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2715.9333,
+        "brightness": 0.3682,
+        "contrast": 0.4006,
+        "score": 0.8347,
+        "selection": 0.7569
+      },
+      "highlight_id": "H05",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F018",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1775.983,
+      "edited_time": 356.563,
+      "path": "frames/F018_001775.98s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2873.051,
+        "brightness": 0.3673,
+        "contrast": 0.399,
+        "score": 0.8339,
+        "selection": 0.7429
+      },
+      "highlight_id": "H06",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F019",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1761.45,
+      "edited_time": 343.78,
+      "path": "frames/F019_001761.45s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3383.7945,
+        "brightness": 0.3663,
+        "contrast": 0.4057,
+        "score": 0.8346,
+        "selection": 0.7367
+      },
+      "highlight_id": "H06",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F020",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1784.5,
+      "edited_time": 365.08,
+      "path": "frames/F020_001784.50s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 1417.9259,
+        "brightness": 0.2626,
+        "contrast": 0.2581,
+        "score": 0.7475,
+        "selection": 0.7872
+      },
+      "highlight_id": "H06",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F021",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2902.033,
+      "edited_time": 403.336,
+      "path": "frames/F021_002902.03s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2399.7461,
+        "brightness": 0.212,
+        "contrast": 0.3561,
+        "score": 0.739,
+        "selection": 0.7962
+      },
+      "highlight_id": "H07",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F022",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2897.533,
+      "edited_time": 398.836,
+      "path": "frames/F022_002897.53s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2527.2771,
+        "brightness": 0.2248,
+        "contrast": 0.3907,
+        "score": 0.753,
+        "selection": 0.7922
+      },
+      "highlight_id": "H07",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F023",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2918.983,
+      "edited_time": 420.286,
+      "path": "frames/F023_002918.98s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2011.9981,
+        "brightness": 0.4441,
+        "contrast": 0.4249,
+        "score": 0.8817,
+        "selection": 0.7764
+      },
+      "highlight_id": "H07",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F024",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2974.883,
+      "edited_time": 467.176,
+      "path": "frames/F024_002974.88s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2751.7739,
+        "brightness": 0.4099,
+        "contrast": 0.4327,
+        "score": 0.8643,
+        "selection": 0.7446
+      },
+      "highlight_id": "H08",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F025",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2970.883,
+      "edited_time": 463.176,
+      "path": "frames/F025_002970.88s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2616.377,
+        "brightness": 0.4094,
+        "contrast": 0.4418,
+        "score": 0.8658,
+        "selection": 0.751
+      },
+      "highlight_id": "H08",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F026",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 2988.216,
+      "edited_time": 480.509,
+      "path": "frames/F026_002988.22s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3459.5713,
+        "brightness": 0.4028,
+        "contrast": 0.4319,
+        "score": 0.8602,
+        "selection": 0.7295
+      },
+      "highlight_id": "H08",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F027",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3087.983,
+      "edited_time": 572.716,
+      "path": "frames/F027_003087.98s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3601.0548,
+        "brightness": 0.3935,
+        "contrast": 0.4172,
+        "score": 0.8521,
+        "selection": 0.8357
+      },
+      "highlight_id": "H09",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F028",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3071.933,
+      "edited_time": 556.666,
+      "path": "frames/F028_003071.93s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3213.6573,
+        "brightness": 0.3961,
+        "contrast": 0.4119,
+        "score": 0.8524,
+        "selection": 0.8067
+      },
+      "highlight_id": "H09",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F029",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3090.483,
+      "edited_time": 575.216,
+      "path": "frames/F029_003090.48s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3607.5362,
+        "brightness": 0.3981,
+        "contrast": 0.4201,
+        "score": 0.8552,
+        "selection": 0.7199
+      },
+      "highlight_id": "H09",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F030",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3107.983,
+      "edited_time": 592.716,
+      "path": "frames/F030_003107.98s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2833.4727,
+        "brightness": 0.4032,
+        "contrast": 0.4135,
+        "score": 0.8567,
+        "selection": 0.7481
+      },
+      "highlight_id": "H10",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F031",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3098.5,
+      "edited_time": 583.233,
+      "path": "frames/F031_003098.50s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3056.3413,
+        "brightness": 0.3936,
+        "contrast": 0.4223,
+        "score": 0.8531,
+        "selection": 0.7732
+      },
+      "highlight_id": "H10",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F032",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3119.0,
+      "edited_time": 603.733,
+      "path": "frames/F032_003119.00s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2690.4121,
+        "brightness": 0.408,
+        "contrast": 0.4229,
+        "score": 0.8612,
+        "selection": 0.7541
+      },
+      "highlight_id": "H10",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F033",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3200.733,
+      "edited_time": 670.346,
+      "path": "frames/F033_003200.73s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3136.3832,
+        "brightness": 0.4041,
+        "contrast": 0.4271,
+        "score": 0.8599,
+        "selection": 0.7685
+      },
+      "highlight_id": "H11",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F034",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3198.1,
+      "edited_time": 667.873,
+      "path": "frames/F034_003198.10s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3329.1352,
+        "brightness": 0.4028,
+        "contrast": 0.427,
+        "score": 0.8592,
+        "selection": 0.7356
+      },
+      "highlight_id": "H11",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F035",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3217.383,
+      "edited_time": 686.996,
+      "path": "frames/F035_003217.38s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3158.2125,
+        "brightness": 0.4064,
+        "contrast": 0.4202,
+        "score": 0.8598,
+        "selection": 0.7967
+      },
+      "highlight_id": "H11",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F036",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3281.033,
+      "edited_time": 743.806,
+      "path": "frames/F036_003281.03s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3006.5671,
+        "brightness": 0.4058,
+        "contrast": 0.4336,
+        "score": 0.8622,
+        "selection": 0.7253
+      },
+      "highlight_id": "H12",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F037",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3277.533,
+      "edited_time": 740.306,
+      "path": "frames/F037_003277.53s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3092.3996,
+        "brightness": 0.405,
+        "contrast": 0.4359,
+        "score": 0.8622,
+        "selection": 0.7221
+      },
+      "highlight_id": "H12",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F038",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3306.75,
+      "edited_time": 760.263,
+      "path": "frames/F038_003306.75s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3336.7761,
+        "brightness": 0.4088,
+        "contrast": 0.4365,
+        "score": 0.8644,
+        "selection": 0.7294
+      },
+      "highlight_id": "H12",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F039",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3411.583,
+      "edited_time": 864.446,
+      "path": "frames/F039_003411.58s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2908.5134,
+        "brightness": 0.2385,
+        "contrast": 0.4262,
+        "score": 0.7677,
+        "selection": 0.7796
+      },
+      "highlight_id": "H13",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F040",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3402.133,
+      "edited_time": 855.516,
+      "path": "frames/F040_003402.13s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3105.1266,
+        "brightness": 0.4117,
+        "contrast": 0.4305,
+        "score": 0.8648,
+        "selection": 0.7266
+      },
+      "highlight_id": "H13",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F041",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3418.616,
+      "edited_time": 868.439,
+      "path": "frames/F041_003418.62s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2919.467,
+        "brightness": 0.2345,
+        "contrast": 0.4291,
+        "score": 0.7661,
+        "selection": 0.7815
+      },
+      "highlight_id": "H13",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F042",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3516.25,
+      "edited_time": 962.693,
+      "path": "frames/F042_003516.25s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2853.3275,
+        "brightness": 0.4174,
+        "contrast": 0.4475,
+        "score": 0.8714,
+        "selection": 0.7182
+      },
+      "highlight_id": "H14",
+      "role": "peak",
+      "notes": ""
+    },
+    {
+      "id": "F043",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3504.3,
+      "edited_time": 950.743,
+      "path": "frames/F043_003504.30s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3173.1488,
+        "brightness": 0.4057,
+        "contrast": 0.4512,
+        "score": 0.8656,
+        "selection": 0.7286
+      },
+      "highlight_id": "H14",
+      "role": "before",
+      "notes": ""
+    },
+    {
+      "id": "F044",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3524.25,
+      "edited_time": 970.693,
+      "path": "frames/F044_003524.25s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 2687.0678,
+        "brightness": 0.4158,
+        "contrast": 0.435,
+        "score": 0.868,
+        "selection": 0.7251
+      },
+      "highlight_id": "H14",
+      "role": "after",
+      "notes": ""
+    },
+    {
+      "id": "F045",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 1582.183,
+      "edited_time": 183.333,
+      "path": "frames/F045_001582.18s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3183.148,
+        "brightness": 0.3958,
+        "contrast": 0.421,
+        "score": 0.8541
+      },
+      "highlight_id": null,
+      "role": "coverage",
+      "notes": "middle of game-a6c0f437acde505ac557"
+    },
+    {
+      "id": "F046",
+      "kind": "gameplay",
+      "source_index": 0,
+      "source_time": 3199.183,
+      "edited_time": 668.956,
+      "path": "frames/F046_003199.18s.jpg",
+      "width": 1920,
+      "height": 1080,
+      "quality": {
+        "sharpness": 3100.4418,
+        "brightness": 0.4071,
+        "contrast": 0.4232,
+        "score": 0.8608
+      },
+      "highlight_id": null,
+      "role": "coverage",
+      "notes": "middle of game-5ea93430b91b0da159e0"
+    },
+    {
+      "id": "W001",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1370.0,
+      "edited_time": 10.55,
+      "path": "webcam/W001_001370.00s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 462.5027,
+        "brightness": 0.4215,
+        "face": 1.0,
+        "face_size": 0.5208,
+        "face_sharpness": 311.2594,
+        "resolution_px": 288.0,
+        "centered": 0.6657,
+        "activity_proxy": 0.0961,
+        "score": 0.9216
+      },
+      "highlight_id": "H01",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W002",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1417.55,
+      "edited_time": 44.62,
+      "path": "webcam/W002_001417.55s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 459.9787,
+        "brightness": 0.433,
+        "face": 1.0,
+        "face_size": 0.4931,
+        "face_sharpness": 357.5778,
+        "resolution_px": 288.0,
+        "centered": 0.6034,
+        "activity_proxy": 0.1705,
+        "score": 0.9246
+      },
+      "highlight_id": "H02",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W003",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1418.55,
+      "edited_time": 45.62,
+      "path": "webcam/W003_001418.55s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 435.8468,
+        "brightness": 0.4075,
+        "face": 1.0,
+        "face_size": 0.5556,
+        "face_sharpness": 227.7974,
+        "resolution_px": 288.0,
+        "centered": 0.6128,
+        "activity_proxy": 0.1539,
+        "score": 0.9097
+      },
+      "highlight_id": "H02",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W004",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1606.5,
+      "edited_time": 207.65,
+      "path": "webcam/W004_001606.50s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 387.2803,
+        "brightness": 0.4196,
+        "face": 1.0,
+        "face_size": 0.5174,
+        "face_sharpness": 284.7109,
+        "resolution_px": 288.0,
+        "centered": 0.5294,
+        "activity_proxy": 0.1635,
+        "score": 0.9109
+      },
+      "highlight_id": "H04",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W005",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1776.983,
+      "edited_time": 357.563,
+      "path": "webcam/W005_001776.98s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 355.5291,
+        "brightness": 0.4413,
+        "face": 1.0,
+        "face_size": 0.4201,
+        "face_sharpness": 225.4592,
+        "resolution_px": 288.0,
+        "centered": 0.4028,
+        "activity_proxy": 0.4079,
+        "score": 0.9128
+      },
+      "highlight_id": "H06",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W006",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 1777.733,
+      "edited_time": 358.313,
+      "path": "webcam/W006_001777.73s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 350.1473,
+        "brightness": 0.4448,
+        "face": 1.0,
+        "face_size": 0.3611,
+        "face_sharpness": 321.1202,
+        "resolution_px": 288.0,
+        "centered": 0.2514,
+        "activity_proxy": 0.1842,
+        "score": 0.9018
+      },
+      "highlight_id": "H06",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W007",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3087.983,
+      "edited_time": 572.716,
+      "path": "webcam/W007_003087.98s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 247.6198,
+        "brightness": 0.3144,
+        "face": 1.0,
+        "face_size": 0.4201,
+        "face_sharpness": 253.715,
+        "resolution_px": 288.0,
+        "centered": 0.4129,
+        "activity_proxy": 0.0395,
+        "score": 0.8585
+      },
+      "highlight_id": "H09",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W008",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3202.233,
+      "edited_time": 671.846,
+      "path": "webcam/W008_003202.23s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 185.1695,
+        "brightness": 0.3247,
+        "face": 1.0,
+        "face_size": 0.4583,
+        "face_sharpness": 324.4357,
+        "resolution_px": 288.0,
+        "centered": 0.5998,
+        "activity_proxy": 0.1233,
+        "score": 0.8697
+      },
+      "highlight_id": "H11",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W009",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3280.033,
+      "edited_time": 742.806,
+      "path": "webcam/W009_003280.03s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 248.8468,
+        "brightness": 0.3179,
+        "face": 1.0,
+        "face_size": 0.4688,
+        "face_sharpness": 272.0729,
+        "resolution_px": 288.0,
+        "centered": 0.4602,
+        "activity_proxy": 0.0479,
+        "score": 0.8641
+      },
+      "highlight_id": "H12",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W010",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3410.833,
+      "edited_time": 863.696,
+      "path": "webcam/W010_003410.83s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 225.3774,
+        "brightness": 0.3054,
+        "face": 1.0,
+        "face_size": 0.6076,
+        "face_sharpness": 166.1727,
+        "resolution_px": 288.0,
+        "centered": 0.6119,
+        "activity_proxy": 0.1396,
+        "score": 0.8575
+      },
+      "highlight_id": "H13",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W011",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3410.083,
+      "edited_time": 862.946,
+      "path": "webcam/W011_003410.08s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 225.1701,
+        "brightness": 0.3037,
+        "face": 1.0,
+        "face_size": 0.6319,
+        "face_sharpness": 165.2803,
+        "resolution_px": 288.0,
+        "centered": 0.6312,
+        "activity_proxy": 0.1044,
+        "score": 0.8561
+      },
+      "highlight_id": "H13",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W012",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3514.0,
+      "edited_time": 960.443,
+      "path": "webcam/W012_003514.00s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 203.3709,
+        "brightness": 0.3086,
+        "face": 1.0,
+        "face_size": 0.5347,
+        "face_sharpness": 227.0207,
+        "resolution_px": 288.0,
+        "centered": 0.5879,
+        "activity_proxy": 0.0997,
+        "score": 0.8599
+      },
+      "highlight_id": "H14",
+      "role": "reaction",
+      "notes": "face visible"
+    },
+    {
+      "id": "W013",
+      "kind": "webcam",
+      "source_index": 0,
+      "source_time": 3516.75,
+      "edited_time": 963.193,
+      "path": "webcam/W013_003516.75s.jpg",
+      "width": 388,
+      "height": 288,
+      "quality": {
+        "sharpness": 143.7943,
+        "brightness": 0.3037,
+        "face": 1.0,
+        "face_size": 0.5069,
+        "face_sharpness": 154.3546,
+        "resolution_px": 288.0,
+        "centered": 0.6076,
+        "activity_proxy": 0.322,
+        "score": 0.8501
+      },
+      "highlight_id": "H14",
+      "role": "reaction",
+      "notes": "face visible"
+    }
+  ],
+  "contact_sheets": [
+    {
+      "path": "contact_sheets\\game-a6c0f437acde505ac557_1.jpg",
+      "description": "contact sheet 1/2 of game-a6c0f437acde505ac557 (WIN): frames F001, F002, F003, F004, F005, F006, F007, F008, F009, F010, F011, F012 labelled with id and edited time"
+    },
+    {
+      "path": "contact_sheets\\game-a6c0f437acde505ac557_2.jpg",
+      "description": "contact sheet 2/2 of game-a6c0f437acde505ac557 (WIN): frames F013, F014, F015, F016, F017, F018, F019, F020, F045 labelled with id and edited time"
+    },
+    {
+      "path": "contact_sheets\\game-5ea93430b91b0da159e0_1.jpg",
+      "description": "contact sheet 1/3 of game-5ea93430b91b0da159e0 (WIN): frames F021, F022, F023, F024, F025, F026, F027, F028, F029, F030, F031, F032 labelled with id and edited time"
+    },
+    {
+      "path": "contact_sheets\\game-5ea93430b91b0da159e0_2.jpg",
+      "description": "contact sheet 2/3 of game-5ea93430b91b0da159e0 (WIN): frames F033, F034, F035, F036, F037, F038, F039, F040, F041, F042, F043, F044 labelled with id and edited time"
+    },
+    {
+      "path": "contact_sheets\\game-5ea93430b91b0da159e0_3.jpg",
+      "description": "contact sheet 3/3 of game-5ea93430b91b0da159e0 (WIN): frames F046 labelled with id and edited time"
+    },
+    {
+      "path": "contact_sheets\\webcam.jpg",
+      "description": "webcam crops W001, W002, W003, W004, W005, W006, W007, W008, W009, W010, W011, W012, W013 (id + edited time)"
+    }
+  ],
+  "timings_s": {
+    "timeline": 0.071,
+    "transcription": 0.003,
+    "audio_analysis": 0.006,
+    "visual_analysis": 0.001,
+    "games": 0.0,
+    "highlight_discovery": 0.001,
+    "frame_extraction": 8.313,
+    "contact_sheets": 0.128
+  },
+  "warnings": [],
+  "brief": {
+    "games": 2,
+    "highlights": 14,
+    "transcript_lines_sent": 179,
+    "transcript_lines_total": 179,
+    "images": 5,
+    "frames_listed": 44,
+    "webcam_listed": 13
+  }
+}

@@ -1,0 +1,15 @@
+NOTE: --resolver claude/codex sends the boundary context text (window transcript, timings, candidate features) to the provider configured in the local CLI. 'exact' sends nothing.
+
+=== game 1 END  window 0:21:36.08 -> 0:22:16.08  41 candidates
+  claude  #15 0:21:50.06 conf=0.70 0.0s TRANSCRIPT_SEGMENT_START+SILENCE_MID cache
+          reason: Loss reactions end at +8.18 and the pack-opening topic starts at +8.98, so cutting in that silence removes the reactions and keeps the new activity.
+  codex   #14 0:21:49.57 conf=0.91 0.0s SILENCE_START cache
+          reason: This silence follows the final loss reaction and precedes the new topic of opening a pack.
+
+=== game 3 END  window 0:46:26.98 -> 0:47:06.98  25 candidates
+  claude  #10 0:46:43.85 conf=0.75 0.0s SILENCE_MID cache
+          reason: Post-loss apology ends at +10.6s and the new deck-exploration topic begins after the ~2s silence; cutting mid-silence keeps the transition clean.
+  codex   #8 0:46:42.57 conf=0.88 0.0s TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START cache
+          reason: The post-loss apology ends here, and discussion of which deck to try next begins.
+
+decisions written to docs\gameplay_validation\videoprova\boundaries\agent_smoke_v1\decisions_cached_rerun.json

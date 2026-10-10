@@ -1,0 +1,223 @@
+game 1: 0:10:30.58 -> 0:21:41.08 LOSS    COMPLETE           REMOVE        start and result observed
+game 2: 0:22:39.45 -> 0:29:45.98 WIN     COMPLETE           KEEP          start and result observed
+game 3: 0:30:19.75 -> 0:46:31.98 LOSS    COMPLETE           REMOVE        start and result observed
+game 4: 0:47:43.75 -> 0:58:45.50 WIN     COMPLETE           KEEP          start and result observed
+game 5: 1:00:28.93 -> - UNKNOWN IN_PROGRESS_AT_EOF REMOVE_TO_EOF board still present at EOF: last 2 board scores [0.397, 0.401] vs board_high 0.38
+
+##### game 1: REMOVE (COMPLETE) profiling {"audio_s": 0.31, "visual_s": 1.77, "transcript_s": 0.0, "candidates_s": 0.0, "window_seconds": 70.0}
+
+=== START  window 0:10:05.58 -> 0:10:35.58 (30.0s)
+transcript: cached faster-whisper 
+  [0:10:09.02 - 0:10:15.72] va donna va donna è proprio qua che si inizia la storia cazzo evento è incredibile questo
+  [0:10:15.72 - 0:10:20.80] è il primo teore crafting di questo tipo speriamo in tanti altri abbiamo anche tanti altri inviti
+  [0:10:24.64 - 0:10:28.96] i drop non sono attivi drop? dovrebbe essere attivi in realtà i drops
+  [0:10:31.14 - 0:10:35.20] il tracker è un attimo baggato vedi cacciatore man
+audio: ok rms threshold=0.01083 (local auto)
+  silences: 0:10:06.02-0:10:09.44 (3.42s), 0:10:10.91-0:10:12.05 (1.14s), 0:10:20.69-0:10:21.38 (0.69s), 0:10:21.68-0:10:25.10 (3.42s), 0:10:29.33-0:10:31.58 (2.25s)
+visual: ok 59 samples, max change 0.278 at 0:10:30.08
+gameplay markers: 
+candidates (22); exact baseline -> #18 0:10:30.58
+  #00 0:10:06.02 SILENCE_START                                 off=-24.56 silB=0.00 silA=3.42 spB=1.00 spA=0.29 txB=- txA=3.00 sent=0.00 vis=0.01
+  #01 0:10:07.73 SILENCE_MID                                   off=-22.85 silB=1.71 silA=1.71 spB=0.20 spA=0.43 txB=- txA=1.29 sent=0.00 vis=0.01
+  #02 0:10:09.02 TRANSCRIPT_SEGMENT_START                      off=-21.56 silB=3.00 silA=0.42 spB=0.13 spA=0.69 txB=- txA=0.00 sent=0.00 vis=0.01
+  #03 0:10:09.44 SILENCE_END                                   off=-21.14 silB=3.42 silA=0.00 spB=0.11 spA=0.77 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #04 0:10:10.91 SILENCE_START                                 off=-19.67 silB=0.00 silA=1.14 spB=0.32 spA=0.77 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #05 0:10:11.48 SILENCE_MID                                   off=-19.10 silB=0.57 silA=0.57 spB=0.29 spA=0.89 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #06 0:10:12.05 SILENCE_END                                   off=-18.53 silB=1.14 silA=0.00 spB=0.29 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #07 0:10:15.72 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-14.86 silB=0.00 silA=0.00 spB=0.77 spA=0.99 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #08 0:10:20.80 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=-9.78 silB=0.11 silA=0.58 spB=0.98 spA=0.20 txB=0.00 txA=3.84 sent=0.00 vis=0.01
+  #09 0:10:21.38 SILENCE_END                                   off=-9.20 silB=0.69 silA=0.00 spB=0.86 spA=0.32 txB=0.58 txA=3.26 sent=0.00 vis=0.01
+  #10 0:10:21.68 SILENCE_START                                 off=-8.90 silB=0.00 silA=3.42 spB=0.86 spA=0.32 txB=0.88 txA=2.96 sent=0.00 vis=0.01
+  #11 0:10:23.39 SILENCE_MID                                   off=-7.19 silB=1.71 silA=1.71 spB=0.52 spA=0.66 txB=2.59 txA=1.25 sent=0.00 vis=0.02
+  #12 0:10:24.64 TRANSCRIPT_SEGMENT_START                      off=-5.94 silB=2.96 silA=0.46 spB=0.27 spA=0.85 txB=3.84 txA=0.00 sent=0.00 vis=0.02
+  #13 0:10:25.10 SILENCE_END                                   off=-5.48 silB=3.42 silA=0.00 spB=0.18 spA=0.85 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #14 0:10:26.76 SENTENCE_END                                  off=-3.82 silB=0.00 silA=0.00 spB=0.33 spA=0.55 txB=0.00 txA=0.00 sent=1.00 vis=0.01
+  #15 0:10:27.22 SENTENCE_START                                off=-3.36 silB=0.00 silA=0.00 spB=0.42 spA=0.55 txB=0.00 txA=0.00 sent=1.00 vis=0.01
+  #16 0:10:28.96 TRANSCRIPT_SEGMENT_END                        off=-1.62 silB=0.00 silA=0.00 spB=0.77 spA=0.55 txB=0.00 txA=2.18 sent=0.00 vis=0.11
+  #17 0:10:29.33 SILENCE_START                                 off=-1.25 silB=0.00 silA=2.25 spB=0.85 spA=0.55 txB=0.37 txA=1.81 sent=0.00 vis=0.28
+  #18 0:10:30.58 GAME_START_ANCHOR+SILENCE_MID                 off=0.00 silB=1.25 silA=1.00 spB=0.75 spA=0.80 txB=1.62 txA=0.56 sent=0.00 vis=0.28
+  #19 0:10:31.14 TRANSCRIPT_SEGMENT_START                      off=0.56 silB=1.81 silA=0.44 spB=0.64 spA=0.90 txB=2.18 txA=0.00 sent=0.00 vis=0.21
+  #20 0:10:31.58 SILENCE_END                                   off=1.00 silB=2.25 silA=0.00 spB=0.55 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.21
+  #21 0:10:35.20 TRANSCRIPT_SEGMENT_END                        off=4.62 silB=0.00 silA=0.00 spB=0.72 spA=1.00 txB=0.00 txA=- sent=0.00 vis=0.02
+
+=== END  window 0:21:36.08 -> 0:22:16.08 (40.0s)
+transcript: cached faster-whisper 
+  [0:21:36.08 - 0:21:37.40] Porca puttana
+  [0:21:39.32 - 0:21:41.32] Porca Eva sembra rotto l'antera
+  [0:21:42.30 - 0:21:44.76] Cos'era cos'era? Oh oh oh
+  [0:21:47.96 - 0:21:49.26] Non so cos'era però ok
+  [0:21:50.06 - 0:21:52.02] Viamo una busta posso aprirla?
+  [0:22:08.81 - 0:22:12.45] Volo una leggendaria mochette non sai posso aprire a busta questi cazzi
+  [0:22:13.15 - 0:22:15.77] Sto atte eeeehm
+audio: ok rms threshold=0.00961 (local auto)
+  silences: 0:21:44.59-0:21:45.34 (0.75s), 0:21:46.60-0:21:48.34 (1.74s), 0:21:49.57-0:21:50.62 (1.05s), 0:21:52.60-0:21:55.99 (3.39s), 0:21:56.32-0:21:56.89 (0.57s), 0:21:57.31-0:21:58.72 (1.41s), 0:21:58.99-0:21:59.92 (0.93s), 0:22:01.51-0:22:04.33 (2.82s), 0:22:04.93-0:22:06.40 (1.47s), 0:22:06.73-0:22:07.42 (0.69s), 0:22:12.64-0:22:13.15 (0.51s)
+visual: ok 79 samples, max change 0.414 at 0:21:55.58
+gameplay markers: BOARD_DISAPPEARED@0:21:42.00
+candidates (41); exact baseline -> #3 0:21:41.08
+  #00 0:21:36.08 TRANSCRIPT_SEGMENT_START                      off=-5.00 silB=0.00 silA=0.00 spB=- spA=1.00 txB=- txA=0.00 sent=0.00 vis=0.04
+  #01 0:21:37.40 TRANSCRIPT_SEGMENT_END                        off=-3.68 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=1.92 sent=0.00 vis=0.04
+  #02 0:21:39.32 TRANSCRIPT_SEGMENT_START                      off=-1.76 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=1.92 txA=0.00 sent=0.00 vis=0.03
+  #03 0:21:41.08 RESULT_ANCHOR+TRANSCRIPT_SEGMENT_END          off=0.00 silB=0.00 silA=0.00 spB=1.00 spA=0.85 txB=0.00 txA=0.00 sent=0.00 vis=0.09
+  #04 0:21:42.00 BOARD_DISAPPEARED                             off=0.92 silB=0.00 silA=0.00 spB=1.00 spA=0.77 txB=0.68 txA=0.30 sent=0.00 vis=0.12
+  #05 0:21:42.30 TRANSCRIPT_SEGMENT_START                      off=1.22 silB=0.00 silA=0.00 spB=1.00 spA=0.71 txB=0.98 txA=0.00 sent=0.00 vis=0.12
+  #06 0:21:43.52 SENTENCE_END+SENTENCE_START                   off=2.44 silB=0.00 silA=0.00 spB=1.00 spA=0.50 txB=0.00 txA=0.00 sent=1.00 vis=0.06
+  #07 0:21:44.76 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=3.68 silB=0.17 silA=0.58 spB=0.97 spA=0.50 txB=0.00 txA=3.20 sent=0.00 vis=0.09
+  #08 0:21:45.34 SILENCE_END                                   off=4.26 silB=0.75 silA=0.00 spB=0.85 spA=0.50 txB=0.58 txA=2.62 sent=0.00 vis=0.09
+  #09 0:21:46.60 SILENCE_START                                 off=5.52 silB=0.00 silA=1.74 spB=0.85 spA=0.44 txB=1.84 txA=1.36 sent=0.00 vis=0.02
+  #10 0:21:47.47 SILENCE_MID                                   off=6.39 silB=0.87 silA=0.87 spB=0.68 spA=0.62 txB=2.71 txA=0.49 sent=0.00 vis=0.36
+  #11 0:21:47.96 TRANSCRIPT_SEGMENT_START+VISUAL_CHANGE        off=6.88 silB=1.36 silA=0.38 spB=0.58 spA=0.64 txB=3.20 txA=0.00 sent=0.00 vis=0.36
+  #12 0:21:48.34 SILENCE_END                                   off=7.26 silB=1.74 silA=0.00 spB=0.50 spA=0.64 txB=0.00 txA=0.00 sent=0.00 vis=0.36
+  #13 0:21:49.26 TRANSCRIPT_SEGMENT_END                        off=8.18 silB=0.00 silA=0.00 spB=0.50 spA=0.46 txB=0.00 txA=0.80 sent=0.00 vis=0.21
+  #14 0:21:49.57 SILENCE_START                                 off=8.49 silB=0.00 silA=1.05 spB=0.50 spA=0.40 txB=0.31 txA=0.49 sent=0.00 vis=0.21
+  #15 0:21:50.06 TRANSCRIPT_SEGMENT_START+SILENCE_MID          off=8.98 silB=0.49 silA=0.56 spB=0.50 spA=0.40 txB=0.80 txA=0.00 sent=0.00 vis=0.21
+  #16 0:21:50.62 SILENCE_END                                   off=9.54 silB=1.05 silA=0.00 spB=0.44 spA=0.40 txB=0.00 txA=0.00 sent=0.00 vis=0.14
+  #17 0:21:52.02 TRANSCRIPT_SEGMENT_END                        off=10.94 silB=0.00 silA=0.00 spB=0.53 spA=0.21 txB=0.00 txA=16.79 sent=1.00 vis=0.20
+  #18 0:21:52.60 SILENCE_START                                 off=11.52 silB=0.00 silA=3.39 spB=0.64 spA=0.15 txB=0.58 txA=16.21 sent=0.00 vis=0.23
+  #19 0:21:54.30 SILENCE_MID                                   off=13.22 silB=1.70 silA=1.69 spB=0.45 spA=0.20 txB=2.28 txA=14.51 sent=0.00 vis=0.21
+  #20 0:21:55.58 VISUAL_CHANGE                                 off=14.50 silB=2.98 silA=0.41 spB=0.40 spA=0.34 txB=3.56 txA=13.23 sent=0.00 vis=0.41
+  #21 0:21:55.99 SILENCE_END                                   off=14.91 silB=3.39 silA=0.00 spB=0.32 spA=0.42 txB=3.97 txA=12.82 sent=0.00 vis=0.41
+  #22 0:21:56.32 SILENCE_START                                 off=15.24 silB=0.00 silA=0.57 spB=0.32 spA=0.42 txB=4.30 txA=12.49 sent=0.00 vis=0.41
+  #23 0:21:56.89 SILENCE_END                                   off=15.81 silB=0.57 silA=0.00 spB=0.21 spA=0.46 txB=4.87 txA=11.92 sent=0.00 vis=0.08
+  #24 0:21:57.31 SILENCE_START                                 off=16.23 silB=0.00 silA=1.41 spB=0.21 spA=0.37 txB=5.29 txA=11.50 sent=0.00 vis=0.08
+  #25 0:21:58.02 SILENCE_MID                                   off=16.93 silB=0.70 silA=0.71 spB=0.15 spA=0.37 txB=5.99 txA=10.80 sent=0.00 vis=0.07
+  #26 0:21:58.72 SILENCE_END                                   off=17.64 silB=1.41 silA=0.00 spB=0.15 spA=0.37 txB=6.70 txA=10.09 sent=0.00 vis=0.07
+  #27 0:21:58.99 SILENCE_START                                 off=17.91 silB=0.00 silA=0.93 spB=0.20 spA=0.32 txB=6.97 txA=9.82 sent=0.00 vis=0.12
+  #28 0:21:59.92 SILENCE_END                                   off=18.84 silB=0.93 silA=0.00 spB=0.20 spA=0.44 txB=7.90 txA=8.89 sent=0.00 vis=0.12
+  #29 0:22:01.51 SILENCE_START                                 off=20.43 silB=0.00 silA=2.82 spB=0.46 spA=0.14 txB=9.49 txA=7.30 sent=0.00 vis=0.16
+  #30 0:22:02.92 SILENCE_MID                                   off=21.84 silB=1.41 silA=1.41 spB=0.37 spA=0.29 txB=10.90 txA=5.89 sent=0.00 vis=0.03
+  #31 0:22:04.33 SILENCE_END                                   off=23.25 silB=2.82 silA=0.00 spB=0.32 spA=0.57 txB=12.31 txA=4.48 sent=0.00 vis=0.04
+  #32 0:22:04.93 SILENCE_START                                 off=23.85 silB=0.00 silA=1.47 spB=0.44 spA=0.57 txB=12.91 txA=3.88 sent=0.00 vis=0.05
+  #33 0:22:05.67 SILENCE_MID                                   off=24.59 silB=0.74 silA=0.73 spB=0.29 spA=0.72 txB=13.64 txA=3.14 sent=0.00 vis=0.05
+  #34 0:22:06.40 SILENCE_END                                   off=25.32 silB=1.47 silA=0.00 spB=0.14 spA=0.86 txB=14.38 txA=2.41 sent=0.00 vis=0.03
+  #35 0:22:06.73 SILENCE_START                                 off=25.65 silB=0.00 silA=0.69 spB=0.19 spA=0.86 txB=14.71 txA=2.08 sent=0.00 vis=0.03
+  #36 0:22:07.42 SILENCE_END                                   off=26.34 silB=0.69 silA=0.00 spB=0.19 spA=1.00 txB=15.40 txA=1.39 sent=0.00 vis=0.12
+  #37 0:22:08.81 TRANSCRIPT_SEGMENT_START                      off=27.73 silB=0.00 silA=0.00 spB=0.46 spA=0.90 txB=16.79 txA=0.00 sent=0.00 vis=0.22
+  #38 0:22:12.45 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=31.37 silB=0.00 silA=0.00 spB=1.00 spA=0.86 txB=0.00 txA=0.70 sent=0.00 vis=0.13
+  #39 0:22:13.15 TRANSCRIPT_SEGMENT_START+SILENCE_END          off=32.07 silB=0.51 silA=0.00 spB=0.90 spA=1.00 txB=0.70 txA=0.00 sent=0.00 vis=0.09
+  #40 0:22:15.77 TRANSCRIPT_SEGMENT_END                        off=34.69 silB=0.00 silA=0.00 spB=0.90 spA=1.00 txB=0.00 txA=- sent=0.00 vis=0.01
+
+##### game 3: REMOVE (COMPLETE) profiling {"audio_s": 0.34, "visual_s": 1.81, "transcript_s": 9.53, "candidates_s": 0.0, "window_seconds": 70.0}
+
+=== START  window 0:29:54.75 -> 0:30:24.75 (30.0s)
+transcript: ok faster-whisper language=it p=0.9920891523361206
+  [0:29:54.75 - 0:29:55.53] Dai
+  [0:29:58.29 - 0:30:02.25] Ma quanto è rotto nel fatelo nel fatelo credo sia
+  [0:30:02.25 - 0:30:04.87] l'unico dec per adesso che
+  [0:30:05.59 - 0:30:08.05] Guardando un po le carte necessita un nerf
+  [0:30:09.23 - 0:30:11.59] Lantera è assurdo
+  [0:30:11.59 - 0:30:13.21] pure di testa
+  [0:30:15.96 - 0:30:17.62] pure di testa
+  [0:30:17.62 - 0:30:22.46] Rode to legend e tutti giocheranno han no c'è un diac e di k appa
+  [0:30:22.98 - 0:30:24.14] Detteo a che se
+audio: ok rms threshold=0.00974 (local auto)
+  silences: 0:29:56.99-0:29:57.83 (0.84s), 0:30:05.21-0:30:05.69 (0.48s), 0:30:08.24-0:30:09.35 (1.11s), 0:30:11.03-0:30:12.32 (1.29s), 0:30:13.28-0:30:14.84 (1.56s), 0:30:15.11-0:30:16.64 (1.53s)
+visual: ok 59 samples, max change 0.413 at 0:29:58.75
+gameplay markers: 
+candidates (27); exact baseline -> #23 0:30:19.75
+  #00 0:29:54.75 TRANSCRIPT_SEGMENT_START                      off=-25.00 silB=0.00 silA=0.00 spB=- spA=0.83 txB=- txA=0.00 sent=0.00 vis=0.02
+  #01 0:29:55.53 TRANSCRIPT_SEGMENT_END                        off=-24.22 silB=0.00 silA=0.00 spB=1.00 spA=0.83 txB=0.00 txA=2.76 sent=0.00 vis=0.10
+  #02 0:29:56.99 SILENCE_START                                 off=-22.76 silB=0.00 silA=0.84 spB=1.00 spA=0.83 txB=1.46 txA=1.30 sent=0.00 vis=0.10
+  #03 0:29:57.83 SILENCE_END                                   off=-21.92 silB=0.84 silA=0.00 spB=0.73 spA=1.00 txB=2.30 txA=0.46 sent=0.00 vis=0.19
+  #04 0:29:58.29 TRANSCRIPT_SEGMENT_START                      off=-21.46 silB=0.00 silA=0.00 spB=0.76 spA=1.00 txB=2.76 txA=0.00 sent=0.00 vis=0.41
+  #05 0:29:58.75 VISUAL_CHANGE                                 off=-21.00 silB=0.00 silA=0.00 spB=0.79 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.41
+  #06 0:30:02.25 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-17.50 silB=0.00 silA=0.00 spB=0.88 spA=0.90 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #07 0:30:04.87 TRANSCRIPT_SEGMENT_END                        off=-14.88 silB=0.00 silA=0.00 spB=1.00 spA=0.68 txB=0.00 txA=0.72 sent=0.00 vis=0.01
+  #08 0:30:05.21 SILENCE_START                                 off=-14.54 silB=0.00 silA=0.48 spB=1.00 spA=0.68 txB=0.34 txA=0.38 sent=0.00 vis=0.01
+  #09 0:30:05.59 TRANSCRIPT_SEGMENT_START+SILENCE_END          off=-14.16 silB=0.38 silA=0.10 spB=0.92 spA=0.76 txB=0.72 txA=0.00 sent=0.00 vis=0.01
+  #10 0:30:08.05 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=-11.70 silB=0.00 silA=0.00 spB=0.90 spA=0.52 txB=0.00 txA=1.18 sent=0.00 vis=0.01
+  #11 0:30:08.80 SILENCE_MID                                   off=-10.95 silB=0.56 silA=0.55 spB=0.79 spA=0.53 txB=0.75 txA=0.43 sent=0.00 vis=0.01
+  #12 0:30:09.23 TRANSCRIPT_SEGMENT_START+SILENCE_END          off=-10.52 silB=0.99 silA=0.12 spB=0.71 spA=0.53 txB=1.18 txA=0.00 sent=0.00 vis=0.00
+  #13 0:30:11.03 SILENCE_START                                 off=-8.72 silB=0.00 silA=1.29 spB=0.78 spA=0.25 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #14 0:30:11.59 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START+SILENCE_MID off=-8.16 silB=0.56 silA=0.73 spB=0.67 spA=0.25 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #15 0:30:12.32 SILENCE_END                                   off=-7.43 silB=1.29 silA=0.00 spB=0.52 spA=0.38 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #16 0:30:13.21 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=-6.54 silB=0.00 silA=1.56 spB=0.52 spA=0.38 txB=0.00 txA=2.75 sent=0.00 vis=0.02
+  #17 0:30:14.06 SILENCE_MID                                   off=-5.69 silB=0.78 silA=0.78 spB=0.53 spA=0.54 txB=0.85 txA=1.90 sent=0.00 vis=0.01
+  #18 0:30:14.84 SILENCE_END                                   off=-4.91 silB=1.56 silA=0.00 spB=0.43 spA=0.69 txB=1.63 txA=1.12 sent=0.00 vis=0.01
+  #19 0:30:15.11 SILENCE_START                                 off=-4.64 silB=0.00 silA=1.53 spB=0.43 spA=0.69 txB=1.90 txA=0.85 sent=0.00 vis=0.01
+  #20 0:30:15.96 TRANSCRIPT_SEGMENT_START+SILENCE_MID          off=-3.79 silB=0.85 silA=0.68 spB=0.26 spA=0.86 txB=2.75 txA=0.00 sent=0.00 vis=0.01
+  #21 0:30:16.64 SILENCE_END                                   off=-3.11 silB=1.53 silA=0.00 spB=0.25 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #22 0:30:17.62 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-2.13 silB=0.00 silA=0.00 spB=0.38 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.07
+  #23 0:30:19.75 GAME_START_ANCHOR                             off=0.00 silB=0.00 silA=0.00 spB=0.68 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.32
+  #24 0:30:22.46 TRANSCRIPT_SEGMENT_END                        off=2.71 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=0.52 sent=0.00 vis=0.01
+  #25 0:30:22.98 TRANSCRIPT_SEGMENT_START                      off=3.23 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.52 txA=0.00 sent=0.00 vis=0.01
+  #26 0:30:24.14 TRANSCRIPT_SEGMENT_END                        off=4.39 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=- sent=0.00 vis=0.02
+
+=== END  window 0:46:26.98 -> 0:47:06.98 (40.0s)
+transcript: ok faster-whisper language=it p=0.9920891523361206
+  [0:46:27.16 - 0:46:32.00] My bad, cazzo adesso mi reporta me, porco due mi sono dimenticato
+  [0:46:32.00 - 0:46:42.57] Ma beh, ma beh, my bad, my bad, my bad, chiedo umilmente perdono mi sono completamente dimenticato
+  [0:46:42.57 - 0:46:49.65] Cosa vediamo provare, comunque Hunter sembra molto rotto, sembra molto forte anche questo
+  [0:46:49.65 - 0:46:57.63] concetto di mazzi control, vedere streamer deck se magari qualcuno sta aggiornando
+  [0:46:57.63 - 0:47:06.96] qualcosa di spicy? Vedete qualche lista interessata.
+audio: ok rms threshold=0.00830 (local auto)
+  silences: 0:46:36.72-0:46:37.68 (0.96s), 0:46:38.55-0:46:39.57 (1.02s), 0:46:42.87-0:46:44.82 (1.95s), 0:46:45.96-0:46:46.65 (0.69s), 0:46:51.78-0:46:55.71 (3.93s), 0:46:58.86-0:47:05.79 (6.93s)
+visual: ok 79 samples, max change 0.467 at 0:46:38.98
+gameplay markers: BOARD_DISAPPEARED@0:46:33.00
+candidates (25); exact baseline -> #1 0:46:31.98
+  #00 0:46:27.16 TRANSCRIPT_SEGMENT_START                      off=-4.82 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=- txA=0.00 sent=0.00 vis=0.08
+  #01 0:46:31.98 RESULT_ANCHOR+TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=0.00 silB=0.00 silA=0.00 spB=1.00 spA=0.95 txB=-0.02 txA=0.02 sent=0.00 vis=0.08
+  #02 0:46:33.00 BOARD_DISAPPEARED                             off=1.02 silB=0.00 silA=0.00 spB=1.00 spA=0.81 txB=0.00 txA=0.00 sent=0.00 vis=0.08
+  #03 0:46:36.72 SILENCE_START                                 off=4.74 silB=0.00 silA=0.96 spB=1.00 spA=0.60 txB=0.00 txA=0.00 sent=0.00 vis=0.29
+  #04 0:46:37.68 SILENCE_END                                   off=5.70 silB=0.96 silA=0.00 spB=0.81 spA=0.80 txB=0.00 txA=0.00 sent=0.00 vis=0.24
+  #05 0:46:38.55 SILENCE_START                                 off=6.57 silB=0.00 silA=1.02 spB=0.81 spA=0.66 txB=0.00 txA=0.00 sent=0.00 vis=0.47
+  #06 0:46:38.98 VISUAL_CHANGE+SILENCE_MID                     off=7.00 silB=0.43 silA=0.59 spB=0.72 spA=0.66 txB=0.00 txA=0.00 sent=0.00 vis=0.47
+  #07 0:46:39.57 SILENCE_END                                   off=7.59 silB=1.02 silA=0.00 spB=0.60 spA=0.66 txB=0.00 txA=0.00 sent=0.00 vis=0.47
+  #08 0:46:42.57 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=10.59 silB=0.00 silA=0.00 spB=0.77 spA=0.47 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #09 0:46:42.87 SILENCE_START                                 off=10.89 silB=0.00 silA=1.95 spB=0.80 spA=0.47 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #10 0:46:43.85 SILENCE_MID                                   off=11.86 silB=0.97 silA=0.98 spB=0.66 spA=0.67 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #11 0:46:44.82 SILENCE_END                                   off=12.84 silB=1.95 silA=0.00 spB=0.61 spA=0.86 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #12 0:46:45.96 SILENCE_START                                 off=13.98 silB=0.00 silA=0.69 spB=0.61 spA=0.86 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #13 0:46:46.65 SILENCE_END                                   off=14.67 silB=0.69 silA=0.00 spB=0.47 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #14 0:46:49.65 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=17.67 silB=0.00 silA=0.00 spB=0.83 spA=0.43 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #15 0:46:51.78 SILENCE_START                                 off=19.80 silB=0.00 silA=3.93 spB=1.00 spA=0.21 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #16 0:46:53.75 SILENCE_MID                                   off=21.77 silB=1.97 silA=1.96 spB=0.61 spA=0.61 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #17 0:46:55.71 SILENCE_END                                   off=23.73 silB=3.93 silA=0.00 spB=0.21 spA=0.63 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #18 0:46:57.63 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=25.65 silB=0.00 silA=0.00 spB=0.38 spA=0.25 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #19 0:46:58.43 SENTENCE_END                                  off=26.45 silB=0.00 silA=0.00 spB=0.54 spA=0.09 txB=0.00 txA=0.00 sent=1.00 vis=0.01
+  #20 0:46:58.86 SILENCE_START                                 off=26.88 silB=0.00 silA=6.93 spB=0.63 spA=0.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #21 0:47:02.33 SILENCE_MID                                   off=30.35 silB=3.47 silA=3.46 spB=0.31 spA=0.26 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #22 0:47:05.24 SENTENCE_START                                off=33.26 silB=6.38 silA=0.55 spB=0.00 spA=0.68 txB=0.00 txA=0.00 sent=1.00 vis=0.01
+  #23 0:47:05.79 SILENCE_END                                   off=33.81 silB=6.93 silA=0.00 spB=0.00 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #24 0:47:06.96 TRANSCRIPT_SEGMENT_END                        off=34.98 silB=0.00 silA=0.00 spB=0.23 spA=1.00 txB=0.00 txA=- sent=1.00 vis=0.01
+
+##### game 5: REMOVE_TO_EOF (IN_PROGRESS_AT_EOF) profiling {"audio_s": 0.24, "visual_s": 1.14, "transcript_s": 7.07, "candidates_s": 0.0, "window_seconds": 35.0}
+
+=== START  window 1:00:03.93 -> 1:00:33.93 (30.0s)
+transcript: ok faster-whisper language=en p=0.3614650368690491
+  [1:00:03.93 - 1:00:08.49] perché vorrei trovarmi contro un dev avere un po di sfida e giocarei il bel
+  [1:00:08.49 - 1:00:13.85] meccanter il bel meccanter perché posso dire vero ho goduto a giocare il meccanter
+  [1:00:13.85 - 1:00:18.91] dopo giochiamoli di capa se volete dopo giochiamo un po il gun che consuma
+  [1:00:18.91 - 1:00:25.29] tutto vorrei provare anche un po di loc con con tune un loc con tune quanto la
+  [1:00:25.29 - 1:00:27.43] coserrebbe un bell'hocconctune, ma donna.
+  [1:00:30.02 - 1:00:33.34] Tim TCK non è un bev.
+audio: ok rms threshold=0.01219 (local auto)
+  silences: 1:00:27.47-1:00:29.42 (1.95s)
+visual: ok 59 samples, max change 0.345 at 1:00:27.93
+gameplay markers: 
+candidates (11); exact baseline -> #7 1:00:28.93
+  #00 1:00:03.93 TRANSCRIPT_SEGMENT_START                      off=-25.00 silB=0.00 silA=0.00 spB=- spA=1.00 txB=- txA=0.00 sent=0.00 vis=0.01
+  #01 1:00:08.49 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-20.44 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.09
+  #02 1:00:13.85 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-15.08 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.00
+  #03 1:00:18.91 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-10.02 silB=0.00 silA=0.00 spB=1.00 spA=1.00 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #04 1:00:25.29 TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START off=-3.64 silB=0.00 silA=0.00 spB=1.00 spA=0.61 txB=0.00 txA=0.00 sent=0.00 vis=0.01
+  #05 1:00:27.43 TRANSCRIPT_SEGMENT_END+SILENCE_START          off=-1.50 silB=0.00 silA=1.95 spB=1.00 spA=0.61 txB=0.00 txA=2.59 sent=1.00 vis=0.34
+  #06 1:00:28.45 SILENCE_MID                                   off=-0.49 silB=0.97 silA=0.97 spB=0.81 spA=0.81 txB=1.01 txA=1.58 sent=0.00 vis=0.34
+  #07 1:00:28.93 GAME_START_ANCHOR                             off=0.00 silB=1.46 silA=0.49 spB=0.71 spA=0.90 txB=1.50 txA=1.09 sent=0.00 vis=0.18
+  #08 1:00:29.42 SILENCE_END                                   off=0.49 silB=1.95 silA=0.00 spB=0.61 spA=1.00 txB=1.99 txA=0.60 sent=0.00 vis=0.18
+  #09 1:00:30.02 TRANSCRIPT_SEGMENT_START                      off=1.09 silB=0.00 silA=0.00 spB=0.61 spA=1.00 txB=2.59 txA=0.00 sent=0.00 vis=0.09
+  #10 1:00:33.34 TRANSCRIPT_SEGMENT_END                        off=4.41 silB=0.00 silA=0.00 spB=0.78 spA=1.00 txB=0.00 txA=- sent=1.00 vis=0.01
+
+=== END  window 1:02:25.00 -> 1:02:30.00 (5.0s) clipped by end_of_file
+transcript: ok faster-whisper language=en p=0.3614650368690491
+audio: ok rms threshold=0.00080 (local auto)
+  silences: 1:02:25.00-1:02:28.59 (3.59s), 1:02:28.89-1:02:30.00 (1.11s)
+visual: ok 9 samples, max change 0.026 at 1:02:27.50
+gameplay markers: 
+candidates (5); exact baseline -> #4 1:02:30.00
+  #00 1:02:26.80 SILENCE_MID                                   off=-3.20 silB=1.80 silA=1.80 spB=0.00 spA=0.09 txB=- txA=- sent=0.00 vis=0.03
+  #01 1:02:28.59 SILENCE_END                                   off=-1.41 silB=3.59 silA=0.00 spB=0.00 spA=0.21 txB=- txA=- sent=0.00 vis=0.01
+  #02 1:02:28.89 SILENCE_START                                 off=-1.11 silB=0.00 silA=1.11 spB=0.08 spA=0.00 txB=- txA=- sent=0.00 vis=0.01
+  #03 1:02:29.45 SILENCE_MID                                   off=-0.56 silB=0.55 silA=0.56 spB=0.07 spA=0.00 txB=- txA=- sent=0.00 vis=0.01
+  #04 1:02:30.00 END_OF_FILE                                   off=0.00 silB=1.11 silA=0.00 spB=0.06 spA=- txB=- txA=- sent=0.00 vis=0.01
+
+contexts written to docs\gameplay_validation\videoprova\boundaries\removable_contexts.json

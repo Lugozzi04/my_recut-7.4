@@ -1,0 +1,1052 @@
+{
+  "pack_fingerprint": "9a3528d080912ef286cd90531cef65f52f9c9fc9ae57f73bdbdd8525756f5224",
+  "retuning": false,
+  "cases": [
+    {
+      "ground_truth_anchor": 2305.0,
+      "type": "DEFEAT",
+      "diagnostic_only": true,
+      "not_used_for_tuning": true,
+      "frame_count": 42,
+      "accepted_source_frames": 1,
+      "peak": {
+        "timestamp": 2305.05,
+        "similarity": 0.9418808817863464,
+        "template_id": "templates/defeat/defeat_01.png",
+        "scale": 1.1,
+        "accepted": true,
+        "margin": 0.5491990745067596
+      },
+      "records": [
+        {
+          "timestamp": 2304.7,
+          "similarity": 0.18440641462802887,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.02405776083469391
+        },
+        {
+          "timestamp": 2304.716,
+          "similarity": 0.18320664763450623,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.019134417176246643
+        },
+        {
+          "timestamp": 2304.733,
+          "similarity": 0.1821659654378891,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.01688094437122345
+        },
+        {
+          "timestamp": 2304.75,
+          "similarity": 0.18119122087955475,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.014345958828926086
+        },
+        {
+          "timestamp": 2304.766,
+          "similarity": 0.1791011393070221,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.009420007467269897
+        },
+        {
+          "timestamp": 2304.783,
+          "similarity": 0.17747771739959717,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.006703734397888184
+        },
+        {
+          "timestamp": 2304.8,
+          "similarity": 0.17687761783599854,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.004926174879074097
+        },
+        {
+          "timestamp": 2304.816,
+          "similarity": 0.17611020803451538,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.0035718679428100586
+        },
+        {
+          "timestamp": 2304.833,
+          "similarity": 0.17568406462669373,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.0030793845653533936
+        },
+        {
+          "timestamp": 2304.85,
+          "similarity": 0.1752537339925766,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.0026145726442337036
+        },
+        {
+          "timestamp": 2304.866,
+          "similarity": 0.1748048961162567,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.0010822266340255737
+        },
+        {
+          "timestamp": 2304.883,
+          "similarity": 0.17484834790229797,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.0006115436553955078
+        },
+        {
+          "timestamp": 2304.9,
+          "similarity": 0.17542333900928497,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.0005383491516113281
+        },
+        {
+          "timestamp": 2304.916,
+          "similarity": 0.17581279575824738,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.001173749566078186
+        },
+        {
+          "timestamp": 2304.933,
+          "similarity": 0.17658357322216034,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.0003909170627593994
+        },
+        {
+          "timestamp": 2304.95,
+          "similarity": 0.1811932921409607,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.925,
+          "accepted": false,
+          "margin": 0.0019583702087402344
+        },
+        {
+          "timestamp": 2304.966,
+          "similarity": 0.29543888568878174,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 0.08365084230899811
+        },
+        {
+          "timestamp": 2304.983,
+          "similarity": 0.8573991656303406,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.925,
+          "accepted": false,
+          "margin": 0.5275041460990906
+        },
+        {
+          "timestamp": 2305.0,
+          "similarity": 0.8289504051208496,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "accepted": false,
+          "margin": 0.31887251138687134
+        },
+        {
+          "timestamp": 2305.016,
+          "similarity": 0.8515582084655762,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "accepted": false,
+          "margin": 0.3349687457084656
+        },
+        {
+          "timestamp": 2305.033,
+          "similarity": 0.8869370818138123,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": 0.35753411054611206
+        },
+        {
+          "timestamp": 2305.05,
+          "similarity": 0.9418808817863464,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 1.1,
+          "accepted": true,
+          "margin": 0.5491990745067596
+        },
+        {
+          "timestamp": 2305.066,
+          "similarity": 0.1802145093679428,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -1.4334917068481445e-05
+        },
+        {
+          "timestamp": 2305.083,
+          "similarity": 0.17961131036281586,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.0005144178867340088
+        },
+        {
+          "timestamp": 2305.1,
+          "similarity": 0.17906460165977478,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.0017544329166412354
+        },
+        {
+          "timestamp": 2305.116,
+          "similarity": 0.17828255891799927,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.004264563322067261
+        },
+        {
+          "timestamp": 2305.133,
+          "similarity": 0.17789603769779205,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.005651041865348816
+        },
+        {
+          "timestamp": 2305.15,
+          "similarity": 0.17766937613487244,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.006701618432998657
+        },
+        {
+          "timestamp": 2305.166,
+          "similarity": 0.17759546637535095,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.008333474397659302
+        },
+        {
+          "timestamp": 2305.183,
+          "similarity": 0.1771005094051361,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.009689286351203918
+        },
+        {
+          "timestamp": 2305.2,
+          "similarity": 0.17666879296302795,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.010766252875328064
+        },
+        {
+          "timestamp": 2305.216,
+          "similarity": 0.17621316015720367,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.011511281132698059
+        },
+        {
+          "timestamp": 2305.233,
+          "similarity": 0.17658796906471252,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.010957792401313782
+        },
+        {
+          "timestamp": 2305.25,
+          "similarity": 0.1768253743648529,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.010298863053321838
+        },
+        {
+          "timestamp": 2305.266,
+          "similarity": 0.17682413756847382,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.010300606489181519
+        },
+        {
+          "timestamp": 2305.283,
+          "similarity": 0.3144010305404663,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 0.975,
+          "accepted": false,
+          "margin": 0.07629662752151489
+        },
+        {
+          "timestamp": 2305.3,
+          "similarity": 0.24045543372631073,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": -0.018380865454673767
+        },
+        {
+          "timestamp": 2305.316,
+          "similarity": 0.19219470024108887,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.06555372476577759
+        },
+        {
+          "timestamp": 2305.333,
+          "similarity": 0.1934882551431656,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": 0.06709146499633789
+        },
+        {
+          "timestamp": 2305.35,
+          "similarity": 0.17247259616851807,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": 0.04691743850708008
+        },
+        {
+          "timestamp": 2305.366,
+          "similarity": 0.1634177714586258,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.02282296121120453
+        },
+        {
+          "timestamp": 2305.383,
+          "similarity": 0.16643139719963074,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.02340109646320343
+        }
+      ]
+    },
+    {
+      "ground_truth_anchor": 5010.7,
+      "type": "DEFEAT",
+      "diagnostic_only": true,
+      "not_used_for_tuning": true,
+      "frame_count": 42,
+      "accepted_source_frames": 0,
+      "peak": {
+        "timestamp": 5010.716,
+        "similarity": 0.9099090099334717,
+        "template_id": "templates/defeat/defeat_01.png",
+        "scale": 1.025,
+        "accepted": false,
+        "margin": 0.5869273841381073
+      },
+      "records": [
+        {
+          "timestamp": 5010.4,
+          "similarity": 0.16569000482559204,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.004526376724243164
+        },
+        {
+          "timestamp": 5010.416,
+          "similarity": 0.17069649696350098,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.009799405932426453
+        },
+        {
+          "timestamp": 5010.433,
+          "similarity": 0.17241699993610382,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.01258029043674469
+        },
+        {
+          "timestamp": 5010.45,
+          "similarity": 0.17420139908790588,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.014699697494506836
+        },
+        {
+          "timestamp": 5010.466,
+          "similarity": 0.17730462551116943,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.017087891697883606
+        },
+        {
+          "timestamp": 5010.483,
+          "similarity": 0.17810270190238953,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.019831493496894836
+        },
+        {
+          "timestamp": 5010.5,
+          "similarity": 0.17935225367546082,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.023645147681236267
+        },
+        {
+          "timestamp": 5010.516,
+          "similarity": 0.18249811232089996,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.023901477456092834
+        },
+        {
+          "timestamp": 5010.533,
+          "similarity": 0.18332430720329285,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.02705448865890503
+        },
+        {
+          "timestamp": 5010.55,
+          "similarity": 0.1838931143283844,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.028884679079055786
+        },
+        {
+          "timestamp": 5010.566,
+          "similarity": 0.18271663784980774,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.027835875749588013
+        },
+        {
+          "timestamp": 5010.583,
+          "similarity": 0.18356381356716156,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.025309234857559204
+        },
+        {
+          "timestamp": 5010.6,
+          "similarity": 0.18625371158123016,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.022600024938583374
+        },
+        {
+          "timestamp": 5010.616,
+          "similarity": 0.18052326142787933,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.022831588983535767
+        },
+        {
+          "timestamp": 5010.633,
+          "similarity": 0.17784887552261353,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.013617739081382751
+        },
+        {
+          "timestamp": 5010.65,
+          "similarity": 0.18321052193641663,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.021080613136291504
+        },
+        {
+          "timestamp": 5010.666,
+          "similarity": 0.18283630907535553,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.009046211838722229
+        },
+        {
+          "timestamp": 5010.683,
+          "similarity": 0.24467897415161133,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 0.06238280236721039
+        },
+        {
+          "timestamp": 5010.7,
+          "similarity": 0.24598227441310883,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.07007937133312225
+        },
+        {
+          "timestamp": 5010.716,
+          "similarity": 0.9099090099334717,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.5869273841381073
+        },
+        {
+          "timestamp": 5010.733,
+          "similarity": 0.8148833513259888,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "accepted": false,
+          "margin": 0.295312762260437
+        },
+        {
+          "timestamp": 5010.75,
+          "similarity": 0.8781753778457642,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.3780122399330139
+        },
+        {
+          "timestamp": 5010.766,
+          "similarity": 0.8886122703552246,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.38024836778640747
+        },
+        {
+          "timestamp": 5010.783,
+          "similarity": 0.8592877388000488,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.45111826062202454
+        },
+        {
+          "timestamp": 5010.8,
+          "similarity": 0.1763458102941513,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.008914604783058167
+        },
+        {
+          "timestamp": 5010.816,
+          "similarity": 0.17799340188503265,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.011221617460250854
+        },
+        {
+          "timestamp": 5010.833,
+          "similarity": 0.17304614186286926,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.007144466042518616
+        },
+        {
+          "timestamp": 5010.85,
+          "similarity": 0.17269831895828247,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.005837872624397278
+        },
+        {
+          "timestamp": 5010.866,
+          "similarity": 0.17268717288970947,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "accepted": false,
+          "margin": 0.004650890827178955
+        },
+        {
+          "timestamp": 5010.883,
+          "similarity": 0.17523713409900665,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": -0.0004888772964477539
+        },
+        {
+          "timestamp": 5010.9,
+          "similarity": 0.1773986965417862,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.005802527070045471
+        },
+        {
+          "timestamp": 5010.916,
+          "similarity": 0.1841408759355545,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.01158130168914795
+        },
+        {
+          "timestamp": 5010.933,
+          "similarity": 0.18402661383152008,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.009180158376693726
+        },
+        {
+          "timestamp": 5010.95,
+          "similarity": 0.18410424888134003,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.008908778429031372
+        },
+        {
+          "timestamp": 5010.966,
+          "similarity": 0.18432973325252533,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.008066385984420776
+        },
+        {
+          "timestamp": 5010.983,
+          "similarity": 0.18469694256782532,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.05,
+          "accepted": false,
+          "margin": 0.008013039827346802
+        },
+        {
+          "timestamp": 5011.0,
+          "similarity": 0.18050462007522583,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.008391410112380981
+        },
+        {
+          "timestamp": 5011.016,
+          "similarity": 0.17073680460453033,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.002504214644432068
+        },
+        {
+          "timestamp": 5011.033,
+          "similarity": 0.17926497757434845,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": 0.007196739315986633
+        },
+        {
+          "timestamp": 5011.05,
+          "similarity": 0.1749822348356247,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.0054749250411987305
+        },
+        {
+          "timestamp": 5011.066,
+          "similarity": 0.17339031398296356,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "accepted": false,
+          "margin": -0.0004522651433944702
+        },
+        {
+          "timestamp": 5011.083,
+          "similarity": 0.32458949089050293,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 0.08368739485740662
+        }
+      ]
+    },
+    {
+      "ground_truth_anchor": 5059.0,
+      "type": "VS_SCREEN",
+      "diagnostic_only": true,
+      "not_used_for_tuning": true,
+      "frame_count": 40,
+      "accepted_source_frames": 28,
+      "peak": {
+        "timestamp": 5060.983,
+        "similarity": 0.9578724503517151,
+        "template_id": "templates/vs/calibration_cursor_free.png",
+        "scale": 1.0,
+        "accepted": true,
+        "margin": 1.957872450351715
+      },
+      "records": [
+        {
+          "timestamp": 5058.0,
+          "similarity": 0.17463214695453644,
+          "template_id": "templates/vs/vs_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.1746321469545364
+        },
+        {
+          "timestamp": 5058.183,
+          "similarity": 0.17350223660469055,
+          "template_id": "templates/vs/vs_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.1735022366046906
+        },
+        {
+          "timestamp": 5058.35,
+          "similarity": 0.16768911480903625,
+          "template_id": "templates/vs/vs_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.1676891148090363
+        },
+        {
+          "timestamp": 5058.533,
+          "similarity": 0.1496100276708603,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.1496100276708603
+        },
+        {
+          "timestamp": 5058.7,
+          "similarity": 0.13742953538894653,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.1374295353889465
+        },
+        {
+          "timestamp": 5058.883,
+          "similarity": 0.6651492714881897,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": false,
+          "margin": 1.6651492714881897
+        },
+        {
+          "timestamp": 5059.05,
+          "similarity": 0.8025909066200256,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": false,
+          "margin": 1.8025909066200256
+        },
+        {
+          "timestamp": 5059.233,
+          "similarity": 0.8945468068122864,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": false,
+          "margin": 1.8945468068122864
+        },
+        {
+          "timestamp": 5059.4,
+          "similarity": 0.9299336671829224,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9299336671829224
+        },
+        {
+          "timestamp": 5059.583,
+          "similarity": 0.9532274603843689,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.953227460384369
+        },
+        {
+          "timestamp": 5059.75,
+          "similarity": 0.9552828073501587,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9552828073501587
+        },
+        {
+          "timestamp": 5059.933,
+          "similarity": 0.9571158289909363,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9571158289909363
+        },
+        {
+          "timestamp": 5060.1,
+          "similarity": 0.957405149936676,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.957405149936676
+        },
+        {
+          "timestamp": 5060.283,
+          "similarity": 0.9574003219604492,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9574003219604492
+        },
+        {
+          "timestamp": 5060.45,
+          "similarity": 0.9574974775314331,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.957497477531433
+        },
+        {
+          "timestamp": 5060.633,
+          "similarity": 0.9576952457427979,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9576952457427979
+        },
+        {
+          "timestamp": 5060.8,
+          "similarity": 0.9575799703598022,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9575799703598022
+        },
+        {
+          "timestamp": 5060.983,
+          "similarity": 0.9578724503517151,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.957872450351715
+        },
+        {
+          "timestamp": 5061.15,
+          "similarity": 0.9576064944267273,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9576064944267273
+        },
+        {
+          "timestamp": 5061.333,
+          "similarity": 0.9575948119163513,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9575948119163513
+        },
+        {
+          "timestamp": 5061.5,
+          "similarity": 0.9575911164283752,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9575911164283752
+        },
+        {
+          "timestamp": 5061.683,
+          "similarity": 0.9575911164283752,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9575911164283752
+        },
+        {
+          "timestamp": 5061.85,
+          "similarity": 0.9575911164283752,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9575911164283752
+        },
+        {
+          "timestamp": 5062.033,
+          "similarity": 0.9577170610427856,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577170610427856
+        },
+        {
+          "timestamp": 5062.2,
+          "similarity": 0.9577123522758484,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577123522758484
+        },
+        {
+          "timestamp": 5062.383,
+          "similarity": 0.9577116966247559,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577116966247559
+        },
+        {
+          "timestamp": 5062.55,
+          "similarity": 0.9577123522758484,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577123522758484
+        },
+        {
+          "timestamp": 5062.733,
+          "similarity": 0.9577123522758484,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577123522758484
+        },
+        {
+          "timestamp": 5062.9,
+          "similarity": 0.9577116966247559,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577116966247559
+        },
+        {
+          "timestamp": 5063.083,
+          "similarity": 0.9577115774154663,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577115774154663
+        },
+        {
+          "timestamp": 5063.25,
+          "similarity": 0.9577092528343201,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.95770925283432
+        },
+        {
+          "timestamp": 5063.433,
+          "similarity": 0.9577076435089111,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577076435089111
+        },
+        {
+          "timestamp": 5063.6,
+          "similarity": 0.9577069878578186,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577069878578186
+        },
+        {
+          "timestamp": 5063.783,
+          "similarity": 0.9577069878578186,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577069878578186
+        },
+        {
+          "timestamp": 5063.95,
+          "similarity": 0.9577069878578186,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.9577069878578186
+        },
+        {
+          "timestamp": 5064.133,
+          "similarity": 0.957396388053894,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.0,
+          "accepted": true,
+          "margin": 1.957396388053894
+        },
+        {
+          "timestamp": 5064.3,
+          "similarity": 0.4996515214443207,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.4996515214443207
+        },
+        {
+          "timestamp": 5064.483,
+          "similarity": 0.21484632790088654,
+          "template_id": "templates/vs/vs_01.png",
+          "scale": 0.9,
+          "accepted": false,
+          "margin": 1.2148463279008865
+        },
+        {
+          "timestamp": 5064.65,
+          "similarity": 0.1642279177904129,
+          "template_id": "templates/vs/calibration_cursor_free.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": 1.164227917790413
+        },
+        {
+          "timestamp": 5064.833,
+          "similarity": 0.15982986986637115,
+          "template_id": "templates/vs/vs_01.png",
+          "scale": 1.1,
+          "accepted": false,
+          "margin": 1.1598298698663712
+        }
+      ]
+    }
+  ]
+}

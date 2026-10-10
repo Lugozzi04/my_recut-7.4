@@ -1,0 +1,78 @@
+PROMPT_VERSION: boundary_agent_prompt_v1
+BOUNDARY: END of a removed game (result LOSS, complete game)
+
+GOAL:
+- The removed game is everything from its START cut to the END cut. Choose where content about this game ends and the following content begins.
+- Reactions and commentary about the removed game (e.g. after a loss) usually belong to it and should be removed too; do not leave sentences that refer to a game the viewer never saw.
+- Do not remove content clearly about the next game, a new topic or other activities.
+- Prefer cutting at a silence or sentence boundary so the speech flows naturally.
+- Aim for a natural editorial cut, not merely the nearest gameplay timestamp.
+- The ASR transcript may contain recognition errors. If the evidence is insufficient, choose the gameplay anchor candidate with low confidence.
+
+TIMELINE (seconds; offsets relative to this boundary's anchor 1301.08s):
+- previous game end: n/a
+- this game start (VS screen): 630.58s (-670.50)
+- this game result screen: 1301.08s (+0.00)
+- next game start: 1359.45s (+58.37)
+- end of video: 3750.00s (+2448.92)
+- analysed window: 1296.08s (-5.00) to 1336.08s (+35.00)
+
+EVIDENCE AVAILABLE: transcript=ok, audio=ok, visual=ok
+
+TRANSCRIPT (this window only):
+- [-5.00 .. -3.68] Porca puttana
+- [-1.76 .. +0.24] Porca Eva sembra rotto l'antera
+- [+1.22 .. +3.68] Cos'era cos'era? Oh oh oh
+- [+6.88 .. +8.18] Non so cos'era però ok
+- [+8.98 .. +10.94] Viamo una busta posso aprirla?
+- [+27.73 .. +31.37] Volo una leggendaria mochette non sai posso aprire a busta questi cazzi
+- [+32.07 .. +34.69] Sto atte eeeehm
+
+SILENCES (no voice, offsets): [+3.51 .. +4.26], [+5.52 .. +7.26], [+8.49 .. +9.54], [+11.52 .. +14.91], [+15.24 .. +15.81], [+16.23 .. +17.64], [+17.91 .. +18.84], [+20.43 .. +23.25], [+23.85 .. +25.32], [+25.65 .. +26.34], [+31.56 .. +32.07]
+GAMEPLAY MARKERS: board_disappeared +0.92
+STRONGEST VISUAL CHANGES (0-1): +7.00=0.36, +12.00=0.23, +14.50=0.41, +28.00=0.22, +28.50=0.31
+
+CANDIDATES (choose one index):
+#0 t=1296.08 (-5.00) sources=TRANSCRIPT_SEGMENT_START | silence before/after=0.00/0.00s | inside speech=no | speech 5s before/after=n/a/100% | transcript gap before/after=n/a/0.00s | sentence boundary=no | visual change=0.04
+#1 t=1297.40 (-3.68) sources=TRANSCRIPT_SEGMENT_END | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/100% | transcript gap before/after=0.00/1.92s | sentence boundary=no | visual change=0.04
+#2 t=1299.32 (-1.76) sources=TRANSCRIPT_SEGMENT_START | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/100% | transcript gap before/after=1.92/0.00s | sentence boundary=no | visual change=0.03
+#3 t=1301.08 (+0.00) sources=RESULT_ANCHOR+TRANSCRIPT_SEGMENT_END | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/85% | transcript gap before/after=0.00/0.00s | sentence boundary=no | visual change=0.09
+#4 t=1302.00 (+0.92) sources=BOARD_DISAPPEARED | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/77% | transcript gap before/after=0.68/0.30s | sentence boundary=no | visual change=0.12
+#5 t=1302.30 (+1.22) sources=TRANSCRIPT_SEGMENT_START | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/71% | transcript gap before/after=0.98/0.00s | sentence boundary=no | visual change=0.12
+#6 t=1303.52 (+2.44) sources=SENTENCE_END+SENTENCE_START | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/50% | transcript gap before/after=0.00/0.00s | sentence boundary=yes | visual change=0.06
+#7 t=1304.76 (+3.68) sources=TRANSCRIPT_SEGMENT_END+SILENCE_START | silence before/after=0.17/0.58s | inside speech=no | speech 5s before/after=97%/50% | transcript gap before/after=0.00/3.20s | sentence boundary=no | visual change=0.09
+#8 t=1305.34 (+4.26) sources=SILENCE_END | silence before/after=0.75/0.00s | inside speech=no | speech 5s before/after=85%/50% | transcript gap before/after=0.58/2.62s | sentence boundary=no | visual change=0.09
+#9 t=1306.60 (+5.52) sources=SILENCE_START | silence before/after=0.00/1.74s | inside speech=no | speech 5s before/after=85%/44% | transcript gap before/after=1.84/1.36s | sentence boundary=no | visual change=0.02
+#10 t=1307.47 (+6.39) sources=SILENCE_MID | silence before/after=0.87/0.87s | inside speech=no | speech 5s before/after=68%/62% | transcript gap before/after=2.71/0.49s | sentence boundary=no | visual change=0.36
+#11 t=1307.96 (+6.88) sources=TRANSCRIPT_SEGMENT_START+VISUAL_CHANGE | silence before/after=1.36/0.38s | inside speech=no | speech 5s before/after=58%/64% | transcript gap before/after=3.20/0.00s | sentence boundary=no | visual change=0.36
+#12 t=1308.34 (+7.26) sources=SILENCE_END | silence before/after=1.74/0.00s | inside speech=no | speech 5s before/after=50%/64% | transcript gap before/after=0.00/0.00s | sentence boundary=no | visual change=0.36
+#13 t=1309.26 (+8.18) sources=TRANSCRIPT_SEGMENT_END | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=50%/46% | transcript gap before/after=0.00/0.80s | sentence boundary=no | visual change=0.21
+#14 t=1309.57 (+8.49) sources=SILENCE_START | silence before/after=0.00/1.05s | inside speech=no | speech 5s before/after=50%/40% | transcript gap before/after=0.31/0.49s | sentence boundary=no | visual change=0.21
+#15 t=1310.06 (+8.98) sources=TRANSCRIPT_SEGMENT_START+SILENCE_MID | silence before/after=0.49/0.56s | inside speech=no | speech 5s before/after=50%/40% | transcript gap before/after=0.80/0.00s | sentence boundary=no | visual change=0.21
+#16 t=1310.62 (+9.54) sources=SILENCE_END | silence before/after=1.05/0.00s | inside speech=no | speech 5s before/after=44%/40% | transcript gap before/after=0.00/0.00s | sentence boundary=no | visual change=0.14
+#17 t=1312.02 (+10.94) sources=TRANSCRIPT_SEGMENT_END | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=53%/21% | transcript gap before/after=0.00/16.79s | sentence boundary=yes | visual change=0.20
+#18 t=1312.60 (+11.52) sources=SILENCE_START | silence before/after=0.00/3.39s | inside speech=no | speech 5s before/after=64%/15% | transcript gap before/after=0.58/16.21s | sentence boundary=no | visual change=0.23
+#19 t=1314.30 (+13.21) sources=SILENCE_MID | silence before/after=1.70/1.69s | inside speech=no | speech 5s before/after=45%/20% | transcript gap before/after=2.28/14.51s | sentence boundary=no | visual change=0.21
+#20 t=1315.58 (+14.50) sources=VISUAL_CHANGE | silence before/after=2.98/0.41s | inside speech=no | speech 5s before/after=40%/34% | transcript gap before/after=3.56/13.23s | sentence boundary=no | visual change=0.41
+#21 t=1315.99 (+14.91) sources=SILENCE_END | silence before/after=3.39/0.00s | inside speech=no | speech 5s before/after=32%/42% | transcript gap before/after=3.97/12.82s | sentence boundary=no | visual change=0.41
+#22 t=1316.32 (+15.24) sources=SILENCE_START | silence before/after=0.00/0.57s | inside speech=no | speech 5s before/after=32%/42% | transcript gap before/after=4.30/12.49s | sentence boundary=no | visual change=0.41
+#23 t=1316.89 (+15.81) sources=SILENCE_END | silence before/after=0.57/0.00s | inside speech=no | speech 5s before/after=21%/46% | transcript gap before/after=4.87/11.92s | sentence boundary=no | visual change=0.08
+#24 t=1317.31 (+16.23) sources=SILENCE_START | silence before/after=0.00/1.41s | inside speech=no | speech 5s before/after=21%/37% | transcript gap before/after=5.29/11.50s | sentence boundary=no | visual change=0.08
+#25 t=1318.02 (+16.93) sources=SILENCE_MID | silence before/after=0.70/0.71s | inside speech=no | speech 5s before/after=15%/37% | transcript gap before/after=5.99/10.80s | sentence boundary=no | visual change=0.07
+#26 t=1318.72 (+17.64) sources=SILENCE_END | silence before/after=1.41/0.00s | inside speech=no | speech 5s before/after=15%/37% | transcript gap before/after=6.70/10.09s | sentence boundary=no | visual change=0.07
+#27 t=1318.99 (+17.91) sources=SILENCE_START | silence before/after=0.00/0.93s | inside speech=no | speech 5s before/after=20%/32% | transcript gap before/after=6.97/9.82s | sentence boundary=no | visual change=0.12
+#28 t=1319.92 (+18.84) sources=SILENCE_END | silence before/after=0.93/0.00s | inside speech=no | speech 5s before/after=20%/44% | transcript gap before/after=7.90/8.89s | sentence boundary=no | visual change=0.12
+#29 t=1321.51 (+20.43) sources=SILENCE_START | silence before/after=0.00/2.82s | inside speech=no | speech 5s before/after=46%/14% | transcript gap before/after=9.49/7.30s | sentence boundary=no | visual change=0.16
+#30 t=1322.92 (+21.84) sources=SILENCE_MID | silence before/after=1.41/1.41s | inside speech=no | speech 5s before/after=37%/29% | transcript gap before/after=10.90/5.89s | sentence boundary=no | visual change=0.03
+#31 t=1324.33 (+23.25) sources=SILENCE_END | silence before/after=2.82/0.00s | inside speech=no | speech 5s before/after=32%/57% | transcript gap before/after=12.31/4.48s | sentence boundary=no | visual change=0.04
+#32 t=1324.93 (+23.85) sources=SILENCE_START | silence before/after=0.00/1.47s | inside speech=no | speech 5s before/after=44%/57% | transcript gap before/after=12.91/3.88s | sentence boundary=no | visual change=0.05
+#33 t=1325.67 (+24.58) sources=SILENCE_MID | silence before/after=0.74/0.73s | inside speech=no | speech 5s before/after=29%/72% | transcript gap before/after=13.64/3.14s | sentence boundary=no | visual change=0.05
+#34 t=1326.40 (+25.32) sources=SILENCE_END | silence before/after=1.47/0.00s | inside speech=no | speech 5s before/after=14%/86% | transcript gap before/after=14.38/2.41s | sentence boundary=no | visual change=0.03
+#35 t=1326.73 (+25.65) sources=SILENCE_START | silence before/after=0.00/0.69s | inside speech=no | speech 5s before/after=19%/86% | transcript gap before/after=14.71/2.08s | sentence boundary=no | visual change=0.03
+#36 t=1327.42 (+26.34) sources=SILENCE_END | silence before/after=0.69/0.00s | inside speech=no | speech 5s before/after=19%/100% | transcript gap before/after=15.40/1.39s | sentence boundary=no | visual change=0.12
+#37 t=1328.81 (+27.73) sources=TRANSCRIPT_SEGMENT_START | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=46%/90% | transcript gap before/after=16.79/0.00s | sentence boundary=no | visual change=0.22
+#38 t=1332.45 (+31.37) sources=TRANSCRIPT_SEGMENT_END+SILENCE_START | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=100%/86% | transcript gap before/after=0.00/0.70s | sentence boundary=no | visual change=0.13
+#39 t=1333.15 (+32.07) sources=TRANSCRIPT_SEGMENT_START+SILENCE_END | silence before/after=0.51/0.00s | inside speech=no | speech 5s before/after=90%/100% | transcript gap before/after=0.70/0.00s | sentence boundary=no | visual change=0.09
+#40 t=1335.77 (+34.69) sources=TRANSCRIPT_SEGMENT_END | silence before/after=0.00/0.00s | inside speech=yes | speech 5s before/after=90%/100% | transcript gap before/after=0.00/n/as | sentence boundary=no | visual change=0.01
+
+ANSWER with JSON only: {"selected_candidate": <index>, "confidence": <0..1>, "reason": "<one short sentence>"}

@@ -1,0 +1,23 @@
+{
+  "started_at_utc": "2026-10-09T13:12:26.175492+00:00",
+  "attempt": 1,
+  "no_retuning": true,
+  "manifest_sha256": "42c457475d385f5d006cc32015e4a479b60bca130b2fec3c9a03d6782033f313",
+  "command": [
+    "python",
+    "-m",
+    "analysis.gameplay.hearthstone.debug_analyze",
+    "C:/Users/jakub/Downloads/73.mp4",
+    "--strategy",
+    "state-aware",
+    "--state-profile",
+    "docs/gameplay_validation/state_aware/iteration5_frozen/profile.json",
+    "--template-pack",
+    "docs/gameplay_validation/86/iteration4_frozen/templates.json",
+    "--ground-truth",
+    "tests/fixtures/gameplay/73_held_out_ground_truth.json",
+    "--output-dir",
+    "docs/gameplay_validation/state_aware/result_decision/blind73",
+    "--no-cache"
+  ]
+}

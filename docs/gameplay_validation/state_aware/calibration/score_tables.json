@@ -1,0 +1,174 @@
+{
+  "thresholds": [
+    {
+      "threshold": 0.8,
+      "independent_loss_cases": 8,
+      "detected_with_two_source_frames": 8,
+      "false_defeat_frames": 0,
+      "missed_groups": []
+    },
+    {
+      "threshold": 0.85,
+      "independent_loss_cases": 8,
+      "detected_with_two_source_frames": 8,
+      "false_defeat_frames": 0,
+      "missed_groups": []
+    },
+    {
+      "threshold": 0.9,
+      "independent_loss_cases": 8,
+      "detected_with_two_source_frames": 7,
+      "false_defeat_frames": 0,
+      "missed_groups": [
+        "86_game_05"
+      ]
+    },
+    {
+      "threshold": 0.92,
+      "independent_loss_cases": 8,
+      "detected_with_two_source_frames": 6,
+      "false_defeat_frames": 0,
+      "missed_groups": [
+        "86_game_02",
+        "86_game_05"
+      ]
+    },
+    {
+      "threshold": 0.95,
+      "independent_loss_cases": 8,
+      "detected_with_two_source_frames": 4,
+      "false_defeat_frames": 0,
+      "missed_groups": [
+        "86_game_02",
+        "86_game_04",
+        "86_game_05",
+        "86_game_06"
+      ]
+    }
+  ],
+  "loss_peaks": [
+    {
+      "group": "74_window_08",
+      "peak_score": 0.9999681711196899,
+      "second_frame_score": 0.9719668030738831,
+      "margin": 0.6617070138454437,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 6092.748667
+    },
+    {
+      "group": "74_window_10",
+      "peak_score": 0.9887086749076843,
+      "second_frame_score": 0.9588904976844788,
+      "margin": 0.648541659116745,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 7606.156667
+    },
+    {
+      "group": "86_game_02",
+      "peak_score": 0.9590578079223633,
+      "second_frame_score": 0.9056586623191833,
+      "margin": 0.6129640638828278,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          37
+        ]
+      },
+      "timestamp": 1847.6
+    },
+    {
+      "group": "86_game_03",
+      "peak_score": 0.9866113662719727,
+      "second_frame_score": 0.9553387761116028,
+      "margin": 0.6452089548110962,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 1982.933
+    },
+    {
+      "group": "86_game_04",
+      "peak_score": 0.9387450814247131,
+      "second_frame_score": 0.9322072267532349,
+      "margin": 0.6029514968395233,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 2128.933
+    },
+    {
+      "group": "86_game_05",
+      "peak_score": 0.9061232805252075,
+      "second_frame_score": 0.8681214451789856,
+      "margin": 0.47816434502601624,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.1,
+        "location": [
+          23,
+          44
+        ]
+      },
+      "timestamp": 2300.716
+    },
+    {
+      "group": "86_game_06",
+      "peak_score": 0.94960618019104,
+      "second_frame_score": 0.9487187266349792,
+      "margin": 0.6155573427677155,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 2946.083
+    },
+    {
+      "group": "86_game_09",
+      "peak_score": 0.988248348236084,
+      "second_frame_score": 0.9515783190727234,
+      "margin": 0.6446120142936707,
+      "best_template": {
+        "template_id": "d74_6092",
+        "scale": 1.0,
+        "location": [
+          27,
+          38
+        ]
+      },
+      "timestamp": 5285.716
+    }
+  ],
+  "non_defeat_max": 0.47885966300964355,
+  "labeled_native_frames": 1511,
+  "source_note": "Only 74/86. Historical calibration label override affects one VICTORY exit frame, never thresholds or the frozen 73 set."
+}

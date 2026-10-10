@@ -1,0 +1,408 @@
+{
+  "format": "recut_packaging_report",
+  "version": 1,
+  "status": "done",
+  "created": "2026-10-10T15:31:48",
+  "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\codex_fast_1_rerender",
+  "input": {
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "edited_duration_s": 971.943,
+    "kept_pieces": 48,
+    "edit_digest": "8aeb6c5d7200621be30d0b7b7750a8afd8600934b90fc5ec21f5b8f26a591ddb"
+  },
+  "settings": {
+    "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\codex_fast_1_rerender",
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "provider": "codex",
+    "language": "it",
+    "asr_language": null,
+    "asr_model": "small",
+    "titles": 6,
+    "thumbnails": 3,
+    "mode": "fast",
+    "webcam_roi": "auto",
+    "creator": null,
+    "use_style": true,
+    "games": "auto",
+    "only": "render",
+    "analyze_only": false,
+    "use_cache": true,
+    "overwrite": false,
+    "max_highlights": 14,
+    "max_deepen": null,
+    "image_format": "png",
+    "agent_model": null,
+    "agent_effort": null,
+    "agent_timeout": 900.0,
+    "agent_max_input": null,
+    "agent_budget_usd": null
+  },
+  "privacy": "NOTE: packaging sends transcript excerpts, timing evidence and selected video frames/crops to the provider configured in the codex CLI. Local analysis sends nothing. Use --analyze-only to stay fully local.",
+  "evidence": {
+    "transcript": "cached",
+    "transcript_lines": 179,
+    "audio": "cached",
+    "visual": "ok",
+    "webcam": "ok",
+    "games": 2,
+    "highlights": 14,
+    "frames": 46,
+    "webcam_frames": 13
+  },
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "edited_start": 0.0,
+      "edited_end": 366.563,
+      "highlights": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ]
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "edited_start": 366.563,
+      "edited_end": 971.943,
+      "highlights": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ]
+    }
+  ],
+  "story": {
+    "main_topic": "Due vittorie a Hearthstone, con l'Hunter contro Kibler e con il Paladino tra pressione sul campo, dubbi sulla lista e nuove opzioni da valutare.",
+    "themes": [
+      "Pressione dell'Hunter e valutazione delle giocate avversarie",
+      "Buona partenza del Paladino e dubbi sulla costruzione della lista",
+      "Valutazione delle nuove carte e degli effetti disponibili",
+      "Sfida collettiva streamer contro sviluppatori"
+    ]
+  },
+  "preferred_title": {
+    "title_id": "TI1",
+    "title": "Bombardamento su Meccaciclo e vittoria contro Kibler",
+    "concept_id": "C1",
+    "style": "competitive",
+    "highlight_ids": [
+      "H06"
+    ],
+    "transcript_ids": [
+      "T0051",
+      "T0052",
+      "T0054"
+    ],
+    "rationale": "Collega una giocata nominata all'esito verificato senza sostenere che quella giocata abbia deciso da sola la partita."
+  },
+  "preferred_concept_id": "C1",
+  "titles": [
+    {
+      "title_id": "TI1",
+      "title": "Bombardamento su Meccaciclo e vittoria contro Kibler",
+      "concept_id": "C1",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "TI2",
+      "title": "Kibler colpisce Meccaciclo: il finale della mia partita con Hunter",
+      "concept_id": "C1",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "TI3",
+      "title": "Vinco col Paladino, ma nella lista manca una carta?",
+      "concept_id": "C2",
+      "highlight_ids": [
+        "H09",
+        "H11",
+        "H14"
+      ]
+    },
+    {
+      "title_id": "TI4",
+      "title": "Paladino: vinco e mi chiedo dov'\u00e8 la magia da un mana",
+      "concept_id": "C2",
+      "highlight_ids": [
+        "H09",
+        "H11",
+        "H14"
+      ]
+    },
+    {
+      "title_id": "TI5",
+      "title": "Palla di Fuoco o buff? Valuto le opzioni durante la partita",
+      "concept_id": "C3",
+      "highlight_ids": [
+        "H13"
+      ]
+    },
+    {
+      "title_id": "TI6",
+      "title": "Una Palla di Fuoco dopo ogni magia? Mi fermo a valutare",
+      "concept_id": "C3",
+      "highlight_ids": [
+        "H13"
+      ]
+    }
+  ],
+  "thumbnails": [
+    {
+      "concept_id": "C1",
+      "path": "thumbnails\\concept_01.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 727692,
+      "format": "png",
+      "layout": "board_focus",
+      "text": {
+        "font_px": 103.0,
+        "cap_px": 81.0,
+        "lines": [
+          "PROPRIO",
+          "SU QUESTO?"
+        ],
+        "fits": true,
+        "bounds": [
+          709.1,
+          34.2,
+          504.5,
+          205.7
+        ],
+        "timestamp_zone_clear": true,
+        "align": "right",
+        "px_at_320": 20.2
+      },
+      "warnings": [],
+      "subjects": [
+        {
+          "kind": "background",
+          "rect": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ],
+          "sharpness": 1591.6
+        },
+        {
+          "kind": "card",
+          "rect": [
+            203.6,
+            72.0,
+            360.8,
+            532.8
+          ]
+        }
+      ],
+      "quality": {
+        "passed": true,
+        "issues": [],
+        "fixes": []
+      }
+    },
+    {
+      "concept_id": "C2",
+      "path": "thumbnails\\concept_02.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 1040046,
+      "format": "png",
+      "layout": "story_focus",
+      "text": {
+        "font_px": 134.0,
+        "cap_px": 105.5,
+        "lines": [
+          "DOV'\u00c8 QUELLA MAGIA?"
+        ],
+        "fits": true,
+        "bounds": [
+          67.8,
+          37.6,
+          1147.5,
+          162.1
+        ],
+        "timestamp_zone_clear": true,
+        "align": "center",
+        "px_at_320": 26.4
+      },
+      "warnings": [],
+      "subjects": [
+        {
+          "kind": "background",
+          "rect": [
+            0.0,
+            0.0,
+            742.4,
+            720.0
+          ],
+          "sharpness": 1204.7
+        },
+        {
+          "kind": "inset",
+          "rect": [
+            588.8,
+            0.0,
+            691.2,
+            720.0
+          ],
+          "sharpness": 1293.5
+        }
+      ],
+      "quality": {
+        "passed": true,
+        "issues": [],
+        "fixes": []
+      }
+    },
+    {
+      "concept_id": "C3",
+      "path": "thumbnails\\concept_03.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 609796,
+      "format": "png",
+      "layout": "reaction_focus",
+      "text": {
+        "font_px": 187.2,
+        "cap_px": 147.8,
+        "lines": [
+          "QUALE",
+          "TENGO?"
+        ],
+        "fits": true,
+        "bounds": [
+          57.8,
+          25.6,
+          595.5,
+          360.3
+        ],
+        "timestamp_zone_clear": true,
+        "align": "left",
+        "px_at_320": 37.0
+      },
+      "warnings": [],
+      "subjects": [
+        {
+          "kind": "background",
+          "rect": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ],
+          "sharpness": 2762.2
+        },
+        {
+          "kind": "face",
+          "rect": [
+            768.9,
+            212.5,
+            438.5,
+            437.5
+          ]
+        },
+        {
+          "kind": "webcam",
+          "rect": [
+            691.2,
+            0.0,
+            588.8,
+            720.0
+          ],
+          "face": true
+        }
+      ],
+      "quality": {
+        "passed": true,
+        "issues": [],
+        "fixes": []
+      }
+    }
+  ],
+  "mode": "fast",
+  "brief": null,
+  "agent": {
+    "provider": "codex",
+    "effort": "medium",
+    "calls_made": 0,
+    "cache_hits": 0,
+    "calls": [],
+    "cost_usd_total": null,
+    "tokens_used_total": null
+  },
+  "extensions": {
+    "image_generation": {
+      "provider": "none",
+      "available": false,
+      "used": false
+    },
+    "youtube_trends": {
+      "provider": "none",
+      "available": false,
+      "used": false,
+      "note": "trends are never inferred; V1 does not query any trends source"
+    }
+  },
+  "cache": {
+    "root": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\iso\\cache\\packaging",
+    "enabled": true,
+    "stats": {
+      "transcript": {
+        "hit": 0,
+        "miss": 0
+      },
+      "evidence": {
+        "hit": 0,
+        "miss": 0
+      },
+      "frames": {
+        "hit": 0,
+        "miss": 0
+      },
+      "agent": {
+        "hit": 0,
+        "miss": 0
+      },
+      "render": {
+        "hit": 0,
+        "miss": 0
+      }
+    }
+  },
+  "timings_s": {
+    "load_previous": 0.329,
+    "thumbnail_render": 1.531,
+    "total": 1.968
+  },
+  "warnings": [],
+  "error": null,
+  "artifacts": {
+    "content_analysis.json": "content_analysis.json",
+    "transcript.json": "transcript.json",
+    "game_contexts.json": "game_contexts.json",
+    "highlights.json": "highlights.json",
+    "video_story.json": "video_story.json",
+    "title_candidates.json": "title_candidates.json",
+    "thumbnail_concepts.json": "thumbnail_concepts.json",
+    "packaging_report.json": "packaging_report.json"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "run_count": 1,
+  "started_at_utc": "2026-10-08T17:16:33.561Z",
+  "command": [
+    "python",
+    "-m",
+    "analysis.gameplay.hearthstone.debug_analyze",
+    "<VIDEOS>/73.mp4",
+    "--template-pack",
+    "docs/gameplay_validation/86/iteration4_frozen/templates.json",
+    "--single-frame-policy",
+    "docs/gameplay_validation/86/iteration4_frozen/single_frame_policy.json",
+    "--ground-truth",
+    "tests/fixtures/gameplay/73_held_out_ground_truth.json",
+    "--output-dir",
+    "<REPORT_DIR>",
+    "--no-cache"
+  ]
+}

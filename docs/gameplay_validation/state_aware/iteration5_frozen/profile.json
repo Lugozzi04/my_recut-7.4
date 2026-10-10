@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "profile": "hearthstone-state-aware",
+  "status": "frozen_experimental_candidate",
+  "reference_size": [
+    960,
+    540
+  ],
+  "viewport": [
+    0,
+    0,
+    1,
+    1
+  ],
+  "result": {
+    "roi": [
+      0.425,
+      0.5,
+      0.15,
+      0.16111111111111112
+    ],
+    "context_roi": [
+      0.425,
+      0.5518518518518518,
+      0.15,
+      0.10185185185185185
+    ],
+    "representation": "gray",
+    "threshold": 0.85,
+    "margin": 0.04,
+    "scales": [
+      0.9,
+      0.95,
+      1.0,
+      1.05,
+      1.1,
+      1.15
+    ],
+    "templates": [
+      {
+        "class": "VICTORY",
+        "id": "v74_820",
+        "path": "v74_820.png",
+        "provenance": {
+          "role": "calibration",
+          "video": "74.mp4",
+          "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+          "timestamp": 820.602667,
+          "reference_crop": [
+            438,
+            314,
+            98,
+            24
+          ],
+          "source_cache": "74_window_02.npz"
+        }
+      },
+      {
+        "class": "VICTORY",
+        "id": "v74_1385",
+        "path": "v74_1385.png",
+        "provenance": {
+          "role": "calibration",
+          "video": "74.mp4",
+          "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+          "timestamp": 1385.056,
+          "reference_crop": [
+            441,
+            309,
+            91,
+            22
+          ],
+          "source_cache": "74_window_04.npz"
+        }
+      },
+      {
+        "class": "DEFEAT",
+        "id": "d74_6092",
+        "path": "d74_6092.png",
+        "provenance": {
+          "role": "calibration",
+          "video": "74.mp4",
+          "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+          "timestamp": 6092.748667,
+          "reference_crop": [
+            435,
+            308,
+            94,
+            23
+          ],
+          "source_cache": "74_window_08.npz"
+        }
+      },
+      {
+        "class": "DEFEAT",
+        "id": "d74_6119",
+        "path": "d74_6119.png",
+        "provenance": {
+          "role": "calibration",
+          "video": "74.mp4",
+          "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+          "timestamp": 6119.015333,
+          "reference_crop": [
+            430,
+            317,
+            108,
+            23
+          ],
+          "source_cache": "74_window_09.npz"
+        }
+      }
+    ]
+  },
+  "board": {
+    "representation": "masked_canny",
+    "aggregation": "minimum",
+    "anchors": [
+      {
+        "id": "end_turn",
+        "roi": [
+          0.7666666666666667,
+          0.4185185185185185,
+          0.084375,
+          0.07962962962962963
+        ],
+        "exclude": [
+          0.12345679012345678,
+          0.18604651162790697,
+          0.7530864197530864,
+          0.627906976744186
+        ],
+        "padding_px": 8,
+        "templates": [
+          {
+            "path": "end_turn_74_300.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 300.0,
+              "requested_timestamp": 300.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.7666666666666667,
+                0.4185185185185185,
+                0.084375,
+                0.07962962962962963
+              ]
+            }
+          },
+          {
+            "path": "end_turn_74_1605.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 1605.014667,
+              "requested_timestamp": 1605.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.7666666666666667,
+                0.4185185185185185,
+                0.084375,
+                0.07962962962962963
+              ]
+            }
+          },
+          {
+            "path": "end_turn_74_5400.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 5400.012,
+              "requested_timestamp": 5400.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.7666666666666667,
+                0.4185185185185185,
+                0.084375,
+                0.07962962962962963
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "hero_power",
+        "roi": [
+          0.565625,
+          0.6925925925925925,
+          0.08125,
+          0.14444444444444443
+        ],
+        "exclude": [
+          0.19230769230769232,
+          0.21794871794871795,
+          0.6025641025641025,
+          0.6025641025641025
+        ],
+        "padding_px": 8,
+        "templates": [
+          {
+            "path": "hero_power_74_300.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 300.0,
+              "requested_timestamp": 300.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.565625,
+                0.6925925925925925,
+                0.08125,
+                0.14444444444444443
+              ]
+            }
+          },
+          {
+            "path": "hero_power_74_1605.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 1605.014667,
+              "requested_timestamp": 1605.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.565625,
+                0.6925925925925925,
+                0.08125,
+                0.14444444444444443
+              ]
+            }
+          },
+          {
+            "path": "hero_power_74_5400.0.png",
+            "provenance": {
+              "role": "calibration",
+              "video": "74.mp4",
+              "timestamp": 5400.012,
+              "requested_timestamp": 5400.0,
+              "video_fingerprint": "3c86fc9248fb5c5cf3218595abfe1e582ee0d4a909f887683c3607e7a947cd02",
+              "reference_roi": [
+                0.565625,
+                0.6925925925925925,
+                0.08125,
+                0.14444444444444443
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "monitor": {
+    "fps": 1.0,
+    "board_high": 0.38,
+    "board_low": 0.2,
+    "board_observations": 2,
+    "weak_score": 0.65,
+    "weak_margin": 0.04,
+    "before_s": 2.0,
+    "after_s": 5.0,
+    "high_fps": 60.0
+  },
+  "dataset_discipline": {
+    "calibration_videos": [
+      "74.mp4",
+      "86.mp4"
+    ],
+    "frozen_validation": "73.mp4 games 4-14 excluded from all parameter selection",
+    "user_reference_images": "templates/; geometry only, provenance not verified"
+  }
+}

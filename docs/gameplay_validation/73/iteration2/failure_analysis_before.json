@@ -1,0 +1,72 @@
+{
+  "format": "recut_gameplay_failure_analysis",
+  "iteration": 2,
+  "code_changes_started": false,
+  "codes": {
+    "A": "correct useful frame not sampled",
+    "B": "wrong ROI",
+    "C": "sampled correct frame below threshold",
+    "D": "visual variant not represented; requires independent calibration evidence",
+    "E": "detected observation rejected by consolidation",
+    "F": "assembler loss or wrong pairing",
+    "G": "other"
+  },
+  "failures": [
+    {
+      "anchor_s": 2305,
+      "result": "LOSS",
+      "primary": "A",
+      "additional": [
+        "E"
+      ],
+      "global_frames": [
+        {
+          "time": 2305.033,
+          "score": 0.534
+        },
+        {
+          "time": 2305.083,
+          "score": 0.1796
+        }
+      ],
+      "native_peak": {
+        "time": 2305.05,
+        "score": 0.9418808817863464,
+        "accepted_frames": 1
+      },
+      "roi": "correct",
+      "note": "Native support only one frame; forcing native decode alone still fails two-distinct-frame rule. New visual variant D is not yet established."
+    },
+    {
+      "anchor_s": 5010.7,
+      "result": "LOSS",
+      "primary": "C",
+      "dense_peak": {
+        "time": 5010.783,
+        "score": 0.851311445236206
+      },
+      "native_peak": {
+        "time": 5010.716,
+        "score": 0.9099090099334717,
+        "accepted_frames": 0
+      },
+      "roi": "correct",
+      "note": "D/animation hypothesis unproven; no threshold/template changes justified by validation alone."
+    },
+    {
+      "anchor_s": 5059,
+      "result": "VS_SCREEN",
+      "primary": "C",
+      "full_frame_peak": {
+        "time": 5063,
+        "score": 0.91203
+      },
+      "roi_peak": {
+        "time": 5060.433,
+        "score": 0.8995426893234253
+      },
+      "roi": "correct",
+      "note": "Visible screen sampled. Cursor and phase are possible appearance factors, to test on calibration only; downstream F at4563.933..5678."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+﻿NOTE: --resolver codex sends the boundary context text (window transcript, timings, candidate features) to the provider configured in the local CLI. 'exact' sends nothing.
+
+=== game 3 END  window 0:46:26.98 -> 0:47:06.98  25 candidates
+  codex   #1 0:46:31.98 conf=1.00 2.1s RESULT_ANCHOR+TRANSCRIPT_SEGMENT_END+TRANSCRIPT_SEGMENT_START FALLBACK(timeout)
+
+decisions written to docs\gameplay_validation\videoprova\boundaries\agent_smoke_v1\decisions_forced_timeout.json

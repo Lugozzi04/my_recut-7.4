@@ -1,0 +1,43 @@
+{
+  "native": {
+    "total": 1511,
+    "correct": 1380,
+    "seconds": 24.536658800000026,
+    "false_defeat": 0,
+    "classes": {
+      "DEFEAT": {
+        "count": 499,
+        "correct": 441
+      },
+      "VICTORY": {
+        "count": 635,
+        "correct": 562
+      },
+      "NEGATIVE": {
+        "count": 377,
+        "correct": 377
+      }
+    }
+  },
+  "synthetic": {
+    "total": 330,
+    "correct": 239,
+    "seconds": 4.771021999999998,
+    "false_defeat": 0,
+    "classes": {
+      "DEFEAT": {
+        "count": 165,
+        "correct": 101
+      },
+      "VICTORY": {
+        "count": 165,
+        "correct": 138
+      },
+      "NEGATIVE": {
+        "count": 0,
+        "correct": 0
+      }
+    }
+  },
+  "note": "NEGATIVE is correct when OCR returns UNKNOWN; native samples are reviewed frames, not independent games."
+}

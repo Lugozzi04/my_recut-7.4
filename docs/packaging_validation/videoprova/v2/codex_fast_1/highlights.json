@@ -1,0 +1,622 @@
+{
+  "highlights": [
+    {
+      "id": "H01",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1360.45,
+      "source_end": 1382.43,
+      "edited_start": 1.0,
+      "edited_end": 20.74,
+      "peak_source": 1370.25,
+      "evidence_sources": [
+        "audio_peak",
+        "game_intro",
+        "pause_break",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -3.712,
+        "peak_db_above_baseline": 9.751,
+        "loud_ratio": 0.078,
+        "voiced_ratio": 0.525
+      },
+      "transcript_ids": [
+        "T0001",
+        "T0002",
+        "T0003",
+        "T0004",
+        "T0005",
+        "T0006"
+      ],
+      "transcript_context": "[00:01] Ho questa impressione che tutti giocheranno l'unter, non so il perch\u00e9. [00:06] Ho questa impressione che oggi ci sar\u00e0 un po' di mirror hunter, mirror hunter. [00:12] Che senso. [00:15] Non lo so eh, non lo so ma mi viene in mente questa possibilit\u00e0. [00:21] Ah, chippiamo tutto? [00:24] A me no.",
+      "reason": "+9.0 dB above baseline; keyframe change 0.97; 2.7 s pause before speech; start of game 2",
+      "local_score": 1.726,
+      "visual": {
+        "keyframe_change_max": 0.973
+      },
+      "frame_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004"
+      ],
+      "webcam_frame_ids": [
+        "W001"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H02",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1406.98,
+      "source_end": 1427.0,
+      "edited_start": 34.05,
+      "edited_end": 54.07,
+      "peak_source": 1416.8,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "speech_burst",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -2.462,
+        "peak_db_above_baseline": 10.226,
+        "loud_ratio": 0.047,
+        "voiced_ratio": 0.484
+      },
+      "transcript_ids": [
+        "T0008",
+        "T0009",
+        "T0010",
+        "T0011"
+      ],
+      "transcript_context": "[00:39] No, \u00e8 in curva questa roba. [00:42] il mimiron comunque mi ha sciolto e il mimiron mi ha davvero sciolto bella cerno billa bella bro cerno billi [00:51] in realt\u00e0 ti chiamo sempre cerno bill per\u00f2 mi sono reso conto adesso che ti chiami cerno billi grazie [00:56] mille per il terzo mese caro grazie mille bentornato men grazie mille cucciolo",
+      "reason": "+8.8 dB above baseline; 3.3 words/s (video mean 1.8); 9.0 s pause before speech; keyframe change 0.70",
+      "local_score": 1.978,
+      "visual": {
+        "keyframe_change_max": 0.703
+      },
+      "frame_ids": [
+        "F005",
+        "F006",
+        "F007",
+        "F008"
+      ],
+      "webcam_frame_ids": [
+        "W002",
+        "W003"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H03",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1528.18,
+      "source_end": 1539.6,
+      "edited_start": 137.81,
+      "edited_end": 149.23,
+      "peak_source": 1533.75,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "reaction"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -6.614,
+        "peak_db_above_baseline": 10.19,
+        "loud_ratio": 0.057,
+        "voiced_ratio": 0.332
+      },
+      "transcript_ids": [
+        "T0022",
+        "T0023",
+        "T0024"
+      ],
+      "transcript_context": "[01:58] un po potrei pensare di squainare il carro arma giusto ma [02:22] dove la che animazioni insane queste [02:25] Ma che animati mi sono?",
+      "reason": "+9.7 dB above baseline; reaction words: insane; 7.3 s pause before speech",
+      "local_score": 1.507,
+      "visual": {
+        "keyframe_change_max": 0.118
+      },
+      "frame_ids": [
+        "F009",
+        "F010",
+        "F011"
+      ],
+      "webcam_frame_ids": [],
+      "coverage": false
+    },
+    {
+      "id": "H04",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1602.5,
+      "source_end": 1619.26,
+      "edited_start": 203.65,
+      "edited_end": 220.41,
+      "peak_source": 1607.5,
+      "evidence_sources": [
+        "audio_peak",
+        "explanation",
+        "speech_burst"
+      ],
+      "audio": {
+        "mean_db_above_baseline": 3.023,
+        "peak_db_above_baseline": 10.459,
+        "loud_ratio": 0.062,
+        "voiced_ratio": 0.674
+      },
+      "transcript_ids": [
+        "T0032",
+        "T0033",
+        "T0034",
+        "T0035"
+      ],
+      "transcript_context": "[03:21] E poi ho anche i bundles da darvi, e per i go away per\u00f2 posso dirvi una cosa sincera, non ho minimamente idea di come cazzo farli [03:30] Mi hanno dato i codici, l'applizzare quindi posso, posso, s\u00ec, cio\u00e8 vi regaler\u00f2 sicuramente oggi un bundle [03:38] Poi non so, magari un altro me lo tengo per un altro live, per\u00f2 uno sicuramente oggi parte [03:42] e non so bene quando come perch\u00e9 per\u00f2 lo faremo",
+      "reason": "+9.6 dB above baseline; 3.5 words/s (video mean 1.8); 27 s of continuous speech",
+      "local_score": 1.394,
+      "visual": {
+        "keyframe_change_max": 0.067
+      },
+      "frame_ids": [
+        "F012",
+        "F013",
+        "F014"
+      ],
+      "webcam_frame_ids": [
+        "W004"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H05",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1699.025,
+      "source_end": 1723.68,
+      "edited_start": 290.255,
+      "edited_end": 308.0,
+      "peak_source": 1715.75,
+      "evidence_sources": [
+        "audio_peak",
+        "explanation",
+        "speech_burst"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -1.677,
+        "peak_db_above_baseline": 11.253,
+        "loud_ratio": 0.068,
+        "voiced_ratio": 0.592
+      },
+      "transcript_ids": [
+        "T0041",
+        "T0042",
+        "T0043",
+        "T0044",
+        "T0045",
+        "T0046",
+        "T0047"
+      ],
+      "transcript_context": "[04:39] Eccolo qua 5-5 fa male questo doppio 5-5 triplo 5-5 anche far\u00e0 male caro chi blerze [04:46] caro chi blerze caro chi blerze [04:51] no non l 'ha effettivamente ammazzato prima l 'uno tra [04:54] si poteva anche ammazzare prima se va anche ammazzare prima effettivamente che drop ci [04:58] sono ci sono i drop di odio c'\u00e8 c'\u00e8 scritto in live toricamente sopra ho vista la scritta [05:03] non so cosa, che drop ci sono, chazzo sicuramente che sono dei drop, l'avevo visti prima in chat [05:09] l 'annuncio,",
+      "reason": "+9.5 dB above baseline; 3.8 words/s (video mean 1.8); 32 s of continuous speech",
+      "local_score": 1.427,
+      "visual": {
+        "keyframe_change_max": 0.1
+      },
+      "frame_ids": [
+        "F015",
+        "F016",
+        "F017"
+      ],
+      "webcam_frame_ids": [],
+      "coverage": false
+    },
+    {
+      "id": "H06",
+      "game_id": "game-a6c0f437acde505ac557",
+      "source_index": 0,
+      "source_start": 1760.44,
+      "source_end": 1785.0,
+      "edited_start": 342.77,
+      "edited_end": 365.58,
+      "peak_source": 1775.983,
+      "evidence_sources": [
+        "explanation",
+        "near_result",
+        "reaction",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": 0.848,
+        "peak_db_above_baseline": 9.433,
+        "loud_ratio": 0.066,
+        "voiced_ratio": 0.596
+      },
+      "transcript_ids": [
+        "T0051",
+        "T0052",
+        "T0053",
+        "T0054",
+        "T0055",
+        "T0056",
+        "T0057",
+        "T0058",
+        "T0059",
+        "T0060"
+      ],
+      "transcript_context": "[05:35] chi bler chi bler il bombardamento sul mecca il ciclo non me lo puoi fare ma chi [05:39] plei di merda \u00e8 scusami cazzo ma che plei di merda scusami ma che plei di [05:43] merda \u00e8 che \u00e8 sta roba [05:46] ma donna ma non lo so gi\u00e0 ma non lo so se il bombardamento [05:49] continua cazzo ma smagamem bro rotto rotto questo decco [05:56] completamente fuori di testa completamente fuori di testa l'anter [06:00] Non c'\u00e8! Non c'\u00e8! [06:04] Non c'\u00e8! [06:05] Bene! [06:07] Ok non \u00e8 un dev, meno male, meno male, meno male,",
+      "reason": "reaction words: ma; seconds before the WIN result of game 2; 35 s of continuous speech; keyframe change 0.49",
+      "local_score": 1.975,
+      "visual": {
+        "keyframe_change_max": 0.52
+      },
+      "frame_ids": [
+        "F018",
+        "F019",
+        "F020"
+      ],
+      "webcam_frame_ids": [
+        "W005",
+        "W006"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H07",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 2896.52,
+      "source_end": 2919.48,
+      "edited_start": 397.823,
+      "edited_end": 420.783,
+      "peak_source": 2901.52,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "reaction",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -4.256,
+        "peak_db_above_baseline": 10.449,
+        "loud_ratio": 0.05,
+        "voiced_ratio": 0.559
+      },
+      "transcript_ids": [
+        "T0066",
+        "T0067",
+        "T0068",
+        "T0069",
+        "T0070",
+        "T0071",
+        "T0072",
+        "T0073"
+      ],
+      "transcript_context": "[06:33] per\u00f2 sicuramente si far\u00e0 un video a full [06:38] -keep, [06:39] sicuramente si far\u00e0 la roba del... lo faremo, lo faremo. [06:47] Il fatto \u00e8 che non so che mazzi conico scegliere, perch\u00e9 posso dire che forse un [06:50] mi ha rubato il content [06:54] io amante incredibile del lock, figa [06:57] il cube \u00e8 stato gi\u00e0 giocato, malissimo [07:00] malissimo, cosa si gioca allora?",
+      "reason": "+9.3 dB above baseline; reaction words: incredibile; 2.7 s pause before speech; keyframe change 0.30",
+      "local_score": 1.624,
+      "visual": {
+        "keyframe_change_max": 0.678
+      },
+      "frame_ids": [
+        "F021",
+        "F022",
+        "F023"
+      ],
+      "webcam_frame_ids": [],
+      "coverage": false
+    },
+    {
+      "id": "H08",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 2969.87,
+      "source_end": 2989.707,
+      "edited_start": 462.163,
+      "edited_end": 482.0,
+      "peak_source": 2974.87,
+      "evidence_sources": [
+        "audio_peak",
+        "explanation",
+        "speech_burst"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -0.592,
+        "peak_db_above_baseline": 9.423,
+        "loud_ratio": 0.065,
+        "voiced_ratio": 0.565
+      },
+      "transcript_ids": [
+        "T0083",
+        "T0084",
+        "T0085",
+        "T0086",
+        "T0087"
+      ],
+      "transcript_context": "[07:35] recuperabile vedo ma quanto figa questa anche prossimo tornare pi\u00f9 un attacco e scudo divino [07:47] se me il druido ha perso insieme non abbiamo giocato una carta nuova e posso dire un'altra [07:53] cosa non c'\u00e8 una carta nuova nella mia mano per\u00f2 io vi confermo che questa roba qua la [07:58] spela 8 nuova che fa 8 danni con furto vitale abbiamo il 7 mana che trasforma le robe l\u00ec [08:04] abbiamo rei abbiamo un po di cose nuove poi non vi \u00e8 gi\u00e0 in questo modo la lista per\u00f2",
+      "reason": "+8.6 dB above baseline; 3.7 words/s (video mean 1.8); 46 s of continuous speech",
+      "local_score": 1.334,
+      "visual": {
+        "keyframe_change_max": 0.12
+      },
+      "frame_ids": [
+        "F024",
+        "F025",
+        "F026"
+      ],
+      "webcam_frame_ids": [],
+      "coverage": false
+    },
+    {
+      "id": "H09",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3070.67,
+      "source_end": 3091.47,
+      "edited_start": 555.403,
+      "edited_end": 576.203,
+      "peak_source": 3086.47,
+      "evidence_sources": [
+        "audio_peak",
+        "explanation",
+        "reaction",
+        "speech_burst"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -2.323,
+        "peak_db_above_baseline": 9.552,
+        "loud_ratio": 0.079,
+        "voiced_ratio": 0.635
+      },
+      "transcript_ids": [
+        "T0101",
+        "T0102",
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0106"
+      ],
+      "transcript_context": "[09:10] abbia fatto di buff o cose particolari. [09:15] Ne si iniziamo a pescar le carte giuste, [09:17] con lei \u00e8 incredibile. \u00c8 un problema, mi sai, in questa lista. Non si trova la spela 1 che [09:23] ti pesca una spell e non fa parte del tuo deck? Chi \u00e8 che ha deck buildato questa cosa? [09:29] non mi sa che devo devo riguardarli liste perch\u00e9 non hanno inserito la carta uno mana [09:36] pi\u00f9 forte che fa funzionare sta lista cio\u00e8 magari perch\u00e9 sono partito bene vincolo stesso ma",
+      "reason": "+9.4 dB above baseline; reaction words: incredibile, si; 3.7 words/s (video mean 1.8); 27 s of continuous speech",
+      "local_score": 1.85,
+      "visual": {
+        "keyframe_change_max": 0.15
+      },
+      "frame_ids": [
+        "F027",
+        "F028",
+        "F029"
+      ],
+      "webcam_frame_ids": [
+        "W007"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H10",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3097.0,
+      "source_end": 3120.0,
+      "edited_start": 581.733,
+      "edited_end": 604.733,
+      "peak_source": 3107.97,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -6.467,
+        "peak_db_above_baseline": 10.563,
+        "loud_ratio": 0.043,
+        "voiced_ratio": 0.221
+      },
+      "transcript_ids": [
+        "T0106",
+        "T0107",
+        "T0108",
+        "T0109",
+        "T0110",
+        "T0111",
+        "T0112"
+      ],
+      "transcript_context": "[09:36] pi\u00f9 forte che fa funzionare sta lista cio\u00e8 magari perch\u00e9 sono partito bene vincolo stesso ma [09:42] li \u00e8 [09:49] 3 [09:52] oh oh oh, oh mio [09:59] bella questa, chi \u00e8 che culo? bella spell [10:04] no [10:04] c '\u00e8 quella spell in standard a uno mana che ti pesca una carta tua e una carta non presente nel tuo d 'ecco originale",
+      "reason": "+10.5 dB above baseline; keyframe change 0.75; 7.3 s pause before speech",
+      "local_score": 1.749,
+      "visual": {
+        "keyframe_change_max": 0.781
+      },
+      "frame_ids": [
+        "F030",
+        "F031",
+        "F032"
+      ],
+      "webcam_frame_ids": [],
+      "coverage": false
+    },
+    {
+      "id": "H11",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3196.84,
+      "source_end": 3217.87,
+      "edited_start": 666.613,
+      "edited_end": 687.483,
+      "peak_source": 3202.47,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "reaction",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -10.538,
+        "peak_db_above_baseline": 10.672,
+        "loud_ratio": 0.091,
+        "voiced_ratio": 0.274
+      },
+      "transcript_ids": [
+        "T0122",
+        "T0123",
+        "T0124",
+        "T0125",
+        "T0126",
+        "T0127"
+      ],
+      "transcript_context": "[11:01] Non posso dir di no, per\u00f2... [11:08] uno? [11:12] No, fermatelo, fermatelo! [11:18] C'\u00e8 questa roba. [11:22] Continua, continua! [11:26] Ma cos'\u00e8 questa merda? Perch\u00e9 come 8 mani avevo che \u00e8 il 3-3? Dico dio porco, dai. Perch\u00e9",
+      "reason": "+9.4 dB above baseline; reaction words: no; keyframe change 0.27; 5.0 s pause before speech",
+      "local_score": 1.69,
+      "visual": {
+        "keyframe_change_max": 0.273
+      },
+      "frame_ids": [
+        "F033",
+        "F034",
+        "F035"
+      ],
+      "webcam_frame_ids": [
+        "W008"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H12",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3276.27,
+      "source_end": 3308.0,
+      "edited_start": 739.043,
+      "edited_end": 761.513,
+      "peak_source": 3281.27,
+      "evidence_sources": [
+        "audio_peak",
+        "pause_break",
+        "reaction"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -9.674,
+        "peak_db_above_baseline": 10.028,
+        "loud_ratio": 0.064,
+        "voiced_ratio": 0.364
+      },
+      "transcript_ids": [
+        "T0136",
+        "T0137",
+        "T0138",
+        "T0139",
+        "T0140",
+        "T0141",
+        "T0142",
+        "T0143"
+      ],
+      "transcript_context": "[12:14] sembra buono adesso [12:16] comunque siamo ancora 2-3 e a me c'\u00e8 qualche dev che sta giocando [12:19] un po' di... controlliamo un attimo [12:23] perch\u00e9 i dev hanno detto abbiamo gi\u00e0 fatto 2-3 e la cigliamo ora [12:29] non ci sono dev, non ci sono dev [12:36] wow [12:38] wow [12:39] che player",
+      "reason": "+8.9 dB above baseline; reaction words: wow; 4.6 s pause before speech",
+      "local_score": 1.334,
+      "visual": {
+        "keyframe_change_max": 0.152
+      },
+      "frame_ids": [
+        "F036",
+        "F037",
+        "F038"
+      ],
+      "webcam_frame_ids": [
+        "W009"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H13",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3400.87,
+      "source_end": 3419.61,
+      "edited_start": 854.253,
+      "edited_end": 869.433,
+      "peak_source": 3411.57,
+      "evidence_sources": [
+        "audio_peak",
+        "reaction",
+        "visual_change"
+      ],
+      "audio": {
+        "mean_db_above_baseline": -5.214,
+        "peak_db_above_baseline": 9.425,
+        "loud_ratio": 0.03,
+        "voiced_ratio": 0.441
+      },
+      "transcript_ids": [
+        "T0153",
+        "T0154",
+        "T0155",
+        "T0156",
+        "T0157"
+      ],
+      "transcript_context": "[14:05] E far\u00e0 passare un altro turno bu questo trade anche non ha senso perch\u00e9 adesso posso tradare [14:15] Diamo un attimo rai [14:17] Ben l'iro power incredibile attenzione aspetta [14:23] Gi\u00e0 quando lancio una magia metto una palla di fuoco a me sembra forte [14:28] quando lancio a magia pi\u00f9 uno pi\u00f9 uno ai tuoi servitori anche",
+      "reason": "+8.6 dB above baseline; reaction words: incredibile; keyframe change 0.78",
+      "local_score": 1.438,
+      "visual": {
+        "keyframe_change_max": 0.777
+      },
+      "frame_ids": [
+        "F039",
+        "F040",
+        "F041"
+      ],
+      "webcam_frame_ids": [
+        "W010",
+        "W011"
+      ],
+      "coverage": false
+    },
+    {
+      "id": "H14",
+      "game_id": "game-5ea93430b91b0da159e0",
+      "source_index": 0,
+      "source_start": 3503.3,
+      "source_end": 3525.5,
+      "edited_start": 949.743,
+      "edited_end": 971.943,
+      "peak_source": 3515.5,
+      "evidence_sources": [
+        "audio_peak",
+        "explanation",
+        "near_result"
+      ],
+      "audio": {
+        "mean_db_above_baseline": 3.683,
+        "peak_db_above_baseline": 10.659,
+        "loud_ratio": 0.115,
+        "voiced_ratio": 0.61
+      },
+      "transcript_ids": [
+        "T0175",
+        "T0176",
+        "T0177",
+        "T0178",
+        "T0179"
+      ],
+      "transcript_context": "[15:42] Io mi rendo conto che la vita pu\u00f2 essere dura e che bisogna [15:48] stare attenti specialmente adesso, dove sei guardi le statistiche. [15:52] I giovani d'oggi, non solo in Italia, proprio del mondo, [15:56] il steward di davvero statisticamente il 1 su 2,5 \u00e8 l'udopatico non voglio [16:07] promuovere la vendita di pet oppure di skin",
+      "reason": "+8.7 dB above baseline; seconds before the WIN result of game 4; 31 s of continuous speech",
+      "local_score": 1.817,
+      "visual": {
+        "keyframe_change_max": 0.176
+      },
+      "frame_ids": [
+        "F042",
+        "F043",
+        "F044"
+      ],
+      "webcam_frame_ids": [
+        "W012",
+        "W013"
+      ],
+      "coverage": false
+    }
+  ]
+}

@@ -185,6 +185,37 @@ class GameplayDetectorTests(unittest.TestCase):
                 self.assertEqual(actual, expected)
                 self.assertEqual(actual[0].metadata["matched_rect_normalized"], [40 / 96, 24 / 64, 16 / 96, 12 / 64])
 
+    def test_template_ranking_reuses_matching_and_groups_scale_variants(self) -> None:
+        from unittest.mock import patch
+        variant = np.random.default_rng(321).integers(0, 256, (12, 16), dtype=np.uint8)
+        self.save_image("DEFEAT", "variant.png", variant)
+        self.config["classes"]["DEFEAT"]["scales"] = [0.9, 1.0, 1.1]
+        detector = self.result_detector()
+        roi = detector.result_scan_roi()
+        crop = self.crop_reference(detector, self.frame(image=variant), roi)
+        kinds = (GameEventType.VICTORY, GameEventType.DEFEAT)
+        ordinary = detector.score_roi(crop, 1., roi=roi, event_types=kinds)
+        with patch.object(detector, '_matches_reference', wraps=detector._matches_reference) as matching:
+            ranked = detector.score_roi(crop, 1., roi=roi, event_types=kinds, include_template_scores=True)
+        self.assertEqual(matching.call_count, 1)
+        entries = ranked['classes']['DEFEAT']['template_scores']
+        self.assertEqual(len(entries), 2)
+        self.assertTrue(entries[0]['template_id'].endswith('variant.png'))
+        self.assertNotEqual(entries[0]['template_id'], entries[1]['template_id'])
+        self.assertEqual(ranked['classes']['DEFEAT']['second_best_template'], entries[1])
+        for values in ranked['classes'].values():
+            values.pop('template_scores')
+            values.pop('second_best_template')
+        self.assertEqual(ranked, ordinary)
+
+    def test_single_patch_rank_has_no_second_template(self) -> None:
+        detector = self.result_detector()
+        roi = detector.result_scan_roi()
+        scores = detector.score_roi(self.crop_reference(detector, self.frame('VICTORY'), roi), 0.,
+                                    roi=roi, event_types=(GameEventType.VICTORY,), include_template_scores=True)
+        self.assertIsNone(scores['classes']['VICTORY']['second_best_template'])
+        self.assertEqual(len(scores['classes']['VICTORY']['template_scores']), 1)
+
     def test_dense_roi_preserves_viewport_coordinate_transform(self) -> None:
         self.config["viewport"] = [0.25, 0.25, 0.5, 0.5]
         detector = self.result_detector()
@@ -291,3 +322,72 @@ class GameplayDetectorTests(unittest.TestCase):
         for kinds in ((), ("DEFEAT",), (GameEventType.DEFEAT, GameEventType.DEFEAT)):
             with self.subTest(kinds=kinds), self.assertRaises(ValueError):
                 detector.detect_roi(crop, 0, roi=roi, event_types=kinds)
+
+    def test_weak_candidate_keeps_original_threshold_and_is_explicitly_non_event(self) -> None:
+        self.config["classes"]["VICTORY"]["threshold"] = 1.0
+        detector = self.result_detector()
+        image = self.images["VICTORY"].copy()
+        image[0, 0] ^= 255
+        frame = self.frame(image=image)
+        kinds = (GameEventType.VICTORY, GameEventType.DEFEAT)
+        self.assertEqual(detector.detect(frame, 0, event_types=kinds), [])
+        full = detector.detect_candidates(frame, 0, minimum_similarity=0.8, event_types=kinds)
+        self.assertEqual(len(full), 1)
+        self.assertTrue(full[0].metadata["candidate_only"])
+        self.assertEqual(full[0].metadata["threshold"], 1)
+        roi = detector.result_scan_roi()
+        cropped = detector.detect_roi_candidates(self.crop_reference(detector, frame, roi), 0, roi=roi,
+                                                minimum_similarity=0.8, event_types=kinds)
+        self.assertEqual(full, cropped)
+
+    def test_weak_candidates_still_reject_class_ties(self) -> None:
+        self.save_image("DEFEAT", "anchor.png", self.images["VICTORY"])
+        detector = self.result_detector()
+        roi = detector.result_scan_roi()
+        self.assertEqual(detector.detect_roi_candidates(self.crop_reference(detector, self.frame("VICTORY"), roi),
+                         0, roi=roi, minimum_similarity=0.8, event_types=(GameEventType.VICTORY, GameEventType.DEFEAT)), [])
+
+    def test_invalid_candidate_gate_is_rejected_even_when_strong_event_exists(self) -> None:
+        detector = self.detector()
+        for gate in (0, -1, 1.1, True, float("nan"), float("inf")):
+            with self.subTest(gate=gate), self.assertRaises(ValueError):
+                detector.detect_candidates(self.frame("VS_SCREEN"), 0, minimum_similarity=gate,
+                                           event_types=(GameEventType.VS_SCREEN,))
+
+
+@unittest.skipUnless(importlib.util.find_spec('cv2') is not None, 'OpenCV unavailable')
+class GameplayObservationAndTemplateCurationTests(unittest.TestCase):
+    def test_observe_roi_matches_once_and_returns_identical_scores_and_events(self):
+        from unittest.mock import patch
+        fixture = GameplayDetectorTests()
+        fixture.setUp()
+        try:
+            detector = fixture.detector()
+            roi = detector.result_scan_roi()
+            kinds = (GameEventType.VICTORY, GameEventType.DEFEAT)
+            frame = fixture.frame('DEFEAT')
+            expected = detector.detect_roi(frame, 1., roi=roi, event_types=kinds)
+            with patch.object(detector, '_roi_matches', wraps=detector._roi_matches) as matches:
+                events, scores = detector.observe_roi(frame, 1., roi=roi, event_types=kinds)
+            self.assertEqual(matches.call_count, 1)
+            self.assertEqual(events, expected)
+            self.assertEqual(scores['classes']['DEFEAT']['similarity'], events[0].confidence)
+        finally:
+            fixture.doCleanups()
+
+    def test_pixel_duplicates_and_distinct_phases_are_reported_without_mutation(self):
+        from analysis.gameplay.hearthstone.visual.template_tools import similar_templates
+        fixture = GameplayDetectorTests()
+        fixture.setUp()
+        try:
+            patch_image = fixture.images['DEFEAT'][:, :, None].repeat(3, axis=2)
+            directory = fixture.root / 'defeat'
+            before = {p.name: p.read_bytes() for p in directory.iterdir()}
+            duplicates = similar_templates(patch_image, directory)
+            self.assertTrue(duplicates[0]['pixel_duplicate'])
+            changed = patch_image.copy()
+            changed[0:3] = 0
+            self.assertFalse(similar_templates(changed, directory)[0]['pixel_duplicate'])
+            self.assertEqual(before, {p.name: p.read_bytes() for p in directory.iterdir()})
+        finally:
+            fixture.doCleanups()

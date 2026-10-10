@@ -1,0 +1,170 @@
+{
+  "cards": [
+    {
+      "id": "K01",
+      "name": "Meccaciclo",
+      "status": "legible",
+      "frame_id": "F005",
+      "box": [
+        0.239,
+        0.3,
+        0.125,
+        0.329
+      ],
+      "path": "cards/K01_F005.png",
+      "source_time": 1415.8,
+      "confidence": 0.99,
+      "legibility": "clear",
+      "transcript_ids": [
+        "T0051"
+      ],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "obs_id": "O1",
+        "frame_id": "F005",
+        "source_time": 1415.8,
+        "box": [
+          0.239,
+          0.3,
+          0.125,
+          0.329
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K02",
+      "name": "Sputafuoco",
+      "status": "legible",
+      "frame_id": "F005",
+      "box": [
+        0.503,
+        0.315,
+        0.126,
+        0.314
+      ],
+      "path": "cards/K02_F005.png",
+      "source_time": 1415.8,
+      "confidence": 0.99,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "obs_id": "O2",
+        "frame_id": "F005",
+        "source_time": 1415.8,
+        "box": [
+          0.503,
+          0.315,
+          0.126,
+          0.314
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K03",
+      "name": "Cane da Guardia",
+      "status": "legible",
+      "frame_id": "F005",
+      "box": [
+        0.634,
+        0.301,
+        0.126,
+        0.328
+      ],
+      "path": "cards/K03_F005.png",
+      "source_time": 1415.8,
+      "confidence": 0.99,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "obs_id": "O3",
+        "frame_id": "F005",
+        "source_time": 1415.8,
+        "box": [
+          0.634,
+          0.301,
+          0.126,
+          0.328
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K04",
+      "name": "Prototipo Instabile",
+      "status": "legible",
+      "frame_id": "F005",
+      "box": [
+        0.759,
+        0.4,
+        0.12,
+        0.317
+      ],
+      "path": "cards/K04_F005.png",
+      "source_time": 1415.8,
+      "confidence": 0.98,
+      "legibility": "clear",
+      "transcript_ids": [],
+      "transcript_match": null,
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "obs_id": "O4",
+        "frame_id": "F005",
+        "source_time": 1415.8,
+        "box": [
+          0.759,
+          0.4,
+          0.12,
+          0.317
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    },
+    {
+      "id": "K05",
+      "name": "Re delle Profondit\u00e0",
+      "status": "verified",
+      "frame_id": "F027",
+      "box": [
+        0.184,
+        0.195,
+        0.163,
+        0.427
+      ],
+      "path": "cards/K05_F027.png",
+      "source_time": 3087.983,
+      "confidence": 0.99,
+      "legibility": "clear",
+      "transcript_ids": [
+        "T0118",
+        "T0119",
+        "T0149"
+      ],
+      "transcript_match": "della profondita",
+      "alternatives_tried": 0,
+      "provenance": {
+        "type": "video_crop",
+        "obs_id": "O5",
+        "frame_id": "F027",
+        "source_time": 3087.983,
+        "box": [
+          0.184,
+          0.195,
+          0.163,
+          0.427
+        ],
+        "note": "crop of the creator's own video frame"
+      }
+    }
+  ]
+}

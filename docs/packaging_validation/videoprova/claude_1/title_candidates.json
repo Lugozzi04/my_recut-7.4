@@ -1,0 +1,128 @@
+{
+  "format": "recut_title_candidates",
+  "prompt_version": "packaging_creative_v1",
+  "provider": "claude",
+  "language": "it",
+  "preferred_title_id": "T1",
+  "titles": [
+    {
+      "title_id": "T1",
+      "title": "Kibler mi bombarda il Meccaciclo\u2026 e vinco lo stesso",
+      "concept_id": "C1",
+      "style": "surprising",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0051",
+        "T0057",
+        "T0059"
+      ],
+      "rationale": "Mette insieme un fatto concreto (il bombardamento sul Meccaciclo) e un esito verificato (WIN). La curiosit\u00e0 sta nel 'come', senza inventare il colpo finale."
+    },
+    {
+      "title_id": "T2",
+      "title": "\u00abRotto questo deck\u00bb: mi sfogo con Kibler, poi la chiudo",
+      "concept_id": "C1",
+      "style": "emotional",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0055",
+        "T0056",
+        "T0057"
+      ],
+      "rationale": "Usa una citazione reale dello sfogo e attribuisce solo parole, non stati d'animo."
+    },
+    {
+      "title_id": "T3",
+      "title": "Avevo previsto il mirror Hunter\u2026 e mi capita Kibler",
+      "concept_id": "C2",
+      "style": "narrative",
+      "highlight_ids": [
+        "H01"
+      ],
+      "transcript_ids": [
+        "T0001",
+        "T0002"
+      ],
+      "rationale": "Hook narrativo: la previsione si avvera subito contro un avversario famoso, come mostra la schermata VS."
+    },
+    {
+      "title_id": "T4",
+      "title": "Oggi tutti giocano Hunter? La previsione e poi Kibler con Rexxar",
+      "concept_id": "C2",
+      "style": "question",
+      "highlight_ids": [
+        "H01"
+      ],
+      "transcript_ids": [
+        "T0001",
+        "T0004"
+      ],
+      "rationale": "Riformula come domanda l'impressione detta dal creator e la ancora alla schermata VS reale."
+    },
+    {
+      "title_id": "T5",
+      "title": "Mulligan nel mirror Hunter contro Kibler: cosa tengo e perch\u00e9",
+      "concept_id": "C3",
+      "style": "educational",
+      "highlight_ids": [
+        "H02",
+        "H01"
+      ],
+      "transcript_ids": [
+        "T0005",
+        "T0008"
+      ],
+      "rationale": "Promessa didattica limitata a ci\u00f2 che si vede: mano iniziale e sostituzione per la curva."
+    },
+    {
+      "title_id": "T6",
+      "title": "Hunter Meccaciclo contro Kibler: mulligan, triplo 5/5 e vittoria",
+      "concept_id": "C3",
+      "style": "informative",
+      "highlight_ids": [
+        "H02",
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0041",
+        "T0057"
+      ],
+      "rationale": "Riassume la partita con elementi verificati: Meccaciclo in mano, \"triplo 5-5\" detto a voce e visibile in F016, risultato WIN."
+    },
+    {
+      "title_id": "T7",
+      "title": "Streamers vs Devs sotto 2-3: provo il Paladino e la chiudo",
+      "concept_id": "C4",
+      "style": "competitive",
+      "highlight_ids": [
+        "H14",
+        "H09"
+      ],
+      "transcript_ids": [
+        "T0137",
+        "T0083"
+      ],
+      "rationale": "La posta in gioco dell'evento \u00e8 chiara con il punteggio reale. Si promette la vittoria della partita, non il cambio del tabellone."
+    },
+    {
+      "title_id": "T8",
+      "title": "\u00abChi ha deckbuildato questa cosa?\u00bb Le liste dell'evento al Paladino",
+      "concept_id": "C4",
+      "style": "informative",
+      "highlight_ids": [
+        "H09",
+        "H08"
+      ],
+      "transcript_ids": [
+        "T0104",
+        "T0105",
+        "T0086"
+      ],
+      "rationale": "Citazione forte e reale sulla critica alle liste, senza nominare la spell da 1 mana che resta incerta."
+    }
+  ]
+}

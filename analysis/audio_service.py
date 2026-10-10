@@ -131,7 +131,12 @@ def _extract_rms(
     audio_filter: str,
     cancellation: AnalysisCancellation,
     progress: _ProgressReporter,
+    start_s: float | None = None,
+    duration_s: float | None = None,
 ) -> np.ndarray:
+    # Optional input seek for local windows; the RMS framing is unchanged.
+    seek = ["-ss", f"{float(start_s):.6f}"] if start_s is not None else []
+    limit = ["-t", f"{float(duration_s):.6f}"] if duration_s is not None else []
     command = [
         ffmpeg,
         "-nostdin",
@@ -146,8 +151,10 @@ def _extract_rms(
         "+genpts",
         "-err_detect",
         "ignore_err",
+        *seek,
         "-i",
         request.path,
+        *limit,
         "-map",
         "0:a:0",
         "-vn",
@@ -251,6 +258,45 @@ def _extract_rms(
     return np.asarray(rms_values, dtype=np.float32)
 
 
+VOICE_FILTER = "highpass=f=150,lowpass=f=3400,acompressor=threshold=0.10:ratio=4:attack=5:release=50"
+
+
+def auto_threshold_from_rms(rms: np.ndarray) -> float:
+    """The editor's automatic silence threshold (percentile based)."""
+    p20 = float(np.percentile(rms, 20))
+    p90 = float(np.percentile(rms, 90))
+    return float(max(0.0008, min(0.06, p20 + 0.12 * (p90 - p20))))
+
+
+def extract_rms_window(
+    request: AnalysisRequest,
+    *,
+    start_s: float,
+    end_s: float,
+    cancellation: AnalysisCancellation | None = None,
+) -> np.ndarray:
+    """RMS of [start_s, end_s) with the same filter/framing as analyze_audio.
+
+    Frame i covers start_s + i * hop_s. Used by local analyses (for example
+    gameplay boundary windows) that must not decode or process the whole file.
+    """
+    _validate_request(request)
+    if not (0.0 <= float(start_s) < float(end_s)):
+        raise AudioAnalysisError("Invalid audio window.", code="invalid_request")
+    token = cancellation or AnalysisCancellation()
+    ffmpeg, _ = ensure_ffmpeg()
+    progress = _ProgressReporter(None)
+    window = {"start_s": float(start_s), "duration_s": float(end_s) - float(start_s)}
+    try:
+        return _extract_rms(ffmpeg=ffmpeg, request=request, duration=None, audio_filter=VOICE_FILTER,
+                            cancellation=token, progress=progress, **window)
+    except AnalysisCancelled:
+        raise
+    except Exception:
+        return _extract_rms(ffmpeg=ffmpeg, request=request, duration=None, audio_filter="anull",
+                            cancellation=token, progress=progress, **window)
+
+
 def analyze_audio(
     request: AnalysisRequest,
     *,
@@ -281,7 +327,7 @@ def analyze_audio(
     except Exception:
         duration = None
 
-    voice_filter = "highpass=f=150,lowpass=f=3400,acompressor=threshold=0.10:ratio=4:attack=5:release=50"
+    voice_filter = VOICE_FILTER
     try:
         rms = _extract_rms(
             ffmpeg=ffmpeg,
@@ -316,9 +362,7 @@ def analyze_audio(
     if rms.size < 10:
         raise AudioAnalysisError("Audio troppo corto o non processabile.", code="audio_too_short")
 
-    p20 = float(np.percentile(rms, 20))
-    p90 = float(np.percentile(rms, 90))
-    auto_threshold = float(max(0.0008, min(0.06, p20 + 0.12 * (p90 - p20))))
+    auto_threshold = auto_threshold_from_rms(rms)
     if duration is None or duration <= 0.0:
         duration = float(rms.size) * request.hop_s
 

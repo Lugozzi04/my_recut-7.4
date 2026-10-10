@@ -13,13 +13,12 @@ def run_gui() -> int:
     from utils.console import detach_gui_console
 
     detach_gui_console()
-    from PySide6.QtCore import QSettings
     from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QApplication
 
     from utils.app_version import app_version
     from utils.crash_handler import install_global_exception_handler
-    from utils.runtime_paths import initialize_qt_settings, resource_path
+    from utils.runtime_paths import app_settings, initialize_qt_settings, resource_path
 
     install_global_exception_handler()
     initialize_qt_settings()
@@ -48,7 +47,7 @@ def run_gui() -> int:
 
     # Respect user's last window mode when available.
     try:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         start_maximized = bool(int(s.value("window_maximized", 1) or 1))
     except Exception:
         start_maximized = True

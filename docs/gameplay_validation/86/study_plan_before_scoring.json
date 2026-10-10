@@ -1,0 +1,22 @@
+{
+  "role": "calibration",
+  "sources": [
+    "74.mp4",
+    "86.mp4"
+  ],
+  "held_out": "73.mp4 validation frozen; no retuning",
+  "threshold_grid": [
+    0.8,
+    0.85,
+    0.9,
+    0.92,
+    0.95,
+    0.98
+  ],
+  "margin": 0.04,
+  "single_frame": "disabled unless independently reviewed genuine one-strong-frame examples justify gates",
+  "hard_negative_mining": "1 FPS ROI entire 86; top 30 peaks separated by >=10s, manually review; native local rescore",
+  "template_acceptance": "independent cross-VOD phase/window coverage gain vs harder-negative score increase; reject redundant candidates",
+  "selection": "prefer unchanged 0.92 unless calibration evidence supports a safer alternative; no arbitrary target for validation",
+  "freeze_before_blind73": true
+}

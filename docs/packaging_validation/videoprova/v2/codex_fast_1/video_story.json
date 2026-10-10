@@ -1,0 +1,342 @@
+{
+  "format": "recut_video_story",
+  "prompt_version": "packaging_fast_v1",
+  "provider": "codex",
+  "mode": "fast",
+  "story": {
+    "language": "it",
+    "main_topic": "Due vittorie a Hearthstone, con l'Hunter contro Kibler e con il Paladino tra pressione sul campo, dubbi sulla lista e nuove opzioni da valutare.",
+    "summary": "La prima partita culmina nel commento sul Bombardamento contro Meccaciclo e nella vittoria contro Kibler. Nella seconda, il creator parte bene con il Paladino, mette in discussione alcune scelte di costruzione dei mazzi e valuta gli effetti disponibili nel momento mostrato in F039. La sfida collettiva streamer contro sviluppatori accompagna entrambe le partite.",
+    "themes": [
+      "Pressione dell'Hunter e valutazione delle giocate avversarie",
+      "Buona partenza del Paladino e dubbi sulla costruzione della lista",
+      "Valutazione delle nuove carte e degli effetti disponibili",
+      "Sfida collettiva streamer contro sviluppatori"
+    ],
+    "why_interesting": "Le vittorie convivono con giudizi molto diretti sulle giocate e sulle liste. Il contrasto pi\u00f9 interessante \u00e8 nel Paladino: la partita procede bene, ma il creator continua a chiedersi se al mazzo manchi una carta importante.",
+    "games": [
+      {
+        "game_id": "game-a6c0f437acde505ac557",
+        "summary": "L'Hunter affronta Kibler, sviluppa pressione e arriva alla vittoria dopo un finale in cui il creator critica il Bombardamento contro Meccaciclo.",
+        "key_moments": [
+          {
+            "highlight_id": "H03",
+            "description": "Il creator interrompe il commento per notare le animazioni della giocata.",
+            "transcript_ids": [
+              "T0023",
+              "T0024"
+            ]
+          },
+          {
+            "highlight_id": "H05",
+            "description": "Commenta la pressione di pi\u00f9 servitori 5/5 e riconosce una possibile eliminazione precedente.",
+            "transcript_ids": [
+              "T0041",
+              "T0043",
+              "T0044"
+            ]
+          },
+          {
+            "highlight_id": "H06",
+            "description": "Critica il Bombardamento contro Meccaciclo, definisce molto forte l'Hunter e si avvicina al risultato vincente registrato nel brief.",
+            "transcript_ids": [
+              "T0051",
+              "T0052",
+              "T0054",
+              "T0055",
+              "T0056"
+            ]
+          }
+        ],
+        "deck_talk": [
+          {
+            "description": "All'inizio ipotizza una giornata con molti mirror di Hunter; \u00e8 una previsione, non la conferma del matchup di questa partita.",
+            "transcript_ids": [
+              "T0001",
+              "T0002",
+              "T0004"
+            ]
+          },
+          {
+            "description": "Il giudizio finale sulla forza dell'Hunter nasce dalla partita appena giocata.",
+            "transcript_ids": [
+              "T0055",
+              "T0056"
+            ]
+          },
+          {
+            "description": "Spiega il contesto streamer contro sviluppatori e le ricompense collegate al risultato collettivo.",
+            "transcript_ids": [
+              "T0026",
+              "T0027",
+              "T0029",
+              "T0030",
+              "T0031"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria registrata dal rilevatore locale. Il materiale non consente di ricostruire con certezza il danno letale o attribuire la vittoria a una singola giocata."
+      },
+      {
+        "game_id": "game-5ea93430b91b0da159e0",
+        "summary": "Il Paladino parte bene e vince. Durante la partita, il creator dubita della propria lista, critica quella avversaria e si sofferma sulle opzioni di effetti mostrate in F039.",
+        "key_moments": [
+          {
+            "highlight_id": "H08",
+            "description": "Osserva che le nuove carte non sono ancora comparse nella sua mano e descrive alcune inclusioni della lista.",
+            "transcript_ids": [
+              "T0084",
+              "T0085",
+              "T0086",
+              "T0087"
+            ]
+          },
+          {
+            "highlight_id": "H09",
+            "description": "Mette in dubbio l'assenza di una magia da un mana che considera importante per il funzionamento del mazzo.",
+            "transcript_ids": [
+              "T0102",
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0106"
+            ]
+          },
+          {
+            "highlight_id": "H11",
+            "description": "Reagisce alla sequenza in corso e poi spiega perch\u00e9 un effetto risulta doppio.",
+            "transcript_ids": [
+              "T0124",
+              "T0125",
+              "T0126",
+              "T0127",
+              "T0128",
+              "T0129"
+            ]
+          },
+          {
+            "highlight_id": "H13",
+            "description": "Valuta le opzioni visibili in F039, soffermandosi sulla Palla di Fuoco dopo una magia e sul potenziamento dei servitori.",
+            "transcript_ids": [
+              "T0154",
+              "T0155",
+              "T0156",
+              "T0157"
+            ]
+          },
+          {
+            "highlight_id": "H14",
+            "description": "Il campo mostrato in F042 precede il risultato vincente; il parlato selezionato in questo punto riguarda invece una digressione su acquisti e statistiche.",
+            "transcript_ids": [
+              "T0175",
+              "T0176",
+              "T0177",
+              "T0178",
+              "T0179"
+            ]
+          }
+        ],
+        "deck_talk": [
+          {
+            "description": "Il discorso iniziale sui vecchi mazzi Warlock riguarda un possibile video futuro, non un cambio di mazzo nella partita corrente.",
+            "transcript_ids": [
+              "T0069",
+              "T0071",
+              "T0072",
+              "T0073",
+              "T0076",
+              "T0077"
+            ]
+          },
+          {
+            "description": "Dubita che nella propria lista sia presente la magia da un mana descritta; il materiale non ne verifica l'assenza.",
+            "transcript_ids": [
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0112",
+              "T0113",
+              "T0114"
+            ]
+          },
+          {
+            "description": "Giudica promettente il Paladino, ma riconosce di essere partito molto bene.",
+            "transcript_ids": [
+              "T0132",
+              "T0133",
+              "T0134",
+              "T0135"
+            ]
+          },
+          {
+            "description": "Critica il doppio Re delle Profondit\u00e0 e altre scelte della lista avversaria.",
+            "transcript_ids": [
+              "T0118",
+              "T0119",
+              "T0147",
+              "T0148",
+              "T0149",
+              "T0150",
+              "T0151"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria registrata dal rilevatore locale. Il pareggio collettivo annunciato durante la partita \u00e8 distinto dall'esito del singolo incontro."
+      }
+    ],
+    "strongest_highlights": [
+      {
+        "highlight_id": "H06",
+        "why": "Unisce una giocata nominata, un commento netto e la vicinanza alla vittoria contro Kibler.",
+        "strength": 0.94
+      },
+      {
+        "highlight_id": "H09",
+        "why": "Introduce una contraddizione concreta: il mazzo parte bene, ma il creator dubita di una scelta importante nella lista.",
+        "strength": 0.9
+      },
+      {
+        "highlight_id": "H13",
+        "why": "La schermata delle opzioni rende visibile una scelta comprensibile e il parlato ne valuta gli effetti.",
+        "strength": 0.88
+      },
+      {
+        "highlight_id": "H11",
+        "why": "La sequenza provoca un commento marcato e una successiva spiegazione dell'effetto doppio.",
+        "strength": 0.76
+      }
+    ],
+    "narrative_angles": [
+      {
+        "angle_id": "A1",
+        "angle": "Il finale contro Kibler: il Bombardamento su Meccaciclo diventa il punto centrale del commento.",
+        "highlight_ids": [
+          "H05",
+          "H06"
+        ]
+      },
+      {
+        "angle_id": "A2",
+        "angle": "Vincere con una lista che continua a suscitare dubbi: il caso del Paladino.",
+        "highlight_ids": [
+          "H08",
+          "H09",
+          "H14"
+        ]
+      },
+      {
+        "angle_id": "A3",
+        "angle": "Fermarsi a leggere le opzioni: Palla di Fuoco e potenziamenti cambiano la valutazione della scelta.",
+        "highlight_ids": [
+          "H13"
+        ]
+      }
+    ],
+    "card_observations": [
+      {
+        "obs_id": "O1",
+        "frame_id": "F005",
+        "box": [
+          0.239,
+          0.3,
+          0.125,
+          0.329
+        ],
+        "name": "Meccaciclo",
+        "legibility": "clear",
+        "confidence": 0.99,
+        "transcript_ids": [
+          "T0051"
+        ]
+      },
+      {
+        "obs_id": "O2",
+        "frame_id": "F005",
+        "box": [
+          0.503,
+          0.315,
+          0.126,
+          0.314
+        ],
+        "name": "Sputafuoco",
+        "legibility": "clear",
+        "confidence": 0.99,
+        "transcript_ids": []
+      },
+      {
+        "obs_id": "O3",
+        "frame_id": "F005",
+        "box": [
+          0.634,
+          0.301,
+          0.126,
+          0.328
+        ],
+        "name": "Cane da Guardia",
+        "legibility": "clear",
+        "confidence": 0.99,
+        "transcript_ids": []
+      },
+      {
+        "obs_id": "O4",
+        "frame_id": "F005",
+        "box": [
+          0.759,
+          0.4,
+          0.12,
+          0.317
+        ],
+        "name": "Prototipo Instabile",
+        "legibility": "clear",
+        "confidence": 0.98,
+        "transcript_ids": []
+      },
+      {
+        "obs_id": "O5",
+        "frame_id": "F027",
+        "box": [
+          0.184,
+          0.195,
+          0.163,
+          0.427
+        ],
+        "name": "Re delle Profondit\u00e0",
+        "legibility": "clear",
+        "confidence": 0.99,
+        "transcript_ids": [
+          "T0118",
+          "T0119",
+          "T0149"
+        ]
+      }
+    ],
+    "risky_claims": [
+      {
+        "claim": "Il Bombardamento su Meccaciclo causa da solo la sconfitta di Kibler.",
+        "why": "Il creator critica la giocata, ma i fotogrammi selezionati non dimostrano il rapporto causale n\u00e9 ricostruiscono il letale."
+      },
+      {
+        "claim": "La magia da un mana manca sicuramente nella lista del Paladino.",
+        "why": "Il creator esprime un dubbio; non \u00e8 disponibile una verifica completa della lista."
+      },
+      {
+        "claim": "Entrambi gli avversari sono sviluppatori.",
+        "why": "Il creator distingue esplicitamente alcuni avversari dagli sviluppatori."
+      },
+      {
+        "claim": "L'Hunter \u00e8 imbattibile o il Paladino \u00e8 competitivo in generale.",
+        "why": "Due vittorie e i giudizi del creator non stabiliscono la forza generale dei mazzi."
+      },
+      {
+        "claim": "In F039 viene scelta l'opzione Palla di Fuoco.",
+        "why": "Il fotogramma mostra le opzioni e il parlato le valuta, ma non verifica la selezione finale."
+      },
+      {
+        "claim": "Le espressioni della webcam dimostrano rabbia, stupore o entusiasmo.",
+        "why": "Le espressioni sono utilizzabili come elementi visivi, senza attribuire loro uno stato emotivo certo."
+      }
+    ],
+    "mode": "fast",
+    "deepened": null
+  }
+}

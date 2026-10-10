@@ -1,0 +1,62 @@
+{
+  "gameplay": {
+    "passed": 209,
+    "failed": 0,
+    "skipped": 0,
+    "command": "python -m pytest -o addopts= -q tests/test_gameplay_*.py"
+  },
+  "full_suite": {
+    "passed": 658,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 47.33,
+    "command": "python -m pytest -o addopts= -q -rs",
+    "skip_reason": "googleapiclient.http not installed; optional YouTube real SDK test"
+  },
+  "ruff": "All checks passed",
+  "mypy": "Success: no issues found in 48 source files",
+  "gui_smoke": {
+    "exit_code": 0,
+    "command": "python main.py --smoke-test",
+    "environment": "QT_QPA_PLATFORM=offscreen, writable app directories isolated under .pytest_cache"
+  },
+  "gates": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "code": 0,
+        "stdout": "All checks passed!\n",
+        "stderr": ""
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "code": 0,
+        "stdout": "Success: no issues found in 48 source files\r\n",
+        "stderr": ""
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ],
+  "pipeline_scope": "video-only detection; no cuts, GUI, exporter, TrackState or persistence changes",
+  "environment": [
+    "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "4.12.0 2.2.6",
+    "32"
+  ],
+  "commands": {
+    "gameplay": "python -m pytest -o addopts= -q tests/test_gameplay_*.py (glob expanded to 11 files)",
+    "full": "python -m pytest -o addopts= -q -rs",
+    "ruff": "python -m ruff check .",
+    "mypy": "python -m mypy automation analysis/audio_service.py analysis/gameplay core/project_file.py core/project_session.py utils/codec_detection.py analysis/cancellation.py analysis/classic.py core/config.py core/presets.py integrations utils/runtime_paths.py utils/console.py utils/credential_files.py utils/ffconcat.py utils/redaction.py utils/ffmpeg.py",
+    "gui": "python main.py --smoke-test"
+  }
+}

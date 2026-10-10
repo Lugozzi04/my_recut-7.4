@@ -1,0 +1,402 @@
+{
+  "format": "recut_thumbnail_concepts",
+  "prompt_version": "packaging_creative_v1",
+  "renderer": "thumbnail_renderer_v1",
+  "provider": "codex",
+  "preferred_concept_id": "C01",
+  "concepts": [
+    {
+      "concept_id": "C01",
+      "narrative_angle": "Il confronto con Kibler culmina nel verdetto esplicito del creator sul Cacciatore, sostenuto dalla pressione visibile sul tavolo.",
+      "direction": "competitive",
+      "title": "Cacciatore contro Kibler: il mio verdetto \u00e8 \u00abrotto\u00bb",
+      "thumbnail_text": "Fuori di testa",
+      "highlight_ids": [
+        "H06"
+      ],
+      "source_frame_ids": [
+        "F016"
+      ],
+      "webcam_frame_id": "W012",
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "split_reaction",
+        "background_frame_id": "F016",
+        "focus_box": [
+          0.305,
+          0.435,
+          0.385,
+          0.215
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "right",
+        "webcam_side": "left",
+        "emphasis_word": "testa",
+        "badge": null,
+        "accent_color": "#FFD43B",
+        "text_color": "#FFFFFF",
+        "rationale": "La fila alleata diventa il centro del gameplay. W012 occupa un pannello ampio a sinistra; il testo resta a destra su una zona scurita, senza coprire i servitori. Il titolo attribuisce il verdetto al creator."
+      },
+      "evidence": [
+        {
+          "claim": "Il Cacciatore viene giocato contro Kibler.",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0051"
+          ],
+          "frame_ids": [
+            "F016"
+          ]
+        },
+        {
+          "claim": "Il creator definisce il mazzo \u00abrotto\u00bb e il Cacciatore \u00abcompletamente fuori di testa\u00bb.",
+          "highlight_id": "H06",
+          "transcript_ids": [
+            "T0055",
+            "T0056"
+          ],
+          "frame_ids": [
+            "F016"
+          ]
+        }
+      ],
+      "risk_notes": "\u00abRotto\u00bb \u00e8 il giudizio del creator sulla partita mostrata. Il tavolo non dimostra l'origine dei servitori, un effetto specifico di Mimiron o il colpo letale.",
+      "render": {
+        "concept_id": "C01",
+        "path": "thumbnails\\concept_01.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 772049,
+        "format": "png",
+        "layout": "split_reaction",
+        "text": {
+          "font_px": 200.5,
+          "lines": [
+            "FUORI",
+            "DI",
+            "TESTA"
+          ],
+          "fits": false,
+          "bounds": [
+            731.1,
+            14.2,
+            508.2,
+            587.0
+          ],
+          "timestamp_zone_clear": false,
+          "px_at_320": 20.1
+        },
+        "warnings": [
+          "headline touches the safe margin",
+          "headline overlaps the YouTube duration badge area"
+        ]
+      }
+    },
+    {
+      "concept_id": "C02",
+      "narrative_angle": "Gli Scudi Divini rendono promettente il Paladino, ma durante la partita emerge il sospetto che nella lista manchi una carta utile.",
+      "direction": "question",
+      "title": "Paladino: Scudi Divini forti, ma manca una carta?",
+      "thumbnail_text": "Lista da rivedere",
+      "highlight_ids": [
+        "H08",
+        "H09"
+      ],
+      "source_frame_ids": [
+        "F022",
+        "F025"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "board_focus",
+        "background_frame_id": "F025",
+        "focus_box": [
+          0.2,
+          0.2,
+          0.64,
+          0.55
+        ],
+        "inset_id": "F022",
+        "inset_box": [
+          0.24,
+          0.31,
+          0.56,
+          0.36
+        ],
+        "text_side": "top",
+        "webcam_side": "right",
+        "emphasis_word": "rivedere",
+        "badge": null,
+        "accent_color": "#FFD166",
+        "text_color": "#FFFFFF",
+        "rationale": "Il tavolo di H09 riempie lo sfondo; un piccolo inserto in basso a destra richiama il precedente momento degli Scudi Divini. La fascia superiore ospita il testo. Il confronto accompagna il passaggio dalla valutazione degli effetti al dubbio sulla lista."
+      },
+      "evidence": [
+        {
+          "claim": "Il creator apprezza l'effetto che aumenta l'attacco e fornisce Scudo Divino.",
+          "highlight_id": "H08",
+          "transcript_ids": [
+            "T0083"
+          ],
+          "frame_ids": [
+            "F022"
+          ]
+        },
+        {
+          "claim": "Il creator sospetta un'omissione nella lista e dice di doverla ricontrollare.",
+          "highlight_id": "H09",
+          "transcript_ids": [
+            "T0103",
+            "T0104",
+            "T0105"
+          ],
+          "frame_ids": [
+            "F025"
+          ]
+        },
+        {
+          "claim": "Il creator riconosce di essere partito bene con il Paladino.",
+          "highlight_id": "H09",
+          "transcript_ids": [
+            "T0106"
+          ],
+          "frame_ids": [
+            "F025"
+          ]
+        }
+      ],
+      "risk_notes": "La carta mancante resta un sospetto: nome e assenza dalla lista completa non sono verificati. L'apprezzamento degli Scudi Divini e la buona partenza non costituiscono una valutazione del meta.",
+      "render": {
+        "concept_id": "C02",
+        "path": "thumbnails\\concept_02.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 1155930,
+        "format": "png",
+        "layout": "board_focus",
+        "text": {
+          "font_px": 148.0,
+          "lines": [
+            "LISTA DA",
+            "RIVEDERE"
+          ],
+          "fits": true,
+          "bounds": [
+            53.8,
+            19.9,
+            568.1,
+            291.1
+          ],
+          "timestamp_zone_clear": true,
+          "px_at_320": 14.8
+        },
+        "warnings": []
+      }
+    },
+    {
+      "concept_id": "C03",
+      "narrative_angle": "La scoperta dell'Innesto diventa una lettura delle alternative: generare una Palla di Fuoco oppure ottenere un bonus ai servitori, distinguendo le rispettive condizioni.",
+      "direction": "educational",
+      "title": "Innesto: Palla di Fuoco o bonus ai servitori?",
+      "thumbnail_text": "Conta la condizione",
+      "highlight_ids": [
+        "H13"
+      ],
+      "source_frame_ids": [
+        "F055",
+        "F056"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "board_focus",
+        "background_frame_id": "F055",
+        "focus_box": [
+          0.18,
+          0.17,
+          0.6,
+          0.61
+        ],
+        "inset_id": "F056",
+        "inset_box": [
+          0.615,
+          0.39,
+          0.157,
+          0.223
+        ],
+        "text_side": "bottom",
+        "webcam_side": "left",
+        "emphasis_word": "condizione",
+        "badge": null,
+        "accent_color": "#58E6FF",
+        "text_color": "#FFFFFF",
+        "rationale": "Il ritaglio mantiene le opzioni e il pulsante Innesto. L'inserto in alto a destra ingrandisce la condizione e l'effetto dell'opzione destra. Il testo occupa una fascia inferiore separata dai riquadri leggibili; si usano soltanto porzioni dei frame reali."
+      },
+      "evidence": [
+        {
+          "claim": "L'interfaccia mostrata durante la scoperta presenta il pulsante \u00abInnesto\u00bb e opzioni da confrontare.",
+          "highlight_id": "H13",
+          "transcript_ids": [
+            "T0155",
+            "T0156",
+            "T0157"
+          ],
+          "frame_ids": [
+            "F055",
+            "F056"
+          ]
+        },
+        {
+          "claim": "L'opzione centrale mette una Palla di Fuoco in mano quando viene lanciata una Magia.",
+          "highlight_id": "H13",
+          "transcript_ids": [
+            "T0156"
+          ],
+          "frame_ids": [
+            "F055"
+          ]
+        },
+        {
+          "claim": "Il creator valuta un bonus ai servitori; l'opzione destra visibile lo lega alla fine del turno e ai servitori di tipo diverso.",
+          "highlight_id": "H13",
+          "transcript_ids": [
+            "T0157"
+          ],
+          "frame_ids": [
+            "F055",
+            "F056"
+          ]
+        }
+      ],
+      "risk_notes": "I frame mostrano alternative, senza documentare la scelta definitiva. L'abbinamento proposto nel parlato non va presentato come risultato ottenuto. Nessun ritaglio K incerto viene utilizzato o nominato.",
+      "render": {
+        "concept_id": "C03",
+        "path": "thumbnails\\concept_03.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 1053792,
+        "format": "png",
+        "layout": "board_focus",
+        "text": {
+          "font_px": 148.0,
+          "lines": [
+            "CONTA LA",
+            "CONDIZIONE"
+          ],
+          "fits": true,
+          "bounds": [
+            52.9,
+            387.6,
+            713.5,
+            293.5
+          ],
+          "timestamp_zone_clear": true,
+          "px_at_320": 14.8
+        },
+        "warnings": []
+      }
+    },
+    {
+      "concept_id": "C04",
+      "narrative_angle": "Le esclamazioni accompagnano una sequenza di effetti con conseguenze visibili: il tavolo cambia mentre il creator ripete che gli effetti continuano.",
+      "direction": "surprising",
+      "title": "Gli effetti continuano e il tavolo del Paladino cambia",
+      "thumbnail_text": "Fermatelo",
+      "highlight_ids": [
+        "H11"
+      ],
+      "source_frame_ids": [
+        "F046",
+        "F047",
+        "F048",
+        "F050"
+      ],
+      "webcam_frame_id": null,
+      "card_asset_ids": [],
+      "composition_plan": {
+        "layout": "cinematic_text",
+        "background_frame_id": "F048",
+        "focus_box": [
+          0.19,
+          0.09,
+          0.64,
+          0.7
+        ],
+        "inset_id": null,
+        "inset_box": null,
+        "text_side": "left",
+        "webcam_side": "right",
+        "emphasis_word": "Fermatelo",
+        "badge": null,
+        "accent_color": "#FFB347",
+        "text_color": "#FFFFFF",
+        "rationale": "F048 riempie la composizione con il tavolo e gli effetti visibili. Un gradiente scuro a sinistra sostiene l'unica parola, molto grande; la parte centrale e destra conserva l'azione. La frase deriva dalla reazione verbale del creator."
+      },
+      "evidence": [
+        {
+          "claim": "Il creator esclama \u00abfermatelo\u00bb durante la sequenza.",
+          "highlight_id": "H11",
+          "transcript_ids": [
+            "T0124"
+          ],
+          "frame_ids": [
+            "F046"
+          ]
+        },
+        {
+          "claim": "Il creator ripete \u00abContinua, continua!\u00bb mentre la sequenza presenta effetti e cambiamenti del tavolo del Paladino.",
+          "highlight_id": "H11",
+          "transcript_ids": [
+            "T0125",
+            "T0126"
+          ],
+          "frame_ids": [
+            "F047",
+            "F048",
+            "F050"
+          ]
+        },
+        {
+          "claim": "Il servitore avversario presente in F046 non \u00e8 pi\u00f9 sul tavolo in F048.",
+          "highlight_id": "H11",
+          "transcript_ids": [
+            "T0124",
+            "T0126"
+          ],
+          "frame_ids": [
+            "F046",
+            "F048"
+          ]
+        }
+      ],
+      "risk_notes": "La sequenza non permette di identificare tutta la catena degli effetti o contarne le attivazioni. La scomparsa del servitore \u00e8 documentata, ma non viene attribuita a una carta specifica.",
+      "render": {
+        "concept_id": "C04",
+        "path": "thumbnails\\concept_04.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 1062451,
+        "format": "png",
+        "layout": "cinematic_text",
+        "text": {
+          "font_px": 149.0,
+          "lines": [
+            "FERMATELO"
+          ],
+          "fits": true,
+          "bounds": [
+            53.7,
+            229.8,
+            660.5,
+            155.1
+          ],
+          "timestamp_zone_clear": true,
+          "px_at_320": 14.9
+        },
+        "warnings": []
+      }
+    }
+  ]
+}

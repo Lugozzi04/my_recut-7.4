@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from contextlib import closing
 from dataclasses import asdict, dataclass
 import math
@@ -15,6 +15,7 @@ from analysis.gameplay.analyzer import GameplayAnalysisError, ProgressCallback
 from analysis.gameplay.assembler import GameAssembler, consolidate_events
 from analysis.gameplay.cache import GameplayCache, cache_key, video_identity
 from analysis.gameplay.models import GameEvent, GameEventType, GameplayAnalysisResult
+from analysis.gameplay.hearthstone.result_policy import SingleFrameResultPolicy
 from analysis.gameplay.hearthstone.visual.detector import TemplateVisualDetector, VisualEventDetector
 from analysis.gameplay.hearthstone.visual.sampler import FFmpegFrameSampler, FrameSampler
 from analysis.gameplay.hearthstone.visual.templates import NormalizedROI, TemplateRepository
@@ -22,7 +23,7 @@ from export.output_safety import atomic_promote_output
 from utils.runtime_paths import cache_root, config_root, resource_path
 
 
-ANALYZER_VERSION = "hearthstone-visual-v3"
+ANALYZER_VERSION = "hearthstone-visual-v5"
 
 
 @dataclass(frozen=True)
@@ -35,17 +36,25 @@ class HearthstoneSettings:
     minimum_result_stability_s: float = 1 / 120
     result_refine_fps: float = 120.0
     result_refine_padding_s: float = 0.15
+    candidate_similarity: float = 0.80
+    maximum_game_duration_s: float = 1800.0
     max_width: int = 960
     event_gap_s: float = 0.5
     minimum_observations: int = 3
     minimum_stability_s: float = 0.25
     max_observations: int = 100_000
+    single_frame_results: SingleFrameResultPolicy = SingleFrameResultPolicy()
 
     def __post_init__(self) -> None:
-        for name in ("coarse_fps", "fine_fps", "fine_padding_s", "event_gap_s", "minimum_stability_s", "minimum_result_stability_s", "result_refine_padding_s"):
+        if not isinstance(self.single_frame_results, SingleFrameResultPolicy):
+            raise ValueError("single_frame_results must be a SingleFrameResultPolicy")
+        for name in ("coarse_fps", "fine_fps", "fine_padding_s", "event_gap_s", "minimum_stability_s", "minimum_result_stability_s", "result_refine_padding_s", "maximum_game_duration_s"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{name} must be finite and positive")
+        if (isinstance(self.candidate_similarity, bool) or not isinstance(self.candidate_similarity, (int, float))
+                or not math.isfinite(self.candidate_similarity) or not 0 < self.candidate_similarity <= 1):
+            raise ValueError("candidate_similarity must be finite and within (0, 1]")
         if self.coarse_fps > 10 or self.fine_fps > 30 or self.fine_fps < self.coarse_fps:
             raise ValueError("Use coarse_fps <= 10 and coarse_fps <= fine_fps <= 30")
         if (isinstance(self.result_fps, bool) or not isinstance(self.result_fps, (int, float))
@@ -90,7 +99,13 @@ class HearthstoneAnalyzer:
     ) -> None:
         self.settings = settings or HearthstoneSettings()
         self.detector = detector or TemplateVisualDetector(TemplateRepository(template_pack or default_template_pack()).load())
+        self.settings.single_frame_results.validate_detector(self.detector.describe())
+        if self.settings.single_frame_results.enabled and (self.settings.result_fps <= 0
+                or self.settings.result_refine_fps <= 0 or not callable(getattr(self.detector, "observe_roi", None))):
+            raise ValueError("Single-frame results require dense/native ROI scanning with score evidence")
         self.sampler = sampler or FFmpegFrameSampler()
+        if self.settings.single_frame_results.enabled and not callable(getattr(self.sampler, "sample_roi", None)):
+            raise ValueError("Single-frame results require a native ROI sampler")
         self.cache = GameplayCache(cache_directory or cache_root() / "gameplay" / "hearthstone") if use_cache else None
 
     def analyze(
@@ -117,6 +132,9 @@ class HearthstoneAnalyzer:
         dense = self.settings.result_fps > 0 and all(callable(item) for item in (roi_factory, roi_detect, roi_sample))
         settings = {"analyzer_version": ANALYZER_VERSION, **asdict(self.settings), "detector": detector_info}
         settings["sampling_strategy"] = "coarse_vs_dense_result_roi" if dense else "legacy_coarse_to_fine"
+        settings["weak_vs_candidates"] = dense and callable(getattr(self.detector, "detect_candidates", None))
+        settings["weak_result_candidates"] = (dense and self.settings.result_refine_fps > 0
+                                              and callable(getattr(self.detector, "detect_roi_candidates", None)))
         key = cache_key(identity, detector_info, settings)
         previous_progress = -1
 
@@ -152,6 +170,43 @@ class HearthstoneAnalyzer:
         refine_frames = 0
         refine_windows: list[tuple[float, float]] = []
         last_debug: dict[str, float] = {}
+        weak_results: list[GameEvent] = []
+        result_context: list[dict[str, Any]] = []
+        single_frame_accepted = 0
+        candidate_detect: Any = getattr(self.detector, "detect_candidates", None)
+        candidate_roi_detect: Any = getattr(self.detector, "detect_roi_candidates", None)
+        profile: dict[str, dict[str, float]] = {
+            stage: {"sampling_wait_seconds": 0.0, "first_frame_wait_seconds": 0.0, "matching_seconds": 0.0, "streams": 0.0}
+            for stage in ("coarse", "fine", "dense", "refinement")
+        }
+        phase = "coarse"
+
+        def measured_frames(frames: Any) -> Iterator[Any]:
+            # next() includes decoder startup, decode/pipe/queue waits and EOF
+            # cleanup. FFmpeg can run concurrently with matching: not CPU time.
+            profile[phase]["streams"] += 1
+            iterator = iter(frames)
+            first_frame = True
+            while True:
+                before = time.perf_counter()
+                try:
+                    frame = next(iterator)
+                except StopIteration:
+                    profile[phase]["sampling_wait_seconds"] += time.perf_counter() - before
+                    return
+                elapsed = time.perf_counter() - before
+                profile[phase]["sampling_wait_seconds"] += elapsed
+                if first_frame:
+                    profile[phase]["first_frame_wait_seconds"] += elapsed
+                    first_frame = False
+                yield frame
+
+        def measured_match(method: Any, *args: Any, **kwargs: Any) -> list[GameEvent]:
+            before = time.perf_counter()
+            try:
+                return method(*args, **kwargs)
+            finally:
+                profile[phase]["matching_seconds"] += time.perf_counter() - before
 
         def debug_matches(image: Any, matches: list[GameEvent]) -> None:
             nonlocal debug_saved
@@ -168,27 +223,41 @@ class HearthstoneAnalyzer:
                 last_debug[label] = event.timestamp
 
         def accept_clusters(observations: list[GameEvent], *, fps: float, brief: bool = False) -> None:
-            nonlocal dropped
+            nonlocal dropped, single_frame_accepted
             minimum_count = self.settings.minimum_result_observations if brief else self.settings.minimum_observations
             minimum_span = self.settings.minimum_result_stability_s if brief else self.settings.minimum_stability_s
             for event in consolidate_events(observations, max_gap_s=self.settings.event_gap_s):
                 count = int(event.metadata.get("observation_count", 1))
                 span = float(event.metadata.get("last_seen", event.timestamp)) - float(event.metadata.get("first_seen", event.timestamp))
-                if count >= minimum_count and span + 1e-9 >= minimum_span:
+                stable = count >= minimum_count and span + 1e-9 >= minimum_span
+                single, reason = (self.settings.single_frame_results.evaluate(event, result_context)
+                                  if brief and not stable else (False, "ordinary_temporal_support"))
+                if stable or single:
+                    if single:
+                        single_frame_accepted += 1
+                        event.metadata["result_acceptance"] = reason
+                        event.metadata["single_frame_calibration_id"] = self.settings.single_frame_results.calibration_id
                     event.metadata["temporal_span_s"] = span
                     event.metadata["sampling_fps"] = fps
                     consolidated.append(event)
                 else:
                     dropped += 1
+                    if brief:
+                        event.metadata["single_frame_rejection"] = reason
                     rejected_events.append(event.to_mapping())
 
         with closing(self.sampler.sample(
             video, fps=self.settings.coarse_fps, max_width=self.settings.max_width, cancellation=token,
         )) as frames:
-            for frame in frames:
+            for frame in measured_frames(frames):
                 token.raise_if_cancelled()
                 coarse_frames += 1
-                matches = selected_detect(frame.image, frame.timestamp, event_types=vs_types) if dense else selected_detect(frame.image, frame.timestamp)
+                if dense and callable(candidate_detect):
+                    matches = measured_match(candidate_detect, frame.image, frame.timestamp, event_types=vs_types,
+                                             minimum_similarity=self.settings.candidate_similarity)
+                else:
+                    matches = (measured_match(selected_detect, frame.image, frame.timestamp, event_types=vs_types)
+                               if dense else measured_match(selected_detect, frame.image, frame.timestamp))
                 coarse.extend(matches)
                 if len(coarse) > self.settings.max_observations:
                     raise GameplayAnalysisError("Too many visual candidates; narrow ROI or recalibrate templates", code="candidate_limit")
@@ -199,6 +268,7 @@ class HearthstoneAnalyzer:
         progress(coarse_end)
         total_fine = sum(end - start for start, end in windows)
         done_fine = 0.0
+        phase = "fine"
         fine_started = time.perf_counter()
         for start, end in windows:
             observations: list[GameEvent] = []
@@ -206,10 +276,11 @@ class HearthstoneAnalyzer:
                 video, fps=self.settings.fine_fps, start_s=start, end_s=end,
                 max_width=self.settings.max_width, cancellation=token,
             )) as frames:
-                for frame in frames:
+                for frame in measured_frames(frames):
                     token.raise_if_cancelled()
                     fine_frames += 1
-                    matches = selected_detect(frame.image, frame.timestamp, event_types=vs_types) if dense else selected_detect(frame.image, frame.timestamp)
+                    matches = (measured_match(selected_detect, frame.image, frame.timestamp, event_types=vs_types)
+                               if dense else measured_match(selected_detect, frame.image, frame.timestamp))
                     observations.extend(matches)
                     if len(observations) > self.settings.max_observations:
                         raise GameplayAnalysisError("Too many fine-scan detections; recalibrate templates", code="candidate_limit")
@@ -219,7 +290,9 @@ class HearthstoneAnalyzer:
             done_fine += end - start
         fine_seconds = time.perf_counter() - fine_started
         progress(fine_end)
+        phase = "dense"
         dense_started = time.perf_counter()
+        refinement_seconds = 0.0
         dense_geometry: dict[str, Any] | None = None
         if dense:
             roi: NormalizedROI = roi_factory()
@@ -242,11 +315,19 @@ class HearthstoneAnalyzer:
                 video, roi=source_roi, reference_size=reference, output_size=output_size,
                 fps=self.settings.result_fps, cancellation=token,
             )) as frames:
-                for frame in frames:
+                for frame in measured_frames(frames):
                     token.raise_if_cancelled()
                     dense_frames += 1
-                    matches = roi_detect(frame.image, frame.timestamp, roi=roi, event_types=result_types)
+                    if callable(candidate_roi_detect) and self.settings.result_refine_fps > 0:
+                        candidates = measured_match(candidate_roi_detect, frame.image, frame.timestamp, roi=roi,
+                                                    event_types=result_types, minimum_similarity=self.settings.candidate_similarity)
+                        matches = [event for event in candidates if not event.metadata.get("candidate_only", False)]
+                        weak_results.extend(event for event in candidates if event.metadata.get("candidate_only", False))
+                    else:
+                        matches = measured_match(roi_detect, frame.image, frame.timestamp, roi=roi, event_types=result_types)
                     observations.extend(matches)
+                    if len(weak_results) > self.settings.max_observations:
+                        raise GameplayAnalysisError("Too many weak result candidates", code="candidate_limit")
                     if len(observations) > self.settings.max_observations:
                         raise GameplayAnalysisError("Too many dense-scan detections; recalibrate templates", code="candidate_limit")
                     debug_matches(frame.image, matches)
@@ -257,26 +338,39 @@ class HearthstoneAnalyzer:
                 unstable = [event for event in consolidate_events(observations, max_gap_s=self.settings.event_gap_s)
                             if int(event.metadata["observation_count"]) < self.settings.minimum_result_observations
                             or float(event.metadata["temporal_span_s"]) + 1e-9 < self.settings.minimum_result_stability_s]
-                refine_windows = candidate_windows(unstable, info.duration_s, self.settings.result_refine_padding_s)
+                refine_windows = candidate_windows(unstable + weak_results, info.duration_s, self.settings.result_refine_padding_s)
                 progress(90)
                 # Native windows revisit earlier timestamps after the global
                 # pass. Debounce per pass; the total debug-file budget remains
                 # shared and bounded by max_debug_frames.
                 last_debug.clear()
+                phase = "refinement"
+                refinement_started = time.perf_counter()
                 for index, (start, end) in enumerate(refine_windows):
                     with closing(roi_sample(
                         video, roi=source_roi, reference_size=reference, output_size=output_size,
                         fps=self.settings.result_refine_fps, start_s=start, end_s=end, cancellation=token,
                     )) as frames:
-                        for frame in frames:
+                        for frame in measured_frames(frames):
                             token.raise_if_cancelled()
                             refine_frames += 1
-                            matches = roi_detect(frame.image, frame.timestamp, roi=roi, event_types=result_types)
+                            if self.settings.single_frame_results.enabled:
+                                before_match = time.perf_counter()
+                                matches, evidence = self.detector.observe_roi(  # type: ignore[attr-defined]
+                                    frame.image, frame.timestamp, roi=roi, event_types=result_types,
+                                )
+                                profile[phase]["matching_seconds"] += time.perf_counter() - before_match
+                                result_context.append(evidence)
+                                if len(result_context) > self.settings.max_observations:
+                                    raise GameplayAnalysisError("Too much single-frame evidence", code="candidate_limit")
+                            else:
+                                matches = measured_match(roi_detect, frame.image, frame.timestamp, roi=roi, event_types=result_types)
                             observations.extend(matches)
                             if len(observations) > self.settings.max_observations:
                                 raise GameplayAnalysisError("Too many result-refinement detections", code="candidate_limit")
                             debug_matches(frame.image, matches)
                     progress(90 + 5 * (index + 1) / len(refine_windows))
+                refinement_seconds = time.perf_counter() - refinement_started
                 unique: dict[tuple[float, str, str], GameEvent] = {}
                 for event in observations:
                     event_key = (round(event.timestamp, 6), event.type.value, event.source.value)
@@ -287,7 +381,7 @@ class HearthstoneAnalyzer:
         dense_seconds = time.perf_counter() - dense_started
         progress(95)
         events = sorted(consolidated, key=lambda event: (event.timestamp, event.type.value))
-        games = GameAssembler().assemble(events)
+        games = GameAssembler(maximum_game_duration_s=self.settings.maximum_game_duration_s).assemble(events)
         warnings = ["Template similarity is not a calibrated probability; no automatic cuts were generated."]
         if not events:
             warnings.append("No stable visual events detected; this does not prove the VOD contains no games.")
@@ -311,9 +405,15 @@ class HearthstoneAnalyzer:
                 "result_refine_frames": refine_frames, "result_refine_windows": [list(window) for window in refine_windows],
                 "result_refine_fps": self.settings.result_refine_fps if dense else 0,
                 "rejected_events": rejected_events,
+                "single_frame_results_accepted": single_frame_accepted,
+                "single_frame_context_frames": len(result_context),
                 "dense_frame_size": dense_geometry["output_size"] if dense_geometry else None,
                 "coarse_elapsed_seconds": coarse_seconds, "fine_elapsed_seconds": fine_seconds,
                 "dense_elapsed_seconds": dense_seconds,
+                "global_dense_elapsed_seconds": dense_seconds - refinement_seconds,
+                "refinement_elapsed_seconds": refinement_seconds,
+                "weak_result_candidates": len(weak_results),
+                "profiling": profile,
                 "fine_windows": [[start, end] for start, end in windows],
                 "fine_seconds": total_fine, "elapsed_seconds": time.perf_counter() - started,
                 "debug_frames_saved": debug_saved, "rejected_clusters": dropped,

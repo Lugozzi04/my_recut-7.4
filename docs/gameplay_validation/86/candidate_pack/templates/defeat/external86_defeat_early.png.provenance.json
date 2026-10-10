@@ -1,0 +1,24 @@
+{
+  "role": "calibration",
+  "video_fingerprint": "3cb1a4cda0156c1cf684380acf226c34ef45c35fa422e8ea7fe6b7b2aded034d",
+  "annotation_sha256": "aee5fcb430ec5d6c4718b6a3cf2041f4708ecfccef29a8c98397f7241d606d99",
+  "timestamp": 2300.6,
+  "roi": [
+    0.4708333333333333,
+    0.5018518518518519,
+    0.059375,
+    0.025925925925925925
+  ],
+  "reference_size": [
+    960,
+    540
+  ],
+  "patch_sha256": "a347ef36ba9f2d08ebb9fab404db84535f74e00e29c2b7d8c8d6950b8ebda4c6",
+  "nearest_templates": [
+    {
+      "path": "C:\\Users\\jakub\\Desktop\\auto-cutter\\auto-cutter\\my_recut 7.4\\docs\\gameplay_validation\\86\\candidate_pack\\templates\\defeat\\calibration_phase_1324.933.png",
+      "pixel_duplicate": false,
+      "similarity": 0.15326273441314697
+    }
+  ]
+}

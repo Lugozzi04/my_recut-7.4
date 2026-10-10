@@ -1,0 +1,416 @@
+{
+  "format": "recut_packaging_report",
+  "version": 1,
+  "status": "done",
+  "created": "2026-10-10T14:38:39",
+  "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\claude_1",
+  "input": {
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "edited_duration_s": 971.943,
+    "kept_pieces": 48,
+    "edit_digest": "054ebd12a28f779bc827b3b622e0bd0635f0dabb4e429981f956c18b7546258c"
+  },
+  "settings": {
+    "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\claude_1",
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "provider": "claude",
+    "language": "it",
+    "asr_language": null,
+    "asr_model": "small",
+    "titles": 8,
+    "thumbnails": 4,
+    "webcam_roi": "auto",
+    "creator": null,
+    "use_style": true,
+    "games": "auto",
+    "only": null,
+    "analyze_only": false,
+    "use_cache": true,
+    "overwrite": false,
+    "max_highlights": 14,
+    "max_deepen": 2,
+    "image_format": "png",
+    "agent_model": null,
+    "agent_effort": null,
+    "agent_timeout": 900.0
+  },
+  "privacy": "NOTE: packaging sends transcript excerpts, timing evidence and selected video frames/crops to the provider configured in the claude CLI. Local analysis sends nothing. Use --analyze-only to stay fully local.",
+  "evidence": {
+    "transcript": "cached",
+    "transcript_lines": 179,
+    "audio": "cached",
+    "visual": "ok",
+    "webcam": "ok",
+    "games": 2,
+    "highlights": 14,
+    "frames": 50,
+    "webcam_frames": 28
+  },
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "edited_start": 0.0,
+      "edited_end": 366.56299900000045,
+      "highlights": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ]
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "edited_start": 366.5630000000001,
+      "edited_end": 971.9429990000003,
+      "highlights": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ]
+    }
+  ],
+  "story": {
+    "main_topic": "Evento Hearthstone \"Streamers vs Devs\" (punteggio a schermo): il creator gioca due partite commentate in italiano. La prima \u00e8 contro Kibler in un mirror Cacciatore, la seconda contro \"Nosferatu\" con un Paladino. Tra un turno e l'altro parla di drop, giveaway, punteggio dell'evento e liste dei mazzi.",
+    "themes": [
+      "Streamers vs Devs: punteggio della squadra e caccia ai dev",
+      "Mirror Cacciatore contro Kibler",
+      "Sfogo sulle giocate avversarie",
+      "Carte nuove e prova del Paladino",
+      "Critica alle liste dei mazzi (spell da 1 mana assente, doppio Re della Profondit\u00e0)",
+      "Drop, giveaway e bundle per la community",
+      "Interazione con la chat (sub, saluti, battute su Kibler 'nonno')"
+    ]
+  },
+  "preferred_title": {
+    "title_id": "T1",
+    "title": "Kibler mi bombarda il Meccaciclo\u2026 e vinco lo stesso",
+    "concept_id": "C1",
+    "style": "surprising",
+    "highlight_ids": [
+      "H06"
+    ],
+    "transcript_ids": [
+      "T0051",
+      "T0057",
+      "T0059"
+    ],
+    "rationale": "Mette insieme un fatto concreto (il bombardamento sul Meccaciclo) e un esito verificato (WIN). La curiosit\u00e0 sta nel 'come', senza inventare il colpo finale."
+  },
+  "preferred_concept_id": "C1",
+  "titles": [
+    {
+      "title_id": "T1",
+      "title": "Kibler mi bombarda il Meccaciclo\u2026 e vinco lo stesso",
+      "concept_id": "C1",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "T2",
+      "title": "\u00abRotto questo deck\u00bb: mi sfogo con Kibler, poi la chiudo",
+      "concept_id": "C1",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "T3",
+      "title": "Avevo previsto il mirror Hunter\u2026 e mi capita Kibler",
+      "concept_id": "C2",
+      "highlight_ids": [
+        "H01"
+      ]
+    },
+    {
+      "title_id": "T4",
+      "title": "Oggi tutti giocano Hunter? La previsione e poi Kibler con Rexxar",
+      "concept_id": "C2",
+      "highlight_ids": [
+        "H01"
+      ]
+    },
+    {
+      "title_id": "T5",
+      "title": "Mulligan nel mirror Hunter contro Kibler: cosa tengo e perch\u00e9",
+      "concept_id": "C3",
+      "highlight_ids": [
+        "H02",
+        "H01"
+      ]
+    },
+    {
+      "title_id": "T6",
+      "title": "Hunter Meccaciclo contro Kibler: mulligan, triplo 5/5 e vittoria",
+      "concept_id": "C3",
+      "highlight_ids": [
+        "H02",
+        "H06"
+      ]
+    },
+    {
+      "title_id": "T7",
+      "title": "Streamers vs Devs sotto 2-3: provo il Paladino e la chiudo",
+      "concept_id": "C4",
+      "highlight_ids": [
+        "H14",
+        "H09"
+      ]
+    },
+    {
+      "title_id": "T8",
+      "title": "\u00abChi ha deckbuildato questa cosa?\u00bb Le liste dell'evento al Paladino",
+      "concept_id": "C4",
+      "highlight_ids": [
+        "H09",
+        "H08"
+      ]
+    }
+  ],
+  "thumbnails": [
+    {
+      "concept_id": "C1",
+      "path": "thumbnails\\concept_01.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 858159,
+      "format": "png",
+      "layout": "split_reaction",
+      "text": {
+        "font_px": 179.0,
+        "lines": [
+          "NON C'\u00c8!",
+          "BENE!"
+        ],
+        "fits": true,
+        "bounds": [
+          627.6,
+          142.6,
+          605.0,
+          395.7
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 17.9
+      },
+      "warnings": []
+    },
+    {
+      "concept_id": "C2",
+      "path": "thumbnails\\concept_02.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 632033,
+      "format": "png",
+      "layout": "cinematic_text",
+      "text": {
+        "font_px": 202.0,
+        "lines": [
+          "MIRROR",
+          "HUNTER"
+        ],
+        "fits": true,
+        "bounds": [
+          564.0,
+          154.3,
+          666.4,
+          400.9
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 20.2
+      },
+      "warnings": []
+    },
+    {
+      "concept_id": "C3",
+      "path": "thumbnails\\concept_03.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 853132,
+      "format": "png",
+      "layout": "card_spotlight",
+      "text": {
+        "font_px": 146.0,
+        "lines": [
+          "TENGO O",
+          "CAMBIO?"
+        ],
+        "fits": true,
+        "bounds": [
+          48.8,
+          20.1,
+          566.0,
+          289.6
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 14.6
+      },
+      "warnings": []
+    },
+    {
+      "concept_id": "C4",
+      "path": "thumbnails\\concept_04.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 1082790,
+      "format": "png",
+      "layout": "board_focus",
+      "text": {
+        "font_px": 141.0,
+        "lines": [
+          "RECUPERABILE?"
+        ],
+        "fits": true,
+        "bounds": [
+          54.3,
+          533.5,
+          891.5,
+          146.8
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 14.1
+      },
+      "warnings": []
+    }
+  ],
+  "agent": {
+    "provider": "claude",
+    "calls": [
+      {
+        "task": "video_story",
+        "provider": "claude",
+        "model": null,
+        "effort": null,
+        "prompt_version": "packaging_story_v1",
+        "images": 9,
+        "prompt_chars": 23454,
+        "cache_hit": false,
+        "attempts": 1,
+        "cost_usd": 0.6848366,
+        "agent_duration_ms": 152299,
+        "agent_model": "claude-opus-5-5",
+        "input_tokens": 4,
+        "output_tokens": 17703,
+        "cache_read_tokens": 35963,
+        "runtime_s": 153.65
+      },
+      {
+        "task": "video_story_deepened",
+        "provider": "claude",
+        "model": null,
+        "effort": null,
+        "prompt_version": "packaging_story_v1",
+        "images": 1,
+        "prompt_chars": 37806,
+        "cache_hit": false,
+        "attempts": 1,
+        "cost_usd": 0.3311756,
+        "agent_duration_ms": 55413,
+        "agent_model": "claude-opus-5-5",
+        "input_tokens": 2,
+        "output_tokens": 8120,
+        "cache_read_tokens": 1918,
+        "runtime_s": 56.293
+      },
+      {
+        "task": "creative_all",
+        "provider": "claude",
+        "model": null,
+        "effort": null,
+        "prompt_version": "packaging_creative_v1",
+        "images": 11,
+        "prompt_chars": 31271,
+        "cache_hit": false,
+        "attempts": 1,
+        "cost_usd": 0.43610800000000005,
+        "agent_duration_ms": 74668,
+        "agent_model": "claude-opus-5-5",
+        "input_tokens": 2,
+        "output_tokens": 8105,
+        "cache_read_tokens": 0,
+        "runtime_s": 75.798
+      }
+    ],
+    "cost_usd_total": 1.4521,
+    "tokens_used_total": null
+  },
+  "extensions": {
+    "image_generation": {
+      "provider": "none",
+      "available": false,
+      "used": false
+    },
+    "youtube_trends": {
+      "provider": "none",
+      "available": false,
+      "used": false,
+      "note": "trends are never inferred; V1 does not query any trends source"
+    }
+  },
+  "cache": {
+    "root": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\iso\\cache\\packaging",
+    "enabled": true,
+    "stats": {
+      "transcript": {
+        "hit": 1,
+        "miss": 0
+      },
+      "evidence": {
+        "hit": 4,
+        "miss": 0
+      },
+      "frames": {
+        "hit": 45,
+        "miss": 11
+      },
+      "agent": {
+        "hit": 0,
+        "miss": 3
+      },
+      "render": {
+        "hit": 0,
+        "miss": 0
+      }
+    }
+  },
+  "timings_s": {
+    "timeline": 0.072,
+    "transcription": 0.007,
+    "audio_analysis": 0.006,
+    "visual_analysis": 0.001,
+    "games": 0.0,
+    "highlight_discovery": 0.001,
+    "frame_extraction": 4.699,
+    "contact_sheets": 0.072,
+    "agent_story": 153.682,
+    "deepen_extraction": 1.652,
+    "agent_story_deepened": 56.301,
+    "cards": 2.005,
+    "agent_creative": 75.829,
+    "thumbnail_render": 0.991,
+    "total": 295.513
+  },
+  "warnings": [],
+  "error": null,
+  "artifacts": {
+    "content_analysis.json": "content_analysis.json",
+    "transcript.json": "transcript.json",
+    "game_contexts.json": "game_contexts.json",
+    "highlights.json": "highlights.json",
+    "video_story.json": "video_story.json",
+    "title_candidates.json": "title_candidates.json",
+    "thumbnail_concepts.json": "thumbnail_concepts.json"
+  }
+}

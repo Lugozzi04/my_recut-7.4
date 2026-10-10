@@ -1,0 +1,24 @@
+Job: 25b0edb8e1eb4593b59db6d35e8dbd90
+Source: videoprova
+Preset: Balanced (Default)
+[Analysis] 0%
+[Analysis] 5%
+[Analysis] 10%
+[Analysis] 15%
+[Analysis] 20%
+[Analysis] 25%
+[Analysis] 30%
+[Analysis] 35%
+[Analysis] 40%
+[Analysis] 45%
+[Analysis] 50%
+[Analysis] 55%
+[Analysis] 60%
+[Analysis] 65%
+[Analysis] 70%
+[Analysis] 81%
+[Analysis] 87%
+[Analysis] 95%
+[Analysis] 100%
+[Cuts] 88 cuts; 33.4 minutes removed
+[DONE] 100%

@@ -88,7 +88,41 @@ def _processing_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--keep-source", action="store_true", help="Keep the downloaded VOD after DONE; original local files are always retained.")
     parser.add_argument("--force", action="store_true", help="Create a fresh job and allow replacing the explicit output; sources are protected.")
     parser.add_argument("--dry-run", action="store_true", help="Show metadata, range, preset and destination without processing or creating a job.")
+    gameplay = parser.add_argument_group("smart gameplay editing (optional)")
+    gameplay.add_argument("--gameplay", choices=("hearthstone",), help="Detect games and remove unwanted ones before the classic cuts.")
+    gameplay.add_argument("--keep-games", choices=("wins",), help="Games to publish (default with --gameplay: wins = complete WINs only).")
+    gameplay.add_argument("--boundary-mode", choices=("exact", "claude", "codex"),
+                          help="Editorial boundary resolver (default exact). claude/codex send the local transcript context "
+                               "around game boundaries to the provider configured in that CLI; exact sends nothing.")
+    gameplay.add_argument("--agent-timeout", type=float, help="Seconds per agent decision (default 120); failures fall back to exact.")
+    gameplay.add_argument("--agent-model", help="Model passed to the claude/codex CLI.")
+    gameplay.add_argument("--agent-effort", help="claude --effort / codex model_reasoning_effort.")
+    gameplay.add_argument("--report", help="Write the gameplay edit report JSON here (default: next to the job project).")
+    parser.add_argument("--analyze-only", action="store_true",
+                        help="Run analysis and cut composition, write the project/report, but do not render; resume to export later.")
     _json_option(parser)
+
+
+COMMANDS = {"presets", "jobs", "process", "vod", "resume", "auth", "packaging", "packaging-style", "packaging-feedback"}
+
+
+VIDEO_SUFFIXES = (".mp4", ".mkv", ".mov", ".flv", ".ts", ".webm", ".m4v", ".avi")
+
+
+def _implicit_command(arguments: list[str]) -> list[str]:
+    """`AutoCutter VIDEO ...` means `process VIDEO ...`; a Twitch VOD URL means `vod URL ...`.
+
+    Only an existing file, a video file name or a Twitch URL is promoted, so
+    unknown words keep producing the usual argument error.
+    """
+    if not arguments or arguments[0].startswith("-") or arguments[0] in COMMANDS:
+        return arguments
+    first = arguments[0]
+    if first.lower().startswith(("https://www.twitch.tv/videos/", "https://twitch.tv/videos/")):
+        return ["vod", *arguments]
+    if os.path.isfile(first) or first.lower().endswith(VIDEO_SUFFIXES):
+        return ["process", *arguments]
+    return arguments
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -127,6 +161,8 @@ def build_parser() -> argparse.ArgumentParser:
         else:
             provider_parser.add_argument("--client-config", help="Google desktop OAuth client JSON (or AUTO_CUTTER_YOUTUBE_CLIENT_CONFIG).")
         _json_option(provider_parser)
+    from automation.packaging_cli import add_parsers as add_packaging_parsers  # argparse only; no engine import
+    add_packaging_parsers(sub, _json_option)
     return parser
 
 
@@ -202,6 +238,9 @@ def _human_plan(plan: dict[str, Any], stream: TextIO) -> None:
     print(f"Requested range: {json.dumps(plan['requested_range'])}", file=stream)
     print(f"Actual range: {selected['start_s']:.3f}s to {selected['end_s']:.3f}s\nPreset: {plan['preset']['name']}", file=stream)
     print(f"Output: {plan['delivery']['output_path']}\nYouTube: {'PRIVATE' if plan['delivery']['youtube'] else 'disabled'}", file=stream)
+    if plan.get("gameplay"):
+        g = plan["gameplay"]
+        print(f"Gameplay: {g['game']} keep={g['keep_games']} boundaries={g['boundary_mode']}", file=stream)
     for warning in plan.get("warnings", []):
         print(f"Warning: {warning}", file=stream)
 
@@ -279,6 +318,7 @@ def run_cli(argv: Sequence[str] | None = None, *, runtime_factory: Callable[...,
             reconfigure(encoding="utf-8", errors="replace")
     output = stdout or sys.stdout
     progress = stderr or sys.stderr
+    arguments = _implicit_command(arguments)
     json_mode = "--json" in arguments
     command = ""
     parser = build_parser()
@@ -338,6 +378,9 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         return {"jobs": [job.to_mapping() for job in manager.list_jobs()]}
     if command == "auth":
         return {"provider": args.provider, **(_auth_twitch(args, progress) if args.provider == "twitch" else _auth_youtube(args, progress))}
+    if command in ("packaging", "packaging-style", "packaging-feedback"):
+        from automation.packaging_cli import execute as execute_packaging
+        return execute_packaging(args, progress)
     from automation.runtime import PipelineCancellation, PipelineRuntime
     from utils.ffmpeg import cancellable_probe_scope
     factory = runtime_factory or PipelineRuntime
@@ -357,6 +400,18 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         "start", "end", "duration", "preset", "output", "output_dir", "youtube", "title",
         "description", "thumbnail", "keep_source", "force", "quality",
     )}
+    gameplay_flags = ("keep_games", "boundary_mode", "agent_timeout", "agent_model", "agent_effort", "report")
+    if args.gameplay is None and any(getattr(args, key) is not None for key in gameplay_flags):
+        raise _ArgumentError("--keep-games/--boundary-mode/--agent-*/--report require --gameplay.")
+    if args.gameplay is not None:
+        options["gameplay"] = {"game": args.gameplay, "keep_games": args.keep_games or "wins",
+                               "boundary_mode": args.boundary_mode or "exact", "agent_timeout": args.agent_timeout,
+                               "agent_model": args.agent_model, "agent_effort": args.agent_effort,
+                               "report": args.report}
+        if options["gameplay"]["boundary_mode"] in ("claude", "codex"):
+            print(f"NOTE: --boundary-mode {options['gameplay']['boundary_mode']} sends the local transcript/timing context "
+                  "around the boundaries of the kept games to the provider configured in that CLI. Use --boundary-mode exact to send nothing.",
+                  file=progress, flush=True)
     cancellation = PipelineCancellation()
     with _ctrl_c(cancellation), cancellable_probe_scope(cancellation):
         try:
@@ -372,8 +427,14 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         job = runtime.create_job(plan)
         print(f"Job: {job.id}", file=progress, flush=True)
         print(f"Source: {plan['media']['title']}\nPreset: {plan['preset']['name']}", file=progress, flush=True)
-        completed = runtime.run(job.id, cancellation=cancellation)
-    return {"job": completed.to_mapping(), "output": completed.export_path, "youtube_video_id": completed.youtube_video_id}
+        run_options = {"stop_after_analysis": True} if args.analyze_only else {}
+        completed = runtime.run(job.id, cancellation=cancellation, **run_options)
+    if args.analyze_only:
+        return {"analyze_only": True, "job": completed.to_mapping(), "project": completed.project_path,
+                "report": completed.metadata.get("gameplay_report_path"),
+                "summary": completed.metadata.get("analysis_summary", {})}
+    return {"job": completed.to_mapping(), "output": completed.export_path, "youtube_video_id": completed.youtube_video_id,
+            "report": completed.metadata.get("gameplay_report_path"), "summary": completed.metadata.get("analysis_summary", {})}
 
 
 def _error_info(exc: Exception, command: str) -> tuple[int, str, str]:
@@ -406,7 +467,10 @@ def _error_info(exc: Exception, command: str) -> tuple[int, str, str]:
 
 
 def _human_result(command: str, result: dict[str, Any], stream: TextIO) -> None:
-    if "version" in result:
+    if command.startswith("packaging"):
+        from automation.packaging_cli import human
+        human(command, result, stream)
+    elif "version" in result:
         print(result["version"], file=stream)
     elif command == "presets":
         for name in result["presets"]:
@@ -419,8 +483,18 @@ def _human_result(command: str, result: dict[str, Any], stream: TextIO) -> None:
             print(json.dumps(result["job"], ensure_ascii=False, indent=2), file=stream)
         else:
             print("Dry run complete. No job was created.", file=stream)
+    elif result.get("analyze_only"):
+        summary = result.get("summary") or {}
+        print(f"ANALYZED (not rendered)\nProject:\n{result['project']}", file=stream)
+        if result.get("report"):
+            print(f"Gameplay report:\n{result['report']}", file=stream)
+        if summary:
+            print(json.dumps(summary, ensure_ascii=False, indent=2), file=stream)
+        print(f"Render later with: resume {result['job']['id']}", file=stream)
     elif "output" in result:
         print(f"DONE\nOutput:\n{result['output']}", file=stream)
+        if result.get("report"):
+            print(f"Gameplay report:\n{result['report']}", file=stream)
         if result.get("youtube_video_id"):
             print(f"YouTube video (PRIVATE):\n{result['youtube_video_id']}", file=stream)
     elif "job" in result:

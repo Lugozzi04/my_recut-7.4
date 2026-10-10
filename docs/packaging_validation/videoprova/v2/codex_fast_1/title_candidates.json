@@ -1,0 +1,109 @@
+{
+  "format": "recut_title_candidates",
+  "prompt_version": "packaging_fast_v1",
+  "provider": "codex",
+  "language": "it",
+  "preferred_title_id": "TI1",
+  "titles": [
+    {
+      "title_id": "TI1",
+      "title": "Bombardamento su Meccaciclo e vittoria contro Kibler",
+      "concept_id": "C1",
+      "style": "competitive",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0051",
+        "T0052",
+        "T0054"
+      ],
+      "rationale": "Collega una giocata nominata all'esito verificato senza sostenere che quella giocata abbia deciso da sola la partita."
+    },
+    {
+      "title_id": "TI2",
+      "title": "Kibler colpisce Meccaciclo: il finale della mia partita con Hunter",
+      "concept_id": "C1",
+      "style": "narrative",
+      "highlight_ids": [
+        "H06"
+      ],
+      "transcript_ids": [
+        "T0051",
+        "T0054",
+        "T0055",
+        "T0056"
+      ],
+      "rationale": "Presenta il confronto e il momento centrale del finale con un tono descrittivo."
+    },
+    {
+      "title_id": "TI3",
+      "title": "Vinco col Paladino, ma nella lista manca una carta?",
+      "concept_id": "C2",
+      "style": "surprising",
+      "highlight_ids": [
+        "H09",
+        "H11",
+        "H14"
+      ],
+      "transcript_ids": [
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0133",
+        "T0134",
+        "T0135"
+      ],
+      "rationale": "La curiosit\u00e0 nasce dal contrasto tra vittoria e dubbio sulla lista; la domanda conserva l'incertezza."
+    },
+    {
+      "title_id": "TI4",
+      "title": "Paladino: vinco e mi chiedo dov'\u00e8 la magia da un mana",
+      "concept_id": "C2",
+      "style": "informative",
+      "highlight_ids": [
+        "H09",
+        "H11",
+        "H14"
+      ],
+      "transcript_ids": [
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0133",
+        "T0134"
+      ],
+      "rationale": "Rende specifico il dubbio espresso durante la partita senza inventare il nome della magia."
+    },
+    {
+      "title_id": "TI5",
+      "title": "Palla di Fuoco o buff? Valuto le opzioni durante la partita",
+      "concept_id": "C3",
+      "style": "informative",
+      "highlight_ids": [
+        "H13"
+      ],
+      "transcript_ids": [
+        "T0155",
+        "T0156",
+        "T0157"
+      ],
+      "rationale": "Descrive gli effetti commentati e promette la valutazione effettivamente presente nel video."
+    },
+    {
+      "title_id": "TI6",
+      "title": "Una Palla di Fuoco dopo ogni magia? Mi fermo a valutare",
+      "concept_id": "C3",
+      "style": "surprising",
+      "highlight_ids": [
+        "H13"
+      ],
+      "transcript_ids": [
+        "T0155",
+        "T0156",
+        "T0157"
+      ],
+      "rationale": "Porta in primo piano l'effetto che attira il commento, senza affermare che venga scelto o sfruttato."
+    }
+  ]
+}

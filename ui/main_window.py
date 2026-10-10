@@ -23,14 +23,13 @@ from PySide6.QtCore import (
     QUrl,
     QTimer,
     Slot,
-    QSettings,
     QStandardPaths,
     QLocale,
 )
 from PySide6.QtGui import QColor, QIcon, QDesktopServices
 from PySide6.QtGui import QKeySequence, QShortcut, QCursor
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QFileDialog, QHBoxLayout,
+    QMainWindow, QWidget, QFileDialog, QHBoxLayout, QAbstractSpinBox,
     QToolButton, QPushButton, QLabel, QSlider, QSpinBox,
     QProgressBar, QComboBox, QCheckBox, QMenu,
     QStackedWidget, QApplication, QSizePolicy, QScrollArea, QPlainTextEdit,
@@ -51,7 +50,7 @@ from utils.crash_handler import crash_logs_dir
 from utils.diagnostics import create_support_bundle
 from utils.redaction import redact_secrets
 from utils.i18n import normalize_language, text as ui_text
-from utils.runtime_paths import project_root, resource_path, config_root, logs_root
+from utils.runtime_paths import app_settings, project_root, resource_path, config_root, logs_root
 from utils.timefmt import fmt_hms
 
 from analysis.audio_analyzer import AnalyzeWorker
@@ -63,7 +62,7 @@ from analysis.classic import compute_classic_cuts, threshold_amp_to_pct, thresho
 from core.presets import PresetRepository, normalize_preset_cfg, default_presets_catalog
 from automation.models import PipelineJob, PipelineState
 
-from widgets.timeline import TimelineWidget
+from widgets.timeline import TimelineWidget, classify_cuts
 from widgets.threshold_meter import ThresholdMeter
 from widgets.seek_slider import SeekJumpSlider
 from export.advisor import ExportAdvisorWorker, ExportRecommendation
@@ -74,19 +73,26 @@ from .frame_video_widget import FrameVideoWidget
 from .icons import IconSet
 from .theme import apply_theme
 from .pro_messagebox import QMessageBox, get_int as pro_get_int, get_text as pro_get_text
-from .layout_left import build_left_panel
+from .layout_left import build_timeline_pane, build_viewer_pane
 from .layout_right import build_right_panel
 from .main_window_components import (
-    GlobalWheelBlocker,
     MiniTimelineWidget,
     NoWheelDoubleSpinBox,
     NoWheelSpinBox,
     ToggleSwitch,
-    WebUiBridge,
+    UiMessageRelay,
+    GuiInvoker,
     WheelOnlyIfFocusedFilter,
-    qt_is_valid,
 )
 from .twitch_integration import TwitchIntegration, normalize_twitch_client_id
+from .gameplay_editing_ui import (
+    BOUNDARY_CHOICES,
+    GameplayEditWorker,
+    complement as gameplay_complement,
+    island_metadata,
+    resize_island,
+    to_segment_domain,
+)
 from core import Project, ProjectSession, Track, TrackState, Clip, Media
 from core.project_file import (
     PROJECT_FORMAT,
@@ -98,11 +104,15 @@ from core.project_file import (
     resolve_project_items,
 )
 
-from PySide6.QtWidgets import QBoxLayout, QFrame, QSplitter, QVBoxLayout, QHBoxLayout
+from PySide6.QtCore import QPoint
+from PySide6.QtWidgets import QFrame, QSplitter, QVBoxLayout
 
-from PySide6.QtWebChannel import QWebChannel
-
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from .design_tokens import INSPECTOR_MAX, INSPECTOR_MIN
+from .widgets.editor_status import EditStats
+from .widgets.glyphs import glyph_icon
+from .widgets.timeline_toolbar import TimelineToolbar
+from .widgets.top_bar import TopBar
+from .widgets.transport import TransportBar
 
 class MainWindow(QMainWindow):
     @property
@@ -126,7 +136,7 @@ class MainWindow(QMainWindow):
         self._project_session = ProjectSession.create_default("Untitled")
         self._project_root = project_root()
         try:
-            saved_language = QSettings("Auto Cutter", "Auto Cutter").value("ui_language", "")
+            saved_language = app_settings().value("ui_language", "")
         except Exception:
             saved_language = ""
         self._ui_language = normalize_language(str(saved_language or QLocale.system().name()))
@@ -176,6 +186,12 @@ class MainWindow(QMainWindow):
         self._global_duration: float = 0.0
         self._warm_cache_queue: list[str] = []
         self._warm_cache_thread: threading.Thread | None = None
+        self._retired_export_refs: list = []
+        self._gui_invokers: dict = {}
+        # The warm-cache worker is a plain Python thread: it must never touch Qt objects directly
+        # (it used QTimer.singleShot from that thread, which is undefined behaviour and could crash).
+        self._warm_cache_relay = UiMessageRelay(self)
+        self._warm_cache_relay.message.connect(self._on_export_detail)
         self._warm_cache_lock = threading.Lock()
         self._warm_cache_stop = threading.Event()
         self._warm_cache_busy: bool = False
@@ -480,13 +496,9 @@ class MainWindow(QMainWindow):
         self.timeline_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.timeline_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.timeline_scroll.setWidget(self.timeline)
-        # Keep viewport transparent to avoid occasional white artifacts on some GPUs.
-        try:
-            self.timeline_scroll.setStyleSheet("background: transparent; border: none;")
-            self.timeline_scroll.viewport().setAutoFillBackground(False)
-            self.timeline_scroll.viewport().setStyleSheet("background: transparent;")
-        except Exception:
-            pass
+        # Transparent viewport (styled in ui/theme.py) avoids white artifacts on some GPUs.
+        self.timeline_scroll.setObjectName("TimelineScroll")
+        self.timeline_scroll.viewport().setAutoFillBackground(False)
 
         if hasattr(self.timeline, "scrubStarted"):
             self.timeline.scrubStarted.connect(lambda: self._set_user_scrubbing(True))
@@ -508,12 +520,12 @@ class MainWindow(QMainWindow):
         self.pages = QStackedWidget()
         self.page_main = QWidget()
         self.page_export = QWidget()
-        self.page_main.setAttribute(Qt.WA_StyledBackground, True)
-        self.page_export.setAttribute(Qt.WA_StyledBackground, True)
-        self.page_main.setStyleSheet("background: transparent;")
-        self.page_export.setStyleSheet("background: transparent;")
+        # No widget-level stylesheets here: a selector-less sheet on a page cascades to every child
+        # and overrides the themed buttons/segmented controls. Pages simply inherit the panel colour.
+        self.page_analysis = QWidget()
         self.pages.addWidget(self.page_main)
         self.pages.addWidget(self.page_export)
+        self.pages.addWidget(self.page_analysis)
 
         self.seg_main = QToolButton()
         self.seg_main.setText("Edit")
@@ -522,6 +534,10 @@ class MainWindow(QMainWindow):
         self.seg_export = QToolButton()
         self.seg_export.setText("Export")
         self.seg_export.setCheckable(True)
+
+        self.seg_analysis = QToolButton()
+        self.seg_analysis.setText("Analysis")
+        self.seg_analysis.setCheckable(True)
 
         # -----------------------------
         # Main page widgets (required by layout_main_page)
@@ -937,8 +953,8 @@ class MainWindow(QMainWindow):
         self._load_layout_pref()
         self._load_ui_prefs()
         self._load_theme_pref()
-        # 1) prima inizializzi i WebViews
-        self._init_web_views()
+        # 1) native chrome (top bar, transport, timeline toolbar, status stats)
+        self._init_native_chrome()
 
         # 2) poi costruisci il layout UNA VOLTA
         self._build_layout_modular()
@@ -950,8 +966,16 @@ class MainWindow(QMainWindow):
         # 3) poi applichi tema / icone
         self._apply_theme_pref()
 
-        self._wheel_filter = GlobalWheelBlocker(self)
-        QApplication.instance().installEventFilter(self._wheel_filter)
+        # Wheel protection per spin box. (It used to be an application-wide Python event filter,
+        # which runs for every event in the app and can wrap objects that are mid-destruction —
+        # e.g. finished analysis QThreads — causing native access violations after a reload.)
+        self._wheel_filter = WheelOnlyIfFocusedFilter(self)
+        for spin in self.findChildren(QAbstractSpinBox):
+            spin.installEventFilter(self._wheel_filter)
+            try:
+                spin.lineEdit().installEventFilter(self._wheel_filter)
+            except Exception:
+                pass
 
         self._sync_icons()
 
@@ -1021,6 +1045,17 @@ class MainWindow(QMainWindow):
 
         self.seg_main.clicked.connect(lambda: self._switch_page(0))
         self.seg_export.clicked.connect(lambda: self._switch_page(1))
+        self.seg_analysis.clicked.connect(lambda: self._switch_page(2))
+        self.timeline.selectionChanged.connect(self._on_timeline_selection_changed)
+        self.timeline.cutResizeRequested.connect(self._on_cut_resize_requested)
+        self.timeline.viewChanged.connect(lambda _i: self._push_zoom_to_web())
+        self.timeline.islandSelected.connect(self._on_island_selected)
+        self.timeline.islandResizeRequested.connect(self._on_island_resize_requested)
+        self.btn_gameplay_run.clicked.connect(self._on_gameplay_run_clicked)
+        self.chk_gameplay_apply.toggled.connect(self._on_gameplay_apply_toggled)
+        self.btn_gameplay_reset_all.clicked.connect(self._reset_all_islands)
+        self.gameplay_boundary_combo.currentIndexChanged.connect(lambda _i: self._refresh_gameplay_panel())
+        self.threshold_pct.valueChanged.connect(lambda _v: self._show_threshold_guide())
 
         if hasattr(self, "btn_ai_process"):
             self.btn_ai_process.clicked.connect(self._on_ai_process_clicked)
@@ -1034,23 +1069,12 @@ class MainWindow(QMainWindow):
             self.timeline.clipSplitRequested.connect(self._on_clip_split_requested)
 
 
-        # Shortcuts
-        QShortcut(QKeySequence.Undo, self, activated=self._undo_cuts)
-        QShortcut(QKeySequence.Redo, self, activated=self._redo_cuts)
-        QShortcut(QKeySequence("Ctrl+Shift+Z"), self, activated=self._redo_cuts)
-
-        QShortcut(QKeySequence("Ctrl++"), self, activated=self.zoom_in)
-        QShortcut(QKeySequence("Ctrl+-"), self, activated=self.zoom_out)
-        QShortcut(QKeySequence("C"), self, activated=self._toggle_cut_tool)
-        QShortcut(QKeySequence("S"), self, activated=self._toggle_split_tool)
-        QShortcut(QKeySequence("J"), self, activated=self.transport_seek_backward)
-        QShortcut(QKeySequence("K"), self, activated=self.toggle_play)
-        QShortcut(QKeySequence("L"), self, activated=self.transport_seek_forward)
+        # Shortcuts (listed in the in-app sheet, F1, and docs/GUI_REDESIGN.md)
+        self._install_shortcuts()
 
         # initialize tool mode
         self._set_tool_mode(self.tool_mode)
         self._update_split_button_state()
-        QShortcut(QKeySequence("Ctrl+0"), self, activated=self.zoom_reset)
 
         self._refresh_precision_label()
         self._refresh_threshold_ui_state()
@@ -1066,23 +1090,9 @@ class MainWindow(QMainWindow):
         self._init_twitch_automation()
 
     def _apply_core_translations(self) -> None:
-        language = str(getattr(self, "_ui_language", "en") or "en")
-        translations = {
-            "btn_open": "add_video",
-            "seg_main": "main",
-            "seg_export": "export",
-            "btn_export": "export_mp4",
-            "btn_export_edl": "export_edl",
-            "btn_ai_process": "process_ai",
-            "btn_ai_reprocess": "reprocess_ai",
-            "btn_export_details": "show_logs",
-            "btn_export_copy_logs": "copy_logs",
-            "btn_export_open_logs_folder": "open_logs",
-        }
-        for attr, key in translations.items():
-            widget = getattr(self, attr, None)
-            if widget is not None and hasattr(widget, "setText"):
-                widget.setText(ui_text(key, language))
+        """Kept as a hook: editor chrome strings are owned by the inspector builders (English) so the
+        UI never mixes languages; menus and dialogs still use utils.i18n via ui_text()."""
+        return
 
     def _apply_accessibility_metadata(self) -> None:
         controls = {
@@ -1109,16 +1119,17 @@ class MainWindow(QMainWindow):
                 widget.setAccessibleDescription(description)
             except Exception:
                 continue
-        for view, name in (
-            (getattr(self, "web_topbar", None), "Project actions and status"),
-            (getattr(self, "web_transport", None), "Playback controls"),
-            (getattr(self, "web_stats", None), "Project statistics"),
+        for widget, name in (
+            (getattr(self, "top_bar", None), "Project actions and status"),
+            (getattr(self, "transport", None), "Playback controls"),
+            (getattr(self, "timeline_toolbar", None), "Timeline tools"),
+            (getattr(self, "edit_stats", None), "Edit statistics"),
         ):
-            if view is not None:
-                view.setAccessibleName(name)
+            if widget is not None:
+                widget.setAccessibleName(name)
 
     def _show_quick_start(self, force: bool = True) -> None:
-        settings = QSettings("Auto Cutter", "Auto Cutter")
+        settings = app_settings()
         if not force and bool(int(settings.value("onboarding_complete_v1", 0) or 0)):
             return
         if self._ui_language == "it":
@@ -1140,6 +1151,16 @@ class MainWindow(QMainWindow):
             )
             title = "Quick start"
         QMessageBox.information(self, title, message)
+        settings.setValue("onboarding_complete_v1", 1)
+
+    def _first_run_hint(self) -> None:
+        """First launch: a non-blocking hint instead of a modal dialog (the empty state already guides)."""
+        settings = app_settings()
+        if bool(int(settings.value("onboarding_complete_v1", 0) or 0)):
+            return
+        self.statusBar().showMessage(
+            "Welcome to ReCut — drop a video on the preview to start. F1 lists the keyboard shortcuts; "
+            "Quick start is in ⋯ › Help.", 12000)
         settings.setValue("onboarding_complete_v1", 1)
 
     def _create_diagnostics_bundle(self) -> None:
@@ -1244,7 +1265,7 @@ class MainWindow(QMainWindow):
                 pass
             self._app_log("startup_auto_restore_end", input_loaded=bool(self.input_path))
             self._media_dbg("deferred_startup_auto_restore end")
-            QTimer.singleShot(250, lambda: self._show_quick_start(force=False))
+            QTimer.singleShot(250, self._first_run_hint)
 
     def _timeline_zoom_signature(self):
         """
@@ -1281,239 +1302,50 @@ class MainWindow(QMainWindow):
         return super().resizeEvent(event)
 
     def _apply_responsive_ui(self) -> None:
-        right_w = 0
-        try:
-            if hasattr(self, "_right_panel") and self._right_panel is not None:
-                right_w = int(self._right_panel.width())
-        except Exception:
-            right_w = 0
-        if right_w <= 1:
-            try:
-                right_w = max(0, int(self.width()))
-            except Exception:
-                right_w = 0
-
-        total_w = 0
+        """Keep proportions sensible from 1366 px laptops to 2560 px monitors."""
         try:
             total_w = int(self.width())
         except Exception:
             total_w = 0
-
-        scale = self._ui_scale_factor()
-        # Avoid oversized controls on high-DPI compact windows.
-        scale_soft = min(scale, 1.12)
-
-        # Responsive breakpoints tuned for laptops (including DPI scaling).
-        compact = (total_w < int(1420 * scale)) or (right_w < int(580 * scale))
-        minimum = (total_w < int(1240 * scale)) or (right_w < int(520 * scale))
-
-        # Right panel width must adapt to small screens, otherwise left/timeline overflows.
+        panel = getattr(self, "_right_panel", None)
+        if panel is not None and total_w > 0:
+            try:
+                panel.setMinimumWidth(INSPECTOR_MIN if total_w >= 1280 else 300)
+                panel.setMaximumWidth(INSPECTOR_MAX if total_w >= 1700 else 440)
+            except Exception:
+                pass
         try:
-            if hasattr(self, "_right_panel") and self._right_panel is not None:
-                target_min = 340 if minimum else (360 if compact else 380)
-                self._right_panel.setMinimumWidth(int(target_min))
+            if getattr(self, "video_widget", None) is not None:
+                self.video_widget.setMinimumHeight(180)
+            if getattr(self, "timeline_scroll", None) is not None:
+                self.timeline_scroll.setMinimumHeight(170)
+        except Exception:
+            pass
+        bar = getattr(self, "timeline_toolbar", None)
+        if bar is not None:
+            try:
+                bar.legend.setVisible(total_w >= 1180)
+            except Exception:
+                pass
+        # Splitter ratios must be applied after the layout has resized the splitters (inside the
+        # window's resizeEvent they still report the old sizes) — defer and coalesce.
+        if not bool(getattr(self, "_ratio_apply_pending", False)):
+            self._ratio_apply_pending = True
+            QTimer.singleShot(0, self._apply_splitter_ratios_deferred)
+        try:
+            self._update_timeline_scroll_policy()
         except Exception:
             pass
 
-        # Keep left/right splitter ratio coherent after responsive min-width updates.
+    def _apply_splitter_ratios_deferred(self) -> None:
+        self._ratio_apply_pending = False
         try:
-            if hasattr(self, "_main_splitter") and self._main_splitter is not None:
+            if getattr(self, "_main_splitter", None) is not None:
                 self._apply_main_panel_ratio()
         except Exception:
             pass
-
-        # Keep segmented tabs compact on laptops.
-        try:
-            seg_h = 42 if compact else 48
-            if hasattr(self, "seg_main") and self.seg_main is not None:
-                self.seg_main.setFixedHeight(seg_h)
-            if hasattr(self, "seg_export") and self.seg_export is not None:
-                self.seg_export.setFixedHeight(seg_h)
-        except Exception:
-            pass
-
-        # Web rows scale with DPI and compact mode.
-        try:
-            if hasattr(self, "web_topbar") and self.web_topbar is not None:
-                self.web_topbar.setFixedHeight(int(round((62 if minimum else (66 if compact else 70)) * scale_soft)))
-            if hasattr(self, "web_transport") and self.web_transport is not None:
-                # Keep extra headroom: browser-side controls (especially volume) can
-                # be taller than expected on some DPI/theme combinations.
-                self.web_transport.setFixedHeight(int(round((70 if minimum else (74 if compact else 78)) * scale_soft)))
-            if hasattr(self, "web_stats") and self.web_stats is not None:
-                stats_two_rows = False
-                try:
-                    stats_two_rows = int(self.web_stats.width()) > 0 and int(self.web_stats.width()) <= 980
-                except Exception:
-                    stats_two_rows = False
-                base_h = 70 if minimum else (74 if compact else 78)
-                if stats_two_rows:
-                    base_h += 8
-                stats_h = int(round(base_h * scale_soft))
-                self.web_stats.setFixedHeight(max(66, min(96, stats_h)))
-            if hasattr(self, "web_stats_full") and self.web_stats_full is not None:
-                if minimum:
-                    self.web_stats_full.setMinimumHeight(260)
-                    self.web_stats_full.setMaximumHeight(460)
-                elif compact:
-                    self.web_stats_full.setMinimumHeight(300)
-                    self.web_stats_full.setMaximumHeight(560)
-                else:
-                    self.web_stats_full.setMinimumHeight(420)
-                    self.web_stats_full.setMaximumHeight(760)
-        except Exception:
-            pass
-
-        # Keep reasonable floors, but let the splitter control most of the space.
-        try:
-            if hasattr(self, "video_widget") and self.video_widget is not None:
-                if minimum:
-                    self.video_widget.setMinimumHeight(int(round(125 * scale_soft)))
-                elif compact:
-                    self.video_widget.setMinimumHeight(int(round(145 * scale_soft)))
-                else:
-                    self.video_widget.setMinimumHeight(int(round(170 * scale_soft)))
-        except Exception:
-            pass
-
-        try:
-            if hasattr(self, "timeline_scroll") and self.timeline_scroll is not None:
-                if minimum:
-                    self.timeline_scroll.setMinimumHeight(int(round(112 * scale_soft)))
-                elif compact:
-                    self.timeline_scroll.setMinimumHeight(int(round(124 * scale_soft)))
-                else:
-                    self.timeline_scroll.setMinimumHeight(int(round(146 * scale_soft)))
-        except Exception:
-            pass
-
-        btn_specs = [
-            (getattr(self, "btn_preset_save", None), "Save"),
-            (getattr(self, "btn_preset_save_as", None), "Save as..."),
-            (getattr(self, "btn_preset_manage", None), "Manage"),
-        ]
-        for btn, full_text in btn_specs:
-            if btn is None:
-                continue
-            try:
-                btn.setText("" if compact else full_text)
-                btn.setMinimumHeight(34)
-                if compact:
-                    btn.setMinimumWidth(36)
-                    btn.setMaximumWidth(42)
-                else:
-                    btn.setMaximumWidth(16777215)
-            except Exception:
-                pass
-
-        # Keep helper text visible; compact-mode hiding made the UI feel "empty".
-        for root in (getattr(self, "page_main", None), getattr(self, "page_export", None)):
-            if root is None:
-                continue
-            try:
-                for lbl in root.findChildren(QLabel):
-                    name = str(lbl.objectName() or "")
-                    if name in {"FieldHint", "PresetMeta"}:
-                        lbl.setVisible(True)
-                    elif name == "SubtleHint":
-                        lbl.setVisible(True)
-            except Exception:
-                pass
-
-        try:
-            if hasattr(self, "lbl_preset_meta") and self.lbl_preset_meta is not None:
-                self.lbl_preset_meta.setVisible(True)
-        except Exception:
-            pass
-
-        # Threshold block specific compaction to avoid clipping at the minimum width.
-        try:
-            if hasattr(self, "threshold_pct") and self.threshold_pct is not None:
-                self.threshold_pct.setFixedWidth(84 if minimum else (90 if compact else 96))
-        except Exception:
-            pass
-        try:
-            if hasattr(self, "threshold_controls_layout") and self.threshold_controls_layout is not None:
-                narrow_right = right_w < int(430 * scale_soft)
-                self.threshold_controls_layout.setDirection(
-                    QBoxLayout.TopToBottom if narrow_right else QBoxLayout.LeftToRight
-                )
-                self.threshold_controls_layout.setSpacing(6 if narrow_right else 8)
-        except Exception:
-            pass
-        try:
-            if hasattr(self, "threshold_meter") and self.threshold_meter is not None:
-                self.threshold_meter.setFixedHeight(58 if minimum else (64 if compact else 70))
-        except Exception:
-            pass
-        try:
-            if hasattr(self, "threshold_note") and self.threshold_note is not None:
-                self.threshold_note.setVisible(True)
-        except Exception:
-            pass
-
-        # Keep status/helper labels concise and avoid collisions in narrow inspector widths.
-        try:
-            if hasattr(self, "lbl_precision") and self.lbl_precision is not None:
-                self.lbl_precision.setVisible(True)
-        except Exception:
-            pass
-
-        # Advanced headers: stack controls on narrow inspector widths to avoid text clipping.
-        try:
-            narrow_right = right_w < int(430 * scale_soft)
-            very_narrow = right_w < int(395 * scale_soft)
-            main_hdr = getattr(self, "adv_header_layout", None)
-            if main_hdr is not None:
-                main_hdr.setDirection(QBoxLayout.TopToBottom if narrow_right else QBoxLayout.LeftToRight)
-                main_hdr.setSpacing(6 if narrow_right else 8)
-            for hdr in getattr(self, "_adv_section_header_layouts", []) or []:
-                try:
-                    hdr.setDirection(QBoxLayout.TopToBottom if narrow_right else QBoxLayout.LeftToRight)
-                    hdr.setSpacing(6 if narrow_right else 8)
-                except Exception:
-                    pass
-            for badge_name in (
-                "lbl_preset_state",
-                "lbl_intensity_value",
-                "lbl_threshold_semantic",
-                "lbl_adv_state_badge",
-            ):
-                badge = getattr(self, badge_name, None)
-                if badge is not None:
-                    badge.setVisible(not very_narrow)
-            for badge in getattr(self, "_adv_section_badges", {}).values():
-                try:
-                    badge.setVisible(not very_narrow)
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        # Preserve user-selected video/timeline split after any resize/responsive pass.
         try:
             self._apply_preview_timeline_ratio()
-        except Exception:
-            pass
-
-        # Export logs panel height must scale on small displays to avoid clipping/white gaps.
-        try:
-            if hasattr(self, "export_details") and self.export_details is not None:
-                if minimum:
-                    self.export_details.setMinimumHeight(120)
-                    self.export_details.setMaximumHeight(170)
-                elif compact:
-                    self.export_details.setMinimumHeight(140)
-                    self.export_details.setMaximumHeight(200)
-                else:
-                    self.export_details.setMinimumHeight(160)
-                    self.export_details.setMaximumHeight(220)
-        except Exception:
-            pass
-
-        # Keep timeline visual clean (no unwanted bars in normal mode).
-        try:
-            self._update_timeline_scroll_policy()
         except Exception:
             pass
 
@@ -1535,10 +1367,7 @@ class MainWindow(QMainWindow):
         step = max(0, min(steps_max, step))
         self._web_zoom_steps = step
         self._web_zoom_steps_max = steps_max
-        self._web_js(
-            self.web_transport,
-            f"uiSetZoom({int(step)}, {int(steps_max)});"
-        )
+        self._ui_set_zoom(int(step), int(steps_max))
 
     def zoom_in(self) -> None:
         before = self._timeline_zoom_signature()
@@ -1585,8 +1414,8 @@ class MainWindow(QMainWindow):
         try:
             r = float(ratio)
         except Exception:
-            r = 0.69
-        return float(max(0.52, min(0.85, r)))
+            r = 0.8
+        return float(max(0.55, min(0.86, r)))
 
     def _on_preview_timeline_splitter_moved(self, *_args) -> None:
         splitter = getattr(self, "preview_timeline_splitter", None)
@@ -1690,219 +1519,255 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
-    def _init_web_views(self) -> None:
-        self.web_topbar = QWebEngineView()
-        self.web_transport = QWebEngineView()
-        self.web_stats = QWebEngineView()
-        # These legacy pages were updated but never inserted in the layout.
+    def _init_native_chrome(self) -> None:
+        """Create the native top bar, transport, timeline toolbar and status-bar statistics."""
+        # The former QWebEngine chrome is gone; keep the attributes for code that probes them.
+        self.web_topbar = None
+        self.web_transport = None
+        self.web_stats = None
         self.web_inspector = None
         self.web_stats_full = None
-        self._web_ready: dict[QWebEngineView, bool] = {}
-        self._web_js_queue: dict[QWebEngineView, list[str]] = {}
-        self._web_js_flush_pending: set[int] = set()
-        self._web_disabled = False
+        self._ui_state_text = ""
+        self._ui_progress = 0
+        self._project_dirty = False
 
-        scale = self._ui_scale_factor()
-        scale_soft = min(scale, 1.12)
-        self.web_topbar.setFixedHeight(int(round(70 * scale_soft)))
-        self.web_transport.setFixedHeight(int(round(74 * scale_soft)))
-        self.web_stats.setFixedHeight(int(round(78 * scale_soft)))
+        self.top_bar = TopBar()
+        self.top_bar.importClicked.connect(self.open_file)
+        self.top_bar.saveClicked.connect(self.save_project_quick)
+        self.top_bar.exportClicked.connect(self._focus_export)
+        self.top_bar.menuClicked.connect(self._open_top_menu)
 
-        self._web_channel = QWebChannel()
-        self._web_bridge = WebUiBridge(self)
-        self._web_channel.registerObject("bridge", self._web_bridge)
+        self.transport = TransportBar(self.btn_play, self.preview_volume_slider)
+        self.transport.prevCutClicked.connect(self.jump_to_previous_cut)
+        self.transport.nextCutClicked.connect(self.jump_to_next_cut)
+        self.transport.backClicked.connect(self.transport_seek_backward)
+        self.transport.forwardClicked.connect(self.transport_seek_forward)
+        self.transport.skipToggled.connect(self._on_transport_skip_toggled)
+        self.transport.set_skip(bool(self.chk_skip.isChecked()))
+        self.transport.set_volume(int(getattr(self, "_preview_volume_pct", 100)))
+        self.transport.set_media_ready(False)
 
-        for view in (self.web_topbar, self.web_transport, self.web_stats):
-            view.page().setWebChannel(self._web_channel)
-            view.setContextMenuPolicy(Qt.NoContextMenu)
-            # Rimuovi lo sfondo bianco di default dei QWebEngineView
-            view.setStyleSheet("background: transparent; border: none; margin: 0; padding: 0;")
-            view.page().setBackgroundColor(Qt.transparent)
-            # Rimuovi eventuali margini
-            view.setContentsMargins(0, 0, 0, 0)
-            self._web_ready[view] = False
-            self._web_js_queue[view] = []
-            view.loadFinished.connect(lambda ok, v=view: self._on_web_loaded(v, ok))
-            view.destroyed.connect(lambda _=None, v=view: self._on_web_view_destroyed(v))
+        self.timeline_toolbar = TimelineToolbar(
+            self.btn_cut_tool, self.btn_split, self.btn_zoom_out, self.btn_zoom_in, self.btn_zoom_reset
+        )
+        self.timeline_toolbar.selectToolClicked.connect(lambda: self._set_tool_mode("select"))
+        self.timeline_toolbar.undoClicked.connect(self._undo_cuts)
+        self.timeline_toolbar.redoClicked.connect(self._redo_cuts)
+        self.timeline_toolbar.snapToggled.connect(self._set_snap_enabled)
+        self.timeline_toolbar.zoomIndexChanged.connect(self._on_zoom_slider_changed)
+        self.timeline_toolbar.btn_snap.setChecked(bool(getattr(self, "_snap_enabled", False)))
+        self.timeline_toolbar.set_history(False, False)
 
-        # --- FIND WebUI folder robustly ---
-        candidates = [
-            self._project_root / "webui",
-            self._project_root / "WebUI",
-            Path.cwd() / "webui",
-            Path.cwd() / "WebUI",
-        ]
-        webdir = next((p for p in candidates if p.exists() and p.is_dir()), None)
+        self.edit_stats = EditStats()
+        self.statusBar().addPermanentWidget(self.edit_stats)
+        self.statusBar().setSizeGripEnabled(False)
 
-        if webdir is None:
-            QMessageBox.critical(
-                self,
-                "WebUI not found",
-                "Non trovo la cartella WebUI.\n"
-                "Mi aspetto: <project>/WebUI\n\n"
-                f"Ho cercato in:\n" + "\n".join(str(p) for p in candidates)
-            )
-            self._web_disabled = True
-            return
+        self._threshold_guide_timer = QTimer(self)
+        self._threshold_guide_timer.setSingleShot(True)
+        self._threshold_guide_timer.setInterval(2200)
+        self._threshold_guide_timer.timeout.connect(lambda: self.timeline.setThresholdGuide(None))
 
-        # --- verify required files exist ---
-        required = {
-            "topbar": webdir / "topbar.html",
-            "transport": webdir / "bottombar.html",
-            "stats": webdir / "stats.html",
-            "css": webdir / "ui.css",
-        }
-        missing = [name for name, p in required.items() if not p.exists()]
-        if missing:
-            QMessageBox.critical(
-                self,
-                "WebUI files missing",
-                "Mancano questi file dentro WebUI:\n"
-                + "\n".join(f"- {m}: {required[m]}" for m in missing)
-            )
-            self._web_disabled = True
-            return
-
-        def _url_with_version(p: Path, extra_query: str | None = None) -> QUrl:
-            url = QUrl.fromLocalFile(str(p))
-            try:
-                ver = int(os.path.getmtime(str(p)))
-            except Exception:
-                ver = 0
-            q = f"v={ver}"
-            if extra_query:
-                q = f"{extra_query}&{q}"
-            url.setQuery(q)
-            return url
-
-        # --- load pages (absolute file URLs, cache-busted) ---
-        self.web_topbar.setUrl(_url_with_version(required["topbar"]))
-        self.web_transport.setUrl(_url_with_version(required["transport"]))
-        self.web_stats.setUrl(_url_with_version(required["stats"]))
-
-    def _on_web_loaded(self, view: QWebEngineView, ok: bool) -> None:
-        try:
-            if hasattr(self, "_web_ready"):
-                self._web_ready[view] = bool(ok)
-        except Exception:
-            pass
-        if ok:
-            # Keep WebUI vars aligned with Qt theme after each load.
-            # Without this, some systems can show low-contrast text in light mode.
-            try:
-                self._web_apply_theme_vars()
-            except Exception:
-                pass
-            try:
-                self._schedule_web_js_flush(view)
-            except Exception:
-                pass
-            # push current state when any view becomes ready
-            try:
-                QTimer.singleShot(0, self._web_push_full_state)
-            except Exception:
-                pass
-
-    def _web_obj_valid(self, obj: Any) -> bool:
-        try:
-            return bool(obj) and bool(qt_is_valid(obj))
-        except Exception:
-            return bool(obj)
-
-    def _on_web_view_destroyed(self, view: QWebEngineView) -> None:
-        try:
-            self._web_ready.pop(view, None)
-        except Exception:
-            pass
-        try:
-            self._web_js_queue.pop(view, None)
-        except Exception:
-            pass
-        try:
-            self._web_js_flush_pending.discard(id(view))
-        except Exception:
-            pass
-
-    def _schedule_web_js_flush(self, view: QWebEngineView) -> None:
-        if getattr(self, "_web_disabled", False):
-            return
-        if not self._web_obj_valid(view):
-            return
-        key = id(view)
-        if key in self._web_js_flush_pending:
-            return
-        self._web_js_flush_pending.add(key)
-        QTimer.singleShot(0, lambda v=view, k=key: self._flush_web_js(v, k))
-
-    def _flush_web_js(self, view: QWebEngineView, key: int | None = None) -> None:
-        try:
-            if key is not None:
-                self._web_js_flush_pending.discard(key)
-        except Exception:
-            pass
-        if getattr(self, "_web_disabled", False):
-            return
-        if not self._web_obj_valid(view):
-            try:
-                self._web_js_queue.pop(view, None)
-            except Exception:
-                pass
-            return
-        try:
-            ready = bool(self._web_ready.get(view, False))
-        except Exception:
-            ready = True
-        if not ready:
-            return
-        queue = self._web_js_queue.get(view)
-        if not queue:
-            return
-        page = view.page() if hasattr(view, "page") else None
-        if not self._web_obj_valid(page):
-            return
-        payload = [str(js) for js in queue if js]
-        if not payload:
-            queue.clear()
-            return
-        queue.clear()
-        for js in payload:
-            self._dispatch_web_js(view, js)
-
-    def _dispatch_web_js(self, view: QWebEngineView, js: str) -> None:
-        if not js:
-            return
-        if getattr(self, "_web_disabled", False):
-            return
-        if not self._web_obj_valid(view):
-            return
-
-        def _run(v=view, script=str(js)) -> None:
-            if getattr(self, "_web_disabled", False):
-                return
-            if not self._web_obj_valid(v):
-                return
-            try:
-                ready = bool(self._web_ready.get(v, False))
-            except Exception:
-                ready = True
-            if not ready:
+    # ---- native chrome state ----------------------------------------------------------------
+    def _apply_native_palette(self, pal) -> None:
+        for name in ("top_bar", "transport", "timeline_toolbar", "edit_stats"):
+            w = getattr(self, name, None)
+            if w is not None:
                 try:
-                    self._web_js_queue.setdefault(v, []).append(script)
+                    w.apply_palette(pal)
                 except Exception:
                     pass
-                return
+        try:
+            self.timeline.setPalette_tokens(pal)
+        except Exception:
+            pass
+        try:
+            self.video_widget.set_palette_tokens(pal)
+        except Exception:
+            pass
+        colors = {"auto": pal.cut_auto, "manual": pal.cut_manual, "gameplay": pal.keep_island,
+                  "restored": pal.restored}
+        for key, item in (getattr(self, "cut_legend_items", None) or {}).items():
             try:
-                page = v.page() if hasattr(v, "page") else None
+                item.dot.set_color(colors[key])
             except Exception:
-                page = None
-            if not self._web_obj_valid(page):
-                return
+                pass
+        muted = QColor(pal.text_2)
+        for sec in self.findChildren(QFrame, "InspectorSection"):
             try:
-                page.runJavaScript(script)
+                sec.refresh_icons(muted)
             except Exception:
-                return
+                pass
+        icon_specs = (
+            ("btn_preset_more", "more", pal.text_2, 16),
+            ("btn_sel_restore", "restore", pal.text, 14),
+            ("btn_sel_jump", "target", pal.text, 14),
+            ("btn_island_reset", "restore", pal.text, 14),
+            ("btn_gameplay_run", "gamepad", "#FFFFFF", 16),
+            ("btn_export", "export", "#FFFFFF", 16),
+            ("btn_ai_process", "sparkle", "#FFFFFF", 14),
+            ("btn_ai_reprocess", "sparkle", "#FFFFFF", 14),
+        )
+        for attr, glyph, color, size in icon_specs:
+            w = getattr(self, attr, None)
+            if w is not None:
+                try:
+                    w.setIcon(glyph_icon(glyph, color, size, disabled=pal.text_3))
+                except Exception:
+                    pass
 
-        QTimer.singleShot(0, _run)
+    def _ui_set_state(self, text: str) -> None:
+        self._ui_state_text = str(text or "")
+        self._ui_refresh_status()
+
+    def _ui_set_progress(self, pct) -> None:
+        try:
+            self._ui_progress = max(0, min(100, int(pct)))
+        except Exception:
+            self._ui_progress = 0
+        self._ui_refresh_status()
+
+    def _ui_refresh_status(self) -> None:
+        """Single owner of the top-bar status pill + progress line (derived from real state)."""
+        bar = getattr(self, "top_bar", None)
+        if bar is None:
+            return
+        pct = int(getattr(self, "_ui_progress", 0) or 0)
+        text = str(getattr(self, "_ui_state_text", "") or "")
+        if bool(getattr(self, "_export_processing", False)):
+            bar.set_status(f"Exporting… {pct}%" if 0 < pct < 100 else "Exporting…", "busy")
+            bar.set_progress(pct if pct > 0 else 1)
+            return
+        if bool(getattr(self, "_ai_processing", False)):
+            bar.set_status("AI analysis…", "busy")
+            bar.set_progress(None)
+            return
+        if self._gameplay_running():
+            gp = int(self.gameplay_progress.value()) if hasattr(self, "gameplay_progress") else 0
+            bar.set_status(f"Detecting games… {gp}%" if gp > 0 else "Detecting games…", "busy")
+            bar.set_progress(max(2, gp))
+            return
+        if bool(getattr(self, "_analysis_threads", {})):
+            progress_map = getattr(self, "_analysis_progress", {}) or {}
+            try:
+                apct = max(int(v) for v in progress_map.values()) if progress_map else 0
+            except Exception:
+                apct = 0
+            bar.set_status(f"Analyzing audio… {apct}%" if apct > 0 else "Analyzing audio…", "busy")
+            bar.set_progress(max(2, apct))
+            return
+        bar.set_progress(None)
+        if not self.input_path:
+            bar.set_status("No video", "idle")
+            return
+        low = text.lower()
+        if "fail" in low or "error" in low:
+            bar.set_status(text.rstrip("."), "error")
+            return
+        if "cancel" in low:
+            bar.set_status("Cancelled", "warn")
+            return
+        try:
+            track = self._get_active_track()
+            analyzed = bool(track is not None and track.rms is not None and float(track.duration or 0.0) > 0.0)
+        except Exception:
+            analyzed = False
+        if analyzed:
+            bar.set_status("Analyzed", "ok")
+        else:
+            bar.set_status("Waiting for analysis", "idle")
+
+    def _ui_set_project_name(self, name: str) -> None:
+        bar = getattr(self, "top_bar", None)
+        if bar is None:
+            return
+        shown = str(name or "")
+        if not shown or shown == "-":
+            shown = "Untitled"
+        project_file = getattr(self, "_project_file_path", None)
+        tip = str(project_file) if project_file else str(self.input_path or "")
+        bar.set_project_name(shown, tooltip=tip)
+        bar.set_dirty(bool(getattr(self, "_project_dirty", False)) and bool(self.input_path))
+
+    def _ui_set_skip(self, enabled: bool) -> None:
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_skip(bool(enabled))
+
+    def _ui_set_video_loaded(self, loaded: bool) -> None:
+        if getattr(self, "top_bar", None) is not None:
+            self.top_bar.set_video_loaded(bool(loaded))
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_media_ready(bool(loaded))
+
+    def _ui_set_timecode(self, current: str, total: str) -> None:
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_timecode(current, total)
+
+    def _ui_set_volume(self, pct: int) -> None:
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_volume(int(pct))
+
+    def _ui_set_playing(self, playing: bool) -> None:
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_playing(bool(playing))
+
+    def _ui_set_cuts_ready(self, ready: bool) -> None:
+        if getattr(self, "transport", None) is not None:
+            self.transport.set_cuts_ready(bool(ready))
+
+    def _ui_sync_tool(self, *_args) -> None:
+        if getattr(self, "timeline_toolbar", None) is not None:
+            self.timeline_toolbar.set_tool(str(getattr(self, "tool_mode", "select")))
+
+    def _ui_set_zoom(self, step: int, steps_max: int) -> None:
+        if getattr(self, "timeline_toolbar", None) is not None:
+            self.timeline_toolbar.set_zoom(int(step), int(steps_max))
+
+    def _sync_history_ui(self) -> None:
+        bar = getattr(self, "timeline_toolbar", None)
+        if bar is None:
+            return
+        can_undo = bool(getattr(self, "_edit_undo_stack", None) or getattr(self, "_undo_stack", None))
+        can_redo = bool(getattr(self, "_edit_redo_stack", None) or getattr(self, "_redo_stack", None))
+        bar.set_history(can_undo, can_redo)
+
+    def _mark_project_dirty(self, dirty: bool = True) -> None:
+        self._project_dirty = bool(dirty)
+        if getattr(self, "top_bar", None) is not None:
+            self.top_bar.set_dirty(self._project_dirty and bool(self.input_path))
+
+    def _on_transport_skip_toggled(self, checked: bool) -> None:
+        self.chk_skip.setChecked(bool(checked))
+        self._on_skip_changed()
+
+    def _set_snap_enabled(self, enabled: bool) -> None:
+        self._snap_enabled = bool(enabled)
+        try:
+            self.timeline.setSnapEnabled(bool(enabled))
+        except Exception:
+            pass
+        if getattr(self, "timeline_toolbar", None) is not None:
+            btn = self.timeline_toolbar.btn_snap
+            if btn.isChecked() != bool(enabled):
+                btn.blockSignals(True)
+                btn.setChecked(bool(enabled))
+                btn.blockSignals(False)
+
+    def _toggle_snap(self) -> None:
+        self._set_snap_enabled(not bool(getattr(self, "_snap_enabled", False)))
+        self.statusBar().showMessage("Snapping on" if self._snap_enabled else "Snapping off", 1200)
+
+    def _on_zoom_slider_changed(self, index: int) -> None:
+        try:
+            self.timeline.setZoomIndex(int(index))
+        except Exception:
+            pass
+
+    def _focus_export(self) -> None:
+        self._switch_page(1)
+        try:
+            self.btn_export.setFocus(Qt.OtherFocusReason)
+        except Exception:
+            pass
 
     # -----------------------------
     # Tracks helpers / properties
@@ -2717,7 +2582,7 @@ class MainWindow(QMainWindow):
             pass
 
     def _media_debug_logs_dir(self) -> Path:
-        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        base = str(config_root())
         if not base:
             base = str(Path.home() / ".auto_cutter")
         d = Path(base) / "debug_logs"
@@ -2920,10 +2785,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
         try:
-            self._web_js(
-                self.web_transport,
-                f"uiSetPlayEnabled({json.dumps(bool(ok))}, {json.dumps(reason)});",
-            )
+            pass
         except Exception:
             pass
 
@@ -3395,6 +3257,12 @@ class MainWindow(QMainWindow):
         t.ai_manual_cuts = self._clone_segments_list(getattr(src, "ai_manual_cuts", []))
         t.ai_suppressed_cuts = self._clone_segments_list(getattr(src, "ai_suppressed_cuts", []))
         t.ai_cuts_enabled = bool(getattr(src, "ai_cuts_enabled", False))
+        t.gameplay_cuts = self._clone_segments_list(getattr(src, "gameplay_cuts", []))
+        t.gameplay_cuts_enabled = bool(getattr(src, "gameplay_cuts_enabled", False))
+        t.gameplay_keeps = self._clone_segments_list(getattr(src, "gameplay_keeps", []))
+        t.gameplay_mode = str(getattr(src, "gameplay_mode", "") or "")
+        t.gameplay_detected_keeps = self._clone_segments_list(getattr(src, "gameplay_detected_keeps", []))
+        t.gameplay_islands = copy.deepcopy(list(getattr(src, "gameplay_islands", []) or []))
         t.ai_speech = self._clone_segments_list(getattr(src, "ai_speech", []))
         t.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
@@ -3676,6 +3544,12 @@ class MainWindow(QMainWindow):
         dup.ai_manual_cuts = self._clone_segments_list(getattr(src, "ai_manual_cuts", []))
         dup.ai_suppressed_cuts = self._clone_segments_list(getattr(src, "ai_suppressed_cuts", []))
         dup.ai_cuts_enabled = bool(getattr(src, "ai_cuts_enabled", False))
+        dup.gameplay_cuts = self._clone_segments_list(getattr(src, "gameplay_cuts", []))
+        dup.gameplay_cuts_enabled = bool(getattr(src, "gameplay_cuts_enabled", False))
+        dup.gameplay_keeps = self._clone_segments_list(getattr(src, "gameplay_keeps", []))
+        dup.gameplay_mode = str(getattr(src, "gameplay_mode", "") or "")
+        dup.gameplay_detected_keeps = self._clone_segments_list(getattr(src, "gameplay_detected_keeps", []))
+        dup.gameplay_islands = copy.deepcopy(list(getattr(src, "gameplay_islands", []) or []))
         dup.ai_speech = self._clone_segments_list(getattr(src, "ai_speech", []))
         dup.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
@@ -3887,6 +3761,7 @@ class MainWindow(QMainWindow):
             self._video_color_cursor = 0
             self.project = Project.create_default("Untitled")
             self._project_file_path = None
+            self._mark_project_dirty(False)
             self._offline_project_items = []
             self._timeline_track_map = []
             self._video_segments = []
@@ -3913,7 +3788,7 @@ class MainWindow(QMainWindow):
 
             # Ensure recent files are cleared after a reset
             try:
-                s = QSettings("Auto Cutter", "Auto Cutter")
+                s = app_settings()
                 s.remove("last_input_path")
                 s.remove("last_session_items")
             except Exception:
@@ -4084,6 +3959,16 @@ class MainWindow(QMainWindow):
                                 "media_id": c.media_id,
                                 "track_state_idx": idx,
                                 "cuts": t.cuts,
+                                # provenance for the timeline (display only; same segment-local domain)
+                                "manual_cuts": list(getattr(t, "manual_cuts", None) or []),
+                                "gameplay_cuts": self._enabled_gameplay_cuts(t),
+                                "gameplay_keeps": list(getattr(t, "gameplay_keeps", None) or [])
+                                if getattr(t, "gameplay_cuts_enabled", False) else [],
+                                "restored_cuts": merge_overlaps(list(getattr(t, "suppressed_cuts", None) or [])),
+                                "gameplay_islands": list(getattr(t, "gameplay_islands", None) or []),
+                                "cut_kinds": classify_cuts(
+                                    list(t.cuts or []), getattr(t, "manual_cuts", None), self._enabled_gameplay_cuts(t)
+                                ),
                                 "rms": rms,
                                 "hop_s": hop_s,
                             }
@@ -4118,6 +4003,8 @@ class MainWindow(QMainWindow):
                 "clips": aclips,
                 "kind": "audio",
                 "track_state_idx": None,
+                # cut selection / hit-testing refer to the active video's clip
+                "active_state_idx": int(self._active_track_index) if self._tracks else None,
             }
         )
         self._timeline_track_map.append({"kind": "audio", "track_state_idx": None})
@@ -4207,11 +4094,11 @@ class MainWindow(QMainWindow):
             pass
         # sync web transport button state
         try:
-            self._web_js(self.web_transport, f"uiSetCutActive({json.dumps(mode == 'cut')});")
+            self._ui_sync_tool(mode == 'cut')
         except Exception:
             pass
         try:
-            self._web_js(self.web_transport, f"uiSetSplitActive({json.dumps(mode == 'split')});")
+            self._ui_sync_tool(mode == 'split')
         except Exception:
             pass
         if hasattr(self.timeline, "setToolMode"):
@@ -4613,30 +4500,6 @@ class MainWindow(QMainWindow):
             return f"{h}:{m:02d}:{s:02d}"
         return f"{m}:{s:02d}"
 
-    def _web_js(self, view: QWebEngineView, js: str) -> None:
-        # Defer WebEngine work onto the UI loop so updates are never fired
-        # inline while Qt is still settling a heavy analysis/timeline refresh.
-        if not js:
-            return
-        if getattr(self, "_web_disabled", False):
-            return
-        if not self._web_obj_valid(view):
-            return
-        try:
-            ready = True
-            if hasattr(self, "_web_ready"):
-                ready = bool(self._web_ready.get(view, False))
-            if not ready:
-                queue = getattr(self, "_web_js_queue", None)
-                if queue is None:
-                    self._web_js_queue = {}
-                    queue = self._web_js_queue
-                queue.setdefault(view, []).append(str(js))
-                return
-            self._dispatch_web_js(view, str(js))
-        except Exception:
-            return
-
     def _compute_stats(self):
         total_s = float(self._global_duration or self.duration or 0.0)
         keeps: list[Segment] = []
@@ -4753,52 +4616,10 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
-    def _topbar_status_payload(self) -> dict[str, Any]:
-        has_video = bool(self.input_path)
-        try:
-            audio_ready = any(bool(getattr(t, "audio_clip_id", None)) for t in getattr(self, "_tracks", []))
-        except Exception:
-            audio_ready = False
-        if not audio_ready:
-            audio_ready = has_video
-
-        try:
-            preset_name = str(self.preset_combo.currentText() or "Manual")
-        except Exception:
-            preset_name = "Manual"
-        if getattr(self, "_preset_dirty", False) and getattr(self, "_preset_source_name", None):
-            preset_label = "Modified"
-            preset_kind = "warn"
-        elif preset_name and preset_name != "Manual":
-            preset_label = preset_name
-            preset_kind = "ok"
-        else:
-            preset_label = "Manual"
-            preset_kind = "muted"
-
-        codec_label = "-"
-        try:
-            codec_label = str(self.codec_combo.currentText() or "-")
-            if " - " in codec_label:
-                codec_label = codec_label.split(" - ", 1)[0]
-        except Exception:
-            pass
-
-        return {
-            "video": "Loaded" if has_video else "Missing",
-            "video_kind": "ok" if has_video else "muted",
-            "audio": "Ready" if audio_ready else "Unavailable",
-            "audio_kind": "ok" if audio_ready else "muted",
-            "preset": preset_label,
-            "preset_kind": preset_kind,
-            "codec": codec_label,
-            "codec_kind": "info",
-        }
-
     def _push_topbar_status_chips(self) -> None:
+        """Preset/codec changes are reflected in the Export summary (the old top-bar chips are gone)."""
         try:
-            payload = self._topbar_status_payload()
-            self._web_js(self.web_topbar, f"uiSetStatusChips({json.dumps(payload)});")
+            self._refresh_export_summary()
         except Exception:
             pass
 
@@ -4817,8 +4638,10 @@ class MainWindow(QMainWindow):
             p = int(self.threshold_pct.value())
         except Exception:
             p = 0
-        label, kind = self._threshold_profile_label(p)
-        self._set_badge_label(getattr(self, "lbl_threshold_semantic", None), label, kind)
+        label, _kind = self._threshold_profile_label(p)
+        lbl = getattr(self, "lbl_threshold_semantic", None)
+        if lbl is not None:
+            lbl.setText(f"{p}%  ·  {label}")
 
     def _refresh_advanced_ui_state(self) -> None:
         states: dict[str, bool] = {}
@@ -4848,14 +4671,19 @@ class MainWindow(QMainWindow):
         if isinstance(badges, dict):
             for key, label in badges.items():
                 custom = bool(states.get(str(key), False))
+                if key == "smoothing":
+                    custom = custom or bool(states.get("merging", False))
                 self._set_badge_label(label, "Custom" if custom else "Default", "warning" if custom else "muted")
+                try:
+                    label.setVisible(custom)
+                except Exception:
+                    pass
 
         any_custom = any(states.values()) if states else False
-        self._set_badge_label(
-            getattr(self, "lbl_adv_state_badge", None),
-            "Custom" if any_custom else "Default",
-            "warning" if any_custom else "muted",
-        )
+        adv_badge = getattr(self, "lbl_adv_state_badge", None)
+        self._set_badge_label(adv_badge, "Custom", "warning")
+        if adv_badge is not None:
+            adv_badge.setVisible(any_custom)
 
     def _preset_profile_summary(self, cfg: dict | None = None) -> str:
         try:
@@ -4894,118 +4722,97 @@ class MainWindow(QMainWindow):
         else:
             pad_lbl = "Longer padding"
 
-        return f"{pace} - {thr_lbl} threshold - {pad_lbl}"
+        return f"{pace} · {thr_lbl.lower()} threshold · {pad_lbl.lower()}"
 
     def _update_preset_ui_state(self) -> None:
-        label = getattr(self, "lbl_preset_state", None)
+        badge = getattr(self, "lbl_preset_state", None)
         meta = getattr(self, "lbl_preset_meta", None)
         combo = getattr(self, "preset_combo", None)
         if combo is None:
             return
-
         try:
             current = str(combo.currentText() or "Manual")
         except Exception:
             current = "Manual"
-
-        if getattr(self, "_preset_dirty", False) and getattr(self, "_preset_source_name", None):
+        presets = self.presets if isinstance(getattr(self, "presets", None), dict) else {}
+        dirty = bool(getattr(self, "_preset_dirty", False)) and bool(getattr(self, "_preset_source_name", None))
+        if dirty:
             src = str(self._preset_source_name or "Preset")
-            self._set_badge_label(label, "Preset modified", "warning")
-            if meta is not None:
-                try:
-                    cfg = self.presets.get(src) if isinstance(getattr(self, "presets", None), dict) else None
-                    meta.setText(f"{self._preset_profile_summary(cfg)} - Unsaved changes from {src}")
-                except Exception:
-                    meta.setText(f"Unsaved changes from {src}")
+            self._set_badge_label(badge, "Modified", "warning")
+            text = f"Based on “{src}” with unsaved changes · {self._preset_profile_summary()}"
         elif current != "Manual":
-            self._set_badge_label(label, "Saved preset", "success")
-            if meta is not None:
-                try:
-                    cfg = self.presets.get(current) if isinstance(getattr(self, "presets", None), dict) else None
-                    meta.setText(self._preset_profile_summary(cfg))
-                except Exception:
-                    meta.setText("Saved preset")
+            self._set_badge_label(badge, "Saved", "success")
+            text = self._preset_profile_summary(presets.get(current))
         else:
-            self._set_badge_label(label, "Manual", "muted")
-            if meta is not None:
-                try:
-                    meta.setText(self._preset_profile_summary())
-                except Exception:
-                    meta.setText("Manual tuning")
-
+            self._set_badge_label(badge, "Custom", "muted")
+            text = f"Custom settings · {self._preset_profile_summary()}"
+        if badge is not None:
+            badge.setVisible(dirty)
+            badge.setToolTip("Settings differ from the selected preset. Use ⋯ to save or revert." if dirty else "")
+        if meta is not None:
+            meta.setText(text)
         try:
             self._push_topbar_status_chips()
         except Exception:
             pass
 
-
     def _web_push_full_state(self) -> None:
-        try:
-            self._web_apply_theme_vars()
-        except Exception:
-            pass
-        # topbar
+        """Refresh every piece of native chrome from the current editor state.
+
+        (Name kept from the WebUI era: it is called after every edit, analysis and playback change.)
+        """
         name = self._project_display_name()
-        skip = bool(self.chk_skip.isChecked())
-        state = "Ready" if self.input_path else "No video loaded"
         has_video = bool(self.input_path)
-        self._web_js(self.web_topbar, f"uiSetState({json.dumps(state)});")
-        self._web_js(self.web_topbar, f"uiSetCrumbs({json.dumps(name)});")
-        self._web_js(self.web_topbar, f"uiSetSkip({json.dumps(skip)});")
-        self._web_js(self.web_topbar, "uiSetProgress(0);")
-        self._web_js(self.web_topbar, f"uiSetVideoLoaded({json.dumps(has_video)});")
-        self._push_topbar_status_chips()
-        self._web_js(self.web_topbar, f"uiSetReadyDotState({json.dumps(getattr(self, '_ready_dot_state', 'idle'))});")
-        self._web_js(self.web_topbar, f"uiSetExportDotState({json.dumps(getattr(self, '_export_dot_state', 'idle'))});")
-        # timecode
+        self._ui_set_project_name(name)
+        self._ui_set_skip(bool(self.chk_skip.isChecked()))
+        self._ui_set_video_loaded(has_video)
+        self._ui_refresh_status()
         cur = self._fmt_time(getattr(self, "_last_pos", 0.0))
         st = self._compute_stats()
         dur = self._fmt_time(st.get("total_s", self._global_duration or self.duration or 0.0))
-        self._web_js(self.web_transport, f"uiSetTimecode({json.dumps(cur)}, {json.dumps(dur)});")
-        self._web_js(self.web_transport, f"uiSetPreviewVolume({int(getattr(self, '_preview_volume_pct', 100))});")
+        self._ui_set_timecode(cur, dur)
+        self._ui_set_volume(int(getattr(self, "_preview_volume_pct", 100)))
         self._push_zoom_to_web()
 
-        # play/pause state
         is_playing = self.player.playbackState() == QMediaPlayer.PlayingState
-        self._web_js(self.web_transport, f"uiSetPlayState({json.dumps(is_playing)});")
+        self._ui_set_playing(is_playing)
         self._refresh_play_button_state()
 
-        # enable/disable cut navigation buttons
         cuts_ready = False
         try:
             track = self._get_active_track()
             cuts_ready = bool(track and track.rms is not None and float(track.duration or 0.0) > 0.0)
         except Exception:
             cuts_ready = False
-        self._web_js(self.web_transport, f"uiSetCutsReady({json.dumps(cuts_ready)});")
-        # split tool state
-        try:
-            self._web_js(self.web_transport, f"uiSetCutActive({json.dumps(self.tool_mode == 'cut')});")
-        except Exception:
-            pass
-        try:
-            self._web_js(self.web_transport, f"uiSetSplitActive({json.dumps(self.tool_mode == 'split')});")
-        except Exception:
-            pass
+        self._ui_set_cuts_ready(cuts_ready)
+        self._ui_sync_tool()
+        self._sync_history_ui()
 
-        # stats
         out_fmt = self._fmt_time(st["out_s"])
         saved_fmt = self._fmt_time(st["saved_s"])
         avg_cut_fmt = self._fmt_time(st["avg_cut"]) if st["avg_cut"] > 0 else "0:00"
         avg_keep_fmt = self._fmt_time(st["avg_keep"]) if st["avg_keep"] > 0 else "0:00"
-
         try:
-            self.lbl_footer.setText(
-                f"Duration {dur}  -  Output {out_fmt}  -  {int(st['cuts_n'])} cuts"
-            )
+            self.lbl_footer.setText(f"Duration {dur}  -  Output {out_fmt}  -  {int(st['cuts_n'])} cuts")
         except Exception:
             pass
-
-        self._web_js(
-            self.web_stats,
-            f"uiSetStats({json.dumps(dur)}, {json.dumps(out_fmt)}, {st['cuts_n']}, {st['kept_pct']}, {json.dumps(saved_fmt)}, {json.dumps(avg_cut_fmt)}, {json.dumps(avg_keep_fmt)}, {st['cuts_per_min']}, {st['keeps_n']}, {st['saved_pct']});",
-        )
-        # Update right panel stats (legacy fallback)
+        stats = getattr(self, "edit_stats", None)
+        if stats is not None:
+            if not has_video:
+                stats.set_empty()
+            else:
+                stats.set_stats(
+                    duration=dur, output=out_fmt, cuts=int(st["cuts_n"]), removed_pct=float(st["saved_pct"]),
+                    saved=saved_fmt, avg_cut=avg_cut_fmt, avg_keep=avg_keep_fmt,
+                    cuts_per_min=float(st["cuts_per_min"]), keeps=int(st["keeps_n"]), analyzed=cuts_ready,
+                )
+        self._refresh_cut_panels()
+        self._refresh_export_summary(st)
+        self._refresh_analysis_panel()
+        try:
+            self._update_preset_ui_state()
+        except Exception:
+            pass
         if self.stats_duration:
             self.stats_duration.setText(f"Duration: {dur}")
             self.stats_output.setText(f"Output: {out_fmt}")
@@ -5020,49 +4827,45 @@ class MainWindow(QMainWindow):
 
     def _build_layout_modular(self) -> None:
         central = QWidget()
+        central.setObjectName("Central")
         self.setCentralWidget(central)
-
         outer = QVBoxLayout(central)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+        outer.addWidget(self.top_bar)
 
-        # TOPBAR is now HTML
-        outer.addWidget(self.web_topbar)
+        viewer = build_viewer_pane(self)
+        inspector = build_right_panel(self)
 
-        # Main layout (fisso, senza splitter)
-        main_container = QFrame()
-        main_container.setObjectName("MainContainer")
-        main_container.setAttribute(Qt.WA_StyledBackground, True)
-        main_layout = QHBoxLayout(main_container)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-
-        left_container = QWidget()
-        left_container.setObjectName("LeftPanel")
-        left_layout = build_left_panel(self)
-        left_container.setLayout(left_layout)
-
-        right_panel = build_right_panel(self)
-
-        # User-resizable left/right split (preview area vs inspector).
+        # viewer | inspector
         main_splitter = QSplitter(Qt.Horizontal)
-        main_splitter.setObjectName("MainPanelSplitter")
+        main_splitter.setObjectName("MainSplitter")
         main_splitter.setChildrenCollapsible(False)
-        main_splitter.setHandleWidth(10)
-        main_splitter.setOpaqueResize(False)
+        main_splitter.setHandleWidth(1)
         try:
             main_splitter.splitterMoved.connect(self._on_main_panel_splitter_moved)
         except Exception:
             pass
-
-        # keep references for layout swap + splitter persistence
-        self._main_layout = main_layout
         self._main_splitter = main_splitter
-        self._left_container = left_container
-        self._right_panel = right_panel
-        main_layout.addWidget(main_splitter, stretch=1)
+        self._left_container = viewer
+        self._right_panel = inspector
 
-        outer.addWidget(main_container, stretch=1)
+        # (viewer | inspector) above a full-width timeline
+        work = QSplitter(Qt.Vertical)
+        work.setObjectName("WorkSplitter")
+        work.setChildrenCollapsible(False)
+        work.setHandleWidth(1)
+        work.addWidget(main_splitter)
+        work.addWidget(build_timeline_pane(self))
+        work.setStretchFactor(0, 3)
+        work.setStretchFactor(1, 2)
+        try:
+            work.splitterMoved.connect(self._on_preview_timeline_splitter_moved)
+        except Exception:
+            pass
+        self.preview_timeline_splitter = work
+        self._main_layout = outer
+        outer.addWidget(work, stretch=1)
 
     def _apply_layout_mode(self) -> None:
         splitter = getattr(self, "_main_splitter", None)
@@ -5076,18 +4879,23 @@ class MainWindow(QMainWindow):
                 w.setParent(None)
         except Exception:
             pass
-
         if self._layout_mode == "right":
             splitter.addWidget(self._right_panel)
             splitter.addWidget(self._left_container)
-            splitter.setStretchFactor(0, 3)
-            splitter.setStretchFactor(1, 7)
+            splitter.setStretchFactor(0, 0)
+            splitter.setStretchFactor(1, 1)
         else:
             splitter.addWidget(self._left_container)
             splitter.addWidget(self._right_panel)
-            splitter.setStretchFactor(0, 7)
-            splitter.setStretchFactor(1, 3)
+            splitter.setStretchFactor(0, 1)
+            splitter.setStretchFactor(1, 0)
         self._apply_main_panel_ratio()
+
+    def _toggle_mini_stats(self) -> None:
+        self._mini_stats_enabled = not self._mini_stats_enabled
+        self._app_log("menu_topbar_action", action="toggle_mini_stats", enabled=self._mini_stats_enabled)
+        self._save_ui_prefs()
+        self._apply_ui_prefs()
 
     def _toggle_layout_mode(self) -> None:
         self._layout_mode = "right" if self._layout_mode == "left" else "left"
@@ -5095,12 +4903,12 @@ class MainWindow(QMainWindow):
         self._save_layout_pref()
 
     def _load_layout_pref(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         mode = s.value("layout_mode", "left")
         self._layout_mode = "right" if str(mode) == "right" else "left"
 
     def _save_layout_pref(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         s.setValue("layout_mode", self._layout_mode)
 
     def _user_presets_path(self) -> Path:
@@ -5109,7 +4917,7 @@ class MainWindow(QMainWindow):
         return path / "presets.json"
 
     def _load_ui_prefs(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         self._mini_stats_enabled = bool(int(s.value("mini_stats_enabled", 1)))
         self._layout_switch_enabled = bool(int(s.value("layout_switch_enabled", 1)))
         self._advanced_enabled = bool(int(s.value("advanced_enabled", 1)))
@@ -5133,14 +4941,14 @@ class MainWindow(QMainWindow):
             self._crash_autosave_interval_s = int(env_interval)
         self._crash_autosave_interval_s = max(10, min(600, int(self._crash_autosave_interval_s)))
         try:
-            ratio_raw = float(s.value("preview_timeline_ratio", 0.72) or 0.72)
+            ratio_raw = float(s.value("preview_timeline_ratio", 0.62) or 0.62)
         except Exception:
-            ratio_raw = 0.72
+            ratio_raw = 0.62
         self._preview_timeline_ratio = self._clamp_preview_timeline_ratio(ratio_raw)
         try:
-            main_ratio_raw = float(s.value("main_panel_ratio", 0.69) or 0.69)
+            main_ratio_raw = float(s.value("main_panel_ratio", 0.8) or 0.8)
         except Exception:
-            main_ratio_raw = 0.69
+            main_ratio_raw = 0.8
         self._main_panel_ratio = self._clamp_main_panel_ratio(main_ratio_raw)
         try:
             self._window_pref_w = int(s.value("window_w", 1400) or 1400)
@@ -5152,7 +4960,7 @@ class MainWindow(QMainWindow):
             self._window_pref_h = 860
 
     def _save_ui_prefs(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         s.setValue("mini_stats_enabled", int(self._mini_stats_enabled))
         s.setValue("layout_switch_enabled", int(self._layout_switch_enabled))
         s.setValue("advanced_enabled", int(self._advanced_enabled))
@@ -5187,24 +4995,23 @@ class MainWindow(QMainWindow):
             pass
 
     def _load_theme_pref(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         raw = str(s.value("theme_name", "Dark") or "Dark").strip()
         allowed = {"Dark", "Light", "System"}
         # Keep support for older/custom values already present in configs.
         self._theme_name = raw if raw in allowed else (raw if raw else "Dark")
 
     def _save_theme_pref(self) -> None:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         s.setValue("theme_name", str(getattr(self, "_theme_name", "Dark") or "Dark"))
 
     def _apply_theme_pref(self) -> None:
         apply_theme(self, str(getattr(self, "_theme_name", "Dark") or "Dark"))
-        self._web_apply_theme_vars()
 
     def _apply_ui_prefs(self) -> None:
-        # Mini stats (under timeline)
-        if hasattr(self, "web_stats") and self.web_stats is not None:
-            self.web_stats.setVisible(bool(self._mini_stats_enabled))
+        # Edit statistics (status bar)
+        if getattr(self, "edit_stats", None) is not None:
+            self.edit_stats.setVisible(bool(self._mini_stats_enabled))
 
         # Layout switch button (disable instead of hide)
         if hasattr(self, "btn_layout") and self.btn_layout is not None:
@@ -5222,33 +5029,6 @@ class MainWindow(QMainWindow):
         self._apply_preview_timeline_ratio()
 
         # Export toggles are managed via the top menu only
-
-    def _web_apply_theme_vars(self) -> None:
-        # Push CSS variables to WebUI
-        try:
-            vars_map = {
-                "--bg": self._c_bg.name(),
-                "--surface": self._c_surface.name(),
-                "--surface-2": self._c_surface2.name(),
-                "--surface2": self._c_surface2.name(),
-                "--border": self._c_border.name(),
-                "--text": self._c_text.name(),
-                "--text-muted": self._c_muted.name(),
-                "--muted": self._c_muted.name(),
-                "--subtle": self._c_subtle.name(),
-                "--accent": self._c_accent.name(),
-                "--accent2": self._c_accent.lighter(120).name(),
-            }
-            js = (
-                "(() => { const r=document.documentElement.style;"
-                + "".join([f"r.setProperty('{k}','{v}');" for k, v in vars_map.items()])
-                + "if(document && document.body){document.body.style.color='var(--text)';}"
-                + "})()"
-            )
-            for view in (self.web_topbar, self.web_transport, self.web_stats):
-                self._web_js(view, js)
-        except Exception:
-            pass
 
     @Slot(str)
 
@@ -5298,7 +5078,7 @@ class MainWindow(QMainWindow):
         # Clearing them is an explicit action in the Performance panel.
         # Persist last session info for "recent files" and "remember filters/cuts"
         try:
-            s = QSettings("Auto Cutter", "Auto Cutter")
+            s = app_settings()
             try:
                 self._save_track_cfg(self._get_active_track())
             except Exception:
@@ -5360,7 +5140,39 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def _open_top_menu(self) -> None:
-        menu = QMenu(self)
+        """App menu (⋯): File · View · Preferences · Twitch automation · Help."""
+        app_menu = QMenu(self)
+        direct: dict = {}
+
+        def add(target, text, fn, shortcut="", enabled=True, checked=None):
+            act = target.addAction(f"{text}\t{shortcut}" if shortcut else text)
+            act.setEnabled(bool(enabled))
+            if checked is not None:
+                act.setCheckable(True)
+                act.setChecked(bool(checked))
+            direct[act] = fn
+            return act
+
+        has_video = bool(self.input_path)
+        can_export = bool(self.btn_export.isEnabled())
+        add(app_menu, "Import video…", self.open_file, "Ctrl+O")
+        add(app_menu, "Open project…", self.load_project_file, "Ctrl+Shift+O")
+        add(app_menu, "Save project", self.save_project_quick, "Ctrl+S", has_video)
+        add(app_menu, "Save project as…", lambda: self.save_project_file(ask_path=True), "Ctrl+Shift+S", has_video)
+        app_menu.addSeparator()
+        add(app_menu, "Export video…", self.export_mp4, "Ctrl+E", can_export)
+        add(app_menu, "Export EDL…", self.export_edl, "", can_export)
+        app_menu.addSeparator()
+        add(app_menu, "Reset workspace…", self.reset_workspace, "", has_video)
+        app_menu.addSeparator()
+        view_menu = app_menu.addMenu("View")
+        add(view_menu, "Inspector on the left", self._toggle_layout_mode, checked=self._layout_mode == "right")
+        add(view_menu, "Edit statistics in the status bar", self._toggle_mini_stats, checked=self._mini_stats_enabled)
+        view_menu.addSeparator()
+        add(view_menu, "Zoom to fit", self.zoom_reset, "Shift+Z", has_video)
+        add(view_menu, "Snapping", self._toggle_snap, "N", checked=bool(getattr(self, "_snap_enabled", False)))
+        # Preferences reuse the existing handlers below
+        menu = app_menu.addMenu("Preferences")
         act_theme_dark = None
         act_theme_light = None
         act_theme_system = None
@@ -5404,23 +5216,10 @@ class MainWindow(QMainWindow):
             act_theme_light = None
             act_theme_system = None
 
-        # Mini stats toggle
-        if self._mini_stats_enabled:
-            act_stats = menu.addAction("Disable mini stats")
-        else:
-            act_stats = menu.addAction("Enable mini stats")
-
-        # Layout switch toggle
-        if self._layout_switch_enabled:
-            act_layout = menu.addAction("Disable layout switch")
-        else:
-            act_layout = menu.addAction("Enable layout switch")
-
-        # Advanced toggle
-        if self._advanced_enabled:
-            act_adv = menu.addAction("Disable advanced")
-        else:
-            act_adv = menu.addAction("Enable advanced")
+        # (mini stats and the layout switch now live in View; the old entries are gone)
+        act_adv = menu.addAction("Advanced detection settings")
+        act_adv.setCheckable(True)
+        act_adv.setChecked(bool(self._advanced_enabled))
 
         # Crash recovery / autosave
         menu.addSeparator()
@@ -5441,21 +5240,20 @@ class MainWindow(QMainWindow):
 
         # Export toggles
         menu.addSeparator()
-        if self._recent_enabled:
-            act_recent = menu.addAction("Disable recent files")
-        else:
-            act_recent = menu.addAction("Enable recent files")
+        act_recent = menu.addAction("Remember recent files")
+        act_recent.setCheckable(True)
+        act_recent.setChecked(bool(self._recent_enabled))
+        act_remember = menu.addAction("Remember detection settings per video")
+        act_remember.setCheckable(True)
+        act_remember.setChecked(bool(self._remember_filters_enabled))
 
-        if self._remember_filters_enabled:
-            act_remember = menu.addAction("Disable remember filters")
-        else:
-            act_remember = menu.addAction("Enable remember filters")
+        act_remember_cuts = menu.addAction("Remember cuts per video")
+        act_remember_cuts.setCheckable(True)
+        act_remember_cuts.setChecked(bool(self._remember_cuts_enabled))
 
-        if self._remember_cuts_enabled:
-            act_remember_cuts = menu.addAction("Disable remember cuts")
-        else:
-            act_remember_cuts = menu.addAction("Enable remember cuts")
-
+        language_menu = menu.addMenu("Language / Lingua")
+        prefs_menu = menu
+        menu = app_menu
         # Twitch automation remains opt-in and never replaces the manual editor.
         menu.addSeparator()
         twitch_menu = menu.addMenu("Twitch automation")
@@ -5543,8 +5341,6 @@ class MainWindow(QMainWindow):
         act_twitch_download_folder = twitch_menu.addAction("Set download folder...")
         act_twitch_open_download_folder = twitch_menu.addAction("Open download folder")
 
-        menu.addSeparator()
-        language_menu = menu.addMenu("Language / Lingua")
         act_language_en = language_menu.addAction("English")
         act_language_en.setCheckable(True)
         act_language_en.setChecked(self._ui_language == "en")
@@ -5553,18 +5349,29 @@ class MainWindow(QMainWindow):
         act_language_it.setChecked(self._ui_language == "it")
 
         help_menu = menu.addMenu("Help")
+        add(help_menu, "Keyboard shortcuts", self._show_shortcuts, "F1")
         act_quick_start = help_menu.addAction(ui_text("quick_start", self._ui_language))
         act_diagnostics = help_menu.addAction(ui_text("diagnostics", self._ui_language))
+        add(help_menu, "Open logs folder", self._open_export_logs_folder)
         act_third_party = help_menu.addAction(ui_text("third_party", self._ui_language))
         help_menu.addSeparator()
         act_about = help_menu.addAction(ui_text("about", self._ui_language))
 
-        menu.addSeparator()
-        act_reset_defaults = menu.addAction("Reset app to defaults...")
+        prefs_menu.addSeparator()
+        act_reset_defaults = prefs_menu.addAction("Reset app to defaults…")
 
-        chosen = menu.exec(QCursor.pos())
+        btn = getattr(getattr(self, "top_bar", None), "btn_more", None)
+        if btn is not None:
+            hint = menu.sizeHint()
+            pos = btn.mapToGlobal(QPoint(btn.width() - hint.width(), btn.height() + 4))
+        else:
+            pos = QCursor.pos()
+        chosen = menu.exec(pos)
         if chosen is None:
             self._app_log("menu_topbar_closed_no_selection")
+            return
+        if chosen in direct:
+            direct[chosen]()
             return
 
         if chosen == act_twitch_client_id:
@@ -5626,7 +5433,7 @@ class MainWindow(QMainWindow):
 
         if chosen in (act_language_en, act_language_it):
             self._ui_language = "it" if chosen == act_language_it else "en"
-            QSettings("Auto Cutter", "Auto Cutter").setValue("ui_language", self._ui_language)
+            app_settings().setValue("ui_language", self._ui_language)
             self._apply_core_translations()
             self._apply_accessibility_metadata()
             self.statusBar().showMessage(
@@ -5665,13 +5472,7 @@ class MainWindow(QMainWindow):
             self._save_theme_pref()
             self._app_log("menu_topbar_action", action="set_theme", theme="System")
             return
-        if chosen == act_stats:
-            self._mini_stats_enabled = not self._mini_stats_enabled
-            self._app_log("menu_topbar_action", action="toggle_mini_stats", enabled=self._mini_stats_enabled)
-        elif chosen == act_layout:
-            self._layout_switch_enabled = not self._layout_switch_enabled
-            self._app_log("menu_topbar_action", action="toggle_layout_switch", enabled=self._layout_switch_enabled)
-        elif chosen == act_adv:
+        if chosen == act_adv:
             self._advanced_enabled = not self._advanced_enabled
             self._app_log("menu_topbar_action", action="toggle_advanced", enabled=self._advanced_enabled)
         elif chosen == act_recent:
@@ -5679,7 +5480,7 @@ class MainWindow(QMainWindow):
             self._app_log("menu_topbar_action", action="toggle_recent_files", enabled=self._recent_enabled)
             if not self._recent_enabled:
                 try:
-                    s = QSettings("Auto Cutter", "Auto Cutter")
+                    s = app_settings()
                     s.remove("recent_paths_v2")
                     # Legacy single-entry fallback should be removed immediately
                     # when recent files are disabled.
@@ -5759,7 +5560,7 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
             cfg = self._current_preset_cfg()
-            s = QSettings("Auto Cutter", "Auto Cutter")
+            s = app_settings()
             s.setValue("last_filters_cfg", json.dumps(cfg))
 
             items = self._build_session_items(
@@ -5777,7 +5578,7 @@ class MainWindow(QMainWindow):
                 self._save_track_cfg(self._get_active_track())
             except Exception:
                 pass
-            s = QSettings("Auto Cutter", "Auto Cutter")
+            s = app_settings()
             items = self._build_session_items(
                 include_cfg=self._remember_filters_enabled,
                 include_cuts=True,
@@ -5831,7 +5632,7 @@ class MainWindow(QMainWindow):
             pass
 
         try:
-            s = QSettings("Auto Cutter", "Auto Cutter")
+            s = app_settings()
             s.clear()
             s.sync()
         except Exception:
@@ -5943,7 +5744,7 @@ class MainWindow(QMainWindow):
         twitch.uploadFinished.connect(self._on_twitch_upload_finished)
         twitch.uploadFailed.connect(self._on_twitch_upload_failed)
 
-        settings = QSettings("Auto Cutter", "Auto Cutter")
+        settings = app_settings()
         saved_client_id = str(settings.value("automation/twitch/client_id", "") or "").strip()
         env_client_id = str(os.environ.get("AUTO_CUTTER_TWITCH_CLIENT_ID", "") or "").strip()
         requested_client_id = saved_client_id or env_client_id
@@ -6044,7 +5845,7 @@ class MainWindow(QMainWindow):
 
         self._twitch_client_id = client_id
         self._twitch_watcher_enabled = False
-        settings = QSettings("Auto Cutter", "Auto Cutter")
+        settings = app_settings()
         settings.setValue("automation/twitch/client_id", client_id)
         settings.setValue("automation/twitch/poll_interval_s", self._twitch_poll_interval_s)
         settings.setValue("automation/twitch/watcher_enabled", 0)
@@ -6088,7 +5889,7 @@ class MainWindow(QMainWindow):
         if not twitch.set_enabled(enabled):
             return False
         self._twitch_watcher_enabled = bool(enabled)
-        QSettings("Auto Cutter", "Auto Cutter").setValue(
+        app_settings().setValue(
             "automation/twitch/watcher_enabled",
             1 if enabled else 0,
         )
@@ -6122,7 +5923,7 @@ class MainWindow(QMainWindow):
             target = Path(selected).expanduser().resolve()
             twitch.configure_download_dir(target)
             self._twitch_download_dir = target
-            QSettings("Auto Cutter", "Auto Cutter").setValue("automation/download_dir", str(target))
+            app_settings().setValue("automation/download_dir", str(target))
             self._app_log("pipeline_download_dir_changed", path=str(target))
             self.statusBar().showMessage(f"Twitch downloads: {target}", 6000)
         except Exception as exc:
@@ -6177,14 +5978,14 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_twitch_disconnected(self) -> None:
         self._twitch_watcher_enabled = False
-        QSettings("Auto Cutter", "Auto Cutter").setValue("automation/twitch/watcher_enabled", 0)
+        app_settings().setValue("automation/twitch/watcher_enabled", 0)
         self._app_log("twitch_auth_disconnected")
         self.statusBar().showMessage("Twitch account disconnected.", 5000)
 
     @Slot(bool)
     def _on_twitch_enabled_changed(self, enabled: bool) -> None:
         self._twitch_watcher_enabled = bool(enabled)
-        QSettings("Auto Cutter", "Auto Cutter").setValue(
+        app_settings().setValue(
             "automation/twitch/watcher_enabled",
             1 if enabled else 0,
         )
@@ -6745,7 +6546,7 @@ class MainWindow(QMainWindow):
         return Path.home() / "project.autocutter"
 
     def _crash_recovery_dir(self) -> Path:
-        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        base = str(config_root())
         if not base:
             base = str(Path.home() / ".autocutter")
         d = Path(base) / "crash_recovery"
@@ -7045,7 +6846,8 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-    def save_project_file(self) -> None:
+    def save_project_file(self, *, ask_path: bool = True) -> None:
+        """Save the project. With ask_path=False, overwrite the current project file (Ctrl+S)."""
         if bool(getattr(self, "_pending_workspace_reset", False)) or bool(getattr(self, "_workspace_resetting", False)):
             self.statusBar().showMessage("Wait for reset to finish before saving project.", 2500)
             return
@@ -7055,15 +6857,19 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Save project", "No loaded tracks to save yet.")
             return
 
-        suggested = self._project_file_default_path()
-        out_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save project",
-            str(suggested),
-            "Auto Cutter Project (*.autocutter)",
-        )
-        if not out_path:
-            return
+        current = getattr(self, "_project_file_path", None)
+        if ask_path or not isinstance(current, Path):
+            suggested = self._project_file_default_path()
+            out_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save project",
+                str(suggested),
+                "Auto Cutter Project (*.autocutter)",
+            )
+            if not out_path:
+                return
+        else:
+            out_path = str(current)
         out = Path(out_path)
         if out.suffix.lower() != ".autocutter":
             out = out.with_suffix(".autocutter")
@@ -7079,6 +6885,8 @@ class MainWindow(QMainWindow):
                 self.project.name = str(out.stem or "Untitled")
             except Exception:
                 pass
+            self._mark_project_dirty(False)
+            self._ui_set_project_name(self._project_display_name())
             self.statusBar().showMessage(f"Project saved: {out.name}", 3000)
             self._app_log("project_save_done", path=str(out), tracks=len(tracks))
         except Exception as e:
@@ -7146,7 +6954,7 @@ class MainWindow(QMainWindow):
         # Preserve session keys because _perform_workspace_reset clears them by design.
         settings_backup: dict[str, Any] = {}
         try:
-            s = QSettings("Auto Cutter", "Auto Cutter")
+            s = app_settings()
             settings_backup["last_input_path"] = s.value("last_input_path", None)
             settings_backup["last_session_items"] = s.value("last_session_items", None)
         except Exception:
@@ -7157,7 +6965,7 @@ class MainWindow(QMainWindow):
 
         if settings_backup:
             try:
-                s = QSettings("Auto Cutter", "Auto Cutter")
+                s = app_settings()
                 for k, v in settings_backup.items():
                     if v is None:
                         s.remove(k)
@@ -7191,6 +6999,7 @@ class MainWindow(QMainWindow):
                 pass
 
         self._apply_project_global_state(raw.get("global", {}))
+        self._mark_project_dirty(False)
         self._web_push_full_state()
         self._push_topbar_status_chips()
         self.statusBar().showMessage(
@@ -7289,6 +7098,12 @@ class MainWindow(QMainWindow):
             "ai_manual_cuts",
             "ai_suppressed_cuts",
             "ai_cuts_enabled",
+            "gameplay_cuts",
+            "gameplay_cuts_enabled",
+            "gameplay_keeps",
+            "gameplay_mode",
+            "gameplay_detected_keeps",
+            "gameplay_islands",
             "segment_source_in",
             "segment_source_out",
             "segment_group_id",
@@ -7441,6 +7256,24 @@ class MainWindow(QMainWindow):
             track.ai_suppressed_cuts = []
             track.ai_cuts_enabled = False
 
+        try:
+            track.gameplay_cuts = self._segments_from_payload(restore_state.get("gameplay_cuts"))
+            track.gameplay_cuts_enabled = bool(restore_state.get("gameplay_cuts_enabled", bool(track.gameplay_cuts)))
+            track.gameplay_keeps = self._segments_from_payload(restore_state.get("gameplay_keeps"))
+            track.gameplay_mode = str(restore_state.get("gameplay_mode", "") or "")
+            # CLI projects carry no separate "detected" islands: their keeps are the detected ones.
+            detected = self._segments_from_payload(restore_state.get("gameplay_detected_keeps"))
+            track.gameplay_detected_keeps = detected or self._clone_segments_list(track.gameplay_keeps)
+            islands = restore_state.get("gameplay_islands")
+            track.gameplay_islands = [dict(i) for i in islands if isinstance(i, dict)] if isinstance(islands, list) else []
+        except Exception:
+            track.gameplay_cuts = []
+            track.gameplay_cuts_enabled = False
+            track.gameplay_keeps = []
+            track.gameplay_mode = ""
+            track.gameplay_detected_keeps = []
+            track.gameplay_islands = []
+
         if not (track.classic_cuts or track.classic_keeps or track.classic_manual_cuts or track.classic_suppressed_cuts):
             track.classic_cuts = list(track.cuts or [])
             track.classic_keeps = list(track.keeps or [])
@@ -7450,6 +7283,13 @@ class MainWindow(QMainWindow):
 
         track.cuts_restored = bool(track.cuts or track.keeps or manual or suppressed)
         return True
+
+    @staticmethod
+    def _enabled_gameplay_cuts(track: TrackState) -> list[Segment]:
+        """Gameplay removals take part in recomputation like other automatic cuts (suppressed/manual still win)."""
+        if not bool(getattr(track, "gameplay_cuts_enabled", False)):
+            return []
+        return list(getattr(track, "gameplay_cuts", None) or [])
 
     def _apply_track_cuts_ui(self, track: TrackState) -> None:
         out_dur = sum(k.dur for k in track.keeps) if track.keeps else 0.0
@@ -7650,6 +7490,15 @@ class MainWindow(QMainWindow):
                 item["ai_keeps"] = self._segments_to_payload(getattr(t, "ai_keeps", None))
                 item["ai_manual_cuts"] = self._segments_to_payload(getattr(t, "ai_manual_cuts", None))
                 item["ai_suppressed_cuts"] = self._segments_to_payload(getattr(t, "ai_suppressed_cuts", None))
+                if getattr(t, "gameplay_cuts", None) or getattr(t, "gameplay_cuts_enabled", False):
+                    item["gameplay_cuts_enabled"] = bool(getattr(t, "gameplay_cuts_enabled", False))
+                    item["gameplay_cuts"] = self._segments_to_payload(getattr(t, "gameplay_cuts", None))
+                    if getattr(t, "gameplay_mode", ""):
+                        item["gameplay_mode"] = str(getattr(t, "gameplay_mode"))
+                        item["gameplay_keeps"] = self._segments_to_payload(getattr(t, "gameplay_keeps", None))
+                        item["gameplay_detected_keeps"] = self._segments_to_payload(
+                            getattr(t, "gameplay_detected_keeps", None))
+                        item["gameplay_islands"] = copy.deepcopy(list(getattr(t, "gameplay_islands", []) or []))
             items.append(item)
         return items
 
@@ -7670,7 +7519,7 @@ class MainWindow(QMainWindow):
         return out
 
     def _load_recent_paths(self) -> list[str]:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         raw = s.value("recent_paths_v2", "")
         paths: list[str] = []
         if isinstance(raw, list):
@@ -7714,7 +7563,7 @@ class MainWindow(QMainWindow):
         return cleaned
 
     def _load_last_session_items(self) -> list[dict]:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         raw = s.value("last_session_items", "")
         items = []
         if isinstance(raw, list):
@@ -7766,7 +7615,7 @@ class MainWindow(QMainWindow):
         return cleaned
 
     def _load_last_filters_cfg(self) -> Optional[dict]:
-        s = QSettings("Auto Cutter", "Auto Cutter")
+        s = app_settings()
         raw_cfg = s.value("last_filters_cfg", "")
         if not raw_cfg:
             return None
@@ -7980,6 +7829,13 @@ class MainWindow(QMainWindow):
         self.pages.setCurrentIndex(idx)
         self.seg_main.setChecked(idx == 0)
         self.seg_export.setChecked(idx == 1)
+        if getattr(self, "seg_analysis", None) is not None:
+            self.seg_analysis.setChecked(idx == 2)
+        if idx == 1:
+            try:
+                self._refresh_export_summary()
+            except Exception:
+                pass
         try:
             self._sync_adv_ui()
         except Exception:
@@ -7989,77 +7845,11 @@ class MainWindow(QMainWindow):
     # Theme + Icons
     # -----------------------------
     def _sync_icons(self) -> None:
-        # theme.py sets window._c_text, _c_muted etc and then calls this method :contentReference[oaicite:5]{index=5}
-        c = getattr(self, "_c_text", None)
-        if c is None:
+        """Icons are painter-drawn glyphs tinted from the active palette (ui/widgets/glyphs.py)."""
+        pal = getattr(self, "_pal", None)
+        if pal is None:
             return
-
-        size = 18
-
-        # Top actions
-        self.btn_open.setIcon(self.icons.first_icon(
-            ["actions/export.svg", "misc/info.svg"],
-            size, c 
-        ))
-
-        # Transport (play/pause depends on state)
-        if self.player.playbackState() == QMediaPlayer.PlayingState:
-            self.btn_play.setIcon(self.icons.first_icon(["transport/pause.svg"], size, c))
-        else:
-            self.btn_play.setIcon(self.icons.first_icon(["transport/play.svg"], size, c))
-
-        self.btn_zoom_out.setIcon(self.icons.first_icon(
-            ["zoom/zoom-out.svg"],
-            size, c
-        ))
-        self.btn_zoom_in.setIcon(self.icons.first_icon(
-            ["zoom/zoom-in.svg"],
-            size, c
-        ))
-        self.btn_zoom_reset.setIcon(self.icons.first_icon(
-            ["zoom/zoom-reset.svg"],
-            size, c
-        ))
-        if hasattr(self, "btn_cut_tool") and self.btn_cut_tool is not None:
-            self.btn_cut_tool.setIcon(self.icons.first_icon(
-                ["actions/cut.svg", "transport/sscissors.svg", "transport/scissors.svg"],
-                size, c
-            ))
-        if hasattr(self, "btn_split") and self.btn_split is not None:
-            self.btn_split.setIcon(self.icons.first_icon(
-                ["transport/sscissors.svg", "transport/scissors.svg", "actions/cut.svg"],
-                size, c
-            ))
-
-        # Advanced header control uses lock/unlock icon
-        if self._adv_open:
-            icon = self.icons.first_icon(["ui/unlock.svg"], size, c)
-        else:
-            icon = self.icons.first_icon(["ui/lock.svg"], size, c)
-        self.btn_adv_toggle.setIcon(icon)
-
-        # Preset actions
-        self.btn_preset_save.setIcon(
-            self.icons.first_icon(["actions/save.svg"], size, c)
-        )
-        if hasattr(self, "btn_preset_save_as") and self.btn_preset_save_as is not None:
-            self.btn_preset_save_as.setIcon(
-                self.icons.first_icon(["actions/save.svg"], size, c)
-            )
-        if hasattr(self, "btn_preset_manage") and self.btn_preset_manage is not None:
-            self.btn_preset_manage.setIcon(
-                self.icons.first_icon(["misc/info.svg", "ui/unlock.svg"], size, c)
-            )
-        self.btn_preset_delete.setIcon(
-            self.icons.first_icon(["actions/delete.svg"], size, c)
-        )
-
-        # Reset buttons in Advanced panel
-        if hasattr(self, "_reset_buttons"):
-            reset_icon = self.icons.first_icon(["zoom/zoom-reset.svg"], size, c)
-            for b in self._reset_buttons:
-                b.setIcon(reset_icon)
-                b.setText("")
+        self._apply_native_palette(pal)
 
     # -----------------------------
     # Advanced header behavior
@@ -8097,67 +7887,36 @@ class MainWindow(QMainWindow):
 
     def _sync_adv_ui(self) -> None:
         ai_mode = str(getattr(self, "analysis_mode", "classic")) == "ai"
-        self.advanced_panel.setVisible(self._adv_open)
-        focus_widgets = getattr(self, "_advanced_focus_hidden_widgets", None)
-        if isinstance(focus_widgets, list):
-            for w in focus_widgets:
-                try:
-                    visible = bool(not self._adv_open)
-                    # Classic-only sections must stay hidden in AI mode.
-                    if ai_mode and w in (
-                        getattr(self, "section_intensity", None),
-                        getattr(self, "section_threshold", None),
-                    ):
-                        visible = False
-                    w.setVisible(visible)
-                except Exception:
-                    pass
-        # Advanced is a Classic-only area and must remain hidden in AI mode.
-        try:
-            if hasattr(self, "section_advanced_root") and self.section_advanced_root is not None:
-                self.section_advanced_root.setVisible((not ai_mode))
-        except Exception:
-            pass
         if ai_mode and self._adv_open:
             self._adv_open = False
-            self.advanced_panel.setVisible(False)
-        if self._adv_open:
-            try:
-                if hasattr(self, "advanced_scroll") and self.advanced_scroll is not None:
-                    self.advanced_scroll.verticalScrollBar().setValue(0)
-            except Exception:
-                pass
-        else:
-            # Restore AI panel visibility rules when leaving Advanced focus mode.
-            try:
-                track = self._get_active_track() if hasattr(self, "_get_active_track") else None
-            except Exception:
-                track = None
-            try:
-                self._update_ai_options_panel(track)
-            except Exception:
-                pass
-            try:
-                self._update_ai_stats_panel(track)
-            except Exception:
-                pass
-        if hasattr(self, "stats_panel_container") and self.stats_panel_container is not None:
-            page_idx = -1
-            try:
-                page_idx = int(self.pages.currentIndex())
-            except Exception:
-                page_idx = -1
-            # Export page must always keep statistics visible.
-            show_stats = bool((page_idx == 1) or (not self._adv_open))
-            self.stats_panel_container.setVisible(show_stats)
+        sec = getattr(self, "section_advanced", None)
+        if sec is not None:
+            sec.set_expanded(bool(self._adv_open), animate=False)
+            sec.setVisible(not ai_mode)
+        controls = getattr(self, "detection_controls", None)
+        if controls is not None:
+            controls.setVisible(not ai_mode)
+        note = getattr(self, "edit_ai_note", None)
+        if note is not None:
+            note.setVisible(ai_mode)
+        try:
+            track = self._get_active_track() if hasattr(self, "_get_active_track") else None
+        except Exception:
+            track = None
+        try:
+            self._update_ai_options_panel(track)
+        except Exception:
+            pass
+        try:
+            self._update_ai_stats_panel(track)
+        except Exception:
+            pass
+        self._refresh_analysis_panel()
         self._apply_advanced_lock_state()
         self._refresh_advanced_ui_state()
-        self._sync_icons()
         self._apply_core_translations()
         self._apply_accessibility_metadata()
-        self._sync_icons()
 
-  
     # -----------------------------
     # Open / playback
     # -----------------------------
@@ -8429,7 +8188,7 @@ class MainWindow(QMainWindow):
 
                 def _ui_log(msg: str) -> None:
                     try:
-                        QTimer.singleShot(0, lambda m=msg: self._on_export_detail(m))
+                        self._warm_cache_relay.message.emit(str(msg))
                     except Exception:
                         pass
 
@@ -8632,16 +8391,7 @@ class MainWindow(QMainWindow):
         )
         self._media_debug_snapshot("on_playback_state_changed")
         self._refresh_play_button_state()
-        c = getattr(self, "_c_text", None)
-        if c is None:
-            return
-        size = 18
-        if state == QMediaPlayer.PlayingState:
-            self.btn_play.setIcon(self.icons.first_icon(["transport/pause.svg"], size, c))
-            self._web_js(self.web_transport, "uiSetPlayState(true);")
-        else:
-            self.btn_play.setIcon(self.icons.first_icon(["transport/play.svg"], size, c))
-            self._web_js(self.web_transport, "uiSetPlayState(false);")
+        self._ui_set_playing(state == QMediaPlayer.PlayingState)
 
         # keep audio player in sync with play/pause state
         try:
@@ -8678,7 +8428,7 @@ class MainWindow(QMainWindow):
 
     def _on_skip_changed(self):
         self.skip_on = self.chk_skip.isChecked()
-        self._web_js(self.web_topbar, f"uiSetSkip({json.dumps(bool(self.chk_skip.isChecked()))});")
+        self._ui_set_skip(bool(self.chk_skip.isChecked()))
 
     def _on_analysis_mode_toggled(self, checked: bool) -> None:
         prev_mode = str(getattr(self, "analysis_mode", "classic") or "classic")
@@ -8763,11 +8513,11 @@ class MainWindow(QMainWindow):
 
     def _set_ready_dot_state(self, state: str) -> None:
         self._ready_dot_state = str(state)
-        self._web_js(self.web_topbar, f"uiSetReadyDotState({json.dumps(self._ready_dot_state)});")
+        pass
 
     def _set_export_dot_state(self, state: str) -> None:
         self._export_dot_state = str(state)
-        self._web_js(self.web_topbar, f"uiSetExportDotState({json.dumps(self._export_dot_state)});")
+        pass
 
 
     def _set_user_scrubbing(self, v: bool):
@@ -8829,6 +8579,11 @@ class MainWindow(QMainWindow):
         self._analysis_job_ids.pop(int(track_idx), None)
         self._analysis_targets.pop(int(track_idx), None)
         self._analysis_progress.pop(int(track_idx), None)
+        try:
+            self._ui_refresh_status()
+            self._refresh_analysis_panel()
+        except Exception:
+            pass
 
     def _sync_analysis_ui_for_active_track(self) -> None:
         try:
@@ -8853,8 +8608,8 @@ class MainWindow(QMainWindow):
             self._set_ready_dot_state("idle")
 
         try:
-            self._web_js(self.web_topbar, f"uiSetState({json.dumps(state)});")
-            self._web_js(self.web_topbar, f"uiSetProgress({int(progress)});")
+            self._ui_set_state(state)
+            self._ui_set_progress(int(progress))
         except Exception:
             pass
         try:
@@ -9092,13 +8847,15 @@ class MainWindow(QMainWindow):
         try:
             if hasattr(self, "video_widget") and self.video_widget is not None:
                 if active:
-                    self.video_widget.set_overlay("AI PROCESSING\nPLEASE WAIT")
+                    self.video_widget.set_overlay("Running AI analysis…")
                 else:
                     self.video_widget.set_overlay(None)
         except Exception:
             pass
         self._update_split_button_state()
         self._refresh_play_button_state()
+        self._ui_refresh_status()
+        self._refresh_analysis_panel()
 
     def _set_export_processing(self, active: bool) -> None:
         active = bool(active)
@@ -9108,9 +8865,13 @@ class MainWindow(QMainWindow):
             self._app_log("export_processing_state", active=active)
         try:
             if hasattr(self, "btn_export") and self.btn_export is not None:
-                self.btn_export.setText("Exporting..." if active else "Export MP4")
+                self.btn_export.setText("Exporting…" if active else "Export video")
+            self.export_progress.setVisible(active)
+            if getattr(self, "top_bar", None) is not None:
+                self.top_bar.btn_export.setEnabled(not active and bool(self.input_path))
         except Exception:
             pass
+        self._ui_refresh_status()
         try:
             if hasattr(self, "btn_play") and self.btn_play is not None:
                 self.btn_play.setEnabled(not active)
@@ -9399,23 +9160,28 @@ class MainWindow(QMainWindow):
         worker.done.connect(self._on_ai_done, Qt.QueuedConnection)
         worker.error.connect(self._on_ai_error, Qt.QueuedConnection)
         worker.done.connect(thread.quit)
-        worker.done.connect(worker.deleteLater)
+        # Workers are Python-owned and kept referenced until their thread has finished; a
+        # deleteLater() here raced with Python's own deletion (double delete -> access violation).
         thread.finished.connect(thread.deleteLater)
         worker.error.connect(thread.quit)
-        worker.error.connect(worker.deleteLater)
 
         self._ai_threads[track_idx] = thread
         self._ai_workers[track_idx] = worker
         self._ai_expected_path[track_idx] = str(track.path)
-        thread.finished.connect(lambda idx=track_idx: self._ai_threads.pop(idx, None))
-        thread.finished.connect(lambda idx=track_idx: self._ai_workers.pop(idx, None))
-        thread.finished.connect(lambda idx=track_idx: self._ai_expected_path.pop(idx, None))
+        ai_key = ("ai", id(thread))
+        thread.finished.connect(self._gui_call(
+            lambda idx=track_idx, key=ai_key: (
+                self._ai_threads.pop(idx, None), self._ai_workers.pop(idx, None),
+                self._ai_expected_path.pop(idx, None), self._release_gui_calls(key),
+            ), ai_key),
+            Qt.QueuedConnection,
+        )
         thread.finished.connect(self._update_split_button_state)
 
         self._set_ai_processing(True)
         self.statusBar().showMessage("AI processing...")
         try:
-            self._web_js(self.web_topbar, f"uiSetState({json.dumps('AI processing...')});")
+            self._ui_set_state('AI processing...')
         except Exception:
             pass
         self._update_ai_options_panel(track)
@@ -9513,7 +9279,7 @@ class MainWindow(QMainWindow):
         self._set_ai_processing(False)
         self._refresh_analysis_workspace_ui(track)
         self.statusBar().showMessage("AI processing complete.", 4000)
-        self._web_js(self.web_topbar, f"uiSetState({json.dumps('Ready')});")
+        self._ui_set_state('Ready')
         self._set_ready_dot_state("ready")
 
     def _on_ai_error(self, track_idx: int, msg: str) -> None:
@@ -9887,6 +9653,8 @@ class MainWindow(QMainWindow):
 
         if self.rms is not None and self.duration > 0 and self.cuts_enabled:
             self._recompute()
+            if not bool(getattr(self, "_in_auto_restore_session", False)):
+                self._mark_project_dirty(True)
 
         # persist per-track settings
         try:
@@ -9895,18 +9663,19 @@ class MainWindow(QMainWindow):
             pass
 
     def _refresh_precision_label(self):
-        v = self.slider_precision.value()
+        v = int(self.slider_precision.value())
         if v < 10:
-            name = "No cuts"
+            name, desc = "No cuts", "Automatic cuts are off."
         elif v < 40:
-            name = "Natural"
+            name, desc = "Natural", "Removes only long pauses; keeps a relaxed pace."
         elif v < 70:
-            name = "Fast"
+            name, desc = "Fast", "Removes most pauses for a brisk pace."
         else:
-            name = "Tight"
-        self.lbl_precision.setText(name)
-        kind = "success" if v < 30 else ("info" if v < 70 else "warning")
-        self._set_badge_label(getattr(self, "lbl_intensity_value", None), f"{int(v)}%", kind)
+            name, desc = "Tight", "Removes even short pauses and trims close to speech."
+        self.lbl_precision.setText(desc)
+        lbl = getattr(self, "lbl_intensity_value", None)
+        if lbl is not None:
+            lbl.setText(f"{v}  ·  {name}")
 
     # -----------------------------
     # Seek bar sync
@@ -9959,7 +9728,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
         try:
-            self._web_js(self.web_transport, f"uiSetPreviewVolume({int(p)});")
+            self._ui_set_volume(int(p))
         except Exception:
             pass
 
@@ -10092,31 +9861,34 @@ class MainWindow(QMainWindow):
         an_worker.moveToThread(an_thread)
 
         an_thread.started.connect(an_worker.run)
-        an_worker.done.connect(
+        # Results must be handled on the GUI thread: connect through GUI-thread invokers, never bare
+        # lambdas (PySide would run those in the worker thread).
+        job_key = ("analysis", int(job_id))
+        an_worker.done.connect(self._gui_call(
             lambda idx, duration, rms_np, hop_s, auto_thr, jid=job_id, target=target_track, expected=str(path): self._on_analysis_done_guard(
                 jid, idx, target, expected, duration, rms_np, hop_s, auto_thr
-            ),
+            ), job_key),
             Qt.QueuedConnection,
         )
-        an_worker.error.connect(
+        an_worker.error.connect(self._gui_call(
             lambda idx, msg, jid=job_id, target=target_track, expected=str(path): self._on_analysis_error_guard(
                 jid, idx, target, expected, msg
-            ),
+            ), job_key),
             Qt.QueuedConnection,
         )
-        an_worker.progress.connect(
+        an_worker.progress.connect(self._gui_call(
             lambda idx, pct, jid=job_id, target=target_track, expected=str(path): self._on_analysis_progress_guard(
                 jid, idx, target, expected, pct
-            ),
+            ), job_key),
             Qt.QueuedConnection,
         )
 
         an_worker.done.connect(an_thread.quit)
-        an_worker.done.connect(an_worker.deleteLater)
+        # Workers are Python-owned and kept referenced until their thread has finished; a
+        # deleteLater() here raced with Python's own deletion (double delete -> access violation).
         an_thread.finished.connect(an_thread.deleteLater)
 
         an_worker.error.connect(an_thread.quit)
-        an_worker.error.connect(an_worker.deleteLater)
 
         # keep refs while running
         self._analysis_threads[track_idx] = an_thread
@@ -10125,15 +9897,18 @@ class MainWindow(QMainWindow):
         self._analysis_job_ids[track_idx] = int(job_id)
         self._analysis_targets[track_idx] = target_track
         self._analysis_progress[track_idx] = 0
-        an_thread.finished.connect(
-            lambda idx=track_idx, jid=job_id, thread=an_thread: self._cleanup_analysis_job_refs(idx, jid, thread)
+        an_thread.finished.connect(self._gui_call(
+            lambda idx=track_idx, jid=job_id, thread=an_thread, key=job_key: (
+                self._cleanup_analysis_job_refs(idx, jid, thread), self._release_gui_calls(key)
+            ), job_key),
+            Qt.QueuedConnection,
         )
         an_thread.finished.connect(self._update_split_button_state)
 
         an_thread.start()
         # --- WebUI: show analyzing state ---
-        self._web_js(self.web_topbar, f"uiSetState({json.dumps('Analyzing audio...')});")
-        self._web_js(self.web_topbar, "uiSetProgress(12);")  # placeholder value (0-100)
+        self._ui_set_state('Analyzing audio...')
+        self._ui_set_progress(12)  # placeholder value (0-100)
         self._update_split_button_state()
 
     def _on_analysis_progress_guard(
@@ -10158,7 +9933,7 @@ class MainWindow(QMainWindow):
             return
         pct = max(0, min(100, int(percentage)))
         self.statusBar().showMessage(f"Analyzing audio... {pct}%")
-        self._web_js(self.web_topbar, f"uiSetProgress({10 + int(pct * 0.8)});")
+        self._ui_set_progress(10 + int(pct * 0.8))
 
     def _on_analysis_done_guard(
         self,
@@ -10334,8 +10109,8 @@ class MainWindow(QMainWindow):
             self._recompute()
 
         # --- WebUI: update state + stats after analysis ---
-        self._web_js(self.web_topbar, f"uiSetState({json.dumps('Ready')});")
-        self._web_js(self.web_topbar, f"uiSetCrumbs({json.dumps(self._project_display_name())});")
+        self._ui_set_state('Ready')
+        self._ui_set_project_name(self._project_display_name())
         self._set_ready_dot_state("ready")
         self._web_push_full_state()
 
@@ -10458,6 +10233,7 @@ class MainWindow(QMainWindow):
         track.cuts, track.keeps = compute_classic_cuts(
             seg_rms if seg_rms is not None else np.array([]), float(track.duration), float(track.hop_s), cfg,
             manual_cuts=track.manual_cuts or [], suppressed_cuts=track.suppressed_cuts,
+            gameplay_cuts=self._enabled_gameplay_cuts(track),
             rms_min=float(track.rms_min or 0.0), rms_max=float(track.rms_max or 0.0),
             rms_eps=track.rms_eps or None,
         )
@@ -10548,6 +10324,7 @@ class MainWindow(QMainWindow):
         track.cuts, track.keeps = compute_classic_cuts(
             rms, float(track.duration), float(track.hop_s), self._current_preset_cfg(),
             manual_cuts=track.manual_cuts, suppressed_cuts=track.suppressed_cuts,
+            gameplay_cuts=self._enabled_gameplay_cuts(track),
             threshold_amp=self._threshold_pct_to_amp(float(self.threshold_pct.value())),
         )
 
@@ -10828,7 +10605,7 @@ class MainWindow(QMainWindow):
             # WebUI transport timecode (avoid full refresh)
             cur = self._fmt_time(t)
             dur = self._fmt_time(self._global_duration or self.duration or 0.0)
-            self._web_js(self.web_transport, f"uiSetTimecode({json.dumps(cur)}, {json.dumps(dur)});")
+            self._ui_set_timecode(cur, dur)
 
             self.timeline.setPlayhead(t)
             # QMediaPlayer is the single clock; no per-track sync needed
@@ -10909,6 +10686,8 @@ class MainWindow(QMainWindow):
         if len(self._edit_undo_stack) > int(self._edit_history_limit):
             self._edit_undo_stack = self._edit_undo_stack[-int(self._edit_history_limit):]
         self._edit_redo_stack.clear()
+        self._mark_project_dirty(True)
+        self._sync_history_ui()
 
     def _undo_cuts(self):
         # Pending cut markers are ephemeral UI actions.
@@ -10976,35 +10755,818 @@ class MainWindow(QMainWindow):
         self._web_push_full_state()
         self._recompute()
 
+    # -----------------------------
+    # Editor interactions (selection, resize, keyboard)
+    # -----------------------------
+    SHORTCUTS: list[tuple[str, str, str]] = [
+        ("Playback", "Space / K", "Play / pause"),
+        ("Playback", "J / L", "Back / forward 5 s"),
+        ("Playback", "← / →", "Back / forward 1 s (timeline or viewer focused)"),
+        ("Playback", "↑ / ↓  or  [ / ]", "Previous / next cut"),
+        ("Editing", "V", "Select tool"),
+        ("Editing", "C", "Cut tool (click start, then end)"),
+        ("Editing", "S", "Split tool"),
+        ("Editing", "I / O", "Mark cut start / end at the playhead (O creates the cut)"),
+        ("Editing", "Delete / Backspace", "Restore the selected cuts (keep that footage)"),
+        ("Editing", "Ctrl+A", "Select all cuts of the active video"),
+        ("Editing", "Esc", "Cancel pending cut / clear selection / back to Select"),
+        ("Editing", "Ctrl+Z", "Undo"),
+        ("Editing", "Ctrl+Shift+Z / Ctrl+Y", "Redo"),
+        ("Timeline", "Ctrl+= / Ctrl+-", "Zoom in / out"),
+        ("Timeline", "Ctrl+wheel", "Zoom at the mouse position"),
+        ("Timeline", "Wheel", "Scroll the zoomed timeline"),
+        ("Timeline", "Shift+Z / Ctrl+0", "Fit the whole timeline"),
+        ("Timeline", "N", "Snapping on / off"),
+        ("Project", "Ctrl+O", "Import video"),
+        ("Project", "Ctrl+Shift+O", "Open project"),
+        ("Project", "Ctrl+S", "Save project"),
+        ("Project", "Ctrl+Shift+S", "Save project as"),
+        ("Project", "Ctrl+E", "Export video"),
+        ("Project", "Alt+1 / Alt+2 / Alt+3", "Inspector: Edit / Analysis / Export"),
+        ("Help", "F1", "This list"),
+    ]
+
+    def _install_shortcuts(self) -> None:
+        def sc(keys, fn, parent=None, context=None):
+            s = QShortcut(QKeySequence(keys), parent or self, activated=fn)
+            if context is not None:
+                s.setContext(context)
+            return s
+
+        sc(QKeySequence.Undo, self._undo_cuts)
+        sc(QKeySequence.Redo, self._redo_cuts)
+        sc("Ctrl+Shift+Z", self._redo_cuts)
+        sc("Ctrl++", self.zoom_in)
+        sc("Ctrl+=", self.zoom_in)
+        sc("Ctrl+-", self.zoom_out)
+        sc("Ctrl+0", self.zoom_reset)
+        sc("Shift+Z", self.zoom_reset)
+        sc("V", lambda: self._set_tool_mode("select"))
+        sc("C", self._toggle_cut_tool)
+        sc("S", self._toggle_split_tool)
+        sc("N", self._toggle_snap)
+        sc("J", self.transport_seek_backward)
+        sc("K", self.toggle_play)
+        sc("Space", self.toggle_play)
+        sc("L", self.transport_seek_forward)
+        sc("Up", self.jump_to_previous_cut)
+        sc("Down", self.jump_to_next_cut)
+        sc("[", self.jump_to_previous_cut)
+        sc("]", self.jump_to_next_cut)
+        sc("I", self._mark_cut_in)
+        sc("O", self._mark_cut_out)
+        sc("Delete", self._restore_selected_cuts)
+        sc("Backspace", self._restore_selected_cuts)
+        sc("Ctrl+A", self._select_all_cuts)
+        sc("Escape", self._on_escape)
+        sc("Ctrl+O", self.open_file)
+        sc("Ctrl+Shift+O", self.load_project_file)
+        sc("Ctrl+S", self.save_project_quick)
+        sc("Ctrl+Shift+S", lambda: self.save_project_file(ask_path=True))
+        sc("Ctrl+E", self.export_mp4)
+        sc("Alt+1", lambda: self._switch_page(0))
+        sc("Alt+2", lambda: self._switch_page(2))
+        sc("Alt+3", lambda: self._switch_page(1))
+        sc("F1", self._show_shortcuts)
+        # Arrow nudges only while the timeline or the viewer has focus, so they never fight with
+        # sliders/spin boxes in the inspector.
+        for target in (getattr(self, "timeline", None), getattr(self, "video_widget", None)):
+            if target is None:
+                continue
+            sc("Left", lambda: self._transport_seek_relative(-1.0), target, Qt.WidgetWithChildrenShortcut)
+            sc("Right", lambda: self._transport_seek_relative(1.0), target, Qt.WidgetWithChildrenShortcut)
+            sc("Shift+Left", lambda: self._transport_seek_relative(-5.0), target, Qt.WidgetWithChildrenShortcut)
+            sc("Shift+Right", lambda: self._transport_seek_relative(5.0), target, Qt.WidgetWithChildrenShortcut)
+
+    def _show_shortcuts(self) -> None:
+        rows = []
+        current = None
+        for group, keys, what in self.SHORTCUTS:
+            if group != current:
+                rows.append(f"<tr><td colspan='2' style='padding-top:10px'><b>{group}</b></td></tr>")
+                current = group
+            rows.append(
+                f"<tr><td style='padding:2px 18px 2px 0'><code>{keys}</code></td><td>{what}</td></tr>"
+            )
+        QMessageBox.information(self, "Keyboard shortcuts", "<table>" + "".join(rows) + "</table>")
+
+    def _selected_cut_indices(self) -> list[int]:
+        try:
+            n = len(self.cuts or [])
+            return [i for i in self.timeline.selectedCutIndices() if 0 <= int(i) < n]
+        except Exception:
+            return []
+
+    def _on_timeline_selection_changed(self, _indices) -> None:
+        self._refresh_cut_panels()
+
+    def _select_all_cuts(self) -> None:
+        try:
+            self.timeline.setCutSelection(list(range(len(self.cuts or []))))
+        except Exception:
+            pass
+
+    def _restore_selected_cuts(self) -> None:
+        sel = self._selected_cut_indices()
+        if not sel:
+            self.statusBar().showMessage("Select a cut on the timeline first.", 2000)
+            return
+        n = len(sel)
+        self._remove_cuts(set(sel))
+        try:
+            self.timeline.clearCutSelection()
+        except Exception:
+            pass
+        self.statusBar().showMessage(f"Restored {n} cut{'s' if n != 1 else ''} · Ctrl+Z to undo", 3000)
+
+    def _active_clip_timeline_in(self) -> float:
+        try:
+            clip = self._audio_clip_for_track(int(self._active_track_index))
+            return float(clip.timeline_in) if clip is not None else 0.0
+        except Exception:
+            return 0.0
+
+    def _jump_to_selected_cut(self) -> None:
+        if self._selected_island_state() is not None:
+            self._jump_to_selected_island()
+            return
+        sel = self._selected_cut_indices()
+        if not sel:
+            return
+        try:
+            c = self.cuts[sel[0]]
+            self._seek_to(self._active_clip_timeline_in() + float(c.start))
+        except Exception:
+            pass
+
+    def _on_cut_resize_requested(self, idx: int, new_start: float, new_end: float) -> None:
+        """Dragging a cut edge = add the grown part as a manual cut / restore the shrunk part.
+
+        Uses exactly the editor's existing model (manual_cuts + suppressed_cuts), no re-analysis.
+        """
+        cuts = list(self.cuts or [])
+        if not (0 <= int(idx) < len(cuts)):
+            return
+        old = cuts[int(idx)]
+        a0, b0 = float(old.start), float(old.end)
+        a1 = max(0.0, min(float(new_start), float(self.duration)))
+        b1 = max(0.0, min(float(new_end), float(self.duration)))
+        if b1 - a1 < 0.05 or (abs(a1 - a0) < 1e-3 and abs(b1 - b0) < 1e-3):
+            return
+        self._push_undo_state()
+        grown = self._subtract_segments([Segment(a1, b1)], [Segment(a0, b0)])
+        shrunk = self._subtract_segments([Segment(a0, b0)], [Segment(a1, b1)])
+        manual = list(self.manual_cuts or [])
+        suppressed = list(self.suppressed_cuts or [])
+        if grown:
+            manual = merge_overlaps(manual + grown)
+            suppressed = self._subtract_segments(suppressed, grown) if suppressed else []
+        if shrunk:
+            manual = self._subtract_segments(manual, shrunk) if manual else []
+            suppressed = merge_overlaps(suppressed + shrunk)
+        self.manual_cuts = manual
+        self.suppressed_cuts = suppressed
+        track = self._get_active_track()
+        visible = list(getattr(track, "cuts", None) or [])
+        if shrunk:
+            visible = self._subtract_segments(visible, shrunk)
+        track.cuts = merge_overlaps(visible + grown)
+        self._finalize_manual_cut_edit_without_reanalysis(track)
+        try:
+            for i, c in enumerate(self.cuts or []):
+                if float(c.start) <= a1 + 1e-3 and float(c.end) >= b1 - 1e-3:
+                    self.timeline.setCutSelection([i])
+                    break
+        except Exception:
+            pass
+        self.statusBar().showMessage(f"Cut adjusted to {fmt_hms(a1)} – {fmt_hms(b1)} · Ctrl+Z to undo", 2500)
+
+    def _playhead_track_local(self) -> tuple[int, float] | None:
+        try:
+            t = float(self.timeline.playhead)
+        except Exception:
+            return None
+        for idx, _clip, tin, tout in self._ordered_audio_tracks():
+            if tin - 1e-6 <= t <= tout + 1e-6:
+                return int(idx), max(0.0, t - tin)
+        return None
+
+    def _mark_cut_in(self) -> None:
+        hit = self._playhead_track_local()
+        if hit is None or not self.input_path:
+            return
+        idx, local = hit
+        if idx != self._active_track_index:
+            self._activate_track(idx)
+        self._pending_cut_start = float(local)
+        self._pending_cut_end = None
+        self._set_pending_cut_visual(self._pending_cut_start, None)
+        self.statusBar().showMessage(f"Cut start at {fmt_hms(float(self.timeline.playhead))} · move and press O to "
+                                     "cut, Esc to cancel", 4000)
+
+    def _mark_cut_out(self) -> None:
+        if self._pending_cut_start is None:
+            self.statusBar().showMessage("Press I at the start of the part to cut first.", 2500)
+            return
+        hit = self._playhead_track_local()
+        if hit is None:
+            return
+        idx, local = hit
+        if idx != self._active_track_index:
+            self.statusBar().showMessage("A cut must start and end inside the same video.", 3000)
+            return
+        if abs(float(local) - float(self._pending_cut_start)) < 0.05:
+            return
+        self._pending_cut_end = float(local)
+        self._commit_pending_cut(confirm=False)
+
+    def _on_escape(self) -> None:
+        if self._pending_cut_start is not None or self._pending_cut_end is not None:
+            self._cancel_pending_cut()
+            return
+        if self._selected_cut_indices():
+            self.timeline.clearCutSelection()
+            return
+        if str(getattr(self, "tool_mode", "select")) != "select":
+            self._set_tool_mode("select")
+
+    def _show_threshold_guide(self) -> None:
+        """Preview the voice threshold as a dashed level on the AUDIO lane while it is adjusted."""
+        try:
+            track = self._get_active_track()
+            rms = track.rms
+            if rms is None or getattr(rms, "size", 0) == 0:
+                return
+            peak = float(np.max(rms))
+            if peak <= 1e-9:
+                return
+            amp = float(self._threshold_pct_to_amp(float(self.threshold_pct.value())))
+            self.timeline.setThresholdGuide(max(0.0, min(1.0, amp / peak)))
+            self._threshold_guide_timer.start()
+        except Exception:
+            pass
+
+    # -----------------------------
+    # Inspector panels
+    # -----------------------------
+    def _cut_kind_counts(self) -> dict[str, int]:
+        counts = {"auto": 0, "manual": 0, "gameplay": 0, "restored": 0}
+        for t in self._tracks:
+            cuts = list(getattr(t, "cuts", None) or [])
+            kinds = classify_cuts(cuts, getattr(t, "manual_cuts", None), self._enabled_gameplay_cuts(t))
+            for k in kinds:
+                if k != "gameplay":  # removal outside kept games is shown by the islands, not counted
+                    counts[k] = counts.get(k, 0) + 1
+            counts["restored"] += len(merge_overlaps(list(getattr(t, "suppressed_cuts", None) or [])))
+            if getattr(t, "gameplay_cuts_enabled", False):
+                counts["gameplay"] += len(getattr(t, "gameplay_keeps", None) or [])
+        return counts
+
+    def _refresh_cut_panels(self) -> None:
+        labels = getattr(self, "cut_count_labels", None)
+        if not labels:
+            return
+        counts = self._cut_kind_counts()
+        for key, lbl in labels.items():
+            lbl.setText(str(counts.get(key, 0)))
+        for key in ("gameplay", "restored"):
+            item = (getattr(self, "cut_legend_items", None) or {}).get(key)
+            if item is not None:
+                item.setEnabled(counts.get(key, 0) > 0)
+        total = counts["auto"] + counts["manual"]
+        if getattr(self, "lbl_cuts_total", None) is not None:
+            self.lbl_cuts_total.setText(f"{total} total" if self.input_path else "")
+        bar = getattr(self, "timeline_toolbar", None)
+        if bar is not None:
+            bar.set_legend_visible("gameplay", counts["gameplay"] > 0)
+            bar.set_legend_visible("restored", counts["restored"] > 0)
+
+        sel = self._selected_cut_indices()
+        title = getattr(self, "lbl_sel_title", None)
+        detail = getattr(self, "lbl_sel_detail", None)
+        actions = getattr(self, "sel_actions", None)
+        if title is None or detail is None:
+            return
+        island = self._selected_island_state()
+        self.btn_sel_restore.setVisible(island is None)
+        self.btn_island_reset.setVisible(island is not None)
+        if island is not None:
+            ts, i, track = island
+            k = track.gameplay_keeps[i]
+            base = self._clip_timeline_in(ts)
+            meta = {}
+            for m in track.gameplay_islands or []:
+                if float(m.get("start", 0)) < float(k.end) and float(m.get("end", 0)) > float(k.start):
+                    meta = m
+                    break
+            game = meta.get("game_index")
+            inside = sum(1 for c in (track.cuts or [])
+                         if float(c.start) >= float(k.start) - 1e-6 and float(c.end) <= float(k.end) + 1e-6)
+            title.setText("WIN island" + (f"  ·  game {game}" if game is not None else f"  ·  {i + 1} of "
+                                          f"{len(track.gameplay_keeps)}"))
+            lines = [f"{fmt_hms(base + float(k.start))} → {fmt_hms(base + float(k.end))}   ·   "
+                     f"{fmt_hms(float(k.end) - float(k.start))} kept   ·   {inside} audio cut{'s' if inside != 1 else ''} inside"]
+            detected = list(track.gameplay_detected_keeps or [])
+            if i < len(detected) and (abs(float(detected[i].start) - float(k.start)) > 1e-3
+                                      or abs(float(detected[i].end) - float(k.end)) > 1e-3):
+                lines.append(f"Edited · detected {fmt_hms(base + float(detected[i].start))} → "
+                             f"{fmt_hms(base + float(detected[i].end))}")
+            resolvers = meta.get("resolvers") or {}
+            if resolvers:
+                lines.append("Boundaries: " + " · ".join(f"{kind.lower()} {r}" for kind, r in resolvers.items() if r))
+            lines.append("Drag its edges on the VIDEO lane to adjust.")
+            detail.setText("\n".join(lines))
+            if actions is not None:
+                actions.setVisible(True)
+            return
+        if not sel:
+            self.btn_sel_restore.setVisible(True)
+            self.btn_island_reset.setVisible(False)
+            title.setText("No cut selected")
+            detail.setText("Click a cut on the timeline to inspect it. Drag across empty space to select "
+                           "several. Delete restores the selection.")
+            if actions is not None:
+                actions.setVisible(False)
+            return
+        track = self._get_active_track()
+        kinds = classify_cuts(list(self.cuts or []), getattr(track, "manual_cuts", None),
+                              self._enabled_gameplay_cuts(track))
+        base = self._active_clip_timeline_in()
+        if len(sel) == 1:
+            i = sel[0]
+            c = self.cuts[i]
+            kind = {"auto": "Automatic cut", "manual": "Manual cut", "gameplay": "Gameplay cut"}.get(
+                kinds[i] if i < len(kinds) else "auto", "Cut")
+            title.setText(f"{kind}  ·  {i + 1} of {len(self.cuts)}")
+            dur = float(c.end) - float(c.start)
+            detail.setText(f"{fmt_hms(base + float(c.start))} → {fmt_hms(base + float(c.end))}   ·   {dur:.2f} s removed"
+                           "\nDrag its edges on the timeline to adjust.")
+            self.btn_sel_restore.setText("Restore")
+        else:
+            total = sum(float(self.cuts[i].end) - float(self.cuts[i].start) for i in sel)
+            title.setText(f"{len(sel)} cuts selected")
+            detail.setText(f"{total:.1f} s removed in total")
+            self.btn_sel_restore.setText(f"Restore {len(sel)}")
+        if actions is not None:
+            actions.setVisible(True)
+
+    def _refresh_analysis_panel(self) -> None:
+        ai = str(getattr(self, "analysis_mode", "classic")) == "ai"
+        seg = getattr(self, "mode_segment", None)
+        if seg is not None:
+            seg.setCurrentIndex(1 if ai else 0)
+            seg.setEnabled(not bool(getattr(self, "_ai_processing", False)))
+        desc = getattr(self, "lbl_mode_desc", None)
+        if desc is not None:
+            desc.setText(
+                "Speech-aware analysis with speaker detection. Slower; run it when you need cleaner cuts. "
+                "Classic and AI edits are kept separately." if ai else
+                "Fast loudness-based detection. Runs automatically when you import a video; tune it in Edit › "
+                "Detection."
+            )
+        status = getattr(self, "lbl_analysis_status", None)
+        if status is not None:
+            text = ""
+            if self.input_path:
+                try:
+                    track = self._get_active_track()
+                    if bool(getattr(self, "_analysis_threads", {})):
+                        text = "Analyzing audio…"
+                    elif bool(getattr(self, "_ai_processing", False)):
+                        text = "AI analysis running…"
+                    elif ai and not (track.ai_speech or track.ai_speech_raw):
+                        text = "AI analysis hasn't run on this video yet."
+                    elif track.rms is not None:
+                        n = len(track.cuts or [])
+                        text = f"✓ Analysis complete · {n} cut{'s' if n != 1 else ''} on this video"
+                except Exception:
+                    text = ""
+            status.setText(text)
+            status.setVisible(bool(text))
+        self._refresh_gameplay_panel()
+
+    def _refresh_export_summary(self, st: dict | None = None) -> None:
+        out_lbl = getattr(self, "lbl_export_out", None)
+        meta = getattr(self, "lbl_export_meta", None)
+        if out_lbl is None or meta is None:
+            return
+        if not self.input_path:
+            out_lbl.setText("–")
+            meta.setText("Import and analyze a video to export it.")
+        else:
+            if st is None:
+                st = self._compute_stats()
+            out_lbl.setText(self._fmt_time(st["out_s"]))
+            codec = str(self.codec_combo.currentText() or "Auto")
+            if " - " in codec:
+                codec = codec.split(" - ", 1)[0]
+            fmt = str(self.container_combo.currentText() or "MP4")
+            meta.setText(f"from {self._fmt_time(st['total_s'])} · {int(st['cuts_n'])} cuts · "
+                         f"{float(st['saved_pct']):.0f}% removed\n{fmt} · {codec}")
+        folder = getattr(self, "lbl_export_folder", None)
+        if folder is not None:
+            raw = self._export_output_dir_pref()
+            if raw:
+                folder.setText(Path(raw).name or raw)
+                folder.setToolTip(raw)
+            else:
+                folder.setText("Source folder")
+                folder.setToolTip("Exports are offered next to the source video")
+
+    # -----------------------------
+    # Project file helpers
+    # -----------------------------
+    def save_project_quick(self) -> None:
+        """Ctrl+S: save to the current project file, ask for a path only the first time."""
+        path = getattr(self, "_project_file_path", None)
+        self.save_project_file(ask_path=not isinstance(path, Path))
+
+    def _export_output_dir_pref(self) -> str:
+        try:
+            raw = str(app_settings().value("export_output_dir", "") or "").strip()
+        except Exception:
+            raw = ""
+        return raw if raw and Path(raw).is_dir() else ""
+
+    def _export_target_dir(self) -> Path:
+        raw = self._export_output_dir_pref()
+        if raw:
+            return Path(raw)
+        if self.input_path:
+            return Path(self.input_path).parent
+        return Path.home()
+
+    def _choose_export_folder(self) -> None:
+        menu = QMenu(self)
+        act_pick = menu.addAction("Choose folder…")
+        act_source = menu.addAction("Next to the source video")
+        act_source.setCheckable(True)
+        act_source.setChecked(not self._export_output_dir_pref())
+        btn = getattr(self, "btn_export_folder", None)
+        pos = btn.mapToGlobal(QPoint(0, btn.height() + 2)) if btn is not None else QCursor.pos()
+        chosen = menu.exec(pos)
+        settings = app_settings()
+        if chosen == act_pick:
+            folder = QFileDialog.getExistingDirectory(self, "Default export folder", str(self._export_target_dir()))
+            if folder:
+                settings.setValue("export_output_dir", str(folder))
+        elif chosen == act_source:
+            settings.setValue("export_output_dir", "")
+        self._refresh_export_summary()
+
+    # -----------------------------
+    # Preset menu
+    # -----------------------------
+    def _save_preset_changes(self) -> None:
+        src = getattr(self, "_preset_source_name", None)
+        if not src or src not in self.presets:
+            self._on_preset_save_as()
+            return
+        merged = dict(self.presets[src]) if isinstance(self.presets[src], dict) else {}
+        merged.update(self._current_preset_cfg())
+        self.presets[src] = self._normalize_preset_cfg(merged)
+        self._save_presets()
+        self._populate_presets_combo()
+        idx = self.preset_combo.findText(src)
+        if idx >= 0:
+            self.preset_combo.setCurrentIndex(idx)
+        self._preset_dirty = False
+        self._preset_source_name = src
+        self._update_preset_ui_state()
+        self.statusBar().showMessage(f"Preset '{src}' updated", 2500)
+
+    def _revert_preset_changes(self) -> None:
+        src = getattr(self, "_preset_source_name", None)
+        if not src or src not in self.presets:
+            return
+        idx = self.preset_combo.findText(src)
+        if idx >= 0:
+            self.preset_combo.setCurrentIndex(idx)
+            self._on_preset_changed(idx)
+
+    def _open_preset_menu(self) -> None:
+        menu = QMenu(self)
+        current = str(self.preset_combo.currentText() or "Manual")
+        dirty = bool(getattr(self, "_preset_dirty", False)) and bool(getattr(self, "_preset_source_name", None))
+        src = str(getattr(self, "_preset_source_name", "") or "")
+        act_save = menu.addAction(f"Save changes to “{src}”" if dirty else "Save changes")
+        act_save.setEnabled(dirty)
+        act_revert = menu.addAction(f"Revert to “{src}”" if dirty else "Revert changes")
+        act_revert.setEnabled(dirty)
+        act_save_as = menu.addAction("Save as new preset…")
+        menu.addSeparator()
+        named = current != "Manual" and current in self.presets
+        act_rename = menu.addAction("Rename…")
+        act_rename.setEnabled(named)
+        act_delete = menu.addAction("Delete preset")
+        act_delete.setEnabled(named)
+        menu.addSeparator()
+        act_defaults = menu.addAction("Reset presets to defaults…")
+        btn = getattr(self, "btn_preset_more", None)
+        pos = btn.mapToGlobal(QPoint(btn.width() - menu.sizeHint().width(), btn.height() + 2)) if btn else QCursor.pos()
+        chosen = menu.exec(pos)
+        if chosen is None:
+            return
+        if chosen == act_save:
+            self._save_preset_changes()
+        elif chosen == act_revert:
+            self._revert_preset_changes()
+        elif chosen == act_save_as:
+            self._on_preset_save_as()
+        elif chosen == act_rename:
+            self._rename_preset(current)
+        elif chosen == act_delete:
+            self._on_preset_delete()
+        elif chosen == act_defaults:
+            self._reset_presets_to_defaults()
+
+    # -----------------------------
+    # Gameplay editing (same service as the CLI pipeline; see ui/gameplay_editing_ui.py)
+    # -----------------------------
+    def _gameplay_running(self) -> bool:
+        th = getattr(self, "_gameplay_thread", None)
+        try:
+            return bool(th is not None and th.isRunning())
+        except RuntimeError:
+            return False
+
+    def _on_gameplay_run_clicked(self) -> None:
+        if self._gameplay_running():
+            worker = getattr(self, "_gameplay_worker", None)
+            if worker is not None:
+                worker.cancel()
+            self.lbl_gameplay_status.setText("Cancelling…")
+            return
+        self._start_gameplay_edit()
+
+    def _start_gameplay_edit(self) -> None:
+        if not self.input_path or not self._tracks:
+            self.statusBar().showMessage("Import a video first.", 2500)
+            return
+        if str(getattr(self, "analysis_mode", "classic")) == "ai":
+            QMessageBox.information(self, "Gameplay editing",
+                                    "Gameplay editing composes with the Classic analysis (as in the CLI). "
+                                    "Switch Analysis mode to Classic first.")
+            return
+        if self._export_in_progress():
+            self.statusBar().showMessage("Wait for the export to finish.", 2500)
+            return
+        mode = str(self.gameplay_boundary_combo.currentData() or "exact")
+        if mode in ("claude", "codex"):
+            answer = QMessageBox.question(
+                self, "Gameplay editing",
+                f"{mode.title()} boundaries send the transcript text around each kept game's START/END to "
+                f"the {mode.title()} CLI on this PC. Continue?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if answer != QMessageBox.Yes:
+                return
+        sources: list[str] = []
+        for t in self._tracks:
+            path = str(getattr(t, "path", "") or "")
+            if path and not any(self._same_local_path(path, s) for s in sources):
+                sources.append(path)
+        self._gameplay_queue = sources
+        self._gameplay_mode = mode
+        self._gameplay_results: list[dict] = []
+        self._gameplay_errors: list[str] = []
+        self._gameplay_total = len(sources)
+        self._run_next_gameplay_source()
+
+    def _run_next_gameplay_source(self) -> None:
+        queue = getattr(self, "_gameplay_queue", [])
+        if not queue:
+            self._finish_gameplay_edit()
+            return
+        video = queue.pop(0)
+        worker = GameplayEditWorker(video, self._gameplay_mode)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        # bound methods of the window: Qt delivers these on the GUI thread
+        worker.progress.connect(self._on_gameplay_progress, Qt.QueuedConnection)
+        worker.finished.connect(self._on_gameplay_source_done, Qt.QueuedConnection)
+        worker.failed.connect(self._on_gameplay_source_failed, Qt.QueuedConnection)
+        worker.finished.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        thread.finished.connect(self._on_gameplay_thread_finished, Qt.QueuedConnection)
+        thread.finished.connect(thread.deleteLater)
+        self._gameplay_thread = thread
+        self._gameplay_worker = worker  # Python-owned; released after the thread finished
+        self._gameplay_current = video
+        self.gameplay_progress.setValue(0)
+        self.gameplay_progress.setVisible(True)
+        self.btn_gameplay_run.setText("Cancel")
+        done = self._gameplay_total - len(queue) - 1
+        prefix = f"Video {done + 1}/{self._gameplay_total}: " if self._gameplay_total > 1 else ""
+        self.lbl_gameplay_status.setText(f"{prefix}detecting games in {Path(video).name}…")
+        self._ui_set_state("Detecting games…")
+        self._app_log("gameplay_edit_start", path=str(video), boundary_mode=self._gameplay_mode)
+        thread.start()
+
+    def _on_gameplay_progress(self, pct: int) -> None:
+        self.gameplay_progress.setValue(int(pct))
+        self._ui_refresh_status()
+
+    def _on_gameplay_source_done(self, payload: object) -> None:
+        if isinstance(payload, dict):
+            self._gameplay_results.append(payload)
+
+    def _on_gameplay_source_failed(self, message: str) -> None:
+        if message == "cancelled":
+            self._gameplay_queue = []
+            self._gameplay_errors.append("cancelled")
+        else:
+            self._gameplay_errors.append(f"{Path(str(getattr(self, '_gameplay_current', ''))).name}: {message}")
+        self._app_log("gameplay_edit_failed", message=str(message))
+
+    def _on_gameplay_thread_finished(self) -> None:
+        self._gameplay_thread = None
+        self._gameplay_worker = None
+        self._run_next_gameplay_source()
+
+    def _finish_gameplay_edit(self) -> None:
+        self.gameplay_progress.setVisible(False)
+        self.btn_gameplay_run.setText("Detect games")
+        results = list(getattr(self, "_gameplay_results", []))
+        errors = list(getattr(self, "_gameplay_errors", []))
+        if "cancelled" in errors:
+            self.lbl_gameplay_status.setText("Cancelled. Nothing was changed.")
+            self._ui_set_state("Cancelled")
+            return
+        usable = [r for r in results if r.get("keeps")]
+        if not usable:
+            reason = "; ".join(errors) if errors else "no complete WIN was found, so nothing would be kept"
+            self.lbl_gameplay_status.setText(f"Not applied: {reason}.")
+            self._ui_set_state("Ready")
+            return
+        self._push_undo_state(kind="timeline")
+        affected: list[int] = []
+        for result in usable:
+            keeps_src = [Segment(float(a), float(b)) for a, b in result["keeps"]]
+            report = result.get("report") or {}
+            for idx, track in enumerate(self._tracks):
+                if not self._same_local_path(getattr(track, "path", None), result.get("video")):
+                    continue
+                seg_in, seg_out, seg_len = self._segment_bounds(track)
+                keeps = to_segment_domain(keeps_src, seg_in, seg_out)
+                track.gameplay_mode = "keep"
+                track.gameplay_keeps = keeps
+                track.gameplay_detected_keeps = self._clone_segments_list(keeps)
+                track.gameplay_cuts = gameplay_complement(keeps, seg_len)
+                track.gameplay_cuts_enabled = True
+                track.gameplay_islands = island_metadata(report, seg_in, seg_out)
+                affected.append(idx)
+        self._recompute_gameplay_tracks(affected)
+        kept = sum(len(self._tracks[i].gameplay_keeps) for i in affected)
+        note = f" ({'; '.join(errors)})" if errors else ""
+        self.lbl_gameplay_status.setText(f"✓ {kept} complete WIN{'s' if kept != 1 else ''} kept{note}. "
+                                         "Select a green island on the VIDEO lane to inspect or adjust it.")
+        self.statusBar().showMessage(f"Gameplay edit applied: {kept} WIN island{'s' if kept != 1 else ''} kept "
+                                     "· Ctrl+Z to undo", 5000)
+        self._app_log("gameplay_edit_applied", islands=kept, tracks=len(affected))
+
+    def _recompute_gameplay_tracks(self, indices: list[int]) -> None:
+        for idx in sorted(set(indices)):
+            if idx == self._active_track_index:
+                self._recompute()
+            else:
+                self._compute_cuts_for_track(idx)
+        self._refresh_timeline_tracks(reset_view=False)
+        self._mark_project_dirty(True)
+        self._web_push_full_state()
+
+    def _on_gameplay_apply_toggled(self, checked: bool) -> None:
+        if getattr(self, "_syncing_gameplay_ui", False):
+            return
+        affected = [i for i, t in enumerate(self._tracks) if getattr(t, "gameplay_keeps", None)]
+        if not affected:
+            return
+        self._push_undo_state(kind="timeline")
+        for i in affected:
+            self._tracks[i].gameplay_cuts_enabled = bool(checked)
+        if not checked:
+            self.timeline.setSelectedIsland(None)
+        self._recompute_gameplay_tracks(affected)
+
+    def _on_island_selected(self, sel: object) -> None:
+        self._refresh_cut_panels()
+
+    def _selected_island_state(self) -> tuple[int, int, TrackState] | None:
+        sel = self.timeline.selectedIsland() if hasattr(self.timeline, "selectedIsland") else None
+        if sel is None:
+            return None
+        ts, i = int(sel[0]), int(sel[1])
+        if not (0 <= ts < len(self._tracks)):
+            return None
+        track = self._tracks[ts]
+        if not (0 <= i < len(track.gameplay_keeps or [])):
+            return None
+        return ts, i, track
+
+    def _on_island_resize_requested(self, ts: int, index: int, start: float, end: float) -> None:
+        if not (0 <= ts < len(self._tracks)):
+            return
+        track = self._tracks[ts]
+        _seg_in, _seg_out, seg_len = self._segment_bounds(track)
+        self._push_undo_state(kind="timeline")
+        track.gameplay_keeps = resize_island(track.gameplay_keeps, index, start, end, seg_len)
+        track.gameplay_cuts = gameplay_complement(track.gameplay_keeps, seg_len)
+        self._recompute_gameplay_tracks([ts])
+        k = track.gameplay_keeps[index]
+        self.statusBar().showMessage(
+            f"WIN island now {fmt_hms(self._clip_timeline_in(ts) + k.start)} – "
+            f"{fmt_hms(self._clip_timeline_in(ts) + k.end)} · Ctrl+Z to undo", 3500)
+
+    def _clip_timeline_in(self, ts: int) -> float:
+        try:
+            clip = self._audio_clip_for_track(int(ts))
+            return float(clip.timeline_in) if clip is not None else 0.0
+        except Exception:
+            return 0.0
+
+    def _reset_selected_island(self) -> None:
+        state = self._selected_island_state()
+        if state is None:
+            return
+        ts, i, track = state
+        detected = list(track.gameplay_detected_keeps or [])
+        if len(detected) != len(track.gameplay_keeps):
+            self._reset_all_islands()
+            return
+        _a, _b, seg_len = self._segment_bounds(track)
+        self._push_undo_state(kind="timeline")
+        keeps = list(track.gameplay_keeps)
+        keeps[i] = Segment(float(detected[i].start), float(detected[i].end))
+        track.gameplay_keeps = keeps
+        track.gameplay_cuts = gameplay_complement(keeps, seg_len)
+        self._recompute_gameplay_tracks([ts])
+
+    def _reset_all_islands(self) -> None:
+        affected = [i for i, t in enumerate(self._tracks) if getattr(t, "gameplay_detected_keeps", None)]
+        if not affected:
+            return
+        self._push_undo_state(kind="timeline")
+        for i in affected:
+            t = self._tracks[i]
+            _a, _b, seg_len = self._segment_bounds(t)
+            t.gameplay_keeps = self._clone_segments_list(t.gameplay_detected_keeps)
+            t.gameplay_cuts = gameplay_complement(t.gameplay_keeps, seg_len)
+        self._recompute_gameplay_tracks(affected)
+
+    def _jump_to_selected_island(self) -> None:
+        state = self._selected_island_state()
+        if state is not None:
+            ts, i, track = state
+            self._seek_to(self._clip_timeline_in(ts) + float(track.gameplay_keeps[i].start))
+
+    def _refresh_gameplay_panel(self) -> None:
+        if not hasattr(self, "chk_gameplay_apply"):
+            return
+        has_keeps = any(getattr(t, "gameplay_keeps", None) for t in self._tracks)
+        enabled = any(getattr(t, "gameplay_cuts_enabled", False) and getattr(t, "gameplay_keeps", None)
+                      for t in self._tracks)
+        self._syncing_gameplay_ui = True
+        try:
+            self.chk_gameplay_apply.setChecked(enabled)
+        finally:
+            self._syncing_gameplay_ui = False
+        self.chk_gameplay_apply.setEnabled(has_keeps)
+        running = self._gameplay_running()
+        self.btn_gameplay_run.setEnabled(bool(self.input_path) and (running or str(self.analysis_mode) != "ai"))
+        if not running:
+            self.btn_gameplay_run.setText("Detect games again" if has_keeps else "Detect games")
+        edited = any(
+            [(round(k.start, 3), round(k.end, 3)) for k in (t.gameplay_keeps or [])]
+            != [(round(k.start, 3), round(k.end, 3)) for k in (t.gameplay_detected_keeps or [])]
+            for t in self._tracks if getattr(t, "gameplay_detected_keeps", None))
+        self.btn_gameplay_reset_all.setVisible(edited)
+        mode = str(self.gameplay_boundary_combo.currentData() or "exact")
+        tip = next((t for k, _label, t in BOUNDARY_CHOICES if k == mode), "")
+        self.lbl_gameplay_boundary_hint.setText(tip)
+        if running or self.lbl_gameplay_status.text().startswith(("✓", "Not applied", "Cancel")):
+            return
+        if has_keeps:
+            kept = sum(len(t.gameplay_keeps or []) for t in self._tracks)
+            total = sum(float(k.end) - float(k.start) for t in self._tracks for k in (t.gameplay_keeps or []))
+            state = "" if enabled else " (edit turned off)"
+            self.lbl_gameplay_status.setText(f"{kept} WIN island{'s' if kept != 1 else ''} · {fmt_hms(total)} of "
+                                             f"gameplay kept{state}.")
+        elif str(self.analysis_mode) == "ai":
+            self.lbl_gameplay_status.setText("Available with Classic analysis (it composes with the classic cuts, "
+                                             "like the CLI pipeline).")
+        else:
+            self.lbl_gameplay_status.setText("Finds every game, keeps complete WINs with smart START/END and removes "
+                                             "the rest. Audio cuts keep working inside the kept games.")
+
     def _on_cut_clicked(self, idx: int, _global_pos):
-        m = self._active_timeline_map()
-        if not m or m.get("kind") != "audio":
-            return
-        if idx < 0 or idx >= len(self.cuts):
-            return
-        if QMessageBox.question(
-            self,
-            "Cut",
-            "Remove this cut?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        ) == QMessageBox.Yes:
-            self._remove_cuts({idx})
+        """Clicking a cut only selects it; the inspector shows what it is and how to restore it."""
+        self._refresh_cut_panels()
 
     def _on_cuts_selected(self, indices: list[int], _global_pos):
-        m = self._active_timeline_map()
-        if not m or m.get("kind") != "audio":
-            return
-        if not indices:
-            return
-        if QMessageBox.question(
-            self,
-            "Cuts",
-            f"Remove {len(indices)} selected cuts?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
-        ) == QMessageBox.Yes:
-            self._remove_cuts(set(indices))
+        if indices:
+            self.statusBar().showMessage(
+                f"{len(indices)} cut{'s' if len(indices) != 1 else ''} selected · Delete restores them", 2500)
+        self._refresh_cut_panels()
 
     def _remove_cuts(self, to_remove: set[int]):
         if not to_remove or not self.cuts:
@@ -11148,6 +11710,9 @@ class MainWindow(QMainWindow):
             edit_t = 0.0
 
         menu = QMenu(self)
+        selected = list(cut_meta.get("selected") or []) if isinstance(cut_meta, dict) else []
+        restored_range = cut_meta.get("restored_range") if isinstance(cut_meta, dict) else None
+        clip_id = cut_meta.get("clip_id") if isinstance(cut_meta, dict) else None
 
         is_audio_row = (row_kind == "audio")
         can_edit_cuts = bool(is_audio_row or track_state_idx is not None)
@@ -11157,11 +11722,13 @@ class MainWindow(QMainWindow):
                 self._on_cut_tool_timeline_click(float(edit_t))
             return
 
-        act_mark_cut = None
-        act_trim_start = None
-        act_trim_end = None
-        act_cancel = None
-        act_remove_cut = None
+        actions: dict = {}
+
+        def add(text, fn, enabled=True):
+            act = menu.addAction(text)
+            act.setEnabled(bool(enabled))
+            actions[act] = fn
+            return act
 
         if can_edit_cuts:
             if cut_idx is None and isinstance(self.cuts, list):
@@ -11172,8 +11739,21 @@ class MainWindow(QMainWindow):
                             break
                     except Exception:
                         continue
-            # Single-step context action:
-            # first invocation sets start, second invocation sets end and creates cut immediately.
+            on_cut = isinstance(cut_idx, int) and 0 <= cut_idx < len(self.cuts or [])
+            if on_cut:
+                multi = [i for i in selected if 0 <= int(i) < len(self.cuts)]
+                if len(multi) > 1 and cut_idx in multi:
+                    add(f"Restore {len(multi)} selected cuts\tDel", lambda: self._restore_selected_cuts())
+                else:
+                    add("Restore this cut (keep footage)\tDel", lambda i=cut_idx: self._remove_cuts({i}))
+                add("Go to cut start", lambda i=cut_idx: self._seek_to(
+                    self._active_clip_timeline_in() + float(self.cuts[i].start)))
+                menu.addSeparator()
+            if restored_range:
+                a, b = float(restored_range[0]), float(restored_range[1])
+                add("Cut this restored part again",
+                    lambda a=a, b=b: self._create_manual_cut_range(a, b, confirm=False, clear_pending=False))
+                menu.addSeparator()
             should_set_start = (
                 self._pending_cut_start is None
                 or (
@@ -11182,68 +11762,35 @@ class MainWindow(QMainWindow):
                 )
             )
             if should_set_start:
-                act_mark_cut = menu.addAction("Set cut start here")
+                add("Mark cut start here\tI", lambda: self._apply_pending_cut_click(float(edit_t), auto_commit=True))
             else:
-                act_mark_cut = menu.addAction("Set cut end here (create immediately)")
-            act_trim_start = menu.addAction("Cut from 0 to here")
-            act_trim_end = menu.addAction("Cut from here to end")
-
-            menu.addSeparator()
+                add("Mark cut end here and cut\tO",
+                    lambda: self._apply_pending_cut_click(float(edit_t), auto_commit=True))
             if self._pending_cut_start is not None or self._pending_cut_end is not None:
-                act_cancel = menu.addAction("Cancel pending cut")
+                add("Cancel pending cut\tEsc", self._cancel_pending_cut)
+            add("Cut everything before here",
+                lambda: self._create_manual_cut_range(0.0, float(edit_t), confirm=False, clear_pending=True))
+            add("Cut everything after here",
+                lambda: self._create_manual_cut_range(float(edit_t), float(self.duration), confirm=False,
+                                                      clear_pending=True))
+            if self.cuts:
+                add("Select all cuts\tCtrl+A", self._select_all_cuts)
 
-            if cut_idx is not None and isinstance(cut_idx, int) and 0 <= cut_idx < len(self.cuts):
-                menu.addSeparator()
-                act_remove_cut = menu.addAction("Remove this cut")
-
-        act_remove_track = None
-        act_duplicate_track = None
         if track_state_idx is not None:
             menu.addSeparator()
-            act_duplicate_track = menu.addAction("Duplicate this video")
-            act_remove_track = menu.addAction("Remove this video")
+            if clip_id and hasattr(self, "_on_clip_split_requested"):
+                add("Split video here", lambda c=str(clip_id), t=float(t_sec): self._on_clip_split_requested(c, t))
+            add("Duplicate this video", lambda i=int(track_state_idx): self._duplicate_track_at_index(i))
+            add("Remove this video", lambda i=int(track_state_idx): self._remove_track_at_index(i))
 
+        if not actions:
+            return
         chosen = menu.exec(global_pos.toPoint())
-        if chosen is None:
-            return
-
-        if act_remove_track is not None and chosen == act_remove_track:
+        if chosen is not None and chosen in actions:
             try:
-                self._remove_track_at_index(int(track_state_idx))
-            except Exception:
-                pass
-            return
-
-        if act_duplicate_track is not None and chosen == act_duplicate_track:
-            try:
-                self._duplicate_track_at_index(int(track_state_idx))
-            except Exception:
-                pass
-            return
-
-        if not can_edit_cuts:
-            return
-
-        if chosen == act_trim_start:
-            self._create_manual_cut_range(0.0, float(edit_t), confirm=True, clear_pending=True)
-            return
-
-        if chosen == act_trim_end:
-            self._create_manual_cut_range(float(edit_t), float(self.duration), confirm=True, clear_pending=True)
-            return
-
-        if chosen == act_mark_cut:
-            self._apply_pending_cut_click(float(edit_t), auto_commit=True)
-            return
-
-        if act_cancel is not None and chosen == act_cancel:
-            self._cancel_pending_cut()
-            return
-
-        if act_remove_cut is not None and chosen == act_remove_cut:
-            if isinstance(cut_idx, int) and 0 <= cut_idx < len(self.cuts):
-                self._remove_cuts({cut_idx})
-            return
+                actions[chosen]()
+            except Exception as exc:
+                self._app_log("timeline_context_action_failed", error=str(exc))
 
     def _set_pending_cut_visual(
         self,
@@ -11887,7 +12434,7 @@ class MainWindow(QMainWindow):
     def _load_export_settings(self) -> None:
         settings = ExportSettings.defaults()
         try:
-            raw = str(QSettings("Auto Cutter", "Auto Cutter").value("export/settings_v1", "") or "")
+            raw = str(app_settings().value("export/settings_v1", "") or "")
             if raw:
                 parsed = json.loads(raw)
                 if isinstance(parsed, dict):
@@ -11898,7 +12445,7 @@ class MainWindow(QMainWindow):
 
     def _save_export_settings(self, settings: ExportSettings | None = None) -> None:
         value = (settings or self._export_settings_from_ui()).normalized()
-        QSettings("Auto Cutter", "Auto Cutter").setValue(
+        app_settings().setValue(
             "export/settings_v1",
             json.dumps(value.to_mapping(), ensure_ascii=True, sort_keys=True),
         )
@@ -12065,8 +12612,7 @@ class MainWindow(QMainWindow):
         worker.error.connect(self._on_export_advisor_error, Qt.QueuedConnection)
         worker.finished.connect(thread.quit)
         worker.error.connect(thread.quit)
-        worker.finished.connect(worker.deleteLater)
-        worker.error.connect(worker.deleteLater)
+        # worker is Python-owned and released in _on_export_advisor_thread_finished (no deleteLater race)
         thread.finished.connect(thread.deleteLater)
         thread.finished.connect(self._on_export_advisor_thread_finished)
         self._app_log(
@@ -12135,7 +12681,7 @@ class MainWindow(QMainWindow):
             out_path = QFileDialog.getExistingDirectory(
                 self,
                 "Choose folder for exported clips",
-                str(Path(self.input_path).parent),
+                str(self._export_target_dir()),
             )
         else:
             format_filters = {
@@ -12150,7 +12696,7 @@ class MainWindow(QMainWindow):
             out_path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Export media",
-                str(Path(self.input_path).with_name(f"{Path(self.input_path).stem}.cutted{extension}")),
+                str(self._export_target_dir() / f"{Path(self.input_path).stem}.cutted{extension}"),
                 format_filters.get(extension, "Media files (*.*)"),
             )
         if not out_path:
@@ -12321,9 +12867,6 @@ class MainWindow(QMainWindow):
         self.export_status.setText("Starting export...")
         try:
             self.export_details.clear()
-            self.btn_export_details.setChecked(False)
-            self.export_details.setVisible(False)
-            self.btn_export_details.setText("Show logs")
             if hasattr(self, "export_stats_block") and self.export_stats_block is not None:
                 self.export_stats_block.setVisible(True)
             self._last_export_detail_hint = ""
@@ -12333,7 +12876,7 @@ class MainWindow(QMainWindow):
         self._set_stage("export")
         self._set_export_dot_state("export")
         self._set_export_processing(True)
-        self._web_js(self.web_topbar, "uiSetProgress(0);")
+        self._ui_set_progress(0)
 
         try:
             self.ex_thread = QThread(self)
@@ -12366,12 +12909,17 @@ class MainWindow(QMainWindow):
             self.ex_worker.finished.connect(self._on_export_done)
             self.ex_worker.error.connect(self._on_export_error)
             self.ex_worker.finished.connect(self.ex_thread.quit)
-            self.ex_worker.finished.connect(self.ex_worker.deleteLater)
+            # Python owns the worker; it is released only after the thread has finished
+            # (a deleteLater() here raced with Python's own deletion -> access violation).
+            self.ex_thread.finished.connect(self._release_retired_export_refs)
             self.ex_thread.finished.connect(self.ex_thread.deleteLater)
             self.ex_worker.error.connect(self.ex_thread.quit)
-            self.ex_worker.error.connect(self.ex_worker.deleteLater)
-            self.ex_thread.started.connect(lambda: self._on_export_detail("ui_export_thread_started_signal"))
-            self.ex_thread.finished.connect(lambda: self._on_export_detail("ui_export_thread_finished_signal"))
+            export_key = ("export", id(self.ex_thread))
+            self.ex_thread.started.connect(self._gui_call(
+                lambda: self._on_export_detail("ui_export_thread_started_signal"), export_key), Qt.QueuedConnection)
+            self.ex_thread.finished.connect(self._gui_call(
+                lambda key=export_key: (self._on_export_detail("ui_export_thread_finished_signal"),
+                                        self._release_gui_calls(key)), export_key), Qt.QueuedConnection)
 
             self._on_export_detail("ui_export_worker_setup ok")
             self._on_export_detail("ui_export_thread_start")
@@ -12668,7 +13216,7 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
         self.export_status.setText(text)
-        self._web_js(self.web_topbar, f"uiSetProgress({int(pct)});")
+        self._ui_set_progress(int(pct))
 
     def _toggle_export_details(self) -> None:
         try:
@@ -12689,7 +13237,7 @@ class MainWindow(QMainWindow):
         self.btn_export_details.setText("Hide logs" if visible else "Show logs")
 
     def _export_logs_dir(self) -> Path:
-        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        base = str(config_root())
         if not base:
             base = str(Path.home() / ".auto_cutter")
         d = Path(base) / "export_logs"
@@ -12781,20 +13329,55 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
+    def _gui_call(self, fn, key):
+        """Return a slot that runs `fn` on the GUI thread (see GuiInvoker)."""
+        inv = GuiInvoker(fn, self)
+        self._gui_invokers.setdefault(key, []).append(inv)
+        return inv.call
+
+    def _release_gui_calls(self, key) -> None:
+        for inv in self._gui_invokers.pop(key, []):
+            try:
+                inv.deleteLater()
+            except RuntimeError:
+                pass
+
+    def _retire_export_refs(self) -> None:
+        """Drop the current export thread/worker, keeping them referenced until the thread exits."""
+        th = getattr(self, "ex_thread", None)
+        wk = getattr(self, "ex_worker", None)
+        self.ex_thread = None
+        self.ex_worker = None
+        try:
+            running = bool(th is not None and th.isRunning())
+        except RuntimeError:
+            running = False
+        if running:
+            self._retired_export_refs.append((th, wk))
+
+    def _release_retired_export_refs(self) -> None:
+        kept = []
+        for th, wk in list(getattr(self, "_retired_export_refs", [])):
+            try:
+                if th.isRunning():
+                    kept.append((th, wk))
+            except RuntimeError:
+                pass
+        self._retired_export_refs = kept
+
     def _on_export_done(self):
         if bool(getattr(self, "_workspace_resetting", False)) or bool(getattr(self, "_pending_workspace_reset", False)):
             self._set_export_processing(False)
             self._export_abort_requested = False
             self._export_last_detail_ts = None
             self._export_start_monotonic = None
-            self.ex_thread = None
-            self.ex_worker = None
+            self._retire_export_refs()
             return
         self._app_log("export_done")
         self.export_progress.setValue(100)
         self.export_progress.setFormat("100%")
         self.export_status.setText("Export complete.")
-        self._web_js(self.web_topbar, "uiSetProgress(100);")
+        self._ui_set_progress(100)
         self.btn_export.setEnabled(True)
         self.btn_export_edl.setEnabled(True)
         self.statusBar().showMessage("Export complete.", 5000)
@@ -12804,8 +13387,7 @@ class MainWindow(QMainWindow):
         self._export_abort_requested = False
         self._export_last_detail_ts = None
         self._export_start_monotonic = None
-        self.ex_thread = None
-        self.ex_worker = None
+        self._retire_export_refs()
 
     def _on_export_error(self, msg: str):
         if bool(getattr(self, "_workspace_resetting", False)) or bool(getattr(self, "_pending_workspace_reset", False)):
@@ -12813,8 +13395,7 @@ class MainWindow(QMainWindow):
             self._export_abort_requested = False
             self._export_last_detail_ts = None
             self._export_start_monotonic = None
-            self.ex_thread = None
-            self.ex_worker = None
+            self._retire_export_refs()
             return
         self._app_log(
             "export_error",
@@ -12826,7 +13407,7 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.critical(self, "Export failed", msg)
             self.export_status.setText("Export failed.")
-        self._web_js(self.web_topbar, "uiSetProgress(0);")
+        self._ui_set_progress(0)
         self.btn_export.setEnabled(True)
         self.btn_export_edl.setEnabled(True)
         self.statusBar().clearMessage()
@@ -12836,8 +13417,7 @@ class MainWindow(QMainWindow):
         self._export_abort_requested = False
         self._export_last_detail_ts = None
         self._export_start_monotonic = None
-        self.ex_thread = None
-        self.ex_worker = None
+        self._retire_export_refs()
 
     def _check_export_thread_started(self) -> None:
         """

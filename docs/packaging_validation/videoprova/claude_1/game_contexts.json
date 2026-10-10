@@ -1,0 +1,568 @@
+{
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 1359.45,
+      "source_end": 1785.983,
+      "edited_start": 0.0,
+      "edited_end": 366.563,
+      "kept_seconds": 366.563,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0001",
+        "T0002",
+        "T0003",
+        "T0004",
+        "T0005",
+        "T0006",
+        "T0007",
+        "T0008",
+        "T0009",
+        "T0010",
+        "T0011",
+        "T0012",
+        "T0013",
+        "T0014",
+        "T0015",
+        "T0016",
+        "T0017",
+        "T0018",
+        "T0019",
+        "T0020",
+        "T0021",
+        "T0022",
+        "T0023",
+        "T0024",
+        "T0025",
+        "T0026",
+        "T0027",
+        "T0028",
+        "T0029",
+        "T0030",
+        "T0031",
+        "T0032",
+        "T0033",
+        "T0034",
+        "T0035",
+        "T0036",
+        "T0037",
+        "T0038",
+        "T0039",
+        "T0040",
+        "T0041",
+        "T0042",
+        "T0043",
+        "T0044",
+        "T0045",
+        "T0046",
+        "T0047",
+        "T0048",
+        "T0049",
+        "T0050",
+        "T0051",
+        "T0052",
+        "T0053",
+        "T0054",
+        "T0055",
+        "T0056",
+        "T0057",
+        "T0058",
+        "T0059"
+      ],
+      "transcript_excerpt": "Ho questa impressione che tutti giocheranno l'unter, non so il perch\u00e9. Ho questa impressione che oggi ci sar\u00e0 un po' di mirror hunter, mirror hunter. Che senso. Non lo so eh, non lo so ma mi viene in mente questa possibilit\u00e0. Ah, chippiamo tutto? A me no. Bene, questa \u00e8 in curva in realt\u00e0. No, \u00e8 in curva questa roba. il mimiron comunque mi ha sciolto e il mimiron mi ha davvero sciolto bella cerno ...",
+      "highlight_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ],
+      "frame_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004",
+        "F005",
+        "F006",
+        "F007",
+        "F008",
+        "F009",
+        "F010",
+        "F011",
+        "F012",
+        "F013",
+        "F014",
+        "F015",
+        "F016",
+        "F017",
+        "F018",
+        "F043"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 1359.45,
+          "edited": 0.0,
+          "exact": true
+        },
+        "result_screen": {
+          "source": 1785.983,
+          "edited": 366.563,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-a6c0f437acde505ac557",
+        "summary": "Partita 2 dell'evento, punteggio 0-0 (F045-F050). Il creator gioca Cacciatore (Varian) contro Kibler (Rexxar), un mirror che aveva appena previsto. Durante l'animazione d'apertura compare il fumetto \"Che la caccia abbia inizio!\". Mulligan con Meccaciclo, Sputafuoco e Cane da Guardia; Cinghiali Meccanici viene sostituito con Prototipo Instabile. Nella parte centrale la chiacchierata su drop, giveaway e sfida con i dev prende pi\u00f9 spazio del gioco. Pi\u00f9 avanti costruisce una board di pi\u00f9 5/5 (T0039, T0041). Kibler bombarda il Meccaciclo e il creator si sfoga, poi chiude la partita (WIN dal detector).",
+        "specific_plays": [
+          {
+            "description": "Previsione del mirror Cacciatore, poi schermata VS contro Kibler/Rexxar e fumetto d'apertura \"Che la caccia abbia inizio!\" (F045-F050)",
+            "transcript_ids": [
+              "T0001",
+              "T0002",
+              "T0004"
+            ]
+          },
+          {
+            "description": "Mulligan: sostituisce una carta per stare in curva (F005 mostra Cinghiali Meccanici sostituita, F004 Prototipo Instabile in mano)",
+            "transcript_ids": [
+              "T0005",
+              "T0007",
+              "T0008"
+            ]
+          },
+          {
+            "description": "Commenta Mimiron (\"mi ha sciolto\")",
+            "transcript_ids": [
+              "T0009"
+            ]
+          },
+          {
+            "description": "Commento sulle animazioni giudicate \"insane\" (F007)",
+            "transcript_ids": [
+              "T0023",
+              "T0024"
+            ]
+          },
+          {
+            "description": "Pianifica un attacco con evocazione di un 4/4 e un minion che diventa 5/5, poi una board con pi\u00f9 5/5",
+            "transcript_ids": [
+              "T0037",
+              "T0038",
+              "T0039",
+              "T0041"
+            ]
+          },
+          {
+            "description": "Kibler bombarda il Meccaciclo: sfogo del creator (\"che play di merda\", \"rotto questo deck\")",
+            "transcript_ids": [
+              "T0050",
+              "T0051",
+              "T0052",
+              "T0055",
+              "T0056"
+            ]
+          },
+          {
+            "description": "Esultanza finale prima del risultato",
+            "transcript_ids": [
+              "T0057",
+              "T0058",
+              "T0059"
+            ]
+          }
+        ],
+        "general_talk": [
+          {
+            "description": "Saluti alla chat, ringraziamenti per i sub, battuta su Kibler 'nonno'",
+            "transcript_ids": [
+              "T0010",
+              "T0011",
+              "T0012",
+              "T0013"
+            ]
+          },
+          {
+            "description": "Programmi: si pu\u00f2 giocare oggi e domani, subathon e minuti per sub",
+            "transcript_ids": [
+              "T0014",
+              "T0015",
+              "T0016",
+              "T0018",
+              "T0019"
+            ]
+          },
+          {
+            "description": "Drop, sfida streamer contro dev con ricompense, bundle da regalare",
+            "transcript_ids": [
+              "T0025",
+              "T0026",
+              "T0027",
+              "T0029",
+              "T0030",
+              "T0032",
+              "T0033",
+              "T0034"
+            ]
+          },
+          {
+            "description": "Kibler non \u00e8 un dev, dubbi sull'aggiornamento del punteggio",
+            "transcript_ids": [
+              "T0031",
+              "T0060"
+            ]
+          },
+          {
+            "description": "Domande sui drop, c'\u00e8 'solo una busta'",
+            "transcript_ids": [
+              "T0045",
+              "T0046",
+              "T0048"
+            ]
+          }
+        ],
+        "conclusion": "WIN secondo il detector locale. Il creator esulta (T0057-T0059) e commenta che Kibler 'non \u00e8 un dev' (T0060), quindi la vittoria non aggiorna il punteggio streamer contro dev."
+      }
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 2863.75,
+      "source_end": 3525.5,
+      "edited_start": 366.563,
+      "edited_end": 971.943,
+      "kept_seconds": 605.38,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0060",
+        "T0061",
+        "T0062",
+        "T0063",
+        "T0064",
+        "T0065",
+        "T0066",
+        "T0067",
+        "T0068",
+        "T0069",
+        "T0070",
+        "T0071",
+        "T0072",
+        "T0073",
+        "T0074",
+        "T0075",
+        "T0076",
+        "T0077",
+        "T0078",
+        "T0079",
+        "T0080",
+        "T0081",
+        "T0082",
+        "T0083",
+        "T0084",
+        "T0085",
+        "T0086",
+        "T0087",
+        "T0088",
+        "T0089",
+        "T0090",
+        "T0091",
+        "T0092",
+        "T0093",
+        "T0094",
+        "T0095",
+        "T0096",
+        "T0097",
+        "T0098",
+        "T0099",
+        "T0100",
+        "T0101",
+        "T0102",
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0106",
+        "T0107",
+        "T0108",
+        "T0109",
+        "T0110",
+        "T0111",
+        "T0112",
+        "T0113",
+        "T0114",
+        "T0115",
+        "T0116",
+        "T0117",
+        "T0118",
+        "T0119",
+        "T0120",
+        "T0121",
+        "T0122",
+        "T0123",
+        "T0124",
+        "T0125",
+        "T0126",
+        "T0127",
+        "T0128",
+        "T0129",
+        "T0130",
+        "T0131",
+        "T0132",
+        "T0133",
+        "T0134",
+        "T0135",
+        "T0136",
+        "T0137",
+        "T0138",
+        "T0139",
+        "T0140",
+        "T0141",
+        "T0142",
+        "T0143",
+        "T0144",
+        "T0145",
+        "T0146",
+        "T0147",
+        "T0148",
+        "T0149",
+        "T0150",
+        "T0151",
+        "T0152",
+        "T0153",
+        "T0154",
+        "T0155",
+        "T0156",
+        "T0157",
+        "T0158",
+        "T0159",
+        "T0160",
+        "T0161",
+        "T0162",
+        "T0163",
+        "T0164",
+        "T0165",
+        "T0166",
+        "T0167",
+        "T0168",
+        "T0169",
+        "T0170",
+        "T0171",
+        "T0172",
+        "T0173",
+        "T0174",
+        "T0175",
+        "T0176",
+        "T0177",
+        "T0178",
+        "T0179"
+      ],
+      "transcript_excerpt": "Ok non \u00e8 un dev, meno male, meno male, meno male, roba per il thunder, alla roba dei mazzi conici, sincero mi ha scritto, ma \u00e8 tipo da un mese in realt\u00e0 che mi sta scrivendo di registrare insieme il tonalzo e sicuramente lo facciamo, \u00e8 che semplicemente abbiamo dei verani un po' di merda, abbiamo un po' dei verani di merda, per\u00f2 sicuramente si far\u00e0 un video a full -keep, sicuramente si far\u00e0 la ...",
+      "highlight_ids": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ],
+      "frame_ids": [
+        "F019",
+        "F020",
+        "F021",
+        "F022",
+        "F023",
+        "F024",
+        "F025",
+        "F026",
+        "F027",
+        "F028",
+        "F029",
+        "F030",
+        "F031",
+        "F032",
+        "F033",
+        "F034",
+        "F035",
+        "F036",
+        "F037",
+        "F038",
+        "F039",
+        "F040",
+        "F041",
+        "F042",
+        "F044"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 2863.75,
+          "edited": 366.563,
+          "exact": false
+        },
+        "result_screen": {
+          "source": 3525.5,
+          "edited": 971.943,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-5ea93430b91b0da159e0",
+        "summary": "Partita 4, i dev conducono 2-3. Prima di iniziare il creator riflette su quale mazzo giocare e poi usa un Paladino; l'avversario \u00e8 Nosferatu. Commenta le carte nuove e le giocate avversarie, critica le liste e il doppio Re della Profondit\u00e0 e scopre il nuovo potere eroe. Il punteggio arriva sul 3-3. Il finale mostra una board enorme con l'avversario a 2 PV (F040), poi il risultato WIN dal detector.",
+        "specific_plays": [
+          {
+            "description": "Mulligan con due Bruta Scarlatta e Manovre di Volo, poi gioca Manovre di Volo (F019-F021)",
+            "transcript_ids": [
+              "T0083"
+            ]
+          },
+          {
+            "description": "Spiega le carte nuove nella lista: spell da 8 con furto vitale, carta da 7 mana che trasforma",
+            "transcript_ids": [
+              "T0084",
+              "T0085",
+              "T0086",
+              "T0087"
+            ]
+          },
+          {
+            "description": "Elogia una giocata o combo (\"idea geniale\") legata a trade e scudi divini",
+            "transcript_ids": [
+              "T0093",
+              "T0094",
+              "T0096",
+              "T0097"
+            ]
+          },
+          {
+            "description": "Reazione \"oh mio\" e spell avversaria commentata come fortunata",
+            "transcript_ids": [
+              "T0109",
+              "T0110"
+            ]
+          },
+          {
+            "description": "Stupore per il doppio Re della Profondit\u00e0 giocato dall'avversario e per l'armatura accumulata",
+            "transcript_ids": [
+              "T0118",
+              "T0119",
+              "T0121"
+            ]
+          },
+          {
+            "description": "\"Fermatelo!\" e poi frustrazione per un effetto raddoppiato",
+            "transcript_ids": [
+              "T0124",
+              "T0126",
+              "T0127",
+              "T0128"
+            ]
+          },
+          {
+            "description": "Piano con Ursol che gioca tre turni di fila",
+            "transcript_ids": [
+              "T0131",
+              "T0132"
+            ]
+          },
+          {
+            "description": "\"Wow, che player\" su una giocata",
+            "transcript_ids": [
+              "T0141",
+              "T0142",
+              "T0143"
+            ]
+          },
+          {
+            "description": "Scopre il potere eroe: palla di fuoco o +1/+1 quando lancia una magia",
+            "transcript_ids": [
+              "T0155",
+              "T0156",
+              "T0157",
+              "T0160"
+            ]
+          }
+        ],
+        "general_talk": [
+          {
+            "description": "Collaborazione e video da registrare con un altro creator, scelta del mazzo",
+            "transcript_ids": [
+              "T0063",
+              "T0064",
+              "T0068",
+              "T0069",
+              "T0076"
+            ]
+          },
+          {
+            "description": "Stato del punteggio (2-3, recuperabile), verifica se ci sono dev in gioco",
+            "transcript_ids": [
+              "T0080",
+              "T0081",
+              "T0082",
+              "T0137",
+              "T0139",
+              "T0140"
+            ]
+          },
+          {
+            "description": "Critica alle liste: manca la spell da 1 mana che pesca",
+            "transcript_ids": [
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0112",
+              "T0113",
+              "T0115"
+            ]
+          },
+          {
+            "description": "Giudizio sulle liste pubblicate sul Discord di altri streamer",
+            "transcript_ids": [
+              "T0147",
+              "T0148",
+              "T0150"
+            ]
+          },
+          {
+            "description": "Il Paladino sembra giocabile",
+            "transcript_ids": [
+              "T0133",
+              "T0134"
+            ]
+          },
+          {
+            "description": "Ricorda la scelta del potere eroe vista nel video di presentazione",
+            "transcript_ids": [
+              "T0164",
+              "T0166",
+              "T0168",
+              "T0170"
+            ]
+          },
+          {
+            "description": "Punteggio sul 3-3: \"battuto un altro dev\"",
+            "transcript_ids": [
+              "T0172"
+            ]
+          },
+          {
+            "description": "Digressione su ludopatia, giovani e vendita di skin e pet",
+            "transcript_ids": [
+              "T0175",
+              "T0176",
+              "T0177",
+              "T0178",
+              "T0179"
+            ]
+          }
+        ],
+        "conclusion": "WIN secondo il detector locale. Nel frame finale (F040) l'avversario \u00e8 a 2 PV contro una board di sette minion potenziati e il creator \u00e8 a 30 PV. Il tabellone mostra 3-3."
+      }
+    }
+  ]
+}

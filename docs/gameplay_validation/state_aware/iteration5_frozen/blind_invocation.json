@@ -1,0 +1,25 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "analysis.gameplay.hearthstone.debug_analyze",
+    "<Downloads>/73.mp4",
+    "--strategy",
+    "state-aware",
+    "--state-profile",
+    "docs\\gameplay_validation\\state_aware\\iteration5_frozen\\profile.json",
+    "--template-pack",
+    "docs/gameplay_validation/86/iteration4_frozen/templates.json",
+    "--ground-truth",
+    "tests/fixtures/gameplay/73_held_out_ground_truth.json",
+    "--output-dir",
+    "<workspace-cache>/blind73",
+    "--no-cache",
+    "--debug-frames",
+    "--max-debug-frames",
+    "60"
+  ],
+  "profile_fingerprint": "4aaeed45c036d569d5db00d6d2ae84775be5e21300b341b6819fcf0bc5031bdb",
+  "expected_runs": 1,
+  "condition": "Start only after OLD vs NEW calibration comparison is complete; do not retune."
+}

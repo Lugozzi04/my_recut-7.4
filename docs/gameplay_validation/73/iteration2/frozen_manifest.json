@@ -1,0 +1,30 @@
+{
+  "analyzer_version": "hearthstone-visual-v4",
+  "pack_fingerprint": "9a3528d080912ef286cd90531cef65f52f9c9fc9ae57f73bdbdd8525756f5224",
+  "settings": {
+    "coarse_fps": 1.0,
+    "fine_fps": 6.0,
+    "fine_padding_s": 2.0,
+    "result_fps": 20.0,
+    "minimum_result_observations": 2,
+    "minimum_result_stability_s": 0.008333333333333333,
+    "result_refine_fps": 120.0,
+    "result_refine_padding_s": 0.15,
+    "candidate_similarity": 0.8,
+    "maximum_game_duration_s": 1800.0,
+    "max_width": 960,
+    "event_gap_s": 0.5,
+    "minimum_observations": 3,
+    "minimum_stability_s": 0.25,
+    "max_observations": 100000
+  },
+  "source_sha256": {
+    "analysis/gameplay/assembler.py": "dce36f575a57dab3dc5372292596f7314346256a9e8f046efea819351785423b",
+    "analysis/gameplay/evaluation.py": "c40392b3d119169e0327d60d062c1ece1b533bb6bfeaed3286f902dd513e56cb",
+    "analysis/gameplay/hearthstone/analyzer.py": "42167cfd51f52b1238498c346c72186172ae82cf68785504f2abd1f41012526a",
+    "analysis/gameplay/hearthstone/visual/detector.py": "8a02392309ae50a5da5a2970990d73ac5b4fd9df521a0f6423da4e4cde7138f5",
+    "analysis/gameplay/hearthstone/visual/sampler.py": "30828f0d93240cdcb8ec20eb20134b410d01f176fe985feb286b2d7563ca6c0a"
+  },
+  "frozen_before_held_out_run": true,
+  "retuning_after_validation_allowed": false
+}

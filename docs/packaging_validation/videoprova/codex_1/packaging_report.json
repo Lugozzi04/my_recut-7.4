@@ -1,0 +1,351 @@
+{
+  "format": "recut_packaging_report",
+  "version": 1,
+  "status": "done",
+  "created": "2026-10-10T14:33:30",
+  "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\codex_1",
+  "input": {
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "edited_duration_s": 971.943,
+    "kept_pieces": 48,
+    "edit_digest": "8aeb6c5d7200621be30d0b7b7750a8afd8600934b90fc5ec21f5b8f26a591ddb"
+  },
+  "settings": {
+    "output": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\runs\\codex_1",
+    "project": "C:/Users/jakub/AppData/Local/Temp/claude/C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4/e3511d32-24ec-43e6-b8e9-124fab79f094/scratchpad/pkg/inputs/videoprova_wins.autocutter",
+    "video": null,
+    "provider": "codex",
+    "language": "it",
+    "asr_language": null,
+    "asr_model": "small",
+    "titles": 8,
+    "thumbnails": 3,
+    "webcam_roi": "auto",
+    "creator": null,
+    "use_style": true,
+    "games": "auto",
+    "only": "render",
+    "analyze_only": false,
+    "use_cache": true,
+    "overwrite": false,
+    "max_highlights": 14,
+    "max_deepen": 2,
+    "image_format": "png",
+    "agent_model": null,
+    "agent_effort": null,
+    "agent_timeout": 900.0
+  },
+  "privacy": "NOTE: packaging sends transcript excerpts, timing evidence and selected video frames/crops to the provider configured in the codex CLI. Local analysis sends nothing. Use --analyze-only to stay fully local.",
+  "evidence": {
+    "transcript": "cached",
+    "transcript_lines": 179,
+    "audio": "cached",
+    "visual": "ok",
+    "webcam": "ok",
+    "games": 2,
+    "highlights": 14,
+    "frames": 56,
+    "webcam_frames": 28
+  },
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "edited_start": 0.0,
+      "edited_end": 366.563,
+      "highlights": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ]
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "edited_start": 366.563,
+      "edited_end": 971.943,
+      "highlights": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ]
+    }
+  ],
+  "story": {
+    "main_topic": "Prova di Cacciatore e Paladino in Hearthstone durante una sfida streamer contro sviluppatori, tra valutazioni dei mazzi, critiche alle liste e scoperta dell'Innesto.",
+    "themes": [
+      "Valutazione dei mazzi attraverso le partite",
+      "Pressione del Cacciatore nel mirror",
+      "Scudi Divini e scambi del Paladino",
+      "Critiche alla costruzione delle liste",
+      "Scoperta delle opzioni dell'Innesto",
+      "Effetti visivi e reazioni verbali",
+      "Sfida collettiva e premi per la community"
+    ]
+  },
+  "preferred_title": {
+    "title_id": "TI01",
+    "title": "Cacciatore contro Kibler: il mio verdetto \u00e8 \u00abrotto\u00bb",
+    "concept_id": "C01",
+    "style": "competitive",
+    "highlight_ids": [
+      "H06"
+    ],
+    "transcript_ids": [
+      "T0051",
+      "T0055",
+      "T0056"
+    ],
+    "rationale": "Unisce l'avversario identificato al giudizio pi\u00f9 netto del video, attribuendolo esplicitamente al creator."
+  },
+  "preferred_concept_id": "C01",
+  "titles": [
+    {
+      "title_id": "TI01",
+      "title": "Cacciatore contro Kibler: il mio verdetto \u00e8 \u00abrotto\u00bb",
+      "concept_id": "C01",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "TI02",
+      "title": "Contro Kibler finisco per chiamare il Cacciatore \u00abrotto\u00bb",
+      "concept_id": "C01",
+      "highlight_ids": [
+        "H06"
+      ]
+    },
+    {
+      "title_id": "TI03",
+      "title": "Paladino: Scudi Divini forti, ma manca una carta?",
+      "concept_id": "C02",
+      "highlight_ids": [
+        "H08",
+        "H09"
+      ]
+    },
+    {
+      "title_id": "TI04",
+      "title": "Il Paladino parte bene, ma la lista mi lascia dubbi",
+      "concept_id": "C02",
+      "highlight_ids": [
+        "H09"
+      ]
+    },
+    {
+      "title_id": "TI05",
+      "title": "Innesto: Palla di Fuoco o bonus ai servitori?",
+      "concept_id": "C03",
+      "highlight_ids": [
+        "H13"
+      ]
+    },
+    {
+      "title_id": "TI06",
+      "title": "Innesto: confronto le condizioni e gli effetti disponibili",
+      "concept_id": "C03",
+      "highlight_ids": [
+        "H13"
+      ]
+    },
+    {
+      "title_id": "TI07",
+      "title": "Gli effetti continuano e il tavolo del Paladino cambia",
+      "concept_id": "C04",
+      "highlight_ids": [
+        "H11"
+      ]
+    },
+    {
+      "title_id": "TI08",
+      "title": "\u00abContinua, continua!\u00bb: sparisce un servitore avversario",
+      "concept_id": "C04",
+      "highlight_ids": [
+        "H11"
+      ]
+    }
+  ],
+  "thumbnails": [
+    {
+      "concept_id": "C01",
+      "path": "thumbnails\\concept_01.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 772049,
+      "format": "png",
+      "layout": "split_reaction",
+      "text": {
+        "font_px": 200.5,
+        "lines": [
+          "FUORI",
+          "DI",
+          "TESTA"
+        ],
+        "fits": false,
+        "bounds": [
+          731.1,
+          14.2,
+          508.2,
+          587.0
+        ],
+        "timestamp_zone_clear": false,
+        "px_at_320": 20.1
+      },
+      "warnings": [
+        "headline touches the safe margin",
+        "headline overlaps the YouTube duration badge area"
+      ]
+    },
+    {
+      "concept_id": "C02",
+      "path": "thumbnails\\concept_02.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 1155930,
+      "format": "png",
+      "layout": "board_focus",
+      "text": {
+        "font_px": 148.0,
+        "lines": [
+          "LISTA DA",
+          "RIVEDERE"
+        ],
+        "fits": true,
+        "bounds": [
+          53.8,
+          19.9,
+          568.1,
+          291.1
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 14.8
+      },
+      "warnings": []
+    },
+    {
+      "concept_id": "C03",
+      "path": "thumbnails\\concept_03.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 1053792,
+      "format": "png",
+      "layout": "board_focus",
+      "text": {
+        "font_px": 148.0,
+        "lines": [
+          "CONTA LA",
+          "CONDIZIONE"
+        ],
+        "fits": true,
+        "bounds": [
+          52.9,
+          387.6,
+          713.5,
+          293.5
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 14.8
+      },
+      "warnings": []
+    },
+    {
+      "concept_id": "C04",
+      "path": "thumbnails\\concept_04.png",
+      "width": 1280,
+      "height": 720,
+      "bytes": 1062451,
+      "format": "png",
+      "layout": "cinematic_text",
+      "text": {
+        "font_px": 149.0,
+        "lines": [
+          "FERMATELO"
+        ],
+        "fits": true,
+        "bounds": [
+          53.7,
+          229.8,
+          660.5,
+          155.1
+        ],
+        "timestamp_zone_clear": true,
+        "px_at_320": 14.9
+      },
+      "warnings": []
+    }
+  ],
+  "agent": {
+    "provider": "codex",
+    "calls": [],
+    "cost_usd_total": null,
+    "tokens_used_total": null
+  },
+  "extensions": {
+    "image_generation": {
+      "provider": "none",
+      "available": false,
+      "used": false
+    },
+    "youtube_trends": {
+      "provider": "none",
+      "available": false,
+      "used": false,
+      "note": "trends are never inferred; V1 does not query any trends source"
+    }
+  },
+  "cache": {
+    "root": "C:\\Users\\jakub\\AppData\\Local\\Temp\\claude\\C--Users-jakub-Desktop-auto-cutter-auto-cutter-my-recut-7-4\\e3511d32-24ec-43e6-b8e9-124fab79f094\\scratchpad\\pkg\\iso\\cache\\packaging",
+    "enabled": true,
+    "stats": {
+      "transcript": {
+        "hit": 0,
+        "miss": 0
+      },
+      "evidence": {
+        "hit": 0,
+        "miss": 0
+      },
+      "frames": {
+        "hit": 0,
+        "miss": 0
+      },
+      "agent": {
+        "hit": 0,
+        "miss": 0
+      },
+      "render": {
+        "hit": 0,
+        "miss": 0
+      }
+    }
+  },
+  "timings_s": {
+    "load_previous": 0.713,
+    "thumbnail_render": 1.174,
+    "total": 1.957
+  },
+  "warnings": [],
+  "error": null,
+  "artifacts": {
+    "content_analysis.json": "content_analysis.json",
+    "transcript.json": "transcript.json",
+    "game_contexts.json": "game_contexts.json",
+    "highlights.json": "highlights.json",
+    "video_story.json": "video_story.json",
+    "title_candidates.json": "title_candidates.json",
+    "thumbnail_concepts.json": "thumbnail_concepts.json",
+    "packaging_report.json": "packaging_report.json"
+  }
+}

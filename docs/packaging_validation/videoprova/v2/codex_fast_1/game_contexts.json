@@ -1,0 +1,473 @@
+{
+  "games": [
+    {
+      "game_id": "game-a6c0f437acde505ac557",
+      "index": 2,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 1359.45,
+      "source_end": 1785.983,
+      "edited_start": 0.0,
+      "edited_end": 366.563,
+      "kept_seconds": 366.563,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0001",
+        "T0002",
+        "T0003",
+        "T0004",
+        "T0005",
+        "T0006",
+        "T0007",
+        "T0008",
+        "T0009",
+        "T0010",
+        "T0011",
+        "T0012",
+        "T0013",
+        "T0014",
+        "T0015",
+        "T0016",
+        "T0017",
+        "T0018",
+        "T0019",
+        "T0020",
+        "T0021",
+        "T0022",
+        "T0023",
+        "T0024",
+        "T0025",
+        "T0026",
+        "T0027",
+        "T0028",
+        "T0029",
+        "T0030",
+        "T0031",
+        "T0032",
+        "T0033",
+        "T0034",
+        "T0035",
+        "T0036",
+        "T0037",
+        "T0038",
+        "T0039",
+        "T0040",
+        "T0041",
+        "T0042",
+        "T0043",
+        "T0044",
+        "T0045",
+        "T0046",
+        "T0047",
+        "T0048",
+        "T0049",
+        "T0050",
+        "T0051",
+        "T0052",
+        "T0053",
+        "T0054",
+        "T0055",
+        "T0056",
+        "T0057",
+        "T0058",
+        "T0059"
+      ],
+      "transcript_excerpt": "Ho questa impressione che tutti giocheranno l'unter, non so il perch\u00e9. Ho questa impressione che oggi ci sar\u00e0 un po' di mirror hunter, mirror hunter. Che senso. Non lo so eh, non lo so ma mi viene in mente questa possibilit\u00e0. Ah, chippiamo tutto? A me no. Bene, questa \u00e8 in curva in realt\u00e0. No, \u00e8 in curva questa roba. il mimiron comunque mi ha sciolto e il mimiron mi ha davvero sciolto bella cerno ...",
+      "highlight_ids": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ],
+      "frame_ids": [
+        "F001",
+        "F002",
+        "F003",
+        "F004",
+        "F005",
+        "F006",
+        "F007",
+        "F008",
+        "F009",
+        "F010",
+        "F011",
+        "F012",
+        "F013",
+        "F014",
+        "F015",
+        "F016",
+        "F017",
+        "F018",
+        "F019",
+        "F020",
+        "F045"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 1359.45,
+          "edited": 0.0,
+          "exact": true
+        },
+        "result_screen": {
+          "source": 1785.983,
+          "edited": 366.563,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-a6c0f437acde505ac557",
+        "summary": "L'Hunter affronta Kibler, sviluppa pressione e arriva alla vittoria dopo un finale in cui il creator critica il Bombardamento contro Meccaciclo.",
+        "key_moments": [
+          {
+            "highlight_id": "H03",
+            "description": "Il creator interrompe il commento per notare le animazioni della giocata.",
+            "transcript_ids": [
+              "T0023",
+              "T0024"
+            ]
+          },
+          {
+            "highlight_id": "H05",
+            "description": "Commenta la pressione di pi\u00f9 servitori 5/5 e riconosce una possibile eliminazione precedente.",
+            "transcript_ids": [
+              "T0041",
+              "T0043",
+              "T0044"
+            ]
+          },
+          {
+            "highlight_id": "H06",
+            "description": "Critica il Bombardamento contro Meccaciclo, definisce molto forte l'Hunter e si avvicina al risultato vincente registrato nel brief.",
+            "transcript_ids": [
+              "T0051",
+              "T0052",
+              "T0054",
+              "T0055",
+              "T0056"
+            ]
+          }
+        ],
+        "deck_talk": [
+          {
+            "description": "All'inizio ipotizza una giornata con molti mirror di Hunter; \u00e8 una previsione, non la conferma del matchup di questa partita.",
+            "transcript_ids": [
+              "T0001",
+              "T0002",
+              "T0004"
+            ]
+          },
+          {
+            "description": "Il giudizio finale sulla forza dell'Hunter nasce dalla partita appena giocata.",
+            "transcript_ids": [
+              "T0055",
+              "T0056"
+            ]
+          },
+          {
+            "description": "Spiega il contesto streamer contro sviluppatori e le ricompense collegate al risultato collettivo.",
+            "transcript_ids": [
+              "T0026",
+              "T0027",
+              "T0029",
+              "T0030",
+              "T0031"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria registrata dal rilevatore locale. Il materiale non consente di ricostruire con certezza il danno letale o attribuire la vittoria a una singola giocata."
+      }
+    },
+    {
+      "game_id": "game-5ea93430b91b0da159e0",
+      "index": 4,
+      "result": "WIN",
+      "source_index": 0,
+      "source_start": 2863.75,
+      "source_end": 3525.5,
+      "edited_start": 366.563,
+      "edited_end": 971.943,
+      "kept_seconds": 605.38,
+      "origin": "project_gameplay",
+      "transcript_ids": [
+        "T0060",
+        "T0061",
+        "T0062",
+        "T0063",
+        "T0064",
+        "T0065",
+        "T0066",
+        "T0067",
+        "T0068",
+        "T0069",
+        "T0070",
+        "T0071",
+        "T0072",
+        "T0073",
+        "T0074",
+        "T0075",
+        "T0076",
+        "T0077",
+        "T0078",
+        "T0079",
+        "T0080",
+        "T0081",
+        "T0082",
+        "T0083",
+        "T0084",
+        "T0085",
+        "T0086",
+        "T0087",
+        "T0088",
+        "T0089",
+        "T0090",
+        "T0091",
+        "T0092",
+        "T0093",
+        "T0094",
+        "T0095",
+        "T0096",
+        "T0097",
+        "T0098",
+        "T0099",
+        "T0100",
+        "T0101",
+        "T0102",
+        "T0103",
+        "T0104",
+        "T0105",
+        "T0106",
+        "T0107",
+        "T0108",
+        "T0109",
+        "T0110",
+        "T0111",
+        "T0112",
+        "T0113",
+        "T0114",
+        "T0115",
+        "T0116",
+        "T0117",
+        "T0118",
+        "T0119",
+        "T0120",
+        "T0121",
+        "T0122",
+        "T0123",
+        "T0124",
+        "T0125",
+        "T0126",
+        "T0127",
+        "T0128",
+        "T0129",
+        "T0130",
+        "T0131",
+        "T0132",
+        "T0133",
+        "T0134",
+        "T0135",
+        "T0136",
+        "T0137",
+        "T0138",
+        "T0139",
+        "T0140",
+        "T0141",
+        "T0142",
+        "T0143",
+        "T0144",
+        "T0145",
+        "T0146",
+        "T0147",
+        "T0148",
+        "T0149",
+        "T0150",
+        "T0151",
+        "T0152",
+        "T0153",
+        "T0154",
+        "T0155",
+        "T0156",
+        "T0157",
+        "T0158",
+        "T0159",
+        "T0160",
+        "T0161",
+        "T0162",
+        "T0163",
+        "T0164",
+        "T0165",
+        "T0166",
+        "T0167",
+        "T0168",
+        "T0169",
+        "T0170",
+        "T0171",
+        "T0172",
+        "T0173",
+        "T0174",
+        "T0175",
+        "T0176",
+        "T0177",
+        "T0178",
+        "T0179"
+      ],
+      "transcript_excerpt": "Ok non \u00e8 un dev, meno male, meno male, meno male, roba per il thunder, alla roba dei mazzi conici, sincero mi ha scritto, ma \u00e8 tipo da un mese in realt\u00e0 che mi sta scrivendo di registrare insieme il tonalzo e sicuramente lo facciamo, \u00e8 che semplicemente abbiamo dei verani un po' di merda, abbiamo un po' dei verani di merda, per\u00f2 sicuramente si far\u00e0 un video a full -keep, sicuramente si far\u00e0 la ...",
+      "highlight_ids": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12",
+        "H13",
+        "H14"
+      ],
+      "frame_ids": [
+        "F021",
+        "F022",
+        "F023",
+        "F024",
+        "F025",
+        "F026",
+        "F027",
+        "F028",
+        "F029",
+        "F030",
+        "F031",
+        "F032",
+        "F033",
+        "F034",
+        "F035",
+        "F036",
+        "F037",
+        "F038",
+        "F039",
+        "F040",
+        "F041",
+        "F042",
+        "F043",
+        "F044",
+        "F046"
+      ],
+      "markers": {
+        "vs_screen": {
+          "source": 2863.75,
+          "edited": 366.563,
+          "exact": false
+        },
+        "result_screen": {
+          "source": 3525.5,
+          "edited": 971.943,
+          "exact": true
+        }
+      },
+      "interpretation": {
+        "game_id": "game-5ea93430b91b0da159e0",
+        "summary": "Il Paladino parte bene e vince. Durante la partita, il creator dubita della propria lista, critica quella avversaria e si sofferma sulle opzioni di effetti mostrate in F039.",
+        "key_moments": [
+          {
+            "highlight_id": "H08",
+            "description": "Osserva che le nuove carte non sono ancora comparse nella sua mano e descrive alcune inclusioni della lista.",
+            "transcript_ids": [
+              "T0084",
+              "T0085",
+              "T0086",
+              "T0087"
+            ]
+          },
+          {
+            "highlight_id": "H09",
+            "description": "Mette in dubbio l'assenza di una magia da un mana che considera importante per il funzionamento del mazzo.",
+            "transcript_ids": [
+              "T0102",
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0106"
+            ]
+          },
+          {
+            "highlight_id": "H11",
+            "description": "Reagisce alla sequenza in corso e poi spiega perch\u00e9 un effetto risulta doppio.",
+            "transcript_ids": [
+              "T0124",
+              "T0125",
+              "T0126",
+              "T0127",
+              "T0128",
+              "T0129"
+            ]
+          },
+          {
+            "highlight_id": "H13",
+            "description": "Valuta le opzioni visibili in F039, soffermandosi sulla Palla di Fuoco dopo una magia e sul potenziamento dei servitori.",
+            "transcript_ids": [
+              "T0154",
+              "T0155",
+              "T0156",
+              "T0157"
+            ]
+          },
+          {
+            "highlight_id": "H14",
+            "description": "Il campo mostrato in F042 precede il risultato vincente; il parlato selezionato in questo punto riguarda invece una digressione su acquisti e statistiche.",
+            "transcript_ids": [
+              "T0175",
+              "T0176",
+              "T0177",
+              "T0178",
+              "T0179"
+            ]
+          }
+        ],
+        "deck_talk": [
+          {
+            "description": "Il discorso iniziale sui vecchi mazzi Warlock riguarda un possibile video futuro, non un cambio di mazzo nella partita corrente.",
+            "transcript_ids": [
+              "T0069",
+              "T0071",
+              "T0072",
+              "T0073",
+              "T0076",
+              "T0077"
+            ]
+          },
+          {
+            "description": "Dubita che nella propria lista sia presente la magia da un mana descritta; il materiale non ne verifica l'assenza.",
+            "transcript_ids": [
+              "T0103",
+              "T0104",
+              "T0105",
+              "T0112",
+              "T0113",
+              "T0114"
+            ]
+          },
+          {
+            "description": "Giudica promettente il Paladino, ma riconosce di essere partito molto bene.",
+            "transcript_ids": [
+              "T0132",
+              "T0133",
+              "T0134",
+              "T0135"
+            ]
+          },
+          {
+            "description": "Critica il doppio Re delle Profondit\u00e0 e altre scelte della lista avversaria.",
+            "transcript_ids": [
+              "T0118",
+              "T0119",
+              "T0147",
+              "T0148",
+              "T0149",
+              "T0150",
+              "T0151"
+            ]
+          }
+        ],
+        "conclusion": "Vittoria registrata dal rilevatore locale. Il pareggio collettivo annunciato durante la partita \u00e8 distinto dall'esito del singolo incontro."
+      }
+    }
+  ]
+}

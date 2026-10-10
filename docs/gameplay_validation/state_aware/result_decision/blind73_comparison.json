@@ -1,0 +1,146 @@
+{
+  "format": "recut_result_decision_blind_comparison",
+  "version": 1,
+  "video": "73.mp4 (frozen validation, held-out games only)",
+  "attempt": 1,
+  "no_retuning": true,
+  "decision": "RESULT_POLICY_READY",
+  "before_iteration5": {
+    "ground_truth_games": 11,
+    "complete_predicted_games": 10,
+    "complete_matched_games": 10,
+    "partial_matched_games": 1,
+    "complete_game_detection_precision": 1.0,
+    "complete_game_detection_recall": 0.9090909090909091,
+    "vs_recall": 1.0,
+    "victory_recall": 1.0,
+    "defeat_recall": 0.75,
+    "complete_loss_recall": 0.75,
+    "complete_loss_precision": 1.0,
+    "complete_false_positive_loss_count": 0,
+    "false_positive_result_event_count": 0,
+    "game_result_classification_accuracy": 1.0,
+    "game_results_matched": 10,
+    "vs_timestamp_error": {
+      "count": 11,
+      "mean_absolute_error_s": 0.22436363636358114,
+      "median_absolute_error_s": 0.09999999999990905,
+      "max_absolute_error_s": 0.7669999999998254
+    },
+    "result_timestamp_error": {
+      "count": 10,
+      "mean_absolute_error_s": 0.07849999999996271,
+      "median_absolute_error_s": 0.033500000000117325,
+      "max_absolute_error_s": 0.33399999999983265
+    },
+    "confusion": {
+      "WIN": {
+        "WIN": 7,
+        "LOSS": 0,
+        "UNKNOWN": 0
+      },
+      "LOSS": {
+        "WIN": 0,
+        "LOSS": 3,
+        "UNKNOWN": 1
+      }
+    }
+  },
+  "after_iteration6": {
+    "ground_truth_games": 11,
+    "complete_predicted_games": 11,
+    "complete_matched_games": 11,
+    "partial_matched_games": 0,
+    "complete_game_detection_precision": 1.0,
+    "complete_game_detection_recall": 1.0,
+    "vs_recall": 1.0,
+    "victory_recall": 1.0,
+    "defeat_recall": 1.0,
+    "complete_loss_recall": 1.0,
+    "complete_loss_precision": 1.0,
+    "complete_false_positive_loss_count": 0,
+    "false_positive_result_event_count": 0,
+    "game_result_classification_accuracy": 1.0,
+    "game_results_matched": 11,
+    "vs_timestamp_error": {
+      "count": 11,
+      "mean_absolute_error_s": 0.22436363636358114,
+      "median_absolute_error_s": 0.09999999999990905,
+      "max_absolute_error_s": 0.7669999999998254
+    },
+    "result_timestamp_error": {
+      "count": 11,
+      "mean_absolute_error_s": 0.07590909090915622,
+      "median_absolute_error_s": 0.03300000000012915,
+      "max_absolute_error_s": 0.38400000000001455
+    },
+    "confusion": {
+      "WIN": {
+        "WIN": 7,
+        "LOSS": 0,
+        "UNKNOWN": 0
+      },
+      "LOSS": {
+        "WIN": 0,
+        "LOSS": 4,
+        "UNKNOWN": 0
+      }
+    }
+  },
+  "pairing_errors": {
+    "before": 0,
+    "after": 0,
+    "unmatched_games_after": [],
+    "unmatched_events_after": []
+  },
+  "recovered_loss": [
+    {
+      "outcome": "DEFEAT",
+      "reason": "event_peak_argmax",
+      "result_screen_confirmed": true,
+      "first_seen": 5010.716,
+      "last_seen": 5010.783,
+      "supporting_frames": 2,
+      "opposite_support": 0,
+      "peak": {
+        "timestamp": 5010.716,
+        "scores": {
+          "VICTORY": 0.36811190843582153,
+          "DEFEAT": 0.8272011876106262
+        },
+        "winner": "DEFEAT",
+        "margin": 0.4590892791748047
+      }
+    }
+  ],
+  "rejected_decisions": [],
+  "runtime_s": {
+    "before": 207.342,
+    "after_analysis": 208.27482559999999,
+    "after_wall_including_startup": 208.934
+  },
+  "comparisons": {
+    "before_total_incl_vs": 475848,
+    "after_total_incl_vs": 475848,
+    "after_breakdown": {
+      "board": 40902,
+      "text_monitor": 163608,
+      "text_windows": 226104,
+      "vs": 45234
+    }
+  },
+  "frames": {
+    "monitor": 6817,
+    "vs_fine": 722,
+    "result_windows": 9421,
+    "windows": 18,
+    "window_seconds": 159.0,
+    "evidence_frames_at_or_above_floor": 1830
+  },
+  "hash_audit": {
+    "checked_at_utc": "2026-10-09T13:15:55.336538+00:00",
+    "all_match": true,
+    "count": 48,
+    "mismatches": []
+  }
+}

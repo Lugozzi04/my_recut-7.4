@@ -1,0 +1,4592 @@
+{
+  "role": "calibration",
+  "sources": [
+    "74.mp4",
+    "86.mp4"
+  ],
+  "frame_count": 2276,
+  "definitions": {
+    "true_scores": "Reviewed visible frames only; animation phases are included. Repeated frames from same game are correlated, not independent samples.",
+    "hard_negatives": "Reviewed 86 top-30 mined NON-DEFEAT neighborhoods (including VICTORY) plus 74 reviewed NEGATIVE and VICTORY windows. Mining at 1 FPS is not full-frame false-positive guarantee.",
+    "event_supported": "At least 2 distinct native PTS with span >=1/120s in same class within .5s; this measures local consolidation availability, not whole-video sampling recall."
+  },
+  "packs": {
+    "old": {
+      "true_defeat": {
+        "count": 499,
+        "min": 0.17130467295646667,
+        "p10": 0.5890076160430908,
+        "median": 0.8526580929756165,
+        "p90": 0.9060375452041626,
+        "p95": 0.9236297488212586,
+        "max": 0.9783180356025696
+      },
+      "true_victory": {
+        "count": 634,
+        "min": 0.1784316599369049,
+        "p10": 0.8616658508777618,
+        "median": 0.9379114806652069,
+        "p90": 0.9974748611450195,
+        "p95": 0.9979286789894104,
+        "max": 0.9995846152305603
+      },
+      "hard_negative_defeat": {
+        "count": 1012,
+        "min": 0.13904865086078644,
+        "p10": 0.2533028185367584,
+        "median": 0.4676272124052048,
+        "p90": 0.49081180095672605,
+        "p95": 0.49883050471544266,
+        "max": 0.5409016609191895
+      },
+      "true_defeat_margin": {
+        "count": 499,
+        "min": -0.0063581764698028564,
+        "p10": 0.12864421010017396,
+        "median": 0.35471731424331665,
+        "p90": 0.5124406278133392,
+        "p95": 0.5771293699741363,
+        "max": 0.6691368520259857
+      },
+      "best_template_counts": {
+        "templates/defeat/defeat_01.png": 56,
+        "templates/defeat/calibration_phase_1324.900.png": 25,
+        "templates/defeat/calibration_phase_1324.933.png": 418
+      },
+      "phase_peaks": {
+        "74_window_08": {
+          "frames": 60,
+          "peak_timestamp": 6092.748667,
+          "peak_score": 0.9782602787017822,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8030080199241638,
+            "scale": 0.925
+          },
+          "class_margin": 0.6691368520259857,
+          "strong_observations_092": 6
+        },
+        "74_window_09": {
+          "frames": 60,
+          "peak_timestamp": 6119.265333,
+          "peak_score": 0.6177365183830261,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3604726791381836,
+            "scale": 1.1
+          },
+          "class_margin": 0.15666723251342773,
+          "strong_observations_092": 0
+        },
+        "74_window_10": {
+          "frames": 60,
+          "peak_timestamp": 7606.156667,
+          "peak_score": 0.9783180356025696,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.7901355624198914,
+            "scale": 0.925
+          },
+          "class_margin": 0.6638704538345337,
+          "strong_observations_092": 5
+        },
+        "86_game_02": {
+          "frames": 21,
+          "peak_timestamp": 1847.6,
+          "peak_score": 0.948849081993103,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8051543235778809,
+            "scale": 0.95
+          },
+          "class_margin": 0.6387453973293304,
+          "strong_observations_092": 4
+        },
+        "86_game_03": {
+          "frames": 40,
+          "peak_timestamp": 1982.933,
+          "peak_score": 0.9754029512405396,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8064683079719543,
+            "scale": 0.925
+          },
+          "class_margin": 0.6611581146717072,
+          "strong_observations_092": 5
+        },
+        "86_game_04": {
+          "frames": 23,
+          "peak_timestamp": 2128.933,
+          "peak_score": 0.9299349784851074,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8520920276641846,
+            "scale": 0.925
+          },
+          "class_margin": 0.5963776111602783,
+          "strong_observations_092": 4
+        },
+        "86_game_05": {
+          "frames": 10,
+          "peak_timestamp": 2300.666,
+          "peak_score": 0.9269711375236511,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8319411873817444,
+            "scale": 1.1
+          },
+          "class_margin": 0.41380125284194946,
+          "strong_observations_092": 1
+        },
+        "86_game_06": {
+          "frames": 40,
+          "peak_timestamp": 2946.2,
+          "peak_score": 0.9492653012275696,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.39304956793785095,
+            "scale": 0.9
+          },
+          "class_margin": 0.45319104194641113,
+          "strong_observations_092": 5
+        },
+        "86_game_06_exit": {
+          "frames": 78,
+          "peak_timestamp": 2976.016,
+          "peak_score": 0.6231337189674377,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3380032479763031,
+            "scale": 1.1
+          },
+          "class_margin": 0.18587952852249146,
+          "strong_observations_092": 0
+        },
+        "86_game_06_stable": {
+          "frames": 60,
+          "peak_timestamp": 2961.333,
+          "peak_score": 0.6202133297920227,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3587337136268616,
+            "scale": 1.1
+          },
+          "class_margin": 0.16470211744308472,
+          "strong_observations_092": 0
+        },
+        "86_game_09": {
+          "frames": 47,
+          "peak_timestamp": 5285.716,
+          "peak_score": 0.9753490090370178,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8179190158843994,
+            "scale": 0.925
+          },
+          "class_margin": 0.6603051126003265,
+          "strong_observations_092": 5
+        }
+      },
+      "threshold_table": [
+        {
+          "threshold": 0.8,
+          "true_defeat_frame_recall": 0.5450901803607214,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.85,
+          "true_defeat_frame_recall": 0.5170340681362725,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.9,
+          "true_defeat_frame_recall": 0.11623246492985972,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.92,
+          "true_defeat_frame_recall": 0.07014028056112225,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 7,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.875,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 7,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.95,
+          "true_defeat_frame_recall": 0.012024048096192385,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 2,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.25,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 2,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.98,
+          "true_defeat_frame_recall": 0.0,
+          "true_defeat_frame_precision": null,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 0,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.0,
+          "local_loss_event_precision": null,
+          "supported_phase_windows": 0,
+          "phase_windows": 11
+        }
+      ],
+      "dangerous_hard_negatives": [
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.733,
+          "similarity": 0.5409016609191895,
+          "threshold": 0.92,
+          "margin": 0.11652368307113647,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5409016609191895,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5140806436538696,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4579841196537018,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5140806436538696,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.683,
+          "similarity": 0.5408301949501038,
+          "threshold": 0.92,
+          "margin": 0.11637097597122192,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408301949501038,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142942667007446,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45813801884651184,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5142942667007446,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.783,
+          "similarity": 0.540820300579071,
+          "threshold": 0.92,
+          "margin": 0.11658990383148193,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540820300579071,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141441226005554,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45800837874412537,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5141441226005554,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.633,
+          "similarity": 0.5408040881156921,
+          "threshold": 0.92,
+          "margin": 0.11640030145645142,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408040881156921,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142384171485901,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4581035077571869,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5142384171485901,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.583,
+          "similarity": 0.540686845779419,
+          "threshold": 0.92,
+          "margin": 0.11631438136100769,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540686845779419,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141023993492126,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45803284645080566,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5141023993492126,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_game_08",
+          "timestamp": 4727.5,
+          "similarity": 0.5127044320106506,
+          "threshold": 0.92,
+          "margin": 0.20537778735160828,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.45208333333333334,
+            0.5444444444444444,
+            0.09791666666666667,
+            0.05185185185185185
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.5127044320106506,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.4854881763458252,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.33061257004737854,
+              "scale": 0.925
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.4854881763458252,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.433,
+          "similarity": 0.5081564784049988,
+          "threshold": 0.92,
+          "margin": 0.04191380739212036,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081564784049988,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054155588150024,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46933063864707947,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054155588150024,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.533,
+          "similarity": 0.5081549882888794,
+          "threshold": 0.92,
+          "margin": 0.04191067814826965,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081549882888794,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247975349426,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934303641319275,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247975349426,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.483,
+          "similarity": 0.5081501007080078,
+          "threshold": 0.92,
+          "margin": 0.04190957546234131,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081501007080078,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054264664649963,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934932470321655,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054264664649963,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.383,
+          "similarity": 0.5081424713134766,
+          "threshold": 0.92,
+          "margin": 0.041890949010849,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081424713134766,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247379302979,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247379302979,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.3,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.333,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "74_window_02",
+          "timestamp": 820.152667,
+          "similarity": 0.5073786973953247,
+          "threshold": 0.92,
+          "margin": -0.45698434114456177,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.44166666666666665,
+            0.562962962962963,
+            0.1125,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5073786973953247,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.43171846866607666,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.38476669788360596,
+              "scale": 1.075
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.43171846866607666,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.533,
+          "similarity": 0.506011962890625,
+          "threshold": 0.92,
+          "margin": -0.40257591009140015,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.506011962890625,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36583393812179565,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33821889758110046,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.36583393812179565,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.483,
+          "similarity": 0.5057899951934814,
+          "threshold": 0.92,
+          "margin": -0.3669021725654602,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5057899951934814,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3728858530521393,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3362385034561157,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3728858530521393,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_07",
+          "timestamp": 6973.383,
+          "similarity": 0.5050150156021118,
+          "threshold": 0.92,
+          "margin": -0.3449282646179199,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5050150156021118,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3755086362361908,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33290988206863403,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3755086362361908,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_03",
+          "timestamp": 4767.583,
+          "similarity": 0.5049132704734802,
+          "threshold": 0.92,
+          "margin": -0.4016820192337036,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5049132704734802,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3667413890361786,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.34295517206192017,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3667413890361786,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_05",
+          "timestamp": 7376.533,
+          "similarity": 0.5048732757568359,
+          "threshold": 0.92,
+          "margin": -0.3842625617980957,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5048732757568359,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3698273301124573,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33932793140411377,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.3698273301124573,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.633,
+          "similarity": 0.5045256614685059,
+          "threshold": 0.92,
+          "margin": -0.3605961203575134,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5045256614685059,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.37345731258392334,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3378545343875885,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.37345731258392334,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.583,
+          "similarity": 0.504478931427002,
+          "threshold": 0.92,
+          "margin": -0.4032030701637268,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.504478931427002,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36571359634399414,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.342482328414917,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.36571359634399414,
+            "scale": 1.1
+          }
+        }
+      ],
+      "matching_seconds": 21.44620280000163
+    },
+    "74_to_86": {
+      "true_defeat": {
+        "count": 499,
+        "min": 0.17688420414924622,
+        "p10": 0.8430642724037171,
+        "median": 0.8796554207801819,
+        "p90": 0.9689244151115417,
+        "p95": 0.9805889070034027,
+        "max": 0.9999737739562988
+      },
+      "true_victory": {
+        "count": 634,
+        "min": 0.1784316599369049,
+        "p10": 0.8616658508777618,
+        "median": 0.9379114806652069,
+        "p90": 0.9974748611450195,
+        "p95": 0.9979286789894104,
+        "max": 0.9995846152305603
+      },
+      "hard_negative_defeat": {
+        "count": 1012,
+        "min": 0.13904865086078644,
+        "p10": 0.2538753747940064,
+        "median": 0.4676272124052048,
+        "p90": 0.49081180095672605,
+        "p95": 0.49883050471544266,
+        "max": 0.5409016609191895
+      },
+      "true_defeat_margin": {
+        "count": 499,
+        "min": 0.006295695900917053,
+        "p10": 0.3547165870666504,
+        "median": 0.4177049994468689,
+        "p90": 0.5325945913791656,
+        "p95": 0.5771293699741363,
+        "max": 0.6691368520259857
+      },
+      "best_template_counts": {
+        "templates/defeat/defeat_01.png": 54,
+        "templates/defeat/calibration_phase_1324.900.png": 25,
+        "templates/defeat/calibration_phase_1324.933.png": 211,
+        "templates/defeat/external74_defeat_stable.png": 209
+      },
+      "phase_peaks": {
+        "74_window_08": {
+          "frames": 60,
+          "peak_timestamp": 6092.748667,
+          "peak_score": 0.9782602787017822,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8030080199241638,
+            "scale": 0.925
+          },
+          "class_margin": 0.6691368520259857,
+          "strong_observations_092": 6
+        },
+        "74_window_09": {
+          "frames": 60,
+          "peak_timestamp": 6119.015333,
+          "peak_score": 0.9999737739562988,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5886173248291016,
+            "scale": 0.975
+          },
+          "class_margin": 0.5330191254615784,
+          "strong_observations_092": 30
+        },
+        "74_window_10": {
+          "frames": 60,
+          "peak_timestamp": 7606.156667,
+          "peak_score": 0.9783180356025696,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.7901355624198914,
+            "scale": 0.925
+          },
+          "class_margin": 0.6638704538345337,
+          "strong_observations_092": 5
+        },
+        "86_game_02": {
+          "frames": 21,
+          "peak_timestamp": 1847.6,
+          "peak_score": 0.948849081993103,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8051543235778809,
+            "scale": 0.95
+          },
+          "class_margin": 0.6387453973293304,
+          "strong_observations_092": 4
+        },
+        "86_game_03": {
+          "frames": 40,
+          "peak_timestamp": 1982.933,
+          "peak_score": 0.9754029512405396,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8064683079719543,
+            "scale": 0.925
+          },
+          "class_margin": 0.6611581146717072,
+          "strong_observations_092": 5
+        },
+        "86_game_04": {
+          "frames": 23,
+          "peak_timestamp": 2128.933,
+          "peak_score": 0.9299349784851074,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8520920276641846,
+            "scale": 0.925
+          },
+          "class_margin": 0.5963776111602783,
+          "strong_observations_092": 4
+        },
+        "86_game_05": {
+          "frames": 10,
+          "peak_timestamp": 2300.666,
+          "peak_score": 0.9269711375236511,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8319411873817444,
+            "scale": 1.1
+          },
+          "class_margin": 0.41380125284194946,
+          "strong_observations_092": 1
+        },
+        "86_game_06": {
+          "frames": 40,
+          "peak_timestamp": 2946.2,
+          "peak_score": 0.9492653012275696,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.5598227381706238,
+            "scale": 1.025
+          },
+          "class_margin": 0.45319104194641113,
+          "strong_observations_092": 5
+        },
+        "86_game_06_exit": {
+          "frames": 78,
+          "peak_timestamp": 2976.4,
+          "peak_score": 0.9777017831802368,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5994389653205872,
+            "scale": 1
+          },
+          "class_margin": 0.5128881931304932,
+          "strong_observations_092": 44
+        },
+        "86_game_06_stable": {
+          "frames": 60,
+          "peak_timestamp": 2961.583,
+          "peak_score": 0.9978609681129456,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.58709317445755,
+            "scale": 1
+          },
+          "class_margin": 0.5303030610084534,
+          "strong_observations_092": 33
+        },
+        "86_game_09": {
+          "frames": 47,
+          "peak_timestamp": 5285.716,
+          "peak_score": 0.9753490090370178,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8179190158843994,
+            "scale": 0.925
+          },
+          "class_margin": 0.6603051126003265,
+          "strong_observations_092": 5
+        }
+      },
+      "threshold_table": [
+        {
+          "threshold": 0.8,
+          "true_defeat_frame_recall": 0.9478957915831663,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.85,
+          "true_defeat_frame_recall": 0.8797595190380761,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.9,
+          "true_defeat_frame_recall": 0.36072144288577157,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.92,
+          "true_defeat_frame_recall": 0.2845691382765531,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 7,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.875,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 10,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.95,
+          "true_defeat_frame_recall": 0.156312625250501,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 3,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.375,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 5,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.98,
+          "true_defeat_frame_recall": 0.05410821643286573,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 2,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.25,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 2,
+          "phase_windows": 11
+        }
+      ],
+      "dangerous_hard_negatives": [
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.733,
+          "similarity": 0.5409016609191895,
+          "threshold": 0.92,
+          "margin": 0.11652368307113647,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5409016609191895,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5140806436538696,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4579841196537018,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44867464900016785,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5140806436538696,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.683,
+          "similarity": 0.5408301949501038,
+          "threshold": 0.92,
+          "margin": 0.11637097597122192,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408301949501038,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142942667007446,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45813801884651184,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4485066831111908,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5142942667007446,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.783,
+          "similarity": 0.540820300579071,
+          "threshold": 0.92,
+          "margin": 0.11658990383148193,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540820300579071,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141441226005554,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45800837874412537,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44853100180625916,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5141441226005554,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.633,
+          "similarity": 0.5408040881156921,
+          "threshold": 0.92,
+          "margin": 0.11640030145645142,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408040881156921,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142384171485901,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4581035077571869,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4484961926937103,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5142384171485901,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.583,
+          "similarity": 0.540686845779419,
+          "threshold": 0.92,
+          "margin": 0.11631438136100769,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540686845779419,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141023993492126,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45803284645080566,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44836875796318054,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.5141023993492126,
+            "scale": 1.05
+          }
+        },
+        {
+          "group": "86_game_08",
+          "timestamp": 4727.5,
+          "similarity": 0.5127044320106506,
+          "threshold": 0.92,
+          "margin": 0.20537778735160828,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.45208333333333334,
+            0.5444444444444444,
+            0.09791666666666667,
+            0.05185185185185185
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.5127044320106506,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.4854881763458252,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.34029483795166016,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.33061257004737854,
+              "scale": 0.925
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.4854881763458252,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.433,
+          "similarity": 0.5081564784049988,
+          "threshold": 0.92,
+          "margin": 0.04191380739212036,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081564784049988,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054155588150024,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46933063864707947,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421185255050659,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054155588150024,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.533,
+          "similarity": 0.5081549882888794,
+          "threshold": 0.92,
+          "margin": 0.04191067814826965,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081549882888794,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247975349426,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934303641319275,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44213956594467163,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247975349426,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.483,
+          "similarity": 0.5081501007080078,
+          "threshold": 0.92,
+          "margin": 0.04190957546234131,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081501007080078,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054264664649963,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934932470321655,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44212865829467773,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054264664649963,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.383,
+          "similarity": 0.5081424713134766,
+          "threshold": 0.92,
+          "margin": 0.041890949010849,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081424713134766,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247379302979,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421248733997345,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247379302979,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.3,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421248733997345,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.333,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44212523102760315,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "74_window_02",
+          "timestamp": 820.152667,
+          "similarity": 0.5073786973953247,
+          "threshold": 0.92,
+          "margin": -0.45698434114456177,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.44166666666666665,
+            0.562962962962963,
+            0.1125,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5073786973953247,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4515698254108429,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.43171846866607666,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.38476669788360596,
+              "scale": 1.075
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4515698254108429,
+            "scale": 0.95
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.533,
+          "similarity": 0.506011962890625,
+          "threshold": 0.92,
+          "margin": -0.40257591009140015,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.506011962890625,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4447336196899414,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36583393812179565,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33821889758110046,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4447336196899414,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.483,
+          "similarity": 0.5057899951934814,
+          "threshold": 0.92,
+          "margin": -0.3669021725654602,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5057899951934814,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4375803470611572,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3728858530521393,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3362385034561157,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4375803470611572,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_07",
+          "timestamp": 6973.383,
+          "similarity": 0.5050150156021118,
+          "threshold": 0.92,
+          "margin": -0.3449282646179199,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5050150156021118,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4323369562625885,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3755086362361908,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33290988206863403,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4323369562625885,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_03",
+          "timestamp": 4767.583,
+          "similarity": 0.5049132704734802,
+          "threshold": 0.92,
+          "margin": -0.4016820192337036,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5049132704734802,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44287586212158203,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3667413890361786,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.34295517206192017,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.44287586212158203,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_05",
+          "timestamp": 7376.533,
+          "similarity": 0.5048732757568359,
+          "threshold": 0.92,
+          "margin": -0.3842625617980957,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5048732757568359,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.43922311067581177,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3698273301124573,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33932793140411377,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.43922311067581177,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.633,
+          "similarity": 0.5045256614685059,
+          "threshold": 0.92,
+          "margin": -0.3605961203575134,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5045256614685059,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4350835680961609,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.37345731258392334,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3378545343875885,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4350835680961609,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.583,
+          "similarity": 0.504478931427002,
+          "threshold": 0.92,
+          "margin": -0.4032030701637268,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.504478931427002,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4440867006778717,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36571359634399414,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.342482328414917,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external74_defeat_stable.png",
+            "similarity": 0.4440867006778717,
+            "scale": 1.025
+          }
+        }
+      ],
+      "matching_seconds": 26.29806760000065
+    },
+    "86_to_74": {
+      "true_defeat": {
+        "count": 499,
+        "min": 0.17130467295646667,
+        "p10": 0.5935392856597901,
+        "median": 0.8736355304718018,
+        "p90": 0.9314669489860534,
+        "p95": 0.942071533203125,
+        "max": 0.9999693632125854
+      },
+      "true_victory": {
+        "count": 634,
+        "min": 0.1784316599369049,
+        "p10": 0.8616658508777618,
+        "median": 0.9379114806652069,
+        "p90": 0.9974748611450195,
+        "p95": 0.9979286789894104,
+        "max": 0.9995846152305603
+      },
+      "hard_negative_defeat": {
+        "count": 1012,
+        "min": 0.13904865086078644,
+        "p10": 0.2533028185367584,
+        "median": 0.4696008861064911,
+        "p90": 0.49103406965732577,
+        "p95": 0.49883050471544266,
+        "max": 0.5409016609191895
+      },
+      "true_defeat_margin": {
+        "count": 499,
+        "min": -0.0063581764698028564,
+        "p10": 0.14398202300071716,
+        "median": 0.3701786994934082,
+        "p90": 0.5204603552818298,
+        "p95": 0.5771293699741363,
+        "max": 0.6691368520259857
+      },
+      "best_template_counts": {
+        "templates/defeat/defeat_01.png": 54,
+        "templates/defeat/calibration_phase_1324.900.png": 17,
+        "templates/defeat/external86_defeat_late.png": 284,
+        "templates/defeat/calibration_phase_1324.933.png": 144
+      },
+      "phase_peaks": {
+        "74_window_08": {
+          "frames": 60,
+          "peak_timestamp": 6092.748667,
+          "peak_score": 0.9782602787017822,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8030080199241638,
+            "scale": 0.925
+          },
+          "class_margin": 0.6691368520259857,
+          "strong_observations_092": 14
+        },
+        "74_window_09": {
+          "frames": 60,
+          "peak_timestamp": 6119.182,
+          "peak_score": 0.6250942945480347,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.6106893420219421,
+            "scale": 1.0
+          },
+          "class_margin": 0.15504950284957886,
+          "strong_observations_092": 0
+        },
+        "74_window_10": {
+          "frames": 60,
+          "peak_timestamp": 7606.156667,
+          "peak_score": 0.9783180356025696,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.7901355624198914,
+            "scale": 0.925
+          },
+          "class_margin": 0.6638704538345337,
+          "strong_observations_092": 10
+        },
+        "86_game_02": {
+          "frames": 21,
+          "peak_timestamp": 1847.5,
+          "peak_score": 0.9565609693527222,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.8551941514015198,
+            "scale": 1.025
+          },
+          "class_margin": 0.45133358240127563,
+          "strong_observations_092": 9
+        },
+        "86_game_03": {
+          "frames": 40,
+          "peak_timestamp": 1982.933,
+          "peak_score": 0.9754029512405396,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8064683079719543,
+            "scale": 0.925
+          },
+          "class_margin": 0.6611581146717072,
+          "strong_observations_092": 13
+        },
+        "86_game_04": {
+          "frames": 23,
+          "peak_timestamp": 2129.033,
+          "peak_score": 0.934142529964447,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.8785126209259033,
+            "scale": 1.05
+          },
+          "class_margin": 0.45566532015800476,
+          "strong_observations_092": 6
+        },
+        "86_game_05": {
+          "frames": 10,
+          "peak_timestamp": 2300.666,
+          "peak_score": 0.9999693632125854,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.9269711375236511,
+            "scale": 0.95
+          },
+          "class_margin": 0.4867994785308838,
+          "strong_observations_092": 2
+        },
+        "86_game_06": {
+          "frames": 40,
+          "peak_timestamp": 2946.2,
+          "peak_score": 0.9492653012275696,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.8827173709869385,
+            "scale": 1.05
+          },
+          "class_margin": 0.45319104194641113,
+          "strong_observations_092": 11
+        },
+        "86_game_06_exit": {
+          "frames": 78,
+          "peak_timestamp": 2976.5,
+          "peak_score": 0.6278207302093506,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.6137757897377014,
+            "scale": 1.0
+          },
+          "class_margin": 0.16283145546913147,
+          "strong_observations_092": 0
+        },
+        "86_game_06_stable": {
+          "frames": 60,
+          "peak_timestamp": 2961.433,
+          "peak_score": 0.625632107257843,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.6092473268508911,
+            "scale": 1.0
+          },
+          "class_margin": 0.15679937601089478,
+          "strong_observations_092": 0
+        },
+        "86_game_09": {
+          "frames": 47,
+          "peak_timestamp": 5285.716,
+          "peak_score": 0.9753490090370178,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8179190158843994,
+            "scale": 0.925
+          },
+          "class_margin": 0.6603051126003265,
+          "strong_observations_092": 14
+        }
+      },
+      "threshold_table": [
+        {
+          "threshold": 0.8,
+          "true_defeat_frame_recall": 0.5450901803607214,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.85,
+          "true_defeat_frame_recall": 0.5350701402805611,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.9,
+          "true_defeat_frame_recall": 0.23246492985971945,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.92,
+          "true_defeat_frame_recall": 0.15831663326653306,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.95,
+          "true_defeat_frame_recall": 0.02404809619238477,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 5,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.625,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 5,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.98,
+          "true_defeat_frame_recall": 0.002004008016032064,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 0,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.0,
+          "local_loss_event_precision": null,
+          "supported_phase_windows": 0,
+          "phase_windows": 11
+        }
+      ],
+      "dangerous_hard_negatives": [
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.733,
+          "similarity": 0.5409016609191895,
+          "threshold": 0.92,
+          "margin": 0.11652368307113647,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5409016609191895,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5241689682006836,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5140806436538696,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4579841196537018,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5241689682006836,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.683,
+          "similarity": 0.5408301949501038,
+          "threshold": 0.92,
+          "margin": 0.11637097597122192,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408301949501038,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5241233110427856,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142942667007446,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45813801884651184,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5241233110427856,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.783,
+          "similarity": 0.540820300579071,
+          "threshold": 0.92,
+          "margin": 0.11658990383148193,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540820300579071,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5240429043769836,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141441226005554,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45800837874412537,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5240429043769836,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.633,
+          "similarity": 0.5408040881156921,
+          "threshold": 0.92,
+          "margin": 0.11640030145645142,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408040881156921,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.524110734462738,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142384171485901,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4581035077571869,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.524110734462738,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.583,
+          "similarity": 0.540686845779419,
+          "threshold": 0.92,
+          "margin": 0.11631438136100769,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540686845779419,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5239763259887695,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141023993492126,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45803284645080566,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5239763259887695,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_game_08",
+          "timestamp": 4727.5,
+          "similarity": 0.5127044320106506,
+          "threshold": 0.92,
+          "margin": 0.20537778735160828,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.5302083333333333,
+            0.6055555555555555,
+            0.053125,
+            0.024074074074074074
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.5127044320106506,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.4854881763458252,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.33061257004737854,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.31713640689849854,
+              "scale": 0.925
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.4854881763458252,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.433,
+          "similarity": 0.5081564784049988,
+          "threshold": 0.92,
+          "margin": 0.04191380739212036,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081564784049988,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054155588150024,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914214313030243,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46933063864707947,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054155588150024,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.533,
+          "similarity": 0.5081549882888794,
+          "threshold": 0.92,
+          "margin": 0.04191067814826965,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081549882888794,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247975349426,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914121627807617,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934303641319275,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247975349426,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.483,
+          "similarity": 0.5081501007080078,
+          "threshold": 0.92,
+          "margin": 0.04190957546234131,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081501007080078,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054264664649963,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914160966873169,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934932470321655,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054264664649963,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.383,
+          "similarity": 0.5081424713134766,
+          "threshold": 0.92,
+          "margin": 0.041890949010849,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081424713134766,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247379302979,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247379302979,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.3,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.333,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "74_window_02",
+          "timestamp": 820.152667,
+          "similarity": 0.5073786973953247,
+          "threshold": 0.92,
+          "margin": -0.45698434114456177,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.546875,
+            0.6370370370370371,
+            0.053125,
+            0.024074074074074074
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5073786973953247,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4523562788963318,
+              "scale": 1.0
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.43171846866607666,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.38476669788360596,
+              "scale": 1.075
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4523562788963318,
+            "scale": 1.0
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.533,
+          "similarity": 0.506011962890625,
+          "threshold": 0.92,
+          "margin": -0.40257591009140015,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.540625,
+            0.6481481481481481,
+            0.0625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.506011962890625,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4701579511165619,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36583393812179565,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33821889758110046,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4701579511165619,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.483,
+          "similarity": 0.5057899951934814,
+          "threshold": 0.92,
+          "margin": -0.3669021725654602,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.5375,
+            0.6481481481481481,
+            0.065625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5057899951934814,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46964114904403687,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3728858530521393,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3362385034561157,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46964114904403687,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_07",
+          "timestamp": 6973.383,
+          "similarity": 0.5050150156021118,
+          "threshold": 0.92,
+          "margin": -0.3449282646179199,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.5375,
+            0.6481481481481481,
+            0.065625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5050150156021118,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4688224792480469,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3755086362361908,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33290988206863403,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4688224792480469,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_03",
+          "timestamp": 4767.583,
+          "similarity": 0.5049132704734802,
+          "threshold": 0.92,
+          "margin": -0.4016820192337036,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.540625,
+            0.6481481481481481,
+            0.0625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5049132704734802,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46941158175468445,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3667413890361786,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.34295517206192017,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46941158175468445,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_05",
+          "timestamp": 7376.533,
+          "similarity": 0.5048732757568359,
+          "threshold": 0.92,
+          "margin": -0.3842625617980957,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.5375,
+            0.6481481481481481,
+            0.065625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5048732757568359,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46969136595726013,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3698273301124573,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33932793140411377,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46969136595726013,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.633,
+          "similarity": 0.5045256614685059,
+          "threshold": 0.92,
+          "margin": -0.3605961203575134,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.540625,
+            0.6481481481481481,
+            0.0625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5045256614685059,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4690580666065216,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.37345731258392334,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3378545343875885,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4690580666065216,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.583,
+          "similarity": 0.504478931427002,
+          "threshold": 0.92,
+          "margin": -0.4032030701637268,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.540625,
+            0.6481481481481481,
+            0.0625,
+            0.027777777777777776
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.504478931427002,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4694872200489044,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36571359634399414,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.342482328414917,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4694872200489044,
+            "scale": 1.1
+          }
+        }
+      ],
+      "matching_seconds": 41.668030500000896
+    },
+    "combined": {
+      "true_defeat": {
+        "count": 499,
+        "min": 0.17688420414924622,
+        "p10": 0.8488341212272644,
+        "median": 0.8960813283920288,
+        "p90": 0.9689755082130432,
+        "p95": 0.9807511091232299,
+        "max": 0.9999737739562988
+      },
+      "true_victory": {
+        "count": 634,
+        "min": 0.1784316599369049,
+        "p10": 0.8616658508777618,
+        "median": 0.9379114806652069,
+        "p90": 0.9974748611450195,
+        "p95": 0.9979286789894104,
+        "max": 0.9995846152305603
+      },
+      "hard_negative_defeat": {
+        "count": 1012,
+        "min": 0.13904865086078644,
+        "p10": 0.2538753747940064,
+        "median": 0.4696008861064911,
+        "p90": 0.49103406965732577,
+        "p95": 0.49883050471544266,
+        "max": 0.5409016609191895
+      },
+      "true_defeat_margin": {
+        "count": 499,
+        "min": 0.006295695900917053,
+        "p10": 0.37011895179748533,
+        "median": 0.43245697021484375,
+        "p90": 0.5328572154045105,
+        "p95": 0.5771293699741363,
+        "max": 0.6691368520259857
+      },
+      "best_template_counts": {
+        "templates/defeat/defeat_01.png": 52,
+        "templates/defeat/calibration_phase_1324.900.png": 17,
+        "templates/defeat/external86_defeat_late.png": 189,
+        "templates/defeat/calibration_phase_1324.933.png": 32,
+        "templates/defeat/external74_defeat_stable.png": 209
+      },
+      "phase_peaks": {
+        "74_window_08": {
+          "frames": 60,
+          "peak_timestamp": 6092.748667,
+          "peak_score": 0.9782602787017822,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8030080199241638,
+            "scale": 0.925
+          },
+          "class_margin": 0.6691368520259857,
+          "strong_observations_092": 14
+        },
+        "74_window_09": {
+          "frames": 60,
+          "peak_timestamp": 6119.015333,
+          "peak_score": 0.9999737739562988,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.6128745675086975,
+            "scale": 1.05
+          },
+          "class_margin": 0.5330191254615784,
+          "strong_observations_092": 30
+        },
+        "74_window_10": {
+          "frames": 60,
+          "peak_timestamp": 7606.156667,
+          "peak_score": 0.9783180356025696,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.7901355624198914,
+            "scale": 0.925
+          },
+          "class_margin": 0.6638704538345337,
+          "strong_observations_092": 10
+        },
+        "86_game_02": {
+          "frames": 21,
+          "peak_timestamp": 1847.5,
+          "peak_score": 0.9565609693527222,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.8551941514015198,
+            "scale": 1.025
+          },
+          "class_margin": 0.45133358240127563,
+          "strong_observations_092": 9
+        },
+        "86_game_03": {
+          "frames": 40,
+          "peak_timestamp": 1982.933,
+          "peak_score": 0.9754029512405396,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8064683079719543,
+            "scale": 0.925
+          },
+          "class_margin": 0.6611581146717072,
+          "strong_observations_092": 13
+        },
+        "86_game_04": {
+          "frames": 23,
+          "peak_timestamp": 2129.033,
+          "peak_score": 0.934142529964447,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.8785126209259033,
+            "scale": 1.05
+          },
+          "class_margin": 0.45566532015800476,
+          "strong_observations_092": 6
+        },
+        "86_game_05": {
+          "frames": 10,
+          "peak_timestamp": 2300.666,
+          "peak_score": 0.9999693632125854,
+          "best_template": "templates/defeat/external86_defeat_late.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.9269711375236511,
+            "scale": 0.95
+          },
+          "class_margin": 0.4867994785308838,
+          "strong_observations_092": 2
+        },
+        "86_game_06": {
+          "frames": 40,
+          "peak_timestamp": 2946.2,
+          "peak_score": 0.9492653012275696,
+          "best_template": "templates/defeat/calibration_phase_1324.933.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.8827173709869385,
+            "scale": 1.05
+          },
+          "class_margin": 0.45319104194641113,
+          "strong_observations_092": 11
+        },
+        "86_game_06_exit": {
+          "frames": 78,
+          "peak_timestamp": 2976.4,
+          "peak_score": 0.9777017831802368,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.6133827567100525,
+            "scale": 1.05
+          },
+          "class_margin": 0.5128881931304932,
+          "strong_observations_092": 44
+        },
+        "86_game_06_stable": {
+          "frames": 60,
+          "peak_timestamp": 2961.583,
+          "peak_score": 0.9978609681129456,
+          "best_template": "templates/defeat/external74_defeat_stable.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.6130347847938538,
+            "scale": 1.05
+          },
+          "class_margin": 0.5303030610084534,
+          "strong_observations_092": 33
+        },
+        "86_game_09": {
+          "frames": 47,
+          "peak_timestamp": 5285.716,
+          "peak_score": 0.9753490090370178,
+          "best_template": "templates/defeat/defeat_01.png",
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.8179190158843994,
+            "scale": 0.925
+          },
+          "class_margin": 0.6603051126003265,
+          "strong_observations_092": 14
+        }
+      },
+      "threshold_table": [
+        {
+          "threshold": 0.8,
+          "true_defeat_frame_recall": 0.9478957915831663,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.85,
+          "true_defeat_frame_recall": 0.8977955911823647,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.9,
+          "true_defeat_frame_recall": 0.47695390781563124,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.92,
+          "true_defeat_frame_recall": 0.3727454909819639,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 8,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 1.0,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 11,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.95,
+          "true_defeat_frame_recall": 0.1683366733466934,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 6,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.75,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 8,
+          "phase_windows": 11
+        },
+        {
+          "threshold": 0.98,
+          "true_defeat_frame_recall": 0.056112224448897796,
+          "true_defeat_frame_precision": 1.0,
+          "false_positive_frames": 0,
+          "false_loss_equivalent_clusters": 0,
+          "supported_loss_games": 2,
+          "annotated_loss_games": 8,
+          "local_loss_event_recall": 0.25,
+          "local_loss_event_precision": 1.0,
+          "supported_phase_windows": 2,
+          "phase_windows": 11
+        }
+      ],
+      "dangerous_hard_negatives": [
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.733,
+          "similarity": 0.5409016609191895,
+          "threshold": 0.92,
+          "margin": 0.11652368307113647,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5409016609191895,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5241689682006836,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5140806436538696,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4579841196537018,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44867464900016785,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5241689682006836,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.683,
+          "similarity": 0.5408301949501038,
+          "threshold": 0.92,
+          "margin": 0.11637097597122192,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408301949501038,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5241233110427856,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142942667007446,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45813801884651184,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4485066831111908,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5241233110427856,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.783,
+          "similarity": 0.540820300579071,
+          "threshold": 0.92,
+          "margin": 0.11658990383148193,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540820300579071,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5240429043769836,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141441226005554,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45800837874412537,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44853100180625916,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5240429043769836,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.633,
+          "similarity": 0.5408040881156921,
+          "threshold": 0.92,
+          "margin": 0.11640030145645142,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5408040881156921,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.524110734462738,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5142384171485901,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.4581035077571869,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4484961926937103,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.524110734462738,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.583,
+          "similarity": 0.540686845779419,
+          "threshold": 0.92,
+          "margin": 0.11631438136100769,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.3802083333333333,
+            0.5277777777777778,
+            0.115625,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.540686845779419,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.5239763259887695,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5141023993492126,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.45803284645080566,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44836875796318054,
+              "scale": 0.975
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.5239763259887695,
+            "scale": 1.025
+          }
+        },
+        {
+          "group": "86_game_08",
+          "timestamp": 4727.5,
+          "similarity": 0.5127044320106506,
+          "threshold": 0.92,
+          "margin": 0.20537778735160828,
+          "template_id": "templates/defeat/defeat_01.png",
+          "scale": 0.975,
+          "matched_rect_normalized": [
+            0.45208333333333334,
+            0.5444444444444444,
+            0.09791666666666667,
+            0.05185185185185185
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.5127044320106506,
+              "scale": 0.975
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.4854881763458252,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.34029483795166016,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.33061257004737854,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.31713640689849854,
+              "scale": 0.925
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.900.png",
+            "similarity": 0.4854881763458252,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.433,
+          "similarity": 0.5081564784049988,
+          "threshold": 0.92,
+          "margin": 0.04191380739212036,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081564784049988,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054155588150024,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914214313030243,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46933063864707947,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421185255050659,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054155588150024,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.533,
+          "similarity": 0.5081549882888794,
+          "threshold": 0.92,
+          "margin": 0.04191067814826965,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081549882888794,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247975349426,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914121627807617,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934303641319275,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44213956594467163,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247975349426,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.483,
+          "similarity": 0.5081501007080078,
+          "threshold": 0.92,
+          "margin": 0.04190957546234131,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081501007080078,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054264664649963,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4914160966873169,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46934932470321655,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44212865829467773,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054264664649963,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.383,
+          "similarity": 0.5081424713134766,
+          "threshold": 0.92,
+          "margin": 0.041890949010849,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081424713134766,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054247379302979,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421248733997345,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054247379302979,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.3,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4421248733997345,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "86_hard_01",
+          "timestamp": 506.333,
+          "similarity": 0.5081421136856079,
+          "threshold": 0.92,
+          "margin": 0.04189059138298035,
+          "template_id": "templates/defeat/calibration_phase_1324.900.png",
+          "scale": 1.05,
+          "matched_rect_normalized": [
+            0.5166666666666667,
+            0.5259259259259259,
+            0.11041666666666666,
+            0.05925925925925926
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.5081421136856079,
+              "scale": 1.05
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5054272413253784,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.49142715334892273,
+              "scale": 0.925
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.46932727098464966,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44212523102760315,
+              "scale": 0.9
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/calibration_phase_1324.933.png",
+            "similarity": 0.5054272413253784,
+            "scale": 0.925
+          }
+        },
+        {
+          "group": "74_window_02",
+          "timestamp": 820.152667,
+          "similarity": 0.5073786973953247,
+          "threshold": 0.92,
+          "margin": -0.45698434114456177,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 0.95,
+          "matched_rect_normalized": [
+            0.44166666666666665,
+            0.562962962962963,
+            0.1125,
+            0.05
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5073786973953247,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4523562788963318,
+              "scale": 1.0
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4515698254108429,
+              "scale": 0.95
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.43171846866607666,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.38476669788360596,
+              "scale": 1.075
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4523562788963318,
+            "scale": 1.0
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.533,
+          "similarity": 0.506011962890625,
+          "threshold": 0.92,
+          "margin": -0.40257591009140015,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.506011962890625,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4701579511165619,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4447336196899414,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36583393812179565,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33821889758110046,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4701579511165619,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_02",
+          "timestamp": 7898.483,
+          "similarity": 0.5057899951934814,
+          "threshold": 0.92,
+          "margin": -0.3669021725654602,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5057899951934814,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46964114904403687,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4375803470611572,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3728858530521393,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3362385034561157,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46964114904403687,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_07",
+          "timestamp": 6973.383,
+          "similarity": 0.5050150156021118,
+          "threshold": 0.92,
+          "margin": -0.3449282646179199,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5050150156021118,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4688224792480469,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4323369562625885,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3755086362361908,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33290988206863403,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4688224792480469,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_03",
+          "timestamp": 4767.583,
+          "similarity": 0.5049132704734802,
+          "threshold": 0.92,
+          "margin": -0.4016820192337036,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5049132704734802,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46941158175468445,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.44287586212158203,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3667413890361786,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.34295517206192017,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46941158175468445,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_05",
+          "timestamp": 7376.533,
+          "similarity": 0.5048732757568359,
+          "threshold": 0.92,
+          "margin": -0.3842625617980957,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5048732757568359,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.46969136595726013,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.43922311067581177,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.3698273301124573,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.33932793140411377,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.46969136595726013,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.633,
+          "similarity": 0.5045256614685059,
+          "threshold": 0.92,
+          "margin": -0.3605961203575134,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.5045256614685059,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4690580666065216,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4350835680961609,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.37345731258392334,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.3378545343875885,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4690580666065216,
+            "scale": 1.1
+          }
+        },
+        {
+          "group": "86_hard_04",
+          "timestamp": 4747.583,
+          "similarity": 0.504478931427002,
+          "threshold": 0.92,
+          "margin": -0.4032030701637268,
+          "template_id": "templates/defeat/calibration_phase_1324.933.png",
+          "scale": 1.025,
+          "matched_rect_normalized": [
+            0.43854166666666666,
+            0.5685185185185185,
+            0.121875,
+            0.053703703703703705
+          ],
+          "passes_threshold": false,
+          "template_scores": [
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.933.png",
+              "similarity": 0.504478931427002,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/external86_defeat_late.png",
+              "similarity": 0.4694872200489044,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/external74_defeat_stable.png",
+              "similarity": 0.4440867006778717,
+              "scale": 1.025
+            },
+            {
+              "template_id": "templates/defeat/calibration_phase_1324.900.png",
+              "similarity": 0.36571359634399414,
+              "scale": 1.1
+            },
+            {
+              "template_id": "templates/defeat/defeat_01.png",
+              "similarity": 0.342482328414917,
+              "scale": 1.025
+            }
+          ],
+          "second_best_template": {
+            "template_id": "templates/defeat/external86_defeat_late.png",
+            "similarity": 0.4694872200489044,
+            "scale": 1.1
+          }
+        }
+      ],
+      "matching_seconds": 26.29806760000065
+    }
+  },
+  "candidate_evaluation": [
+    {
+      "candidate": "external86_defeat_early.png",
+      "accepted": false,
+      "cross_source_gain": {
+        "74": {
+          "gain_true_frames_at_092_vs_74_pack": 0
+        },
+        "86": {
+          "gain_true_frames_at_092_vs_74_pack": 1
+        }
+      },
+      "hard_negative_max": 0.6315203309059143,
+      "reason": "No new >=.92 coverage on independent 74; capture-VOD-only fit. Early also raises negative tail."
+    },
+    {
+      "candidate": "external86_defeat_mid.png",
+      "accepted": false,
+      "cross_source_gain": {
+        "74": {
+          "gain_true_frames_at_092_vs_74_pack": 0
+        },
+        "86": {
+          "gain_true_frames_at_092_vs_74_pack": 1
+        }
+      },
+      "hard_negative_max": 0.5088738799095154,
+      "reason": "No new >=.92 coverage on independent 74; capture-VOD-only fit. Early also raises negative tail."
+    },
+    {
+      "candidate": "external86_defeat_late.png",
+      "accepted": true,
+      "cross_source_gain": {
+        "74": {
+          "gain_true_frames_at_092_vs_74_pack": 13
+        },
+        "86": {
+          "gain_true_frames_at_092_vs_74_pack": 31
+        }
+      },
+      "hard_negative_max": 0.5241689682006836,
+      "reason": "Independent phase coverage gain on 74, plus 86; no negative >=.92"
+    }
+  ],
+  "single_frame_decision": {
+    "enabled": false,
+    "reason": "Frozen pack supplies at least two supported native observations for all 8 independent calibration LOSS games; no remaining genuine one-strong-observation target. Only 8 LOSS games from two similarly laid-out VODs and sparse mined negatives do not justify enabling a new exception or estimating rare-event FP safety.",
+    "high_confidence_threshold": null
+  }
+}

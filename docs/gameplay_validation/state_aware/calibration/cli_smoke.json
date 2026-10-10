@@ -1,0 +1,15 @@
+{
+  "checked_at_utc": "2026-10-08T23:52:34.187Z",
+  "commands": [
+    {
+      "command": "python -m analysis.gameplay.hearthstone.debug_analyze --help",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m analysis.gameplay.hearthstone.result_experiment --help",
+      "exit_code": 0
+    }
+  ],
+  "broken_documentation_links": [],
+  "note": "No display or QApplication was initialized by these CLI help commands."
+}

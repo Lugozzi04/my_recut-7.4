@@ -1,0 +1,54 @@
+{
+  "format": "recut_blind_run_integrity",
+  "version": 1,
+  "checked_utc": "2026-10-08T17:57:57.351Z",
+  "started_utc": "2026-10-08T17:16:33.561Z",
+  "exit_code": 0,
+  "run_count": 1,
+  "freeze_manifest_modified_utc": "2026-10-08T17:16:06.686Z",
+  "pack_fingerprint_expected": "4a481ff015e8e0bbe500fc098b1abee0d975f9af733c90b4adfcf6beb08e99fc",
+  "pack_fingerprint_actual": "4a481ff015e8e0bbe500fc098b1abee0d975f9af733c90b4adfcf6beb08e99fc",
+  "frozen_files_checked": 31,
+  "changed_files": [],
+  "settings_differences": [],
+  "cache_hit": false,
+  "source_fingerprint_matches_baseline": true,
+  "post_blind_visual_review": {
+    "timestamp": 6065.383,
+    "file": "anchor_6065_383.jpg",
+    "purpose": "Confirm extra DEFEAT anchor is a repeated phase of the same real LOSS; no detector or template matching rerun, no calibration or config changes"
+  },
+  "artifacts": {
+    "gameplay_analysis.json": "bd69d386ddba166f9a7ea4943e816447c7d381c95848dc05dc904df006ff473a",
+    "gameplay_evaluation.json": "09d8789d1f50b1460184a4fee3293a321d55076e4783f9e950b7144cc572dd02",
+    "validation_run.log": "253cb1ac03841ec5550388b7c68c6fa307e034c538516baced6adaea6d14ab87",
+    "anchor_6065_383.jpg": "bdbb18fa5156fa3cc24d22c7cd64a2991b3c183af07838ffa74fedbb8760cc39"
+  },
+  "manifest_summary_settings_differences": [
+    "single_frame_results"
+  ],
+  "manifest_summary_note": "The summary settings recorded the default disabled policy with an empty descriptive calibration_id. The explicitly invoked policy file, already hashed in that same freeze manifest, names iteration4-74-86 and disables both rules. This is an identifier difference, not a rule/threshold change.",
+  "effective_settings_expected": {
+    "coarse_fps": 1,
+    "fine_fps": 6,
+    "fine_padding_s": 2,
+    "result_fps": 20,
+    "minimum_result_observations": 2,
+    "minimum_result_stability_s": 0.008333333333333333,
+    "result_refine_fps": 120,
+    "result_refine_padding_s": 0.15,
+    "candidate_similarity": 0.8,
+    "maximum_game_duration_s": 1800,
+    "max_width": 960,
+    "event_gap_s": 0.5,
+    "minimum_observations": 3,
+    "minimum_stability_s": 0.25,
+    "max_observations": 100000,
+    "single_frame_results": {
+      "victory": null,
+      "defeat": null,
+      "pack_fingerprint": "",
+      "calibration_id": "iteration4-74-86"
+    }
+  }
+}

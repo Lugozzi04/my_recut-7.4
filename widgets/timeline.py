@@ -1,18 +1,59 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Any
-import traceback
-import numpy as np
+"""Editor timeline.
 
-from PySide6.QtCore import Qt, Signal, QPointF
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFontMetrics, QPolygonF
-from PySide6.QtWidgets import QWidget
+Lanes (top → bottom): ruler · CUTS · VIDEO · AUDIO, with a header column on the left. Gameplay
+editing is shown on these lanes: kept WIN islands are large green overlays, everything outside them
+is dimmed (no separate lane).
+
+Rendering: everything except playhead, hover line and marquee is drawn into a cached pixmap that is
+only rebuilt when data/view/selection/size change; a playhead move repaints two thin strips. This
+keeps the GUI thread free for video frames regardless of zoom (see docs/GUI_REDESIGN.md §17). Cuts are coloured by provenance (automatic / manual / gameplay)
+and restored ranges are shown hatched, so the timeline explains *why* something is removed.
+
+Data model is unchanged: MainWindow passes `tracks` (dicts) with `clips`; audio clips carry
+segment-local `cuts` plus optional provenance lists (`manual_cuts`, `gameplay_cuts`,
+`restored_cuts`, `gameplay_keeps`). Every mapping between time and x goes through
+`_t_to_x/_x_to_t` (which account for the header column).
+"""
+from __future__ import annotations
+
+import traceback
+from dataclasses import dataclass, field
+from typing import Any, List, Optional
+
+import numpy as np
+from PySide6.QtCore import QLineF, QPointF, QRect, QRectF, Qt, Signal
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QPixmap,
+    QFont,
+    QFontMetrics,
+    QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPen,
+)
+from PySide6.QtWidgets import QToolTip, QWidget
 
 from analysis.cut_engine import Segment
 from utils.timefmt import fmt_hms
 
+HEADER_W = 92
+RULER_H = 28
+LANE_THIN_H = 20
+LANE_GAP = 4
+TOP_PAD = 6
+BOTTOM_PAD = 8
+RIGHT_PAD = 10
+EDGE_GRAB_PX = 5
+DRAG_THRESHOLD_PX = 4
+MIN_CUT_S = 0.05
+
+_LABEL_STEPS = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200]
+
 
 def _choose_major_step(duration_s: float) -> int:
-    # step (sec) per avere ~8-12 ticks maggiori
+    """Kept for backwards compatibility (old tick logic)."""
     candidates = [5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600]
     target = max(1.0, duration_s / 10.0)
     return min(candidates, key=lambda c: abs(c - target))
@@ -22,6 +63,40 @@ def _track_attr(track: Any, name: str, default=None):
     if isinstance(track, dict):
         return track.get(name, default)
     return getattr(track, name, default)
+
+
+def _overlap(a0: float, a1: float, b0: float, b1: float) -> float:
+    return max(0.0, min(a1, b1) - max(a0, b0))
+
+
+def classify_cuts(cuts: List[Segment], manual: Optional[List[Segment]] = None,
+                  gameplay: Optional[List[Segment]] = None) -> List[str]:
+    """Label each effective cut by provenance: 'manual', 'gameplay' or 'auto'.
+
+    A cut is attributed to the source covering most of it (manual wins ties because the user's
+    explicit edit is the most specific reason). Pure function, no cut logic is changed.
+    """
+    manual = list(manual or [])
+    gameplay = list(gameplay or [])
+    out: List[str] = []
+    for c in cuts or []:
+        try:
+            a, b = float(c.start), float(c.end)
+        except Exception:
+            out.append("auto")
+            continue
+        dur = max(1e-9, b - a)
+        m = sum(_overlap(a, b, float(s.start), float(s.end)) for s in manual)
+        g = sum(_overlap(a, b, float(s.start), float(s.end)) for s in gameplay)
+        if m >= 0.5 * dur and m >= g:
+            out.append("manual")
+        elif g >= 0.5 * dur:
+            out.append("gameplay")
+        elif m > 0 and m >= g:
+            out.append("manual")
+        else:
+            out.append("auto")
+    return out
 
 
 @dataclass
@@ -42,6 +117,56 @@ class _TrackCache:
     cached_view: tuple[float, float, int] = (-1.0, -1.0, -1)
 
 
+@dataclass
+class _Lane:
+    kind: str          # "cuts" | "video" | "audio" | "gameplay"
+    track_idx: int     # timeline track the lane belongs to
+    top: float
+    h: float
+
+    @property
+    def bottom(self) -> float:
+        return self.top + self.h
+
+
+class _Colors:
+    """Resolved colours for painting (from ui.design_tokens.Palette or defaults)."""
+
+    def __init__(self, pal: Any = None):
+        def g(name: str, default: str) -> QColor:
+            return QColor(getattr(pal, name, default) if pal is not None else default)
+
+        self.panel = g("panel", "#14171C")
+        self.app = g("app", "#0D0F12")
+        self.raised = g("raised", "#1C2027")
+        self.hover = g("hover", "#252A33")
+        self.border = g("border", "#22262E")
+        self.border_strong = g("border_strong", "#323843")
+        self.text = g("text", "#E9EDF3")
+        self.text_2 = g("text_2", "#A3ACB9")
+        self.text_3 = g("text_3", "#6A7383")
+        self.accent = g("accent", "#4D8DFF")
+        self.auto = g("cut_auto", "#F2555A")
+        self.manual = g("cut_manual", "#F5A524")
+        self.gameplay = g("cut_gameplay", "#A579F7")
+        self.restored = g("restored", "#3DD68C")
+        self.keep_island = g("keep_island", "#2FBF7F")
+        self.wave = g("wave", "#5AA2FF")
+        self.wave_removed = g("wave_removed", "#3A414D")
+        self.playhead = g("playhead", "#FF4F55")
+        self.clip_video = g("clip_video", "#2E5F8F")
+        self.pending = QColor("#FFC94D")
+
+    def cut(self, kind: str) -> QColor:
+        return {"manual": self.manual, "gameplay": self.gameplay}.get(kind, self.auto)
+
+
+def _alpha(c: QColor, a: int) -> QColor:
+    out = QColor(c)
+    out.setAlpha(max(0, min(255, int(a))))
+    return out
+
+
 class TimelineWidget(QWidget):
     seekRequested = Signal(float)
     trackSelected = Signal(int)
@@ -50,12 +175,20 @@ class TimelineWidget(QWidget):
     clipActivated = Signal(int)  # track_state_idx (for single audio row)
     clipSplitRequested = Signal(str, float)  # clip_id, timeline_time
 
-    # emitted when user clicks a single cut
+    # emitted when user clicks a single cut (selection; MainWindow decides what to show)
     cutClicked = Signal(int, object)   # index, globalPos
-
-    # emitted after rectangle selection
+    # emitted after marquee selection
     cutsSelected = Signal(list, object)  # indices, globalPos
-    contextMenuRequested = Signal(float, object, object)  # timeSec, globalPos, cutIndexOrNone
+    # selection changed for the active clip (indices into its cuts)
+    selectionChanged = Signal(list)
+    # drag of a cut edge finished: index, new start, new end (segment-local seconds)
+    cutResizeRequested = Signal(int, float, float)
+    contextMenuRequested = Signal(float, object, object)  # timeSec, globalPos, meta
+    # zoom / pan changed (zoom index)
+    viewChanged = Signal(int)
+    # gameplay WIN islands: selection ((track_state_idx, island_index) or None) and boundary edit
+    islandSelected = Signal(object)
+    islandResizeRequested = Signal(int, int, float, float)  # track_state_idx, island, start, end (local)
 
     # scrubbing lifecycle (for MainWindow sync)
     scrubStarted = Signal()
@@ -64,10 +197,12 @@ class TimelineWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setMinimumHeight(160)
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.ClickFocus)
         self.duration: float = 0.0  # global max duration across tracks
         self.playhead: float = 0.0
 
-        self.tracks: List[TimelineTrack] = []
+        self.tracks: List[Any] = []
         self.active_track: int = 0
         self._track_cache: List[_TrackCache] = []
 
@@ -75,8 +210,6 @@ class TimelineWidget(QWidget):
         self.view_start: float = 0.0
         self.view_span: float = 0.0  # 0 = auto (usa durata)
         self.follow_playhead: bool = True
-
-        # zoom levels (1x = full duration)
         self._zoom_levels = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
         self._zoom_index = 0
 
@@ -84,12 +217,13 @@ class TimelineWidget(QWidget):
         self._cached_env: Optional[np.ndarray] = None
         self._cached_view: tuple[float, float] = (-1.0, -1.0)
 
-        # selection state for cuts (per-track)
+        # selection state for cuts (per timeline track)
         self._selected_by_track: dict[int, set[int]] = {}
         self._sel_start_x: Optional[float] = None
         self._sel_current_x: Optional[float] = None
         self._sel_track_idx: Optional[int] = None
         self._sel_clip: Optional[dict] = None
+        self._sel_base: set[int] = set()
 
         # pending cut markers (per-track, from MainWindow)
         self._pending_by_track: dict[int, tuple[Optional[float], Optional[float]]] = {}
@@ -97,6 +231,14 @@ class TimelineWidget(QWidget):
         # scrubbing state (drag playhead / ruler)
         self._scrubbing: bool = False
         self._scrub_offset_px: float = 0.0
+
+        # deferred click on empty lane space (seek on release, marquee on drag)
+        self._press_pos: Optional[QPointF] = None
+        self._press_t: float = 0.0
+        self._press_shift: bool = False
+
+        # cut edge resize
+        self._resize: Optional[dict] = None
 
         # clip drag state
         self._drag_clip: Optional[dict] = None
@@ -109,24 +251,57 @@ class TimelineWidget(QWidget):
         self._drag_started: bool = False
         self._drag_press_x: float = 0.0
 
-        # snapping
+        # hover
+        self._hover_x: Optional[float] = None
+        self._hover_cut: Optional[int] = None
+        self._hover_edge: Optional[str] = None
+
         self._snap_enabled: bool = False
         self._tool_mode: str = "select"
+        self._colors = _Colors()
+        # voice-threshold preview (fraction of the clip's peak RMS) or None
+        self._threshold_guide: Optional[float] = None
+        # gameplay islands
+        self._selected_island: Optional[tuple[int, int]] = None
+        self._island_drag: Optional[dict] = None
+        # static layer cache
+        self._static_rev = 0
+        self._static_cache: Optional[QPixmap] = None
+        self._static_cache_key: tuple = ()
+        self.static_renders = 0  # diagnostics: how often the static layer was rebuilt
+
+    # -----------------------------
+    # Appearance / modes
+    # -----------------------------
+    def setPalette_tokens(self, pal: Any) -> None:
+        self._colors = _Colors(pal)
+        self._changed()
 
     def setToolMode(self, mode: str) -> None:
         m = str(mode).lower().strip()
         if m not in {"select", "split", "cut"}:
             m = "select"
-        mode = m
-        self._tool_mode = mode
-        if mode in {"split", "cut"}:
+        self._tool_mode = m
+        if m in {"split", "cut"}:
             self.setCursor(Qt.CrossCursor)
         else:
             self.unsetCursor()
+        self._changed()
+
+    def setThresholdGuide(self, level: Optional[float]) -> None:
+        """Show the voice threshold as a dashed level on the AUDIO lane (None hides it).
+
+        `level` is the detection amplitude relative to the clip's peak RMS, the same reference the
+        waveform is normalised to, so the line sits exactly where quiet audio becomes "silence".
+        """
+        value = None if level is None else max(0.0, min(1.0, float(level)))
+        if value != self._threshold_guide:
+            self._threshold_guide = value
+            self._changed()
 
     def setSnapEnabled(self, enabled: bool) -> None:
         self._snap_enabled = bool(enabled)
-        self.update()
+        self._changed()
 
     # -----------------------------
     # Data / view
@@ -139,9 +314,23 @@ class TimelineWidget(QWidget):
             return self.tracks[idx]
         return None
 
-    def _track_cuts(self, idx: int) -> List[Segment]:
+    def _track_kind(self, idx: int) -> str:
         t = self._track(idx)
-        return _track_attr(t, "cuts", []) if t is not None else []
+        return str(_track_attr(t, "kind", "audio") or "audio") if t is not None else ""
+
+    def _audio_track_index(self) -> Optional[int]:
+        for i, t in enumerate(self.tracks):
+            if str(_track_attr(t, "kind", "audio") or "audio") == "audio":
+                return i
+        return None
+
+    def _track_cuts(self, idx: int) -> List[Segment]:
+        """Cuts of the active clip on that track (selection indices refer to this list)."""
+        clip = self._active_clip(idx)
+        if clip is not None:
+            return list(clip.get("cuts") or [])
+        t = self._track(idx)
+        return list(_track_attr(t, "cuts", []) or []) if t is not None else []
 
     def _track_active_state(self, track: Any) -> Optional[int]:
         v = _track_attr(track, "active_state_idx", None)
@@ -167,60 +356,62 @@ class TimelineWidget(QWidget):
         except Exception:
             return True
 
+    def _active_clip(self, track_idx: int) -> Optional[dict]:
+        t = self._track(track_idx)
+        if t is None:
+            return None
+        for c in _track_attr(t, "clips", []) or []:
+            if self._clip_matches_active(t, c):
+                return c
+        return None
+
     def _cut_index_at_x(self, track_idx: int, x: float) -> Optional[int]:
-        """Return index of cut under x (in widget coords), if any."""
+        """Return index of cut under x (in widget coords) in the clip under x, if any."""
         if self.duration <= 0:
             return None
-        t = self._x_to_t(x)
-        cuts = self._track_cuts(track_idx)
-        if not cuts:
-            return None
+        hit = self._cut_hit(track_idx, x)
+        return hit[0] if hit else None
 
-        # If clips exist, map timeline time to source time
-        track = self._track(track_idx)
-        clips = _track_attr(track, "clips", []) if track is not None else []
-        clip_cuts = cuts
-        if clips:
-            hit = None
-            for c in clips:
-                try:
-                    cs = float(c.get("start", 0.0))
-                    ce = float(c.get("end", 0.0))
-                except Exception:
-                    continue
-                if cs <= t <= ce:
-                    if not self._clip_matches_active(track, c):
-                        return None
-                    hit = c
-                    break
-            if hit is None:
-                return None
-            clip_start = float(hit.get("start", 0.0) or 0.0)
-            s_in = float(hit.get("source_in", 0.0) or 0.0)
-            local_t = float(t) - clip_start
-            source_t = s_in + local_t
+    def _cut_hit(self, track_idx: Optional[int], x: float, *, pad_px: float = 0.0,
+                 require_active: bool = True) -> Optional[tuple[int, dict, Segment]]:
+        if track_idx is None:
+            return None
+        t = self._track(track_idx)
+        if t is None:
+            return None
+        clip = self._clip_at_x(track_idx, x)
+        if clip is None:
+            cuts = _track_attr(t, "cuts", []) or []
+            time = self._x_to_t(x)
+            pad = self._px_to_s(pad_px)
+            for i, c in enumerate(cuts):
+                if float(c.start) - pad <= time <= float(c.end) + pad:
+                    return i, {}, c
+            return None
+        if require_active and not self._clip_matches_active(t, clip):
+            return None
+        c_start = float(clip.get("start", 0.0))
+        local = self._x_to_t(x) - c_start
+        pad = self._px_to_s(pad_px)
+        kinds = self._clip_cut_kinds(clip)
+        for i, c in enumerate(clip.get("cuts") or []):
+            if i < len(kinds) and kinds[i] == "gameplay":
+                continue
             try:
-                clip_cuts = hit.get("cuts") or cuts
+                if float(c.start) - pad <= local <= float(c.end) + pad:
+                    return i, clip, c
             except Exception:
-                clip_cuts = cuts
-            # clip cuts are normally segment-local; keep a source-time fallback
-            for i, c in enumerate(clip_cuts):
-                try:
-                    if float(c.start) <= float(local_t) <= float(c.end):
-                        return i
-                except Exception:
-                    continue
-            for i, c in enumerate(clip_cuts):
-                try:
-                    if float(c.start) <= float(source_t) <= float(c.end):
-                        return i
-                except Exception:
-                    continue
-            return None
+                continue
+        return None
 
-        for i, c in enumerate(clip_cuts):
-            if c.start <= t <= c.end:
-                return i
+    def _restored_hit(self, track_idx: int, x: float) -> Optional[tuple[dict, Segment]]:
+        clip = self._clip_at_x(track_idx, x)
+        if clip is None:
+            return None
+        local = self._x_to_t(x) - float(clip.get("start", 0.0))
+        for r in clip.get("restored_cuts") or []:
+            if float(r.start) <= local <= float(r.end):
+                return clip, r
         return None
 
     def _invalidate_all_caches(self) -> None:
@@ -239,20 +430,22 @@ class TimelineWidget(QWidget):
             self.active_track = max(0, min(self.active_track, len(self.tracks) - 1))
         else:
             self.active_track = 0
-
-        # refresh caches
         self._track_cache = [_TrackCache() for _ in self.tracks]
 
-        # prune selections/pending beyond range
         max_idx = len(self.tracks) - 1
-        self._selected_by_track = {
-            i: s for i, s in self._selected_by_track.items() if i <= max_idx
-        }
-        self._pending_by_track = {
-            i: v for i, v in self._pending_by_track.items() if i <= max_idx
-        }
+        self._pending_by_track = {i: v for i, v in self._pending_by_track.items() if i <= max_idx}
+        pruned: dict[int, set[int]] = {}
+        for i, sel in self._selected_by_track.items():
+            if i > max_idx:
+                continue
+            n = len(self._track_cuts(i))
+            keep = {j for j in sel if 0 <= j < n}
+            if keep:
+                pruned[i] = keep
+        if pruned != self._selected_by_track:
+            self._selected_by_track = pruned
+            self.selectionChanged.emit(self.selectedCutIndices())
 
-        # recompute global duration
         if self.tracks:
             track_max = max(0.0, max(float(_track_attr(t, "duration", 0.0)) for t in self.tracks))
         else:
@@ -267,40 +460,33 @@ class TimelineWidget(QWidget):
             self.view_start = 0.0
             self.view_span = float(self.duration) if self.duration > 0 else 0.0
             self._zoom_index = 0
+            self.viewChanged.emit(self._zoom_index)
 
-        # Keep rows readable without forcing an oversized timeline area.
-        base_row_h = 48
-        min_h = 22 + 18 + base_row_h * max(1, len(self.tracks))
-        self.setMinimumHeight(max(150, min_h))
+        thin = LANE_THIN_H
+        min_h = RULER_H + TOP_PAD + thin + 56 * max(1, len(self.tracks)) + BOTTOM_PAD
+        self.setMinimumHeight(max(170, int(min_h)))
 
         self._invalidate_all_caches()
-        self.update()
+        self._changed()
 
     def setData(self, duration: float, rms: Optional[np.ndarray], hop_s: float, cuts: List[Segment]):
-        """
-        Backward-compatible single-track update (updates active track).
-        """
+        """Backward-compatible single-track update (updates active track)."""
         if not self.tracks:
-            name = "Track 1"
-            self.tracks = [TimelineTrack(name=name, duration=float(duration), rms=rms, hop_s=float(hop_s), cuts=cuts[:])]
+            self.tracks = [TimelineTrack(name="Track 1", duration=float(duration), rms=rms, hop_s=float(hop_s),
+                                         cuts=cuts[:])]
             self.active_track = 0
             self._track_cache = [_TrackCache()]
             self.setTracks(self.tracks, reset_view=True)
             return
-
         idx = max(0, min(self.active_track, len(self.tracks) - 1))
         t = self.tracks[idx]
         if isinstance(t, dict):
-            t["duration"] = float(duration)
-            t["rms"] = rms
-            t["hop_s"] = float(hop_s)
-            t["cuts"] = cuts[:]
+            t.update(duration=float(duration), rms=rms, hop_s=float(hop_s), cuts=cuts[:])
         else:
             t.duration = float(duration)
             t.rms = rms
             t.hop_s = float(hop_s)
             t.cuts = cuts[:]
-
         self.setTracks(self.tracks, reset_view=False)
 
     def setCuts(self, cuts: List[Segment], track_index: Optional[int] = None):
@@ -315,7 +501,7 @@ class TimelineWidget(QWidget):
             t["cuts"] = cuts[:]
         else:
             t.cuts = cuts[:]
-        self.update()
+        self._changed()
 
     def setActiveTrack(self, index: int, emit: bool = False):
         if not self.tracks:
@@ -327,35 +513,114 @@ class TimelineWidget(QWidget):
         self.active_track = idx
         if emit:
             self.trackSelected.emit(idx)
-        self.update()
+        self._changed()
 
     def set_pending_cut(self, start: Optional[float], end: Optional[float], track_index: Optional[int] = None):
         idx = self.active_track if track_index is None else int(track_index)
         if idx < 0 or (self.tracks and idx >= len(self.tracks)):
             return
         self._pending_by_track[idx] = (start, end)
-        self.update()
+        self._changed()
 
     def setPlayhead(self, t: float):
+        old = float(self.playhead)
         self.playhead = float(t)
-
         if self.duration > 0 and self.follow_playhead and not self._scrubbing:
             span = self._span()
             start = float(self.view_start)
             end = start + span
+            # Page-turn follow: when the playhead leaves the view (or nears its right edge) the view
+            # jumps once, instead of scrolling — and re-rendering everything — on every tick.
+            if span < self.duration and (self.playhead < start or self.playhead > end - 0.04 * span):
+                new_start = max(0.0, min(self.playhead - 0.1 * span, self.duration - span))
+                if abs(new_start - start) > 1e-9:
+                    self.view_start = new_start
+                    self._invalidate_all_caches()
+                    self.update()
+                    return
+        self._update_playhead_strip(old)
+        self._update_playhead_strip(self.playhead)
 
-            # keep playhead inside viewport with margin
-            margin = 0.15 * span
-            if self.playhead < start + margin:
-                new_start = max(0.0, self.playhead - margin)
-                self.view_start = min(new_start, max(0.0, self.duration - span))
-                self._invalidate_all_caches()
-            elif self.playhead > end - margin:
-                new_start = max(0.0, self.playhead - (span - margin))
-                self.view_start = min(new_start, max(0.0, self.duration - span))
-                self._invalidate_all_caches()
+    def _update_playhead_strip(self, t: float) -> None:
+        if self.duration <= 0:
+            self.update()
+            return
+        x = int(round(self._t_to_xf(t)))
+        self.update(QRect(x - 8, 0, 17, self.height()))
 
-        self.update()
+    # ---- selection API ----------------------------------------------------------------------
+    def _selection_track(self) -> int:
+        idx = self._audio_track_index()
+        return int(idx if idx is not None else self.active_track)
+
+    def selectedCutIndices(self) -> list[int]:
+        return sorted(self._selected_by_track.get(self._selection_track(), set()))
+
+    def setCutSelection(self, indices: list[int]) -> None:
+        idx = self._selection_track()
+        n = len(self._track_cuts(idx))
+        sel = {int(i) for i in indices if 0 <= int(i) < n}
+        if sel != self._selected_by_track.get(idx, set()):
+            self._selected_by_track[idx] = sel
+            self.selectionChanged.emit(sorted(sel))
+        self._changed()
+
+    def clearCutSelection(self) -> None:
+        self.setCutSelection([])
+
+    def selectedIsland(self) -> Optional[tuple[int, int]]:
+        return self._selected_island
+
+    def setSelectedIsland(self, sel: Optional[tuple[int, int]], emit: bool = False) -> None:
+        sel = (int(sel[0]), int(sel[1])) if sel is not None else None
+        if sel != self._selected_island:
+            self._selected_island = sel
+            if emit:
+                self.islandSelected.emit(sel)
+            self._changed()
+
+    def _gameplay_islands(self) -> list[dict]:
+        """Kept WIN islands of every audio clip with gameplay editing active (global time)."""
+        out: list[dict] = []
+        for clip in self._audio_clips():
+            keeps = clip.get("gameplay_keeps") or []
+            if not keeps:
+                continue
+            c0 = float(clip.get("start", 0.0))
+            c1 = float(clip.get("end", c0))
+            ts = clip.get("track_state_idx")
+            meta = clip.get("gameplay_islands") or []
+            for i, k in enumerate(keeps):
+                a, b = float(k.start), float(k.end)
+                drag = self._island_drag
+                if drag is not None and drag.get("clip") is clip and drag.get("index") == i:
+                    a, b = float(drag["start"]), float(drag["end"])
+                info = None
+                best = 0.0
+                for m in meta:
+                    ov = _overlap(a, b, float(m.get("start", 0.0)), float(m.get("end", 0.0)))
+                    if ov > best:
+                        best, info = ov, m
+                out.append({"clip": clip, "index": i, "ts": ts, "start": a, "end": b,
+                            "t0": c0 + a, "t1": min(c1, c0 + b), "meta": info or {}})
+        return out
+
+    def _island_at_x(self, x: float) -> Optional[dict]:
+        t = self._x_to_t(x)
+        for isl in self._gameplay_islands():
+            if isl["t0"] <= t <= isl["t1"]:
+                return isl
+        return None
+
+    def _island_edge_at_x(self, x: float) -> Optional[tuple[dict, str]]:
+        best = None
+        best_d = EDGE_GRAB_PX + 1.5
+        for isl in self._gameplay_islands():
+            for edge, t in (("start", isl["t0"]), ("end", isl["t1"])):
+                d = abs(self._t_to_xf(t) - x)
+                if d < best_d:
+                    best, best_d = (isl, edge), d
+        return best
 
     # -----------------------------
     # Mapping & env
@@ -366,75 +631,34 @@ class TimelineWidget(QWidget):
         s = float(self.view_span) if self.view_span > 0 else float(self.duration)
         return max(1e-9, min(s, float(self.duration)))
 
+    def _content_w(self) -> int:
+        return max(1, self.width() - HEADER_W - RIGHT_PAD)
+
+    def _px_to_s(self, px: float) -> float:
+        return (float(px) / float(self._content_w())) * self._span() if self.duration > 0 else 0.0
+
     def _t_to_x(self, t: float) -> int:
         if self.duration <= 0:
-            return 0
+            return HEADER_W
         span = self._span()
-        start = float(self.view_start)
-        rel = (float(t) - start) / span
-
-        w = max(1, self.width() - 1)
+        rel = (float(t) - float(self.view_start)) / span
+        w = self._content_w()
         x = rel * w
-        if x < 0:
-            return 0
-        if x > w:
-            return int(w)
-        return int(x)
+        x = max(-4.0, min(float(w) + 4.0, x))
+        return int(round(HEADER_W + x))
+
+    def _t_to_xf(self, t: float) -> float:
+        if self.duration <= 0:
+            return float(HEADER_W)
+        rel = (float(t) - float(self.view_start)) / self._span()
+        return HEADER_W + rel * self._content_w()
 
     def _x_to_t(self, x: float) -> float:
         if self.duration <= 0:
             return 0.0
-
-        w = max(1, self.width() - 1)
-        x = max(0.0, min(float(w), float(x)))
-
-        span = self._span()
-        start = float(self.view_start)
-        return start + (x / float(w)) * span
-
-    def _env_for_width(self, track_idx: int, w: int, start_s: float, end_s: float) -> Optional[np.ndarray]:
-        t = self._track(track_idx)
-        if t is None:
-            return None
-        rms = _track_attr(t, "rms", None)
-        if rms is not None and not isinstance(rms, np.ndarray):
-            try:
-                rms = np.asarray(rms, dtype=np.float32)
-            except Exception:
-                rms = None
-        hop_s = float(_track_attr(t, "hop_s", 0.03) or 0.03)
-        if rms is None or getattr(rms, "size", 0) == 0 or w <= 10 or self.duration <= 0:
-            return None
-
-        cache = self._track_cache[track_idx] if track_idx < len(self._track_cache) else _TrackCache()
-        view_key = (round(start_s, 6), round(end_s, 6), int(w))
-        if cache.cached_w == w and cache.cached_env is not None and cache.cached_view == view_key:
-            return cache.cached_env
-
-        n = int(rms.size)
-        i0 = int(max(0, min(n, start_s / hop_s)))
-        i1 = int(max(0, min(n, end_s / hop_s)))
-        if i1 <= i0:
-            return None
-
-        bins = max(10, int(w))
-        idx = np.linspace(i0, i1, bins + 1).astype(int)
-        env = np.zeros(bins, dtype=np.float32)
-
-        for i in range(bins):
-            a, b = int(idx[i]), int(idx[i + 1])
-            if b > a:
-                env[i] = float(np.max(rms[a:b]))
-
-        m = float(np.max(env)) if env.size else 1.0
-        if m > 1e-9:
-            env = env / m
-
-        if track_idx < len(self._track_cache):
-            cache.cached_w = w
-            cache.cached_view = view_key
-            cache.cached_env = env
-        return env
+        w = self._content_w()
+        rel_x = max(0.0, min(float(w), float(x) - HEADER_W))
+        return float(self.view_start) + (rel_x / float(w)) * self._span()
 
     def _env_for_rms(self, rms: Any, hop_s: float, w: int, start_s: float, end_s: float) -> Optional[np.ndarray]:
         if rms is not None and not isinstance(rms, np.ndarray):
@@ -442,43 +666,71 @@ class TimelineWidget(QWidget):
                 rms = np.asarray(rms, dtype=np.float32)
             except Exception:
                 rms = None
-        if rms is None or getattr(rms, "size", 0) == 0 or w <= 10 or self.duration <= 0:
+        if rms is None or getattr(rms, "size", 0) == 0 or w <= 2 or self.duration <= 0:
             return None
         hop_s = float(hop_s or 0.03)
-
         n = int(rms.size)
         i0 = int(max(0, min(n, start_s / hop_s)))
         i1 = int(max(0, min(n, end_s / hop_s)))
         if i1 <= i0:
             return None
-
-        bins = max(10, int(w))
-        idx = np.linspace(i0, i1, bins + 1).astype(int)
-        env = np.zeros(bins, dtype=np.float32)
-
-        for i in range(bins):
-            a, b = int(idx[i]), int(idx[i + 1])
-            if b > a:
-                env[i] = float(np.max(rms[a:b]))
-
-        m = float(np.max(env)) if env.size else 1.0
+        bins = max(2, int(w))
+        window = rms[i0:i1]
+        starts = np.linspace(0, window.size, bins + 1).astype(int)[:-1]
+        starts = np.minimum(starts, window.size - 1)
+        # max per pixel column (reduceat reduces [starts[i], starts[i+1]) and handles repeats)
+        env = np.maximum.reduceat(window, starts).astype(np.float32)
+        # normalise against the whole clip so loudness reads the same at every zoom level
+        m = float(np.max(rms))
         if m > 1e-9:
             env = env / m
-        return env
+        # gentle perceptual curve: quiet speech stays visible without saturating the lane
+        return np.power(np.clip(env, 0.0, 1.0), 0.7)
+
+    def _env_for_width(self, track_idx: int, w: int, start_s: float, end_s: float) -> Optional[np.ndarray]:
+        t = self._track(track_idx)
+        if t is None:
+            return None
+        return self._env_for_rms(_track_attr(t, "rms", None), float(_track_attr(t, "hop_s", 0.03) or 0.03),
+                                 w, start_s, end_s)
+
+    # ---- lanes --------------------------------------------------------------------------------
+    def _has_gameplay(self) -> bool:
+        return any(c.get("gameplay_keeps") for c in self._audio_clips())
+
+    def _lanes(self) -> list[_Lane]:
+        lanes: list[_Lane] = []
+        if not self.tracks:
+            return lanes
+        audio_idx = self._audio_track_index()
+        thin_kinds: list[str] = []
+        if audio_idx is not None:
+            thin_kinds.append("cuts")
+        weights = {"video": 0.8, "audio": 1.5}
+        y = float(RULER_H + TOP_PAD)
+        avail = float(self.height() - y - BOTTOM_PAD)
+        n_lanes = len(self.tracks) + len(thin_kinds)
+        avail -= LANE_THIN_H * len(thin_kinds) + LANE_GAP * max(0, n_lanes - 1)
+        total_w = sum(weights.get(str(_track_attr(t, "kind", "audio")), 1.0) for t in self.tracks) or 1.0
+        if audio_idx is not None:
+            lanes.append(_Lane("cuts", audio_idx, y, LANE_THIN_H))
+            y += LANE_THIN_H + LANE_GAP
+        for i, t in enumerate(self.tracks):
+            kind = str(_track_attr(t, "kind", "audio") or "audio")
+            h = max(28.0, avail * weights.get(kind, 1.0) / total_w)
+            lanes.append(_Lane(kind, i, y, h))
+            y += h + LANE_GAP
+        return lanes
+
+    def _lane_at_y(self, y: float) -> Optional[_Lane]:
+        for lane in self._lanes():
+            if lane.top - LANE_GAP / 2 <= y <= lane.bottom + LANE_GAP / 2:
+                return lane
+        return None
 
     def _track_at_y(self, y: float) -> Optional[int]:
-        if not self.tracks:
-            return None
-        ruler_h = 26
-        bottom_pad = 24
-        track_top = ruler_h + 6
-        track_bot = self.height() - bottom_pad
-        if y < track_top or y > track_bot:
-            return None
-        track_area_h = max(1, track_bot - track_top)
-        row_h = track_area_h / max(1, len(self.tracks))
-        idx = int((y - track_top) / row_h)
-        return max(0, min(idx, len(self.tracks) - 1))
+        lane = self._lane_at_y(y)
+        return lane.track_idx if lane is not None else None
 
     def _clip_at_x(self, track_idx: int, x: float) -> Optional[dict]:
         t = self._track(track_idx)
@@ -501,36 +753,23 @@ class TimelineWidget(QWidget):
     def _snap_time(self, proposed_start: float, dur: float, ignore_clip_id: Optional[str]) -> float:
         if not self._snap_enabled or self.duration <= 0:
             return proposed_start
-        w = max(1, self.width())
-        span = self._span()
-        # snap threshold ~10px
-        thr = (span / float(w)) * 10.0
-
+        thr = self._px_to_s(10.0)
         best = proposed_start
         best_diff = thr + 1.0
 
         def consider(edge: float, mode: str):
             nonlocal best, best_diff
-            if mode == "start":
-                cand = edge
-            else:
-                cand = edge - dur
+            cand = edge if mode == "start" else edge - dur
             diff = abs(cand - proposed_start)
             if diff < best_diff:
                 best_diff = diff
                 best = cand
 
         consider(0.0, "start")
-        # snap to playhead as well
-        try:
-            consider(float(self.playhead), "start")
-            consider(float(self.playhead), "end")
-        except Exception:
-            pass
-
+        consider(float(self.playhead), "start")
+        consider(float(self.playhead), "end")
         for t in self.tracks:
-            clips = _track_attr(t, "clips", []) or []
-            for c in clips:
+            for c in _track_attr(t, "clips", []) or []:
                 if ignore_clip_id and c.get("clip_id") == ignore_clip_id:
                     continue
                 try:
@@ -538,14 +777,10 @@ class TimelineWidget(QWidget):
                     ce = float(c.get("end", 0.0))
                 except Exception:
                     continue
-                consider(cs, "start")
-                consider(ce, "start")
-                consider(cs, "end")
-                consider(ce, "end")
-
-        if best_diff <= thr:
-            return best
-        return proposed_start
+                for edge in (cs, ce):
+                    consider(edge, "start")
+                    consider(edge, "end")
+        return best if best_diff <= thr else proposed_start
 
     # -----------------------------
     # Zoom
@@ -570,759 +805,1138 @@ class TimelineWidget(QWidget):
         self._zoom_index = 0
         self._apply_zoom_level(reset=True)
 
-    def _apply_zoom_level(self, reset: bool = False):
+    def setZoomIndex(self, index: int, anchor_t: Optional[float] = None) -> None:
+        if self.duration <= 0:
+            return
+        index = max(0, min(len(self._zoom_levels) - 1, int(index)))
+        if index == self._zoom_index:
+            return
+        self._zoom_index = index
+        self._apply_zoom_level(reset=(index == 0), anchor_t=anchor_t)
+
+    def _apply_zoom_level(self, reset: bool = False, anchor_t: Optional[float] = None):
         z = self._zoom_levels[self._zoom_index]
         span = max(0.01, float(self.duration) / float(z))
-
         if reset:
             self.view_start = 0.0
+        elif anchor_t is not None:
+            # keep the time under the cursor fixed
+            old_span = self._span() or span
+            rel = (float(anchor_t) - float(self.view_start)) / old_span if old_span > 0 else 0.5
+            rel = max(0.0, min(1.0, rel))
+            new_start = float(anchor_t) - rel * span
+            self.view_start = max(0.0, min(new_start, max(0.0, self.duration - span)))
         else:
             center = float(self.playhead)
             new_start = center - span * 0.5
-            new_start = max(0.0, min(new_start, max(0.0, self.duration - span)))
-            self.view_start = new_start
-
+            self.view_start = max(0.0, min(new_start, max(0.0, self.duration - span)))
         self.view_span = span
         self._invalidate_all_caches()
-        self.update()
+        self.viewChanged.emit(self._zoom_index)
+        self._changed()
+
+    def wheelEvent(self, e):
+        if self.duration <= 0:
+            return super().wheelEvent(e)
+        delta = e.angleDelta().y() or e.angleDelta().x()
+        if not delta:
+            return
+        if e.modifiers() & Qt.ControlModifier:
+            anchor = self._x_to_t(float(e.position().x()))
+            self.setZoomIndex(self._zoom_index + (1 if delta > 0 else -1), anchor_t=anchor)
+            e.accept()
+            return
+        span = self._span()
+        if span >= self.duration - 1e-6:
+            return super().wheelEvent(e)
+        step = span * 0.12 * (-1 if delta > 0 else 1)
+        self.view_start = max(0.0, min(self.view_start + step, max(0.0, self.duration - span)))
+        self.follow_playhead = False
+        self._invalidate_all_caches()
+        self._changed()
+        e.accept()
 
     # -----------------------------
     # Paint
     # -----------------------------
-    def paintEvent(self, _):
+    def _clip_cut_kinds(self, clip: dict) -> list[str]:
+        kinds = clip.get("cut_kinds")
+        cuts = clip.get("cuts") or []
+        if isinstance(kinds, list) and len(kinds) == len(cuts):
+            return kinds
+        kinds = classify_cuts(cuts, clip.get("manual_cuts"), clip.get("gameplay_cuts"))
+        clip["cut_kinds"] = kinds
+        return kinds
+
+    def _audio_clips(self) -> list[dict]:
+        idx = self._audio_track_index()
+        if idx is None:
+            return []
+        return list(_track_attr(self.tracks[idx], "clips", []) or [])
+
+    def _removed_spans(self) -> list[tuple[float, float, str, bool]]:
+        """(t0, t1, kind, selected) for every effective cut on the timeline."""
+        out: list[tuple[float, float, str, bool]] = []
+        audio_idx = self._audio_track_index()
+        selected = self._selected_by_track.get(audio_idx, set()) if audio_idx is not None else set()
+        atrack = self._track(audio_idx) if audio_idx is not None else None
+        for clip in self._audio_clips():
+            c0 = float(clip.get("start", 0.0))
+            c1 = float(clip.get("end", c0))
+            kinds = self._clip_cut_kinds(clip)
+            sel = selected if (atrack is not None and self._clip_matches_active(atrack, clip)) else set()
+            islands = [(c0 + float(k.start), c0 + float(k.end)) for k in (clip.get("gameplay_keeps") or [])]
+            for i, c in enumerate(clip.get("cuts") or []):
+                a = c0 + float(c.start)
+                b = min(c1, c0 + float(c.end))
+                if self._resize is not None and self._resize.get("clip") is clip and self._resize.get("idx") == i:
+                    a = c0 + float(self._resize["start"])
+                    b = c0 + float(self._resize["end"])
+                if b <= a:
+                    continue
+                kind = kinds[i] if i < len(kinds) else "auto"
+                if kind == "gameplay" and islands:
+                    # outside the islands is shown dimmed by the gameplay overlay; only the parts of
+                    # this cut that remove footage *inside* a kept game are drawn as ordinary cuts
+                    for ia, ib in islands:
+                        sa, sb = max(a, ia), min(b, ib)
+                        if sb > sa:
+                            out.append((sa, sb, "auto", i in sel))
+                    continue
+                out.append((a, b, kind, i in sel))
+        return out
+
+    def _changed(self) -> None:
+        """Rendered content changed (data, selection, hover target, …): rebuild the static layer."""
+        self._static_rev += 1
+        self.update()
+
+    def resizeEvent(self, e):
+        self._static_cache = None
+        return super().resizeEvent(e)
+
+    def _ensure_static(self) -> QPixmap:
+        dpr = float(self.devicePixelRatioF())
+        key = (self.width(), self.height(), round(dpr, 3), round(float(self.view_start), 9),
+               round(self._span(), 9), self._static_rev)
+        if self._static_cache is None or key != self._static_cache_key:
+            pm = QPixmap(max(1, int(round(self.width() * dpr))), max(1, int(round(self.height() * dpr))))
+            pm.setDevicePixelRatio(dpr)
+            pm.fill(self._colors.panel)
+            painter = QPainter(pm)
+            try:
+                self._render_static(painter)
+            except Exception:
+                traceback.print_exc()
+            finally:
+                painter.end()
+            self._static_cache = pm
+            self._static_cache_key = key
+            self.static_renders += 1
+        return self._static_cache
+
+    def paintEvent(self, _e):
+        pm = self._ensure_static()
         p = QPainter(self)
         try:
-            p.setRenderHint(QPainter.Antialiasing, False)
-            f = p.font()
-            if f.pointSize() <= 0:
-                f.setPointSize(10)
-                p.setFont(f)
-
-            rect = self.rect()
-            w, h = rect.width(), rect.height()
-
-            # palette
-            bg_color = QColor(18, 18, 20)
-            row_active = QColor(26, 30, 36)
-            row_even = QColor(22, 22, 24)
-            row_odd = QColor(20, 20, 22)
-            row_top_line = QColor(34, 36, 40)
-            row_bot_line = QColor(44, 46, 52)
-            label_bg = QColor(14, 14, 16, 200)
-            label_border = QColor(90, 90, 105)
-            label_text_active = QColor(245, 245, 245)
-            label_text = QColor(195, 200, 210)
-
-            # background
-            p.fillRect(rect, bg_color)
-
-            # zones
-            ruler_h = 26
-            bottom_pad = 24
-            track_top = ruler_h + 6
-            track_bot = h - bottom_pad
-            track_area_h = max(1, track_bot - track_top)
-            track_count = max(0, len(self.tracks))
-            row_h = track_area_h / max(1, track_count) if track_count > 0 else track_area_h
-
-            # ruler ticks (viewport-aware)
+            p.drawPixmap(0, 0, pm)  # clipped to the update region by Qt
             if self.duration > 0:
-                span = self._span()
-                vs = max(0.0, min(self.view_start, self.duration))
-                ve = max(0.0, min(vs + span, self.duration))
-
-                major = _choose_major_step(span)
-                minor = max(1, major // 5)
-
-                t0 = int(vs // minor) * minor
-                if t0 < 0:
-                    t0 = 0
-
-                p.setPen(QPen(QColor(120, 120, 120), 1))
-                t = t0
-                while t <= int(ve) + minor:
-                    x = self._t_to_x(t)
-                    if 0 <= x <= w:
-                        tick_h = 6 if (t % major) else 12
-                        p.drawLine(x, ruler_h - tick_h, x, ruler_h)
-                    t += minor
-
-                p.setPen(QColor(200, 200, 200))
-                fm = QFontMetrics(p.font())
-                t = int(vs // major) * major
-                if t < 0:
-                    t = 0
-                while t <= int(ve) + major:
-                    if t % major == 0:
-                        label = fmt_hms(t)
-                        x = self._t_to_x(t)
-                        if -50 <= x <= w + 50:
-                            p.drawText(max(0, x - fm.horizontalAdvance(label) // 2), 16, label)
-                    t += major
-
-            # tracks
-            if track_count > 0:
-                span = self._span()
-                vs = max(0.0, min(self.view_start, self.duration))
-                ve = max(0.0, min(vs + span, self.duration))
-
-                for i, t in enumerate(self.tracks):
-                    row_top = track_top + i * row_h
-                    row_bot = row_top + row_h
-                    wave_top = int(row_top) + 4
-                    wave_bot = int(row_bot) - 4
-                    wave_h = max(1, wave_bot - wave_top)
-
-                    # row background
-                    if i == self.active_track:
-                        bg = row_active
-                    else:
-                        bg = row_even if (i % 2 == 0) else row_odd
-                    p.fillRect(0, int(row_top), w, int(row_bot - row_top), bg)
-
-                    # separators (top + bottom for better contour)
-                    p.setPen(QPen(row_top_line, 1))
-                    p.drawLine(0, int(row_top), w, int(row_top))
-                    p.setPen(QPen(row_bot_line, 1))
-                    p.drawLine(0, int(row_bot), w, int(row_bot))
-
-                    # clip blocks (NLE-style)
-                    clips = _track_attr(t, "clips", []) or []
-                    clip_labels = []
-                    if self.duration > 0 and clips:
-                        track_kind = str(_track_attr(t, "kind", "audio") or "audio")
-                        for clip in clips:
-                            try:
-                                c_start = float(clip.get("start", 0.0))
-                                c_end = float(clip.get("end", 0.0))
-                            except Exception:
-                                continue
-                            if c_end <= c_start:
-                                continue
-                            # preview drag (ghost)
-                            if self._drag_clip is not None and clip.get("clip_id") == self._drag_clip.get("clip_id"):
-                                if self._drag_preview_start is not None:
-                                    dur = max(0.0, c_end - c_start)
-                                    c_start = float(self._drag_preview_start)
-                                    c_end = float(c_start + dur)
-                            x1 = self._t_to_x(c_start)
-                            x2 = self._t_to_x(c_end)
-                            if x2 <= x1:
-                                continue
-                            if track_kind == "video" or clip.get("kind") == "video":
-                                c_val = clip.get("color")
-                                e_val = clip.get("edge")
-                                if isinstance(c_val, (list, tuple)) and len(c_val) >= 4:
-                                    color = QColor(int(c_val[0]), int(c_val[1]), int(c_val[2]), int(c_val[3]))
-                                else:
-                                    color = QColor(70, 140, 90, 130)
-                                if isinstance(e_val, (list, tuple)) and len(e_val) >= 3:
-                                    edge = QColor(int(e_val[0]), int(e_val[1]), int(e_val[2]))
-                                else:
-                                    edge = QColor(90, 170, 110)
-                            else:
-                                color = QColor(70, 120, 170, 120)
-                                edge = QColor(90, 150, 210)
-                            p.setPen(QPen(edge, 2))
-                            p.setBrush(QBrush(color))
-                            p.drawRoundedRect(x1, wave_top, x2 - x1, wave_h, 4, 4)
-                            name = str(clip.get("name") or "")
-                            if name and track_kind == "video":
-                                clip_labels.append((x1, x2, name, row_top, wave_top))
-
-                    # waveform (align to clips if present)
-                    track_kind = str(_track_attr(t, "kind", "audio") or "audio")
-                    track_dur = float(_track_attr(t, "duration", 0.0) or 0.0)
-                    if track_kind == "audio" and self.duration > 0 and ve > vs:
-                        if clips:
-                            for clip in clips:
-                                try:
-                                    c_start = float(clip.get("start", 0.0))
-                                    c_end = float(clip.get("end", 0.0))
-                                    s_in = float(clip.get("source_in", 0.0))
-                                    s_out = float(clip.get("source_out", s_in + (c_end - c_start)))
-                                except Exception:
-                                    continue
-                                if c_end <= c_start or s_out <= 0.0:
-                                    continue
-                                seg_start = max(vs, c_start)
-                                seg_end = min(ve, c_end)
-                                if seg_end <= seg_start:
-                                    continue
-                                # map timeline -> source
-                                src_start = s_in + (seg_start - c_start)
-                                src_end = s_in + (seg_end - c_start)
-                                src_start = max(0.0, min(src_start, s_out))
-                                src_end = max(0.0, min(src_end, s_out))
-                                if src_end <= src_start:
-                                    continue
-                                x0 = self._t_to_x(seg_start)
-                                x1 = self._t_to_x(seg_end)
-                                width = max(1, x1 - x0)
-
-                                clip_rms = clip.get("rms", None) if isinstance(clip, dict) else None
-                                clip_hop = clip.get("hop_s", _track_attr(t, "hop_s", 0.03))
-                                if clip_rms is not None:
-                                    env = self._env_for_rms(clip_rms, clip_hop, width, src_start, src_end)
-                                else:
-                                    env = self._env_for_width(i, width, src_start, src_end)
-
-                                if env is not None:
-                                    p.setPen(QPen(QColor(110, 160, 230), 1))
-                                    mid = wave_top + wave_h // 2
-                                    lim = min(width, int(env.size))
-                                    for xi in range(lim):
-                                        amp = int(env[xi] * (wave_h * 0.45))
-                                        x = x0 + xi
-                                        p.drawLine(x, mid - amp, x, mid + amp)
-                        else:
-                            if track_dur > 0.0:
-                                seg_start = max(vs, 0.0)
-                                seg_end = min(ve, track_dur)
-                                if seg_end > seg_start:
-                                    x0 = self._t_to_x(seg_start)
-                                    x1 = self._t_to_x(seg_end)
-                                    width = max(1, x1 - x0)
-                                    env = self._env_for_width(i, width, seg_start, seg_end)
-                                    if env is not None:
-                                        p.setPen(QPen(QColor(110, 160, 230), 1))
-                                        mid = wave_top + wave_h // 2
-                                        lim = min(width, int(env.size))
-                                        for xi in range(lim):
-                                            amp = int(env[xi] * (wave_h * 0.45))
-                                            x = x0 + xi
-                                            p.drawLine(x, mid - amp, x, mid + amp)
-
-                    # cuts overlay (align to clip positions)
-                    cuts = _track_attr(t, "cuts", []) or []
-                    if self.duration > 0 and track_kind == "audio":
-                        selected = self._selected_by_track.get(i, set())
-                        if clips:
-                            for clip in clips:
-                                try:
-                                    c_start = float(clip.get("start", 0.0))
-                                    c_end = float(clip.get("end", 0.0))
-                                    s_in = float(clip.get("source_in", 0.0))
-                                except Exception:
-                                    continue
-                                if c_end <= c_start:
-                                    continue
-                                try:
-                                    clip_cuts = clip.get("cuts") or cuts
-                                except Exception:
-                                    clip_cuts = cuts
-                                if not clip_cuts:
-                                    continue
-                                is_active_clip = self._clip_matches_active(t, clip)
-                                sel = selected if is_active_clip else set()
-                                for ci, c in enumerate(clip_cuts):
-                                    # cuts are segment-relative (0..segment duration)
-                                    t1 = c_start + float(c.start)
-                                    t2 = c_start + float(c.end)
-                                    x1 = self._t_to_x(t1)
-                                    x2 = self._t_to_x(t2)
-                                    if ci in sel:
-                                        fill = QColor(90, 170, 255, 160)
-                                        edge = QColor(140, 210, 255, 220)
-                                    else:
-                                        fill = QColor(255, 90, 90, 130)
-                                        edge = QColor(255, 140, 140, 200)
-                                    width = x2 - x1
-                                    if width < 2:
-                                        # Draw a visible marker for very small cuts
-                                        p.setPen(QPen(edge, 2))
-                                        p.drawLine(x1, wave_top, x1, wave_top + wave_h)
-                                    else:
-                                        p.setPen(QPen(edge, 1))
-                                        p.setBrush(QBrush(fill))
-                                        p.drawRect(x1, wave_top, width, wave_h)
-                        else:
-                            if cuts:
-                                for ci, c in enumerate(cuts):
-                                    x1 = self._t_to_x(c.start)
-                                    x2 = self._t_to_x(c.end)
-                                    if ci in selected:
-                                        fill = QColor(90, 170, 255, 160)
-                                        edge = QColor(140, 210, 255, 220)
-                                    else:
-                                        fill = QColor(255, 90, 90, 130)
-                                        edge = QColor(255, 140, 140, 200)
-                                    width = x2 - x1
-                                    if width < 2:
-                                        p.setPen(QPen(edge, 2))
-                                        p.drawLine(x1, wave_top, x1, wave_top + wave_h)
-                                    else:
-                                        p.setPen(QPen(edge, 1))
-                                        p.setBrush(QBrush(fill))
-                                        p.drawRect(x1, wave_top, width, wave_h)
-
-                    # pending manual cut markers (start/end + highlight)
-                    ps, pe = self._pending_by_track.get(i, (None, None))
-                    if self.duration > 0 and track_kind == "audio":
-                        if clips:
-                            # show on active clip only (source-aligned)
-                            clip0 = None
-                            for c in clips:
-                                if self._clip_matches_active(t, c):
-                                    clip0 = c
-                                    break
-                            if clip0 is None and clips:
-                                clip0 = clips[0]
-                            try:
-                                c_start = float(clip0.get("start", 0.0)) if clip0 else 0.0
-                                c_end = float(clip0.get("end", c_start)) if clip0 else c_start
-                                s_in = float(clip0.get("source_in", 0.0)) if clip0 else 0.0
-                                s_out = float(clip0.get("source_out", s_in + max(0.0, c_end - c_start))) if clip0 else s_in
-                            except Exception:
-                                c_start = 0.0
-                                c_end = c_start
-                                s_in = 0.0
-
-                            def _pending_to_t(v: Optional[float]) -> Optional[float]:
-                                if v is None:
-                                    return None
-                                try:
-                                    vv = float(v)
-                                except Exception:
-                                    return None
-                                clip_len = max(0.0, c_end - c_start)
-                                # New behavior: pending values are segment-local (0..segment_len)
-                                if clip_len > 0.0 and (-1e-6 <= vv <= clip_len + 1e-6):
-                                    vv = max(0.0, min(vv, clip_len))
-                                    return c_start + vv
-                                # Backward compatibility: source-domain values
-                                if s_out > s_in + 1e-6 and (s_in - 1e-6 <= vv <= s_out + 1e-6):
-                                    return c_start + (vv - s_in)
-                                # Fallback: already in timeline domain
-                                if c_start - 1e-6 <= vv <= c_end + 1e-6:
-                                    return vv
-                                return None
-
-                            tp_s = _pending_to_t(ps)
-                            tp_e = _pending_to_t(pe)
-                            if tp_s is not None and tp_e is not None:
-                                a, b = (tp_s, tp_e) if tp_s <= tp_e else (tp_e, tp_s)
-                                x1 = self._t_to_x(a)
-                                x2 = self._t_to_x(b)
-                                if x2 > x1:
-                                    p.fillRect(x1, wave_top, x2 - x1, wave_h, QColor(255, 200, 60, 45))
-                            if tp_s is not None:
-                                x = self._t_to_x(tp_s)
-                                p.setPen(QPen(QColor(255, 200, 60), 2))
-                                p.drawLine(x, wave_top, x, wave_top + wave_h)
-                            if tp_e is not None:
-                                x = self._t_to_x(tp_e)
-                                p.setPen(QPen(QColor(255, 200, 60), 2))
-                                p.drawLine(x, wave_top, x, wave_top + wave_h)
-                        else:
-                            if ps is not None and pe is not None:
-                                a, b = (ps, pe) if ps <= pe else (pe, ps)
-                                x1 = self._t_to_x(a)
-                                x2 = self._t_to_x(b)
-                                if x2 > x1:
-                                    p.fillRect(x1, wave_top, x2 - x1, wave_h, QColor(255, 200, 60, 45))
-                            if ps is not None:
-                                x = self._t_to_x(ps)
-                                p.setPen(QPen(QColor(255, 200, 60), 2))
-                                p.drawLine(x, wave_top, x, wave_top + wave_h)
-                            if pe is not None:
-                                x = self._t_to_x(pe)
-                                p.setPen(QPen(QColor(255, 200, 60), 2))
-                                p.drawLine(x, wave_top, x, wave_top + wave_h)
-
-                    # clip labels (on top)
-                    if clip_labels:
-                        base_font = p.font()
-                        label_font = base_font
-                        label_font.setBold(True)
-                        label_font.setPointSize(max(9, base_font.pointSize() + 1))
-                        p.setFont(label_font)
-                        fm = QFontMetrics(p.font())
-                        for x1, x2, name, rtop, wtop in clip_labels:
-                            label = fm.elidedText(str(name), Qt.ElideRight, max(10, x2 - x1 - 10))
-                            if not label:
-                                continue
-                            text_w = fm.horizontalAdvance(label)
-                            text_h = fm.height()
-                            bx = x1 + 6
-                            by = max(int(rtop) + 2, int(wtop) - (text_h + 8))
-                            bw = min(text_w + 10, max(12, x2 - x1 - 6))
-                            bh = text_h + 6
-                            p.setPen(QPen(QColor(0, 0, 0, 0), 1))
-                            p.setBrush(QBrush(QColor(10, 10, 12, 190)))
-                            p.drawRoundedRect(bx - 2, by - 2, bw, bh, 4, 4)
-                            p.setPen(QColor(245, 245, 245))
-                            p.drawText(bx + 2, by + text_h, label)
-                        p.setFont(base_font)
-
-                    # track label (draw last, above overlays)
-                    name = _track_attr(t, "name", f"Track {i + 1}")
-                    base_font = p.font()
-                    label_font = base_font
-                    label_font.setBold(True)
-                    p.setFont(label_font)
-                    fm = QFontMetrics(p.font())
-                    label = fm.elidedText(str(name), Qt.ElideRight, max(80, w // 2))
-                    label_w = fm.horizontalAdvance(label) + 16
-                    label_h = fm.height() + 6
-                    lx = 12
-                    ly = int(row_bot) - label_h - 6
-                    p.setPen(QPen(label_border, 1))
-                    p.setBrush(QBrush(label_bg))
-                    p.drawRoundedRect(lx, ly, label_w, label_h, 6, 6)
-                    if i == self.active_track:
-                        p.setPen(label_text_active)
-                    else:
-                        p.setPen(label_text)
-                    p.drawText(lx + 8, ly + label_h - 6, label)
-                    p.setFont(base_font)
-
-            # bottom time labels
-            p.setPen(QColor(200, 200, 200))
-            span = self._span()
-            vs = max(0.0, min(self.view_start, self.duration))
-            ve = max(0.0, min(vs + span, self.duration))
-            left = fmt_hms(vs)
-            right = fmt_hms(ve)
-            fm = QFontMetrics(p.font())
-            p.drawText(6, h - 6, left)
-            p.drawText(w - fm.horizontalAdvance(right) - 6, h - 6, right)
-
-            # outer border for clearer separation
-            p.setPen(QPen(QColor(40, 40, 46), 1))
-            p.setBrush(Qt.NoBrush)
-            p.drawRect(0, 0, max(0, w - 1), max(0, h - 1))
-
-            # playhead line + triangle (foreground)
-            if self.duration > 0:
-                x = self._t_to_x(self.playhead)
-                x = max(0, min(w - 1, x))
-
-                p.setPen(QPen(QColor(255, 80, 80), 3))
-                p.drawLine(x, 0, x, h)
-
-                p.setPen(Qt.NoPen)
-                p.setBrush(QBrush(QColor(255, 80, 80)))
-                tri = QPolygonF([
-                    QPointF(x, ruler_h),
-                    QPointF(x - 7, ruler_h - 11),
-                    QPointF(x + 7, ruler_h - 11),
-                ])
-                p.drawPolygon(tri)
-
+                lanes = self._lanes()
+                p.save()
+                p.setClipRect(QRectF(HEADER_W, 0, self.width() - HEADER_W, self.height()))
+                self._paint_hover_cut(p, lanes)
+                self._paint_marquee(p, lanes)
+                self._paint_hover_line(p, lanes)
+                p.restore()
+                self._paint_playhead(p, lanes, self.height())
         except Exception:
             traceback.print_exc()
         finally:
             p.end()
 
+    def _render_static(self, p: QPainter) -> None:
+        col = self._colors
+        w, h = self.width(), self.height()
+        base_font = QFont(self.font())
+        if base_font.pixelSize() <= 0 and base_font.pointSize() <= 0:
+            base_font.setPixelSize(12)
+        p.setFont(base_font)
+        p.fillRect(QRectF(0, 0, w, h), col.panel)
+        lanes = self._lanes()
+        for lane in lanes:
+            r = QRectF(HEADER_W, lane.top, w - HEADER_W, lane.h)
+            p.fillRect(r, col.app if lane.kind in ("video", "audio") else _alpha(col.app, 150))
+        if self.duration > 0:
+            spans = self._removed_spans()
+            p.save()
+            p.setClipRect(QRectF(HEADER_W, 0, w - HEADER_W, h))
+            for lane in lanes:
+                if lane.kind == "video":
+                    self._paint_video_lane(p, lane, spans)
+                elif lane.kind == "audio":
+                    self._paint_audio_lane(p, lane, spans)
+                elif lane.kind == "cuts":
+                    self._paint_cuts_lane(p, lane, spans)
+            self._paint_gameplay_overlay(p, lanes)
+            self._paint_pending(p, lanes)
+            p.restore()
+            self._paint_ruler(p, w)
+            self._paint_island_ruler_marks(p)
+        else:
+            self._paint_ruler(p, w)
+            p.setPen(col.text_3)
+            f = QFont(base_font)
+            f.setPixelSize(13)
+            p.setFont(f)
+            p.drawText(QRectF(HEADER_W, RULER_H, w - HEADER_W, h - RULER_H), Qt.AlignCenter,
+                       "Import a video to see its timeline")
+            p.setFont(base_font)
+        self._paint_headers(p, lanes, h)
+
+    def _paint_headers(self, p: QPainter, lanes: list[_Lane], h: int) -> None:
+        col = self._colors
+        p.fillRect(QRectF(0, 0, HEADER_W, h), col.panel)
+        p.setPen(QPen(col.border, 1))
+        p.drawLine(HEADER_W - 1, 0, HEADER_W - 1, h)
+        p.drawLine(0, RULER_H - 1, self.width(), RULER_H - 1)
+        names = {"cuts": "CUTS", "video": "VIDEO", "audio": "AUDIO", "gameplay": "GAMEPLAY"}
+        glyphs = {"cuts": "scissors", "video": "film", "audio": "wave", "gameplay": "gamepad"}
+        try:
+            from ui.widgets.glyphs import draw_glyph
+        except Exception:  # pragma: no cover - glyphs are part of the app
+            draw_glyph = None  # type: ignore[assignment]
+        f = QFont(p.font())
+        f.setPixelSize(10)
+        f.setBold(True)
+        f.setLetterSpacing(QFont.AbsoluteSpacing, 0.6)
+        p.setFont(f)
+        for lane in lanes:
+            thin = lane.kind in ("cuts", "gameplay")
+            text_c = col.text_2 if not thin else col.text_3
+            if lane.kind in ("audio", "video") and lane.track_idx == self.active_track:
+                p.fillRect(QRectF(0, lane.top, 3, lane.h), col.accent)
+            cy = lane.top + lane.h / 2
+            if draw_glyph is not None:
+                draw_glyph(p, glyphs[lane.kind], QRectF(12, cy - 7, 14, 14), text_c, 1.9)
+            p.setPen(text_c)
+            p.drawText(QRectF(32, lane.top, HEADER_W - 36, lane.h), Qt.AlignVCenter | Qt.AlignLeft, names[lane.kind])
+        p.setFont(QFont(self.font()))
+
+    def _paint_ruler(self, p: QPainter, w: int) -> None:
+        col = self._colors
+        p.fillRect(QRectF(HEADER_W, 0, w - HEADER_W, RULER_H), col.panel)
+        if self.duration <= 0:
+            return
+        span = self._span()
+        vs = float(self.view_start)
+        ve = vs + span
+        px_per_s = self._content_w() / span
+        step = next((s for s in _LABEL_STEPS if s * px_per_s >= 84), _LABEL_STEPS[-1])
+        minor = step / 5.0 if step >= 5 else step / 2.0
+        f = QFont(p.font())
+        f.setPixelSize(10)
+        p.setFont(f)
+        t = int(vs / minor) * minor
+        while t <= ve + minor:
+            x = self._t_to_xf(t)
+            if HEADER_W <= x <= w:
+                is_major = abs((t / step) - round(t / step)) < 1e-6
+                p.setPen(QPen(col.border_strong if not is_major else col.text_3, 1))
+                p.drawLine(QPointF(x, RULER_H - (9 if is_major else 4)), QPointF(x, RULER_H - 1))
+                if is_major:
+                    label = fmt_hms(t) if step >= 1 else f"{fmt_hms(int(t))}.{int(round((t % 1) * 10))}"
+                    p.setPen(col.text_2)
+                    p.drawText(QPointF(x + 4, 13), label)
+            t += minor
+        p.setFont(QFont(self.font()))
+
+    def _hatch(self, p: QPainter, rect: QRectF, color: QColor, spacing: float = 6.0) -> None:
+        """Diagonal hatch in one call (pattern brush) instead of one drawLine per stroke."""
+        if rect.width() <= 1:
+            return
+        p.fillRect(rect, QBrush(color, Qt.BDiagPattern))
+
+    def _paint_video_lane(self, p: QPainter, lane: _Lane, spans) -> None:
+        col = self._colors
+        t = self._track(lane.track_idx)
+        clips = _track_attr(t, "clips", []) or []
+        top = lane.top + 2
+        hh = lane.h - 4
+        p.setRenderHint(QPainter.Antialiasing, True)
+        labels = []
+        for clip in clips:
+            try:
+                c_start = float(clip.get("start", 0.0))
+                c_end = float(clip.get("end", 0.0))
+            except Exception:
+                continue
+            if self._drag_clip is not None and clip.get("clip_id") == self._drag_clip.get("clip_id") \
+                    and self._drag_preview_start is not None:
+                dur = c_end - c_start
+                c_start = float(self._drag_preview_start)
+                c_end = c_start + dur
+            x1, x2 = self._t_to_xf(c_start), self._t_to_xf(c_end)
+            if x2 - x1 < 1:
+                continue
+            r = QRectF(x1 + 0.5, top, x2 - x1 - 1, hh)
+            # neutral clip body so cut colours stay the loudest signal; each video keeps its own
+            # identity colour as a thin stripe along the top edge
+            base = col.clip_video
+            g = QLinearGradient(0, top, 0, top + hh)
+            g.setColorAt(0.0, base.lighter(112))
+            g.setColorAt(1.0, base.darker(118))
+            path = QPainterPath()
+            path.addRoundedRect(r, 5, 5)
+            p.fillPath(path, g)
+            c_val = clip.get("edge") or clip.get("color")
+            # identity stripe only distinguishes videos: pointless (and confusable with WIN green)
+            # when the project has a single video
+            if len(clips) > 1 and isinstance(c_val, (list, tuple)) and len(c_val) >= 3:
+                ident = QColor(int(c_val[0]), int(c_val[1]), int(c_val[2]))
+                p.save()
+                p.setClipPath(path)
+                p.fillRect(QRectF(r.left(), r.top(), r.width(), 3), ident)
+                p.restore()
+            p.setPen(QPen(_alpha(base.lighter(160), 170), 1))
+            p.setBrush(Qt.NoBrush)
+            p.drawPath(path)
+            labels.append((r, str(clip.get("name") or "")))
+        # removed ranges: darken + hatch
+        p.setRenderHint(QPainter.Antialiasing, False)
+        for a, b, kind, selected in spans:
+            x1, x2 = self._t_to_xf(a), self._t_to_xf(b)
+            if x2 < HEADER_W or x1 > self.width():
+                continue
+            rr = QRectF(x1, top, max(1.0, x2 - x1), hh)
+            p.fillRect(rr, QColor(0, 0, 0, 120))
+            self._hatch(p, rr, _alpha(col.cut(kind), 70))
+            if selected:
+                p.fillRect(rr, _alpha(col.accent, 40))
+        # clip names on top
+        f = QFont(p.font())
+        f.setPixelSize(11)
+        f.setBold(True)
+        p.setFont(f)
+        fm = QFontMetrics(f)
+        for r, name in labels:
+            if r.width() < 40 or not name:
+                continue
+            # keep the name visible when the clip starts left of the viewport
+            left = max(r.left(), float(HEADER_W))
+            visible_w = r.right() - left
+            if visible_w < 40:
+                continue
+            text = fm.elidedText(name, Qt.ElideRight, int(visible_w - 16))
+            tw = fm.horizontalAdvance(text) + 12
+            chip = QRectF(left + 6, r.top() + 8, tw, fm.height() + 4)
+            p.setRenderHint(QPainter.Antialiasing, True)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0, 120))
+            p.drawRoundedRect(chip, 4, 4)
+            p.setPen(QColor(255, 255, 255, 235))
+            p.drawText(chip, Qt.AlignCenter, text)
+        p.setFont(QFont(self.font()))
+        p.setRenderHint(QPainter.Antialiasing, False)
+
+    def _paint_audio_lane(self, p: QPainter, lane: _Lane, spans) -> None:
+        col = self._colors
+        t = self._track(lane.track_idx)
+        clips = _track_attr(t, "clips", []) or []
+        top = lane.top + 2
+        hh = lane.h - 4
+        mid = top + hh / 2
+        vs = float(self.view_start)
+        ve = vs + self._span()
+        # clip backgrounds
+        p.setRenderHint(QPainter.Antialiasing, True)
+        for clip in clips:
+            c_start = float(clip.get("start", 0.0))
+            c_end = float(clip.get("end", 0.0))
+            x1, x2 = self._t_to_xf(c_start), self._t_to_xf(c_end)
+            if x2 - x1 < 1:
+                continue
+            r = QRectF(x1 + 0.5, top, x2 - x1 - 1, hh)
+            p.setPen(QPen(_alpha(col.wave, 60), 1))
+            p.setBrush(_alpha(col.wave, 18))
+            p.drawRoundedRect(r, 5, 5)
+        p.setRenderHint(QPainter.Antialiasing, False)
+
+        # removed mask per pixel column
+        width = self.width()
+        removed = np.zeros(width + 2, dtype=np.int8)  # 0 keep, 1 removed, 2 removed+selected
+        for a, b, _kind, selected in spans:
+            x1 = int(max(0, self._t_to_xf(a)))
+            x2 = int(min(width, self._t_to_xf(b) + 0.999))
+            if x2 > x1:
+                removed[x1:x2] = np.maximum(removed[x1:x2], 2 if selected else 1)
+
+        for clip in clips:
+            try:
+                c_start = float(clip.get("start", 0.0))
+                c_end = float(clip.get("end", 0.0))
+                s_in = float(clip.get("source_in", 0.0))
+                s_out = float(clip.get("source_out", s_in + (c_end - c_start)))
+            except Exception:
+                continue
+            seg_start = max(vs, c_start)
+            seg_end = min(ve, c_end)
+            if seg_end <= seg_start:
+                continue
+            src_start = max(0.0, min(s_in + (seg_start - c_start), s_out))
+            src_end = max(0.0, min(s_in + (seg_end - c_start), s_out))
+            if src_end <= src_start:
+                continue
+            x0 = int(round(self._t_to_xf(seg_start)))
+            x1 = int(round(self._t_to_xf(seg_end)))
+            npx = max(1, x1 - x0)
+            clip_rms = clip.get("rms", None)
+            if clip_rms is None:
+                clip_rms = _track_attr(t, "rms", None)
+            env = self._env_for_rms(clip_rms, clip.get("hop_s", _track_attr(t, "hop_s", 0.03)), npx, src_start, src_end)
+            if env is None:
+                continue
+            amp_h = hh * 0.44
+            lim = min(npx, int(env.size))
+            xs = np.arange(lim) + x0
+            amps = np.maximum(0.6, env[:lim] * amp_h)
+            inside = (xs >= 0) & (xs < removed.size)
+            states = np.zeros(lim, dtype=np.int8)
+            states[inside] = removed[xs[inside]]
+            for state, pen in ((0, QPen(_alpha(col.wave, 215), 1)), (1, QPen(col.wave_removed, 1)),
+                               (2, QPen(_alpha(col.accent, 200), 1))):
+                idx = np.nonzero(states == state)[0]
+                if idx.size == 0:
+                    continue
+                p.setPen(pen)
+                p.drawLines([QLineF(float(xs[j]) + 0.5, mid - float(amps[j]), float(xs[j]) + 0.5, mid + float(amps[j]))
+                             for j in idx])
+        # tint removed ranges
+        for a, b, kind, selected in spans:
+            x1, x2 = self._t_to_xf(a), self._t_to_xf(b)
+            if x2 < HEADER_W or x1 > width:
+                continue
+            rr = QRectF(x1, top, max(1.0, x2 - x1), hh)
+            p.fillRect(rr, _alpha(col.cut(kind), 30 if not selected else 18))
+            if selected:
+                p.setPen(QPen(col.accent, 1))
+                p.drawLine(QPointF(x1, top), QPointF(x1, top + hh))
+                p.drawLine(QPointF(x2, top), QPointF(x2, top + hh))
+        # centre line
+        p.setPen(QPen(_alpha(col.wave, 40), 1))
+        p.drawLine(QPointF(HEADER_W, mid), QPointF(width, mid))
+        # threshold preview (waveform uses a sqrt curve, so the guide does too)
+        if self._threshold_guide is not None:
+            a = max(0.6, float(np.power(self._threshold_guide, 0.7)) * hh * 0.44)
+            pen = QPen(col.pending, 1, Qt.DashLine)
+            p.setPen(pen)
+            p.drawLine(QPointF(HEADER_W, mid - a), QPointF(width, mid - a))
+            p.drawLine(QPointF(HEADER_W, mid + a), QPointF(width, mid + a))
+            f = QFont(p.font())
+            f.setPixelSize(10)
+            f.setBold(True)
+            p.setFont(f)
+            label = "Voice threshold"
+            fm = QFontMetrics(f)
+            chip = QRectF(HEADER_W + 6, mid - a - fm.height() - 6, fm.horizontalAdvance(label) + 12, fm.height() + 4)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0, 170))
+            p.drawRoundedRect(chip, 3, 3)
+            p.setPen(col.pending)
+            p.drawText(chip, Qt.AlignCenter, label)
+            p.setFont(QFont(self.font()))
+
+    def _paint_cuts_lane(self, p: QPainter, lane: _Lane, spans) -> None:
+        col = self._colors
+        top = lane.top + 3
+        hh = lane.h - 6
+        p.setRenderHint(QPainter.Antialiasing, True)
+        # restored (suppressed) ranges first — hatched green outlines
+        for clip in self._audio_clips():
+            c0 = float(clip.get("start", 0.0))
+            for r in clip.get("restored_cuts") or []:
+                x1, x2 = self._t_to_xf(c0 + float(r.start)), self._t_to_xf(c0 + float(r.end))
+                if x2 < HEADER_W or x1 > self.width():
+                    continue
+                rr = QRectF(x1, top + 1, max(2.0, x2 - x1), hh - 2)
+                p.setPen(QPen(_alpha(col.restored, 190), 1))
+                p.setBrush(_alpha(col.restored, 26))
+                p.drawRoundedRect(rr, 3, 3)
+                self._hatch(p, rr, _alpha(col.restored, 70), 5.0)
+        audio_idx = self._audio_track_index()
+        atrack = self._track(audio_idx) if audio_idx is not None else None
+        selected = self._selected_by_track.get(audio_idx, set()) if audio_idx is not None else set()
+        for clip in self._audio_clips():
+            c0 = float(clip.get("start", 0.0))
+            kinds = self._clip_cut_kinds(clip)
+            active = atrack is not None and self._clip_matches_active(atrack, clip)
+            islands = [(float(k.start), float(k.end)) for k in (clip.get("gameplay_keeps") or [])]
+            for i, c in enumerate(clip.get("cuts") or []):
+                a, b = float(c.start), float(c.end)
+                if self._resize is not None and self._resize.get("clip") is clip and self._resize.get("idx") == i:
+                    a, b = float(self._resize["start"]), float(self._resize["end"])
+                x1, x2 = self._t_to_xf(c0 + a), self._t_to_xf(c0 + b)
+                if x2 < HEADER_W or x1 > self.width():
+                    continue
+                kind = kinds[i] if i < len(kinds) else "auto"
+                if kind == "gameplay":
+                    p.setPen(Qt.NoPen)
+                    p.setBrush(_alpha(col.auto, 225))
+                    for ia, ib in islands:
+                        sa, sb = max(a, ia), min(b, ib)
+                        if sb > sa:
+                            xa, xb = self._t_to_xf(c0 + sa), self._t_to_xf(c0 + sb)
+                            p.drawRoundedRect(QRectF(xa, top, max(2.0, xb - xa), hh), 2, 2)
+                    continue
+                base = col.cut(kind)
+                is_sel = active and i in selected
+                ww = max(2.0, x2 - x1)
+                rr = QRectF(x1, top, ww, hh)
+                p.setPen(Qt.NoPen)
+                p.setBrush(_alpha(base, 225))
+                p.drawRoundedRect(rr, 3 if ww > 6 else 1, 3 if ww > 6 else 1)
+                if is_sel:
+                    p.setPen(QPen(QColor("#FFFFFF"), 1.5))
+                    p.setBrush(Qt.NoBrush)
+                    p.drawRoundedRect(rr.adjusted(-1, -1, 1, 1), 3, 3)
+        p.setRenderHint(QPainter.Antialiasing, False)
+
+    def _paint_hover_cut(self, p: QPainter, lanes: list[_Lane]) -> None:
+        """Hover highlight + edge grips of the cut under the mouse (dynamic layer: no static rebuild)."""
+        if self._hover_cut is None or self._hover_x is None or self._tool_mode != "select":
+            return
+        lane = next((ln for ln in lanes if ln.kind == "cuts"), None)
+        hit = self._cut_hit(self._audio_track_index(), self._hover_x)
+        if lane is None or hit is None:
+            return
+        _i, clip, c = hit
+        c0 = float(clip.get("start", 0.0)) if clip else 0.0
+        x1, x2 = self._t_to_xf(c0 + float(c.start)), self._t_to_xf(c0 + float(c.end))
+        top, hh = lane.top + 3, lane.h - 6
+        p.setRenderHint(QPainter.Antialiasing, True)
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(255, 255, 255, 55))
+        p.drawRoundedRect(QRectF(x1, top, max(2.0, x2 - x1), hh), 3, 3)
+        if x2 - x1 > 14:
+            p.setPen(QPen(QColor(255, 255, 255, 210), 1.5))
+            p.drawLine(QPointF(x1 + 3, top + 4), QPointF(x1 + 3, top + hh - 4))
+            p.drawLine(QPointF(x2 - 3, top + 4), QPointF(x2 - 3, top + hh - 4))
+        p.setRenderHint(QPainter.Antialiasing, False)
+
+    def _paint_gameplay_overlay(self, p: QPainter, lanes: list[_Lane]) -> None:
+        """Kept WIN islands as large green overlays; everything outside them dimmed."""
+        islands = self._gameplay_islands()
+        if not islands or not lanes:
+            return
+        col = self._colors
+        top = lanes[0].top
+        bottom = lanes[-1].bottom
+        video = next((ln for ln in lanes if ln.kind == "video"), lanes[0])
+        green = col.keep_island
+        # dim everything that gameplay editing removes (outside the islands)
+        for clip in self._audio_clips():
+            if not clip.get("gameplay_keeps"):
+                continue
+            c0 = float(clip.get("start", 0.0))
+            for g in clip.get("gameplay_cuts") or []:
+                x1, x2 = self._t_to_xf(c0 + float(g.start)), self._t_to_xf(c0 + float(g.end))
+                if x2 < HEADER_W or x1 > self.width():
+                    continue
+                p.fillRect(QRectF(x1, top, x2 - x1, bottom - top), QColor(4, 5, 7, 165))
+        f = QFont(p.font())
+        f.setPixelSize(11)
+        f.setBold(True)
+        fm = QFontMetrics(f)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        for n, isl in enumerate(islands, start=1):
+            x1, x2 = self._t_to_xf(isl["t0"]), self._t_to_xf(isl["t1"])
+            if x2 < HEADER_W or x1 > self.width():
+                continue
+            selected = self._selected_island == (isl["ts"], isl["index"])
+            rect = QRectF(x1, top, max(2.0, x2 - x1), bottom - top)
+            # dominant green; lighter when selected so the cuts inside become readable
+            p.fillRect(rect, _alpha(green, 42 if selected else 96))
+            p.setPen(QPen(green.lighter(150) if selected else green.lighter(118), 2.5 if selected else 2.0))
+            p.setBrush(Qt.NoBrush)
+            p.drawRect(rect.adjusted(1, 1, -1, -1))
+            # label tab at the top of the VIDEO lane
+            game = isl["meta"].get("game_index")
+            label = "WIN" + (f" · game {game}" if game is not None else f" {n}")
+            dur = isl["t1"] - isl["t0"]
+            long_label = f"{label}   {fmt_hms(dur)} kept"
+            text = long_label if fm.horizontalAdvance(long_label) + 20 < rect.width() else label
+            if fm.horizontalAdvance(text) + 16 < rect.width():
+                tab_x = max(rect.left(), float(HEADER_W)) + 6
+                tab = QRectF(tab_x, video.top + 4, fm.horizontalAdvance(text) + 16, fm.height() + 6)
+                p.setPen(Qt.NoPen)
+                p.setBrush(green.darker(115) if not selected else green)
+                p.drawRoundedRect(tab, 4, 4)
+                p.setFont(f)
+                p.setPen(QColor("#FFFFFF"))
+                p.drawText(tab, Qt.AlignCenter, text)
+                p.setFont(QFont(self.font()))
+            if selected:
+                # boundary handles
+                p.setPen(Qt.NoPen)
+                p.setBrush(QColor("#FFFFFF"))
+                for xe in (x1, x2):
+                    p.drawRoundedRect(QRectF(xe - 3, video.top + video.h / 2 - 12, 6, 24), 3, 3)
+        p.setRenderHint(QPainter.Antialiasing, False)
+
+    def _paint_island_ruler_marks(self, p: QPainter) -> None:
+        """Green bars under the ruler for every island; times at the edges of the selected one."""
+        islands = self._gameplay_islands()
+        if not islands:
+            return
+        col = self._colors
+        f = QFont(p.font())
+        f.setPixelSize(10)
+        f.setBold(True)
+        p.setFont(f)
+        fm = QFontMetrics(f)
+        for isl in islands:
+            x1, x2 = self._t_to_xf(isl["t0"]), self._t_to_xf(isl["t1"])
+            x1c, x2c = max(x1, float(HEADER_W)), min(x2, float(self.width()))
+            if x2c <= x1c:
+                continue
+            p.fillRect(QRectF(x1c, RULER_H - 4, x2c - x1c, 3), col.keep_island)
+            if self._selected_island == (isl["ts"], isl["index"]):
+                for t, align_right in ((isl["t0"], False), (isl["t1"], True)):
+                    label = fmt_hms(t)
+                    x = self._t_to_xf(t)
+                    tw = fm.horizontalAdvance(label) + 8
+                    box = QRectF(x - tw if align_right else x, 2, tw, 14)
+                    p.fillRect(box, col.keep_island)
+                    p.setPen(QColor("#FFFFFF"))
+                    p.drawText(box, Qt.AlignCenter, label)
+        p.setFont(QFont(self.font()))
+
+    def _paint_pending(self, p: QPainter, lanes: list[_Lane]) -> None:
+        if not lanes:
+            return
+        col = self._colors
+        audio_idx = self._audio_track_index()
+        idx = audio_idx if audio_idx is not None else self.active_track
+        ps, pe = self._pending_by_track.get(idx, (None, None))
+        if ps is None and pe is None:
+            return
+        clip = self._active_clip(idx) if idx is not None else None
+        c_start = float(clip.get("start", 0.0)) if clip else 0.0
+        c_end = float(clip.get("end", c_start)) if clip else self.duration
+        s_in = float(clip.get("source_in", 0.0)) if clip else 0.0
+        s_out = float(clip.get("source_out", s_in + max(0.0, c_end - c_start))) if clip else 0.0
+
+        def to_t(v: Optional[float]) -> Optional[float]:
+            if v is None:
+                return None
+            vv = float(v)
+            if clip is None:
+                return vv
+            clip_len = max(0.0, c_end - c_start)
+            if clip_len > 0.0 and -1e-6 <= vv <= clip_len + 1e-6:
+                return c_start + max(0.0, min(vv, clip_len))
+            if s_out > s_in + 1e-6 and s_in - 1e-6 <= vv <= s_out + 1e-6:
+                return c_start + (vv - s_in)
+            if c_start - 1e-6 <= vv <= c_end + 1e-6:
+                return vv
+            return None
+
+        top = lanes[0].top
+        bottom = lanes[-1].bottom
+        ts, te = to_t(ps), to_t(pe)
+        if ts is not None and te is not None:
+            a, b = sorted((ts, te))
+            x1, x2 = self._t_to_xf(a), self._t_to_xf(b)
+            p.fillRect(QRectF(x1, top, max(1.0, x2 - x1), bottom - top), _alpha(col.pending, 40))
+        for tv, label in ((ts, "IN"), (te, "OUT")):
+            if tv is None:
+                continue
+            x = self._t_to_xf(tv)
+            p.setPen(QPen(col.pending, 2))
+            p.drawLine(QPointF(x, top), QPointF(x, bottom))
+            f = QFont(p.font())
+            f.setPixelSize(9)
+            f.setBold(True)
+            p.setFont(f)
+            chip = QRectF(x - 13, top, 26, 13)
+            p.fillRect(chip, col.pending)
+            p.setPen(QColor("#1A1300"))
+            p.drawText(chip, Qt.AlignCenter, label)
+            p.setFont(QFont(self.font()))
+
+    def _paint_marquee(self, p: QPainter, lanes: list[_Lane]) -> None:
+        if self._sel_start_x is None or self._sel_current_x is None or not lanes:
+            return
+        col = self._colors
+        x1 = min(self._sel_start_x, self._sel_current_x)
+        x2 = max(self._sel_start_x, self._sel_current_x)
+        r = QRectF(x1, lanes[0].top, x2 - x1, lanes[-1].bottom - lanes[0].top)
+        p.fillRect(r, _alpha(col.accent, 34))
+        p.setPen(QPen(_alpha(col.accent, 200), 1, Qt.DashLine))
+        p.drawRect(r)
+
+    def _paint_hover_line(self, p: QPainter, lanes: list[_Lane]) -> None:
+        if self._hover_x is None or self._scrubbing or not lanes or self._hover_x < HEADER_W:
+            return
+        col = self._colors
+        x = float(self._hover_x)
+        p.setPen(QPen(_alpha(col.text, 46), 1))
+        p.drawLine(QPointF(x, RULER_H), QPointF(x, lanes[-1].bottom))
+
+    def _paint_playhead(self, p: QPainter, lanes: list[_Lane], h: int) -> None:
+        col = self._colors
+        x = self._t_to_xf(self.playhead)
+        if x < HEADER_W - 1 or x > self.width():
+            return
+        p.setRenderHint(QPainter.Antialiasing, True)
+        bottom = lanes[-1].bottom if lanes else h
+        p.setPen(QPen(col.playhead, 1.5))
+        p.drawLine(QPointF(x, RULER_H - 6), QPointF(x, bottom))
+        head = QPainterPath()
+        head.moveTo(x - 6, 3)
+        head.lineTo(x + 6, 3)
+        head.lineTo(x + 6, RULER_H - 12)
+        head.lineTo(x, RULER_H - 5)
+        head.lineTo(x - 6, RULER_H - 12)
+        head.closeSubpath()
+        p.setPen(Qt.NoPen)
+        p.setBrush(col.playhead)
+        p.drawPath(head)
+        p.setRenderHint(QPainter.Antialiasing, False)
+
     # -----------------------------
     # Mouse interactions
     # -----------------------------
+    def _meta_for(self, track_idx: Optional[int], x: float, t: float) -> dict:
+        row_kind = None
+        track_state_idx = None
+        clip_id = None
+        source_t = None
+        local_t = None
+        if track_idx is not None:
+            row_kind = self._track_kind(track_idx)
+            clip = self._clip_at_x(track_idx, x)
+            if isinstance(clip, dict):
+                track_state_idx = clip.get("track_state_idx", None)
+                clip_id = clip.get("clip_id", None)
+                try:
+                    cs = float(clip.get("start", 0.0))
+                    s_in = float(clip.get("source_in", 0.0))
+                    local_t = float(t) - cs
+                    source_t = s_in + local_t
+                except Exception:
+                    local_t = None
+                    source_t = None
+        return {"row_kind": row_kind, "track_state_idx": track_state_idx, "clip_id": clip_id,
+                "source_t": source_t, "local_t": local_t}
+
+    def _edge_hit(self, x: float) -> Optional[tuple[int, dict, str]]:
+        """(cut index, clip, 'start'|'end') when x is on a cut edge of the active clip."""
+        audio_idx = self._audio_track_index()
+        if audio_idx is None:
+            return None
+        atrack = self._track(audio_idx)
+        best = None
+        best_d = EDGE_GRAB_PX + 0.5
+        for clip in self._audio_clips():
+            if atrack is not None and not self._clip_matches_active(atrack, clip):
+                continue
+            c0 = float(clip.get("start", 0.0))
+            kinds = self._clip_cut_kinds(clip)
+            for i, c in enumerate(clip.get("cuts") or []):
+                if i < len(kinds) and kinds[i] == "gameplay":
+                    continue
+                x1, x2 = self._t_to_xf(c0 + float(c.start)), self._t_to_xf(c0 + float(c.end))
+                if x2 - x1 < 10:
+                    continue
+                for edge, ex in (("start", x1), ("end", x2)):
+                    d = abs(ex - x)
+                    if d < best_d:
+                        best, best_d = (i, clip, edge), d
+        return best
+
     def mousePressEvent(self, e):
         if self.duration <= 0:
             return
+        x = float(e.position().x())
+        y = float(e.position().y())
+        if x < HEADER_W:
+            lane = self._lane_at_y(y)
+            if lane is not None and lane.track_idx != self.active_track:
+                self.setActiveTrack(lane.track_idx, emit=True)
+            return
+        lane = self._lane_at_y(y)
+        track_idx = lane.track_idx if lane is not None else None
+        t = self._x_to_t(x)
 
-        # Right click always opens context menu (create/remove cuts)
         if e.button() == Qt.RightButton:
-            x = float(e.position().x())
-            y = float(e.position().y())
-            track_idx = self._track_at_y(y)
             if track_idx is not None and track_idx != self.active_track:
                 self.setActiveTrack(track_idx, emit=True)
-            active_idx = self.active_track
-            t = self._x_to_t(x)
-            cut_idx = self._cut_index_at_x(active_idx, x)
-
-            row_kind = None
-            track_state_idx = None
-            clip_id = None
-            source_t = None
-            local_t = None
-            if track_idx is not None:
-                row = self._track(track_idx)
-                row_kind = str(_track_attr(row, "kind", "audio") or "audio")
-                clip = self._clip_at_x(track_idx, x)
-                if isinstance(clip, dict):
-                    try:
-                        track_state_idx = clip.get("track_state_idx", None)
-                    except Exception:
-                        track_state_idx = None
-                    try:
-                        clip_id = clip.get("clip_id", None)
-                    except Exception:
-                        clip_id = None
-                    try:
-                        cs = float(clip.get("start", 0.0))
-                        s_in = float(clip.get("source_in", 0.0))
-                        local_t = float(t) - cs
-                        source_t = s_in + local_t
-                    except Exception:
-                        local_t = None
-                        source_t = None
-                    if cut_idx is None:
-                        try:
-                            clip_cuts = clip.get("cuts") or []
-                        except Exception:
-                            clip_cuts = []
-                        if clip_cuts and local_t is not None:
-                            for i, c in enumerate(clip_cuts):
-                                try:
-                                    if float(c.start) <= float(local_t) <= float(c.end):
-                                        cut_idx = i
-                                        break
-                                except Exception:
-                                    continue
-                        if cut_idx is None and clip_cuts and source_t is not None:
-                            for i, c in enumerate(clip_cuts):
-                                try:
-                                    if float(c.start) <= float(source_t) <= float(c.end):
-                                        cut_idx = i
-                                        break
-                                except Exception:
-                                    continue
-
-            meta = {
-                "cut_idx": cut_idx,
-                "track_state_idx": track_state_idx,
-                "clip_id": clip_id,
-                "row_kind": row_kind,
-                "source_t": source_t,
-                "local_t": local_t,
-            }
+            meta = self._meta_for(track_idx, x, t)
+            hit = self._cut_hit(self._audio_track_index(), x)
+            meta["cut_idx"] = hit[0] if hit else None
+            if hit is not None:
+                cur = set(self.selectedCutIndices())
+                if hit[0] not in cur:
+                    self.setCutSelection([hit[0]])
+            restored = self._restored_hit(self._audio_track_index() or 0, x) if lane is not None else None
+            meta["restored_range"] = (float(restored[1].start), float(restored[1].end)) if restored else None
+            meta["selected"] = self.selectedCutIndices()
+            meta["lane"] = lane.kind if lane is not None else None
             self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
             return
 
-        x = float(e.position().x())
-        y = float(e.position().y())
-
-        ruler_h = 26
-        playhead_x = float(self._t_to_x(self.playhead))
-
-        if e.button() == Qt.LeftButton:
-            track_idx = self._track_at_y(y)
-            if track_idx is not None and track_idx != self.active_track:
-                self.setActiveTrack(track_idx, emit=True)
-
-            active_idx = self.active_track
-
-            # Split tool: click on a clip to split
-            if self._tool_mode == "split":
-                if track_idx is None:
-                    return
-                clip = self._clip_at_x(track_idx, x)
-                track = self._track(track_idx)
-                if clip is not None and (track is None or self._clip_matches_active(track, clip)):
-                    try:
-                        clip_id = clip.get("clip_id", None)
-                    except Exception:
-                        clip_id = None
-                    if clip_id:
-                        t = self._x_to_t(x)
-                        self.clipSplitRequested.emit(str(clip_id), float(t))
-                return
-
-            # Cut tool: let MainWindow handle 2-click pending cut workflow
-            if self._tool_mode == "cut":
-                t = self._x_to_t(x)
-                row_kind = None
-                track_state_idx = None
-                source_t = None
-                local_t = None
-                if track_idx is not None:
-                    row = self._track(track_idx)
-                    row_kind = str(_track_attr(row, "kind", "audio") or "audio")
-                    clip = self._clip_at_x(track_idx, x)
-                    if isinstance(clip, dict):
-                        try:
-                            track_state_idx = clip.get("track_state_idx", None)
-                        except Exception:
-                            track_state_idx = None
-                        try:
-                            cs = float(clip.get("start", 0.0))
-                            s_in = float(clip.get("source_in", 0.0))
-                            local_t = float(t) - cs
-                            source_t = s_in + local_t
-                        except Exception:
-                            local_t = None
-                            source_t = None
-                meta = {
-                    "track_state_idx": track_state_idx,
-                    "row_kind": row_kind,
-                    "source_t": source_t,
-                    "local_t": local_t,
-                    "cut_tool_click": True,
-                }
-                self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
-                return
-            # SCRUB only when user intends it:
-            # - near playhead (triangle/line)
-            # - OR on ruler area
-            if abs(x - playhead_x) <= 12.0 or y <= ruler_h:
-                self._scrubbing = True
-                self._scrub_offset_px = (x - playhead_x) if abs(x - playhead_x) <= 12.0 else 0.0
-                self.scrubStarted.emit()
-                t = self._x_to_t(x - self._scrub_offset_px)
-                self.seekRequested.emit(float(t))
-                return
-            # clip drag
-            clip = self._clip_at_x(active_idx, x)
-            if clip is not None:
-                try:
-                    ts = clip.get("track_state_idx", None)
-                    if ts is not None:
-                        self.clipActivated.emit(int(ts))
-                except Exception:
-                    pass
-                try:
-                    c_start = float(clip.get("start", 0.0))
-                    c_end = float(clip.get("end", 0.0))
-                except Exception:
-                    c_start = 0.0
-                    c_end = 0.0
-                t = self._x_to_t(x)
-                self._drag_clip = clip
-                self._drag_track_idx = active_idx
-                self._drag_start_t = t
-                self._drag_clip_start = c_start
-                self._drag_clip_end = c_end
-                self._drag_offset_t = t - c_start
-                self._drag_preview_start = c_start
-                self.update()
-                return
-
-            # Click on a cut -> select + click action (remove etc in MainWindow)
-            cut_idx = self._cut_index_at_x(active_idx, x)
-            if cut_idx is not None:
-                self._selected_by_track[active_idx] = {cut_idx}
-                self.update()
-                self.cutClicked.emit(cut_idx, e.globalPosition())
-                return
-
-            # Rectangle selection only with Shift; otherwise scrub anywhere
-            if e.modifiers() & Qt.ShiftModifier:
-                track = self._track(active_idx)
-                clips = _track_attr(track, "clips", []) if track is not None else []
-                if clips:
-                    clip = self._clip_at_x(active_idx, x)
-                    if clip is None or not self._clip_matches_active(track, clip):
-                        return
-                    self._sel_clip = clip
-                else:
-                    self._sel_clip = None
-
-                self._sel_start_x = x
-                self._sel_current_x = x
-                self._sel_track_idx = active_idx
-                self._selected_by_track[active_idx] = set()
-                self.update()
-                return
-
-            # default: click anywhere to move/scrub playhead
-            self._scrubbing = True
-            self._scrub_offset_px = 0.0
-            self.scrubStarted.emit()
-            t = self._x_to_t(x)
-            self.seekRequested.emit(float(t))
+        if e.button() != Qt.LeftButton:
             return
+        if track_idx is not None and track_idx != self.active_track and lane is not None \
+                and lane.kind in ("video", "audio"):
+            self.setActiveTrack(track_idx, emit=True)
+        active_idx = self.active_track
+
+        if self._tool_mode == "split":
+            if track_idx is None:
+                return
+            clip = self._clip_at_x(track_idx, x)
+            track = self._track(track_idx)
+            if clip is not None and (track is None or self._clip_matches_active(track, clip)):
+                clip_id = clip.get("clip_id", None)
+                if clip_id:
+                    self.clipSplitRequested.emit(str(clip_id), float(t))
+            return
+
+        if self._tool_mode == "cut":
+            meta = self._meta_for(self._audio_track_index() if lane is not None and lane.kind != "video"
+                                  else track_idx, x, t)
+            meta["cut_tool_click"] = True
+            self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
+            return
+
+        # ruler or playhead grab → scrub
+        playhead_x = self._t_to_xf(self.playhead)
+        if y <= RULER_H or (abs(x - playhead_x) <= 5.0 and y <= RULER_H + 10):
+            self._start_scrub(x, playhead_x)
+            return
+
+        # cut edge → resize
+        if lane is not None and lane.kind in ("cuts", "audio"):
+            edge = self._edge_hit(x)
+            if edge is not None:
+                i, clip, which = edge
+                c = (clip.get("cuts") or [])[i]
+                self._resize = {"idx": i, "clip": clip, "edge": which, "start": float(c.start),
+                                "end": float(c.end), "orig": (float(c.start), float(c.end))}
+                self.setCutSelection([i])
+                self._changed()
+                return
+
+        # gameplay islands on the VIDEO lane: drag an edge to move a boundary, click to select
+        if lane is not None and lane.kind == "video" and self._has_gameplay():
+            edge = self._island_edge_at_x(x)
+            if edge is not None:
+                isl, which = edge
+                keeps = sorted(isl["clip"].get("gameplay_keeps") or [], key=lambda k: float(k.start))
+                i = isl["index"]
+                c0 = float(isl["clip"].get("start", 0.0))
+                clip_len = float(isl["clip"].get("end", c0)) - c0
+                self._island_drag = {
+                    "clip": isl["clip"], "index": i, "ts": isl["ts"], "edge": which, "c0": c0,
+                    "start": isl["start"], "end": isl["end"], "orig": (isl["start"], isl["end"]),
+                    "lo": float(keeps[i - 1].end) if i > 0 else 0.0,
+                    "hi": float(keeps[i + 1].start) if i + 1 < len(keeps) else clip_len,
+                }
+                if isl["ts"] is not None:
+                    self.setSelectedIsland((int(isl["ts"]), i), emit=True)
+                return
+            isl = self._island_at_x(x)
+            if isl is not None and isl["ts"] is not None:
+                self.setSelectedIsland((int(isl["ts"]), isl["index"]), emit=True)
+                return
+
+        # clip drag on the video lane (sequential mode: swap)
+        if lane is not None and lane.kind == "video":
+            clip = self._clip_at_x(track_idx, x) if track_idx is not None else None
+            if clip is not None:
+                ts = clip.get("track_state_idx", None)
+                if ts is not None:
+                    try:
+                        self.clipActivated.emit(int(ts))
+                    except Exception:
+                        pass
+                self._drag_clip = clip
+                self._drag_track_idx = track_idx
+                self._drag_start_t = t
+                self._drag_clip_start = float(clip.get("start", 0.0))
+                self._drag_clip_end = float(clip.get("end", 0.0))
+                self._drag_offset_t = t - self._drag_clip_start
+                self._drag_preview_start = None
+                self._drag_started = False
+                self._drag_press_x = x
+                return
+
+        # click on a cut → select
+        if lane is not None and lane.kind in ("cuts", "audio", "gameplay"):
+            sel_track = self._audio_track_index()
+            hit = self._cut_hit(sel_track, x)
+            if hit is None:
+                other = self._cut_hit(sel_track, x, require_active=False)
+                if sel_track is not None and other is not None and other[1].get("track_state_idx") is not None:
+                    # cut of another video in the sequence: activate that video first
+                    self._selected_by_track[sel_track] = set()
+                    self.clipActivated.emit(int(other[1]["track_state_idx"]))
+                    hit = self._cut_hit(sel_track, x) or other
+            if hit is not None:
+                i = hit[0]
+                cur = set(self.selectedCutIndices())
+                if e.modifiers() & (Qt.ShiftModifier | Qt.ControlModifier):
+                    cur ^= {i}
+                else:
+                    cur = {i}
+                self.setCutSelection(sorted(cur))
+                self.cutClicked.emit(i, e.globalPosition())
+                return
+
+        # empty space: click = seek (on release), drag = marquee
+        self._press_pos = QPointF(x, y)
+        self._press_t = t
+        self._press_shift = bool(e.modifiers() & (Qt.ShiftModifier | Qt.ControlModifier))
+        _ = active_idx
+
+    def _start_scrub(self, x: float, playhead_x: float) -> None:
+        self._scrubbing = True
+        self.follow_playhead = True
+        self._scrub_offset_px = (x - playhead_x) if abs(x - playhead_x) <= 5.0 else 0.0
+        self.scrubStarted.emit()
+        self.seekRequested.emit(float(self._x_to_t(x - self._scrub_offset_px)))
+
+    def mouseDoubleClickEvent(self, e):
+        if self.duration <= 0 or e.button() != Qt.LeftButton:
+            return
+        x = float(e.position().x())
+        sel_track = self._audio_track_index()
+        hit = self._cut_hit(sel_track, x) if sel_track is not None else None
+        if hit is not None:
+            _i, clip, c = hit
+            self.follow_playhead = True
+            self.seekRequested.emit(float(clip.get("start", 0.0)) + float(c.start) if clip else float(c.start))
+
+    def _update_hover(self, x: float, y: float, global_pos) -> None:
+        prev = (self._hover_cut, self._hover_edge)
+        self._hover_x = x if x >= HEADER_W else None
+        lane = self._lane_at_y(y)
+        self._hover_cut = None
+        self._hover_edge = None
+        tip = ""
+        if lane is not None and x >= HEADER_W and lane.kind in ("cuts", "audio", "gameplay"):
+            sel_track = self._audio_track_index()
+            if self._tool_mode == "select" and lane.kind in ("cuts", "audio"):
+                edge = self._edge_hit(x)
+                if edge is not None:
+                    self._hover_cut = edge[0]
+                    self._hover_edge = edge[2]
+            hit = self._cut_hit(sel_track, x) if sel_track is not None else None
+            if hit is not None:
+                i, clip, c = hit
+                self._hover_cut = i
+                kinds = self._clip_cut_kinds(clip) if clip else []
+                kind = kinds[i] if i < len(kinds) else "auto"
+                label = {"auto": "Automatic cut", "manual": "Manual cut", "gameplay": "Gameplay cut"}[kind]
+                c0 = float(clip.get("start", 0.0)) if clip else 0.0
+                a, b = c0 + float(c.start), c0 + float(c.end)
+                tip = (f"{label}\n{fmt_hms(a)} – {fmt_hms(b)}  ({b - a:.2f} s)\n"
+                       f"Click to select · Del restores · drag edges to adjust")
+            elif lane.kind == "cuts":
+                r = self._restored_hit(sel_track or 0, x)
+                if r is not None:
+                    clip, seg = r
+                    c0 = float(clip.get("start", 0.0))
+                    tip = (f"Restored (kept)\n{fmt_hms(c0 + float(seg.start))} – {fmt_hms(c0 + float(seg.end))}\n"
+                           "Right-click to cut it again")
+        island_edge = None
+        if lane is not None and lane.kind == "video" and x >= HEADER_W and self._has_gameplay():
+            island_edge = self._island_edge_at_x(x)
+            if island_edge is not None:
+                isl, which = island_edge
+                tip = (f"WIN island {which}: {fmt_hms(isl['t0'] if which == 'start' else isl['t1'])}\n"
+                       "Drag to adjust this boundary")
+            else:
+                isl = self._island_at_x(x)
+                if isl is not None:
+                    tip = (f"WIN island  {fmt_hms(isl['t0'])} – {fmt_hms(isl['t1'])}  "
+                           f"({fmt_hms(isl['t1'] - isl['t0'])} kept)\nClick to select · drag its edges to adjust")
+        if self._tool_mode == "select":
+            if self._hover_edge is not None or island_edge is not None:
+                self.setCursor(Qt.SizeHorCursor)
+            else:
+                self.unsetCursor()
+        if tip:
+            QToolTip.showText(global_pos.toPoint(), tip, self)
+        elif prev[0] is not None:
+            QToolTip.hideText()
+        self.update()  # hover line/highlight are drawn on the dynamic layer: cheap blit, no rebuild
 
     def mouseMoveEvent(self, e):
         if self.duration <= 0:
             return
-
         x = float(e.position().x())
+        y = float(e.position().y())
 
-        # clip drag
+        if not (e.buttons() & Qt.LeftButton):
+            self._update_hover(x, y, e.globalPosition())
+            return
+
+        if self._island_drag is not None:
+            d = self._island_drag
+            local = self._x_to_t(x) - d["c0"]
+            if self._snap_enabled and abs(self._t_to_xf(self.playhead) - x) <= 8:
+                local = float(self.playhead) - d["c0"]
+            if d["edge"] == "start":
+                d["start"] = max(d["lo"], min(local, d["end"] - 1.0))
+            else:
+                d["end"] = min(d["hi"], max(local, d["start"] + 1.0))
+            QToolTip.showText(e.globalPosition().toPoint(),
+                              f"WIN island  {fmt_hms(d['c0'] + d['start'])} – {fmt_hms(d['c0'] + d['end'])}"
+                              f"  ({fmt_hms(d['end'] - d['start'])} kept)", self)
+            self._changed()
+            return
+
+        if self._resize is not None:
+            clip = self._resize["clip"]
+            c0 = float(clip.get("start", 0.0)) if clip else 0.0
+            clip_len = float(clip.get("end", c0)) - c0 if clip else self.duration
+            local = self._x_to_t(x) - c0
+            if self._snap_enabled:
+                ph_local = float(self.playhead) - c0
+                if abs(self._t_to_xf(c0 + ph_local) - x) <= 8:
+                    local = ph_local
+            if self._resize["edge"] == "start":
+                self._resize["start"] = max(0.0, min(local, self._resize["end"] - MIN_CUT_S))
+            else:
+                self._resize["end"] = min(clip_len, max(local, self._resize["start"] + MIN_CUT_S))
+            QToolTip.showText(e.globalPosition().toPoint(),
+                              f"{fmt_hms(c0 + self._resize['start'])} – {fmt_hms(c0 + self._resize['end'])}"
+                              f"  ({self._resize['end'] - self._resize['start']:.2f} s)", self)
+            self._changed()
+            return
+
         if self._drag_clip is not None:
+            if not self._drag_started and abs(x - self._drag_press_x) < DRAG_THRESHOLD_PX:
+                return
+            self._drag_started = True
             t = self._x_to_t(x)
             dur = max(0.0, self._drag_clip_end - self._drag_clip_start)
             new_start = max(0.0, t - self._drag_offset_t)
             new_start = self._snap_time(new_start, dur, self._drag_clip.get("clip_id"))
             self._drag_preview_start = new_start
-            self.update()
+            self._changed()
             return
 
-        # scrubbing
         if self._scrubbing:
-            t = self._x_to_t(x - self._scrub_offset_px)
-            self.seekRequested.emit(float(t))
+            self.seekRequested.emit(float(self._x_to_t(x - self._scrub_offset_px)))
             return
 
-        # selection box
+        if self._press_pos is not None and self._sel_start_x is None:
+            if abs(x - self._press_pos.x()) >= DRAG_THRESHOLD_PX:
+                self._sel_start_x = float(self._press_pos.x())
+                self._sel_track_idx = self._audio_track_index()
+                self._sel_base = set(self.selectedCutIndices()) if self._press_shift else set()
         if self._sel_start_x is not None and self._sel_track_idx is not None:
             self._sel_current_x = x
-
-            x1 = min(self._sel_start_x, self._sel_current_x)
-            x2 = max(self._sel_start_x, self._sel_current_x)
-
-            t1 = self._x_to_t(x1)
-            t2 = self._x_to_t(x2)
-
-            sel = set()
-            cuts = self._track_cuts(self._sel_track_idx)
-            # map to source time if clips exist
-            track = self._track(self._sel_track_idx)
-            clips = _track_attr(track, "clips", []) if track is not None else []
-            if clips:
-                clip0 = self._sel_clip
-                if clip0 is None or not self._clip_matches_active(track, clip0):
-                    self.update()
-                    return
-                try:
-                    cs = float(clip0.get("start", 0.0))
-                    s_in = float(clip0.get("source_in", 0.0))
-                except Exception:
-                    cs = 0.0
-                    s_in = 0.0
-                t1 = s_in + (t1 - cs)
-                t2 = s_in + (t2 - cs)
-            for i, c in enumerate(cuts):
-                if c.end >= t1 and c.start <= t2:
-                    sel.add(i)
+            t1 = self._x_to_t(min(self._sel_start_x, x))
+            t2 = self._x_to_t(max(self._sel_start_x, x))
+            sel = set(self._sel_base)
+            atrack = self._track(self._sel_track_idx)
+            for clip in self._audio_clips():
+                if atrack is not None and not self._clip_matches_active(atrack, clip):
+                    continue
+                c0 = float(clip.get("start", 0.0))
+                kinds = self._clip_cut_kinds(clip)
+                for i, c in enumerate(clip.get("cuts") or []):
+                    if i < len(kinds) and kinds[i] == "gameplay":
+                        continue
+                    if c0 + float(c.end) >= t1 and c0 + float(c.start) <= t2:
+                        sel.add(i)
             self._selected_by_track[self._sel_track_idx] = sel
-
-            self.update()
-            return
+            self._changed()
 
     def mouseReleaseEvent(self, e):
-        # end scrubbing
         if self._scrubbing:
             self._scrubbing = False
             self.scrubEnded.emit()
             return
 
-        # end clip drag
+        if self._island_drag is not None:
+            d = self._island_drag
+            self._island_drag = None
+            if d["ts"] is not None and (abs(d["start"] - d["orig"][0]) > 1e-3 or abs(d["end"] - d["orig"][1]) > 1e-3):
+                self.islandResizeRequested.emit(int(d["ts"]), int(d["index"]), float(d["start"]), float(d["end"]))
+            self._changed()
+            return
+
+        if self._resize is not None:
+            r = self._resize
+            self._resize = None
+            if (abs(r["start"] - r["orig"][0]) > 1e-3) or (abs(r["end"] - r["orig"][1]) > 1e-3):
+                self.cutResizeRequested.emit(int(r["idx"]), float(r["start"]), float(r["end"]))
+            self._changed()
+            return
+
         if self._drag_clip is not None:
-            new_start = self._drag_preview_start
             clip_id = self._drag_clip.get("clip_id") if isinstance(self._drag_clip, dict) else None
             target_id = None
-            try:
-                x = float(e.position().x())
-            except Exception:
-                x = None
-            if x is not None and self._drag_track_idx is not None:
-                target = self._clip_at_x(self._drag_track_idx, x)
+            started = self._drag_started
+            if started and self._drag_track_idx is not None:
+                target = self._clip_at_x(self._drag_track_idx, float(e.position().x()))
                 if target is not None:
-                    try:
-                        target_id = target.get("clip_id")
-                    except Exception:
-                        target_id = None
+                    target_id = target.get("clip_id")
+            new_start = self._drag_preview_start
             self._drag_clip = None
             self._drag_track_idx = None
             self._drag_preview_start = None
-            if clip_id is not None and target_id is not None and str(target_id) != str(clip_id):
+            self._drag_started = False
+            if not started:
+                self.follow_playhead = True
+                self.seekRequested.emit(float(self._x_to_t(float(e.position().x()))))
+            elif clip_id is not None and target_id is not None and str(target_id) != str(clip_id):
                 self.clipSwapRequested.emit(str(clip_id), str(target_id))
             elif clip_id is not None and new_start is not None:
                 self.clipMoveRequested.emit(str(clip_id), float(new_start))
-            self.update()
+            self._changed()
             return
 
-        # finalize selection
         if self._sel_start_x is not None and self._sel_track_idx is not None:
-            selected = self._selected_by_track.get(self._sel_track_idx, set())
-            if selected:
-                self.cutsSelected.emit(sorted(selected), e.globalPosition())
+            selected = sorted(self._selected_by_track.get(self._sel_track_idx, set()))
             self._sel_start_x = None
             self._sel_current_x = None
             self._sel_track_idx = None
             self._sel_clip = None
+            self._press_pos = None
+            self.selectionChanged.emit(selected)
+            if selected:
+                self.cutsSelected.emit(selected, e.globalPosition())
+            self._changed()
             return
+
+        if self._press_pos is not None:
+            self._press_pos = None
+            if not self._press_shift:
+                self.clearCutSelection()
+                if self._selected_island is not None:
+                    self.setSelectedIsland(None, emit=True)
+            self.follow_playhead = True
+            self.seekRequested.emit(float(self._press_t))
+            return
+
+    def leaveEvent(self, e):
+        self._hover_x = None
+        self._hover_cut = None
+        self._hover_edge = None
+        self.update()
+        return super().leaveEvent(e)
+
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape and (self._resize is not None or self._sel_start_x is not None):
+            self._resize = None
+            self._sel_start_x = None
+            self._sel_current_x = None
+            self._changed()
+            return
+        return super().keyPressEvent(e)
