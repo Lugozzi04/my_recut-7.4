@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any
+from analysis.performance_profile import submeasure
 import numpy as np
 
 from analysis.gameplay.models import GameEvent, GameEventType
@@ -44,15 +45,17 @@ class ResultTextDetector:
     def score_roi(self, image: np.ndarray) -> dict[str, Any]:
         if image.shape[:2] != (self.output_size[1], self.output_size[0]):
             raise ValueError('Result ROI shape differs from the configured FFmpeg sampling geometry')
-        roi = self._represent(image)
+        with submeasure("image_preparation"):
+            roi = self._represent(image)
         scores = {'VICTORY': 0.0, 'DEFEAT': 0.0}
         best: dict[str, dict[str, Any]] = {}
-        for kind, name, scale, template in self.templates:
-            response = self.cv.matchTemplate(roi, template, self.cv.TM_CCOEFF_NORMED)
-            _, score, _, location = self.cv.minMaxLoc(response)
-            if np.isfinite(score) and score > scores[kind]:
-                scores[kind] = float(score)
-                best[kind] = {'template_id': name, 'scale': float(scale), 'location': list(location)}
+        with submeasure("template_matching"):
+            for kind, name, scale, template in self.templates:
+                response = self.cv.matchTemplate(roi, template, self.cv.TM_CCOEFF_NORMED)
+                _, score, _, location = self.cv.minMaxLoc(response)
+                if np.isfinite(score) and score > scores[kind]:
+                    scores[kind] = float(score)
+                    best[kind] = {'template_id': name, 'scale': float(scale), 'location': list(location)}
         winner = max(scores, key=lambda key: scores[key])
         other = 'DEFEAT' if winner == 'VICTORY' else 'VICTORY'
         return {'scores': scores, 'winner': winner, 'score': scores[winner],

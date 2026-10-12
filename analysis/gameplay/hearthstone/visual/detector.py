@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import math
 from typing import Any, Protocol
 
+from analysis.performance_profile import current_profile, record, submeasure
 import numpy as np
 
 from analysis.gameplay.models import DetectionSource, GameEvent, GameEventType
@@ -163,25 +164,30 @@ class TemplateVisualDetector:
             image = np.ascontiguousarray(gray[top - crop_top:bottom - crop_top, left - crop_left:right - crop_left])
             best: _ClassMatch | None = None
             ranked: dict[str, _ClassMatch] = {}
-            for template in self._prepared[config.event_type]:
-                result = self._cv.matchTemplate(image, template.image, self._cv.TM_CCOEFF_NORMED)
-                _minimum, maximum, _minimum_location, location = self._cv.minMaxLoc(result)
-                score = float(maximum)
-                if not math.isfinite(score):
-                    continue
-                # OpenCV may return a tiny floating-point overshoot around 1.
-                score = max(-1.0, min(1.0, score))
-                if (best is None or score > best.similarity or template_scores is not None):
-                    height, width = template.image.shape
-                    match = _ClassMatch(
-                        config.event_type, score, config.threshold, template.template_id, template.scale,
-                        (left + location[0], top + location[1], width, height),
-                    )
-                    if best is None or score > best.similarity:
-                        best = match
-                    if template_scores is not None and (template.template_id not in ranked
-                            or score > ranked[template.template_id].similarity):
-                        ranked[template.template_id] = match
+            with submeasure("template_matching"):
+                for template in self._prepared[config.event_type]:
+                    result = self._cv.matchTemplate(image, template.image, self._cv.TM_CCOEFF_NORMED)
+                    _minimum, maximum, _minimum_location, location = self._cv.minMaxLoc(result)
+                    score = float(maximum)
+                    if not math.isfinite(score):
+                        continue
+                    # OpenCV may return a tiny floating-point overshoot around 1.
+                    score = max(-1.0, min(1.0, score))
+                    if (best is None or score > best.similarity or template_scores is not None):
+                        height, width = template.image.shape
+                        match = _ClassMatch(
+                            config.event_type, score, config.threshold, template.template_id, template.scale,
+                            (left + location[0], top + location[1], width, height),
+                        )
+                        if best is None or score > best.similarity:
+                            best = match
+                        if template_scores is not None and (template.template_id not in ranked
+                                or score > ranked[template.template_id].similarity):
+                            ranked[template.template_id] = match
+            profile = current_profile()
+            if profile:
+                record(profile.stack[-1][0] if profile.stack else "visual_matching",
+                       comparisons=len(self._prepared[config.event_type]))
             if template_scores is not None:
                 template_scores[config.event_type.value] = ranked
             if best is not None:
@@ -192,7 +198,8 @@ class TemplateVisualDetector:
         self, frame: np.ndarray, event_types: tuple[GameEventType, ...] | None,
     ) -> list[_ClassMatch]:
         selected = self._event_types(event_types)
-        gray = self._cv.cvtColor(self.normalize_frame(frame), self._cv.COLOR_BGR2GRAY)
+        with submeasure("image_preparation"):
+            gray = self._cv.cvtColor(self.normalize_frame(frame), self._cv.COLOR_BGR2GRAY)
         width, height = self.pack.reference_size
         return self._matches_reference(gray, (0, 0, width, height), selected)
 
@@ -345,6 +352,17 @@ class TemplateVisualDetector:
     ) -> list[GameEvent]:
         """One matching pass; weak matches only seed local decoding, never events."""
         return self._events(self._full_matches(frame, event_types), self._timestamp(timestamp), minimum_similarity)
+
+    def detect_reference_candidates(
+        self, gray: np.ndarray, timestamp: float, *, minimum_similarity: float,
+        event_types: tuple[GameEventType, ...],
+    ) -> list[GameEvent]:
+        """Prepared grayscale in this pack's exact viewport/reference geometry."""
+        width, height = self.pack.reference_size
+        if gray.dtype != np.uint8 or gray.shape != (height, width):
+            raise ValueError("Prepared VS frame must match the template reference geometry")
+        matches = self._matches_reference(gray, (0, 0, width, height), self._event_types(event_types))
+        return self._events(matches, self._timestamp(timestamp), minimum_similarity)
 
     def detect_roi_candidates(
         self, frame: np.ndarray, timestamp: float, *, roi: NormalizedROI, minimum_similarity: float,

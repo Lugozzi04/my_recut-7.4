@@ -17,7 +17,7 @@ from analysis.audio_service import AnalysisCancellation
 
 from .cache import PackagingCache, stable_key
 from .models import FrameRecord
-from .timeline import EditMap
+from analysis.shared.timeline import TimelineMapper as EditMap
 
 MAX_WIDTH = 1920
 
@@ -70,8 +70,8 @@ class FrameExtractor:
     def __init__(self, edit_map: EditMap, output_dir: Path, cache: PackagingCache, *, sampler: Any = None,
                  cancellation: AnalysisCancellation | None = None) -> None:
         if sampler is None:
-            from analysis.gameplay.hearthstone.visual.sampler import FFmpegFrameSampler
-            sampler = FFmpegFrameSampler()
+            from analysis.shared.frames import FrameSamplingService
+            sampler = FrameSamplingService(enabled=cache.enabled)
         self.edit_map = edit_map
         self.output_dir = output_dir
         self.cache = cache
@@ -110,7 +110,8 @@ class FrameExtractor:
                 bundle.parent.mkdir(parents=True, exist_ok=True)
                 encoded = [self._encode(image) for _, image in frames]  # JPEG bytes, no pickled objects
                 offsets = np.cumsum([0] + [len(e) for e in encoded]).astype(np.int64)
-                temporary = bundle.with_name(f".{bundle.stem}.tmp.npz")
+                import uuid
+                temporary = bundle.with_name(f".{bundle.stem}.{uuid.uuid4().hex}.tmp.npz")
                 np.savez(temporary, times=np.array([t for t, _ in frames]), offsets=offsets,
                          blob=np.concatenate(encoded) if encoded else np.zeros(0, np.uint8))
                 temporary.replace(bundle)

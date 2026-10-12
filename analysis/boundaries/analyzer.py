@@ -11,6 +11,7 @@ from pathlib import Path
 import time
 from typing import Any
 
+from analysis.performance_profile import current_profile, measure, profiled, record
 from analysis.audio_service import AnalysisCancellation
 from analysis.gameplay.models import GameplayAnalysisResult
 from .audio import AudioEvidence, SilenceSettings, analyze_audio_window
@@ -60,10 +61,47 @@ class BoundaryAnalyzer:
         self.transcription = transcription
         self.sampler = sampler
 
+    def prefetch_kept_transcripts(self, video: str | Path, analysis: GameplayAnalysisResult,
+                                  game_indices: list[int], *, cancellation: AnalysisCancellation) -> None:
+        """One model/helper lifetime for the WIN boundary windows of this run.
+
+        Custom engines and disabled caches retain their original per-game contract.
+        Evidence preparation below reads these same source-time cached windows.
+        """
+        if (not self.settings.transcript.enabled or not isinstance(self.transcription, FasterWhisperEngine)
+                or not self.transcription.settings.use_cache):
+            return
+        timeline = GameplayTimeline(analysis, self.settings.eof, policy=self.settings.keep_policy)
+        windows: list[TimeRange] = []
+        for index in game_indices:
+            segment = timeline.game(index)
+            info = timeline.info(segment)
+            if info.disposition != GameDisposition.KEEP or segment.start is None or segment.end is None:
+                continue
+            for kind, anchor in ((BoundaryType.START, segment.start), (BoundaryType.END, segment.end)):
+                window, _ = search_window(kind, anchor, duration=timeline.duration, settings=self.settings.windows,
+                                           previous_game_end=timeline.previous_game_end(segment),
+                                           next_game_start=timeline.next_game_start(segment))
+                windows.append(window)
+        if windows:
+            cancellation.raise_if_cancelled()
+            with measure("boundaries.transcript"):
+                self.transcription.transcribe(video, windows, cancellation=cancellation)
+            record("boundaries.transcript", prefetched_windows=len(windows), prefetch_batches=1)
+
+    @profiled("boundaries.evidence")
     def analyze_game(self, video: str | Path, analysis: GameplayAnalysisResult, game_index: int, *,
                      require_removable: bool = True, cancellation: AnalysisCancellation | None = None
                      ) -> GameBoundaryAnalysis:
         token = cancellation or AnalysisCancellation()
+        profile = current_profile()
+        if profile:
+            profile.modes.update(transcript_enabled=self.settings.transcript.enabled,
+                transcript_engine=type(self.transcription).__name__,
+                transcript_model=Path(self.settings.transcript.model).name,
+                transcript_device=self.settings.transcript.device,
+                visual_evidence_enabled=self.settings.visual.enabled,
+                visual_evidence_fps=self.settings.visual.fps)
         timeline = GameplayTimeline(analysis, self.settings.eof, policy=self.settings.keep_policy)
         segment = timeline.game(game_index)
         info = timeline.info(segment)
@@ -97,8 +135,24 @@ class BoundaryAnalyzer:
         profiling: dict[str, float] = {"audio_s": 0.0, "visual_s": 0.0, "transcript_s": 0.0, "candidates_s": 0.0,
                                        "window_seconds": sum(p[3].duration for p in plans)}
         started = time.perf_counter()
-        transcript_status, transcripts = self.transcription.transcribe(video, [p[3] for p in plans],
-                                                                       cancellation=token)
+        record("boundaries.evidence", windows=len(plans), source_window_seconds=sum(p[3].duration for p in plans))
+        with measure("boundaries.transcript"):
+            transcript_status, transcripts = self.transcription.transcribe(video, [p[3] for p in plans],
+                                                                           cancellation=token)
+        profile = current_profile()
+        if profile:
+            profile.node("boundaries.transcript")["evidence_status"] = transcript_status.status
+            statuses = profile.node("boundaries.transcript").setdefault("evidence_status_counts", {})
+            statuses[transcript_status.status] = statuses.get(transcript_status.status, 0) + 1
+            if transcript_status.status in ("disabled", "unavailable"):
+                profile.skip_unexecuted("boundaries.transcript.inference", transcript_status.status)
+                profile.skip_unexecuted("boundaries.transcript.audio_extraction", transcript_status.status)
+            elif transcript_status.status == "cached":
+                profile.skip_unexecuted("boundaries.transcript.inference", "transcript_cache_hit")
+                profile.skip_unexecuted("boundaries.transcript.audio_extraction", "transcript_cache_hit")
+            elif transcript_status.status == "failed":
+                profile.node("boundaries.transcript")["status"] = "failed"
+                profile.node("boundaries.transcript")["error_type"] = "ASRHelperFailure"
         profiling["transcript_s"] = time.perf_counter() - started
         neighbors = timeline.neighbor_summary(segment)
         video_info = {"path": str(Path(video)), "duration": duration,
@@ -108,18 +162,24 @@ class BoundaryAnalyzer:
         for (kind, anchor, anchor_kind, window, clipped), transcript in zip(plans, transcripts):
             token.raise_if_cancelled()
             started = time.perf_counter()
-            audio: AudioEvidence = analyze_audio_window(video, window, self.settings.silence, cancellation=token)
+            with measure("boundaries.audio_evidence"):
+                audio: AudioEvidence = analyze_audio_window(video, window, self.settings.silence, cancellation=token)
+            record("boundaries.audio_evidence", windows=1)
             profiling["audio_s"] += time.perf_counter() - started
             started = time.perf_counter()
-            visual_status, visual = analyze_visual_window(video, window, self.settings.visual,
-                                                          sampler=self.sampler, cancellation=token)
+            with measure("boundaries.visual_evidence"):
+                visual_status, visual = analyze_visual_window(video, window, self.settings.visual,
+                                                              sampler=self.sampler, cancellation=token)
+            record("boundaries.visual_evidence", windows=1)
             profiling["visual_s"] += time.perf_counter() - started
             started = time.perf_counter()
-            local_markers = [m for m in markers if window.contains(m.timestamp)]
-            evidence = Evidence(kind, window, anchor, anchors, audio.status, audio.silences, audio.speech,
-                                transcript_status, transcript, visual_status, visual, local_markers,
-                                audio.mean_db if audio.rms is not None else None)
-            candidates = generate_candidates(evidence, self.settings.candidates)
+            with measure("boundaries.candidate_generation"):
+                local_markers = [m for m in markers if window.contains(m.timestamp)]
+                evidence = Evidence(kind, window, anchor, anchors, audio.status, audio.silences, audio.speech,
+                                    transcript_status, transcript, visual_status, visual, local_markers,
+                                    audio.mean_db if audio.rms is not None else None)
+                candidates = generate_candidates(evidence, self.settings.candidates)
+            record("boundaries.candidate_generation", candidates=len(candidates), windows=1)
             profiling["candidates_s"] += time.perf_counter() - started
             contexts[kind] = BoundaryContext(
                 kind, video_info, info, anchors, window, clipped, transcript_status, list(transcript),

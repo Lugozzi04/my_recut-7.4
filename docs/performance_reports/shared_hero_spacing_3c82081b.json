@@ -1,0 +1,43 @@
+{
+  "fixture": "generated 72s 1080p60 H264 + sine",
+  "logical_cores": 32,
+  "opencv": "4.12.0",
+  "scope": "short synthetic fixture, not VOD accuracy or 7h speedup",
+  "selected_frames": {
+    "requests": 10,
+    "legacy_processes": 10,
+    "batch_processes": 3,
+    "legacy_seconds": 0.831082100000458,
+    "batch_cold_including_persistence_seconds": 1.0003278000003775,
+    "warm_seconds": 0.09545900000011898,
+    "pixels_and_timestamps_equal": true
+  },
+  "classic": {
+    "cold_seconds": 0.37093819999972766,
+    "warm_seconds": 0.0873037999999724,
+    "rms_equal": true
+  },
+  "matchers": {
+    "frames_per_repeat": 10,
+    "repeats": 3,
+    "legacy_median_seconds": 0.09790389999943727,
+    "shared_gray_median_seconds": 0.09437079999952402,
+    "scores_and_events_equal": true
+  },
+  "packaging_two_groups": {
+    "runs": [
+      {
+        "seconds": 0.014320299999781128,
+        "status": "cached",
+        "lines": 1
+      },
+      {
+        "seconds": 0.0041611000006014365,
+        "status": "cached",
+        "lines": 1
+      }
+    ],
+    "asr_invocations": 0,
+    "raw_transcript_source_time": true
+  }
+}

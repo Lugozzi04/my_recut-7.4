@@ -156,42 +156,56 @@ class GameplayEditWorker(QObject):
         self._token.cancel()
 
     def run(self) -> None:
-        try:
-            from analysis.gameplay_editing import GameplayEditingService, GameplayEditSettings
+        from analysis.performance_profile import GameplayProfiler
 
-            from analysis.boundaries.resolvers import ResolverOptions
+        profile = GameplayProfiler(self.video, {"boundary_mode": self.boundary_mode,
+            "end_policy": self.end_policy, "keep_policy": "complete_wins_only",
+            "game": "hearthstone", "frontend": "GUI"})
 
-            settings = GameplayEditSettings(game="hearthstone", keep_games="wins", boundary_mode=self.boundary_mode,
-                                            resolver=ResolverOptions(end_policy=self.end_policy))
-            result = GameplayEditingService(settings).run(
-                self.video, cancellation=self._token,
-                on_progress=lambda value: self.progress.emit(int(value * .9)),
-            )
-            keeps = [(float(k.start), float(k.end)) for k in result.gameplay_keeps]
-            report = result.report()
-            payload: dict[str, Any] = {"video": self.video, "keeps": keeps, "report": report}
-            self._token.raise_if_cancelled()
-            if report.get("games"):
-                self.phase.emit("Analyzing player classes…")
-                try:
-                    from analysis.hero_groups.recognition import HeroGroupingService
+        def report_progress(value: int) -> None:
+            profile.checkpoint()
+            self.progress.emit(value)
 
-                    payload["grouping"] = HeroGroupingService().analyze(
-                        Path(self.video), report["games"], duration=float(report["duration"]),
-                        previous=self.previous_grouping, cancellation=self._token,
-                        on_progress=lambda value: self.progress.emit(90 + int(value * .1)),
-                    )
-                except Exception as exc:
-                    self._token.raise_if_cancelled()
-                    if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
-                        raise
-                    # A class-reference/media problem must not discard detected games.
-                    payload["grouping_error"] = f"Player classes: {exc.__class__.__name__}: {exc}"
-            self._token.raise_if_cancelled()
-            self.progress.emit(100)
-            self.finished.emit(payload)
-        except Exception as exc:  # noqa: BLE001 - surfaced to the UI as a readable message
-            if self._token.is_cancelled or exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
-                self.failed.emit("cancelled")
-            else:
-                self.failed.emit(f"{exc.__class__.__name__}: {exc}")
+        with profile.activate():
+            try:
+                from analysis.gameplay_editing import GameplayEditingService, GameplayEditSettings
+
+                from analysis.boundaries.resolvers import ResolverOptions
+
+                settings = GameplayEditSettings(game="hearthstone", keep_games="wins", boundary_mode=self.boundary_mode,
+                                                resolver=ResolverOptions(end_policy=self.end_policy))
+                result = GameplayEditingService(settings).run(
+                    self.video, cancellation=self._token,
+                    on_progress=lambda value: report_progress(int(value * .9)),
+                )
+                keeps = [(float(k.start), float(k.end)) for k in result.gameplay_keeps]
+                report = result.report()
+                payload: dict[str, Any] = {"video": self.video, "keeps": keeps, "report": report}
+                self._token.raise_if_cancelled()
+                if report.get("games"):
+                    self.phase.emit("Analyzing player classes…")
+                    try:
+                        from analysis.hero_groups.recognition import HeroGroupingService
+
+                        payload["grouping"] = HeroGroupingService().analyze(
+                            Path(self.video), report["games"], duration=float(report["duration"]),
+                            previous=self.previous_grouping, cancellation=self._token,
+                            on_progress=lambda value: report_progress(90 + int(value * .1)),
+                        )
+                    except Exception as exc:
+                        self._token.raise_if_cancelled()
+                        if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
+                            raise
+                        # A class-reference/media problem must not discard detected games.
+                        payload["grouping_error"] = f"Player classes: {exc.__class__.__name__}: {exc}"
+                self._token.raise_if_cancelled()
+                profile.finish("completed")
+                self.progress.emit(100)
+                self.finished.emit(payload)
+            except Exception as exc:  # noqa: BLE001 - surfaced to the UI as a readable message
+                if self._token.is_cancelled or exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
+                    profile.finish("cancelled", exc)
+                    self.failed.emit("cancelled")
+                else:
+                    profile.finish("failed", exc)
+                    self.failed.emit(f"{exc.__class__.__name__}: {exc}")

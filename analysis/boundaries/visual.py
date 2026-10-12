@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 
+from analysis.performance_profile import current_profile, measure, record
 from analysis.audio_service import AnalysisCancellation
 from .models import EvidenceStatus, TimeRange, VisualSample
 
@@ -45,21 +46,54 @@ def analyze_visual_window(video: str | Path, window: TimeRange, settings: Visual
                           ) -> tuple[EvidenceStatus, list[VisualSample]]:
     options = asdict(settings)
     if not settings.enabled:
+        profile = current_profile()
+        if profile:
+            profile.skip("boundaries.visual_evidence.frame_extraction", "disabled")
         return EvidenceStatus("disabled", "frame-difference", "", options), []
     try:
+        store = None
+        descriptor = None
         if sampler is None:
-            from analysis.gameplay.hearthstone.visual.sampler import FFmpegFrameSampler
-            sampler = FFmpegFrameSampler()
+            from analysis.shared.visual import VisualEvidenceStore
+            store = VisualEvidenceStore()
+            descriptor = store.descriptor(video, window.start, window.end, options)
+            cached = store.load(descriptor)
+            if cached is not None:
+                if cancellation:
+                    cancellation.raise_if_cancelled()
+                profile = current_profile()
+                if profile:
+                    profile.skip_unexecuted("boundaries.visual_evidence.frame_extraction", "source_window_cache_hit")
+                return EvidenceStatus("cached", "frame-difference", "source window cache hit", options), [
+                    VisualSample.from_mapping(item) for item in cached]
+        if sampler is None:
+            from analysis.shared.frames import FrameSamplingService
+            sampler = FrameSamplingService()
         from contextlib import closing
 
         samples: list[VisualSample] = []
         previous = None
         with closing(sampler.sample(video, fps=settings.fps, start_s=window.start, end_s=window.end,
                                     max_width=settings.width, cancellation=cancellation)) as frames:
-            for frame in frames:
+            def measured_frames():
+                iterator = iter(frames)
+                while True:
+                    with measure("boundaries.visual_evidence.frame_extraction"):
+                        frame = next(iterator, None)
+                    if frame is None:
+                        return
+                    yield frame
+
+            for frame in measured_frames():
+                record("boundaries.visual_evidence", frames=1)
                 if previous is not None:
-                    samples.append(VisualSample(float(frame.timestamp), frame_change(previous, frame.image)))
+                    with measure("boundaries.visual_evidence.frame_change"):
+                        samples.append(VisualSample(float(frame.timestamp), frame_change(previous, frame.image)))
                 previous = frame.image
+        if cancellation:
+            cancellation.raise_if_cancelled()
+        if store is not None and descriptor is not None:
+            store.save(descriptor, [sample.to_mapping() for sample in samples])
     except Exception as exc:
         if exc.__class__.__name__ == "AnalysisCancelled":
             raise

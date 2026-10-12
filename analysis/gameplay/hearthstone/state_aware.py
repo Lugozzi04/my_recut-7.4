@@ -8,6 +8,7 @@ from pathlib import Path
 import time
 from typing import Any, Iterator
 
+from analysis.performance_profile import current_profile, measure, profiled, record
 from analysis.audio_service import AnalysisCancellation
 from analysis.gameplay.analyzer import GameplayAnalysisError, ProgressCallback
 from analysis.gameplay.assembler import GameAssembler, consolidate_events
@@ -19,6 +20,8 @@ from .analyzer import HearthstoneAnalyzer, candidate_windows, default_template_p
 from .result_decision import ResultDecisionPolicy, ResultEvidence, decide_results
 from .state_monitor import GameStateMonitor, MonitorObservation, MonitorSettings
 from .visual.board import BoardPresenceDetector
+from analysis.shared.visual import VisualEvidenceStore
+
 from .visual.detector import TemplateVisualDetector, normalize_frame
 from .visual.result_text import ResultTextDetector
 from .visual.sampler import FFmpegFrameSampler, FrameSampler
@@ -55,6 +58,7 @@ class StateAwareHearthstoneAnalyzer:
             raise ValueError('State-aware analysis requires a native ROI sampler')
         self.cache = GameplayCache(cache_directory or cache_root() / 'gameplay' / 'hearthstone' / 'state-aware') if use_cache else None
 
+    @profiled("detection")
     def analyze(self, video_path: str | Path, *, cancellation: AnalysisCancellation | None = None,
                 on_progress: ProgressCallback | None = None, debug_frames: str | Path | None = None,
                 max_debug_frames: int = 100) -> GameplayAnalysisResult:
@@ -63,8 +67,22 @@ class StateAwareHearthstoneAnalyzer:
         if type(max_debug_frames) is not int or max_debug_frames < 0:
             raise ValueError('max_debug_frames must be a nonnegative integer')
         video = Path(video_path).expanduser().resolve()
-        identity = video_identity(video)
-        info = self.sampler.probe(video, cancellation=token)
+        profile = current_profile()
+        if profile:
+            profile.node("detection")["cache"] = "pending" if self.cache is not None else "disabled"
+            profile.modes.update({"monitor_fps": self.monitor_settings.fps,
+                                  "result_window_fps": self.monitor_settings.high_fps,
+                                  "detector_version": ANALYZER_VERSION,
+                                  "state_profile_fingerprint": self.profile.fingerprint,
+                                  "vs_pack_fingerprint": self.vs.pack_fingerprint,
+                                  "opencv_version": str(self.text.cv.__version__),
+                                  "monitor_settings": asdict(self.monitor_settings),
+                                  "result_policy": self.result_policy.to_mapping()})
+        with measure("detection.identity_probe"):
+            identity = video_identity(video)
+            info = self.sampler.probe(video, cancellation=token)
+        if profile:
+            profile.video.update(duration_s=info.duration_s, width=info.width, height=info.height)
         if not math.isfinite(info.duration_s) or info.duration_s <= 0:
             raise GameplayAnalysisError('Invalid video duration', code='invalid_video')
         detector_info = {'state_profile': self.profile.describe(), 'vs': self.vs.describe()}
@@ -88,12 +106,22 @@ class StateAwareHearthstoneAnalyzer:
 
         progress(0)
         if self.cache is not None and debug_frames is None:
-            cached = self.cache.load(key)
+            with measure("detection.cache_lookup"):
+                cached = VisualEvidenceStore.gameplay(self.cache, key)
             if (cached is not None and cached.settings == settings and cached.video_path == str(video)
                     and cached.duration == info.duration_s and video_identity(video) == identity):
                 cached.metadata['cache_hit'] = True
+                if profile:
+                    profile.cache('detection', 'hit')
+                    for name in ('monitor', 'vs_refinement', 'result_windows', 'event_consolidation', 'game_assembly'):
+                        profile.skip(name, 'detector_cache_hit')
+                    profile.record('detection', cached_games=len(cached.games), cached_events=len(cached.events),
+                                   cached_wins=sum(g.result.value == 'WIN' for g in cached.games),
+                                   cached_losses=sum(g.result.value == 'LOSS' for g in cached.games))
                 progress(100)
                 return cached
+        if profile and self.cache is not None:
+            profile.cache("detection", "miss")
         started = time.perf_counter()
         profiling = {name: {'sampling_wait_seconds': 0.0, 'matching_seconds': 0.0, 'streams': 0}
                      for name in ('monitor', 'vs_refinement', 'result_windows')}
@@ -105,12 +133,16 @@ class StateAwareHearthstoneAnalyzer:
             while True:
                 before = time.perf_counter()
                 try:
-                    frame = next(iterator)
+                    with measure(f"{phase}.frame_delivery_wait"):
+                        frame = next(iterator)
                 except StopIteration:
                     profiling[phase]['sampling_wait_seconds'] += time.perf_counter() - before
                     return
                 profiling[phase]['sampling_wait_seconds'] += time.perf_counter() - before
                 token.raise_if_cancelled()
+                record(phase, frames=1)
+                if profile:
+                    profile.checkpoint()
                 yield frame
 
         coarse: list[GameEvent] = []
@@ -119,45 +151,75 @@ class StateAwareHearthstoneAnalyzer:
         comparisons = {'board': 0, 'text_monitor': 0, 'text_windows': 0}
         coarse_frames = fine_frames = result_frames = debug_saved = 0
         next_vs = 0.0
-        with closing(self.sampler.sample(video, fps=self.monitor_settings.fps,
-                                        max_width=self.profile.reference_size[0], cancellation=token)) as frames:
-            for frame in measured(frames):
-                before = time.perf_counter()
-                normalized = normalize_frame(frame.image, self.profile.reference_size, self.profile.viewport)
-                board_score, anchors = self.board.score(normalized)
-                left, top, right, bottom = self.profile.result_roi.pixel_bounds(*self.profile.reference_size)
-                result_evidence = self.text.score_roi(normalized[top:bottom, left:right])
-                rows.append(MonitorObservation(frame.timestamp, board_score, result_evidence['score'], result_evidence['margin']))
-                evidence.append({'timestamp': frame.timestamp, 'board_score': board_score, 'anchors': anchors,
-                                 'result_scores': result_evidence['scores'], 'result_margin': result_evidence['margin']})
-                comparisons['board'] += self.board.comparisons_per_frame
-                comparisons['text_monitor'] += len(self.text.templates)
-                if frame.timestamp + 1e-7 >= next_vs:
-                    coarse_frames += 1
-                    coarse.extend(self.vs.detect_candidates(frame.image, frame.timestamp,
-                                  event_types=(GameEventType.VS_SCREEN,), minimum_similarity=0.80))
-                    next_vs = frame.timestamp + 1.0
-                if len(rows) > 100000:
-                    raise GameplayAnalysisError('Too many monitor frames', code='candidate_limit')
-                profiling[phase]['matching_seconds'] += time.perf_counter() - before
-                progress(60 * frame.timestamp / info.duration_s)
+        with measure("monitor"):
+            with closing(self.sampler.sample(video, fps=self.monitor_settings.fps,
+                                            max_width=self.profile.reference_size[0], cancellation=token)) as frames:
+                for frame in measured(frames):
+                    before = time.perf_counter()
+                    with measure("monitor.image_preparation"):
+                        normalized = normalize_frame(frame.image, self.profile.reference_size, self.profile.viewport)
+                        gray = self.board.cv.cvtColor(normalized, self.board.cv.COLOR_BGR2GRAY)
+                    with measure("monitor.board"):
+                        board_score, anchors = self.board.score(gray)
+                    record("monitor.board", comparisons=self.board.comparisons_per_frame, frames=1)
+                    left, top, right, bottom = self.profile.result_roi.pixel_bounds(*self.profile.reference_size)
+                    with measure("monitor.result_matching"):
+                        result_evidence = self.text.score_roi(gray[top:bottom, left:right])
+                    record("monitor.result_matching", comparisons=len(self.text.templates), frames=1)
+                    record("monitor", weak_result_candidate_frames=int(
+                        result_evidence["score"] >= self.monitor_settings.weak_score
+                        and result_evidence["margin"] >= self.monitor_settings.weak_margin),
+                        board_below_low_frames=int(board_score <= self.monitor_settings.board_low))
+                    rows.append(MonitorObservation(frame.timestamp, board_score, result_evidence['score'], result_evidence['margin']))
+                    evidence.append({'timestamp': frame.timestamp, 'board_score': board_score, 'anchors': anchors,
+                                     'result_scores': result_evidence['scores'], 'result_margin': result_evidence['margin']})
+                    comparisons['board'] += self.board.comparisons_per_frame
+                    comparisons['text_monitor'] += len(self.text.templates)
+                    if frame.timestamp + 1e-7 >= next_vs:
+                        coarse_frames += 1
+                        candidate_count = len(coarse)
+                        with measure("monitor.vs"):
+                            if (self.vs.pack.reference_size == self.profile.reference_size
+                                    and self.vs.pack.viewport == self.profile.viewport):
+                                coarse.extend(self.vs.detect_reference_candidates(gray, frame.timestamp,
+                                              event_types=(GameEventType.VS_SCREEN,), minimum_similarity=0.80))
+                            else:
+                                coarse.extend(self.vs.detect_candidates(frame.image, frame.timestamp,
+                                              event_types=(GameEventType.VS_SCREEN,), minimum_similarity=0.80))
+                        record("monitor.vs", frames=1, candidates=len(coarse) - candidate_count)
+                        next_vs = frame.timestamp + 1.0
+                    if len(rows) > 100000:
+                        raise GameplayAnalysisError('Too many monitor frames', code='candidate_limit')
+                    profiling[phase]['matching_seconds'] += time.perf_counter() - before
+                    progress(60 * frame.timestamp / info.duration_s)
         vs_observations: list[GameEvent] = []
         vs_windows = candidate_windows(coarse, duration=info.duration_s, padding=2.0)
         phase = 'vs_refinement'
-        for index, (start, end) in enumerate(vs_windows):
-            with closing(self.sampler.sample(video, fps=6.0, start_s=start, end_s=end,
-                                            max_width=self.profile.reference_size[0], cancellation=token)) as frames:
-                for frame in measured(frames):
-                    fine_frames += 1
-                    before = time.perf_counter()
-                    vs_observations.extend(self.vs.detect(frame.image, frame.timestamp, event_types=(GameEventType.VS_SCREEN,)))
-                    profiling[phase]['matching_seconds'] += time.perf_counter() - before
-                    if len(vs_observations) > 100000:
-                        raise GameplayAnalysisError('Too many VS observations', code='candidate_limit')
-            progress(60 + 5 * (index + 1) / len(vs_windows))
-        starts = [event for event in consolidate_events(vs_observations, max_gap_s=0.5)
-                  if event.metadata['observation_count'] >= 3 and event.metadata['temporal_span_s'] + 1e-9 >= 0.25]
-        windows, reacquisitions = GameStateMonitor(self.monitor_settings).plan(rows, starts, duration=info.duration_s)
+        with measure("vs_refinement"):
+            for index, (start, end) in enumerate(vs_windows):
+                record("vs_refinement", windows=1)
+                with closing(self.sampler.sample(video, fps=6.0, start_s=start, end_s=end,
+                                                max_width=self.profile.reference_size[0], cancellation=token)) as frames:
+                    for frame in measured(frames):
+                        fine_frames += 1
+                        before = time.perf_counter()
+                        previous_count = len(vs_observations)
+                        with measure("vs_refinement.vs"):
+                            vs_observations.extend(self.vs.detect(frame.image, frame.timestamp, event_types=(GameEventType.VS_SCREEN,)))
+                        record("vs_refinement.vs", frames=1, candidates=len(vs_observations) - previous_count)
+                        profiling[phase]['matching_seconds'] += time.perf_counter() - before
+                        if len(vs_observations) > 100000:
+                            raise GameplayAnalysisError('Too many VS observations', code='candidate_limit')
+                record("vs_refinement", completed_windows=1)
+                progress(60 + 5 * (index + 1) / len(vs_windows))
+        if profile and not vs_windows:
+            profile.skip("vs_refinement", "no_candidate_windows")
+        with measure("window_planning"):
+            starts = [event for event in consolidate_events(vs_observations, max_gap_s=0.5)
+                      if event.metadata['observation_count'] >= 3 and event.metadata['temporal_span_s'] + 1e-9 >= 0.25]
+            windows, reacquisitions = GameStateMonitor(self.monitor_settings).plan(rows, starts, duration=info.duration_s)
+        record("window_planning", start_events=len(starts), result_windows=len(windows),
+               board_reacquisitions=len(reacquisitions))
         phase = 'result_windows'
         window_evidence: list[ResultEvidence] = []
         roi = self.profile.result_roi
@@ -167,37 +229,53 @@ class StateAwareHearthstoneAnalyzer:
         roi_sample: Any = getattr(self.sampler, 'sample_roi')
         total_window_seconds = sum(window.end - window.start for window in windows)
         processed_seconds = 0.0
-        for window in windows:
-            with closing(roi_sample(video, roi=source_roi, reference_size=self.profile.reference_size,
-                                   fps=self.monitor_settings.high_fps, start_s=window.start, end_s=window.end,
-                                   output_size=self.text.output_size, cancellation=token)) as frames:
-                for frame in measured(frames):
-                    result_frames += 1
-                    before = time.perf_counter()
-                    scores = self.text.score_roi(frame.image)
-                    comparisons['text_windows'] += len(self.text.templates)
-                    profiling[phase]['matching_seconds'] += time.perf_counter() - before
-                    if scores['score'] >= self.result_policy.evidence_score:
-                        window_evidence.append(ResultEvidence.from_scores(frame.timestamp, scores))
-                        if debug_frames is not None and debug_saved < max_debug_frames and scores['margin'] > 0 and (
-                                debug_saved == 0 or result_frames % 10 == 0):
-                            # Save bounded samples; frame data never enters the job/project model.
-                            HearthstoneAnalyzer._save_frame(Path(debug_frames), frame.image, GameEvent(
-                                frame.timestamp, GameEventType(scores['winner']), scores['score']), debug_saved)
-                            debug_saved += 1
-                    if len(window_evidence) > 100000:
-                        raise GameplayAnalysisError('Too many result observations', code='candidate_limit')
-                    progress(65 + 34 * (processed_seconds + max(0.0, frame.timestamp-window.start)) /
-                             max(total_window_seconds, 1e-9))
-            processed_seconds += window.end - window.start
-        decisions = decide_results(window_evidence, self.result_policy)
-        static = {'threshold': self.result_policy.evidence_score, 'representation': self.text.method,
-                  'roi': self.profile.result_roi.to_list(), 'similarity_method': 'TM_CCOEFF_NORMED',
-                  'detector_version': self.text.detector_version}
-        accepted = [event for event in (decision.to_event(static) for decision in decisions) if event is not None]
-        rejected = [decision.to_mapping() for decision in decisions if not decision.classified]
-        events = deduplicate_result_events([*starts, *accepted], barriers=reacquisitions, maximum_gap_s=45.0)
-        games = GameAssembler(maximum_game_duration_s=1800.0).assemble(events)
+        with measure("result_windows"):
+            for window in windows:
+                record("result_windows", windows=1, source_window_seconds=window.end - window.start)
+                with closing(roi_sample(video, roi=source_roi, reference_size=self.profile.reference_size,
+                                       fps=self.monitor_settings.high_fps, start_s=window.start, end_s=window.end,
+                                       output_size=self.text.output_size, cancellation=token)) as frames:
+                    for frame in measured(frames):
+                        result_frames += 1
+                        before = time.perf_counter()
+                        with measure("result_windows.result_matching"):
+                            scores = self.text.score_roi(frame.image)
+                        record("result_windows.result_matching", comparisons=len(self.text.templates), frames=1)
+                        comparisons['text_windows'] += len(self.text.templates)
+                        profiling[phase]['matching_seconds'] += time.perf_counter() - before
+                        if scores['score'] >= self.result_policy.evidence_score:
+                            window_evidence.append(ResultEvidence.from_scores(frame.timestamp, scores))
+                            record("result_windows", candidates=1)
+                            if debug_frames is not None and debug_saved < max_debug_frames and scores['margin'] > 0 and (
+                                    debug_saved == 0 or result_frames % 10 == 0):
+                                # Save bounded samples; frame data never enters the job/project model.
+                                HearthstoneAnalyzer._save_frame(Path(debug_frames), frame.image, GameEvent(
+                                    frame.timestamp, GameEventType(scores['winner']), scores['score']), debug_saved)
+                                debug_saved += 1
+                        if len(window_evidence) > 100000:
+                            raise GameplayAnalysisError('Too many result observations', code='candidate_limit')
+                        progress(65 + 34 * (processed_seconds + max(0.0, frame.timestamp-window.start)) /
+                                 max(total_window_seconds, 1e-9))
+                record("result_windows", completed_windows=1)
+                processed_seconds += window.end - window.start
+        if profile and not windows:
+            profile.skip("result_windows", "no_trigger_windows")
+        with measure("event_consolidation"):
+            decisions = decide_results(window_evidence, self.result_policy)
+            static = {'threshold': self.result_policy.evidence_score, 'representation': self.text.method,
+                      'roi': self.profile.result_roi.to_list(), 'similarity_method': 'TM_CCOEFF_NORMED',
+                      'detector_version': self.text.detector_version}
+            accepted = [event for event in (decision.to_event(static) for decision in decisions) if event is not None]
+            rejected = [decision.to_mapping() for decision in decisions if not decision.classified]
+            events = deduplicate_result_events([*starts, *accepted], barriers=reacquisitions, maximum_gap_s=45.0)
+        record("event_consolidation", input_candidates=len(window_evidence), output_events=len(events),
+               rejected_clusters=len(rejected), accepted_result_clusters=len(accepted))
+        with measure("game_assembly"):
+            games = GameAssembler(maximum_game_duration_s=1800.0).assemble(events)
+        record("game_assembly", games=len(games), complete_games=sum(g.complete for g in games),
+               wins=sum(g.result.value == "WIN" for g in games),
+               losses=sum(g.result.value == "LOSS" for g in games),
+               unknown=sum(g.result.value == "UNKNOWN" for g in games))
         token.raise_if_cancelled()
         if video_identity(video) != identity:
             raise GameplayAnalysisError('Source changed during analysis', code='source_changed')
@@ -218,7 +296,8 @@ class StateAwareHearthstoneAnalyzer:
             result.warnings.append('Some boundaries are missing; no timestamps were inferred.')
         if self.cache is not None:
             try:
-                self.cache.save(key, result)
+                with measure('detection.cache_write'):
+                    self.cache.save(key, result)
             except OSError as exc:
                 result.warnings.append(f'Analysis succeeded, but cache could not be written: {exc}')
         progress(100)

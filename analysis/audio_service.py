@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from analysis.performance_profile import profiled, submeasure, record
+
 import subprocess
 import threading
 from collections.abc import Callable
@@ -123,7 +125,8 @@ def _validate_request(request: AnalysisRequest) -> None:
         raise AudioAnalysisError("sample_rate deve essere maggiore di zero.", code="invalid_request")
 
 
-def _extract_rms(
+@profiled("audio_extraction")
+def _extract_rms_uncached(
     *,
     ffmpeg: str,
     request: AnalysisRequest,
@@ -210,7 +213,8 @@ def _extract_rms(
         while True:
             cancellation.raise_if_cancelled()
             try:
-                chunk = process.stdout.read(65536)
+                with submeasure("audio_pipe_read_wait"):
+                    chunk = process.stdout.read(65536)
             except Exception:
                 cancellation.raise_if_cancelled()
                 raise
@@ -222,6 +226,7 @@ def _extract_rms(
                 current = min(99, int((samples_read / float(request.sample_rate)) / duration * 100.0))
                 progress.emit(current)
 
+            record("audio_extraction", chunks=1, pcm_samples=len(chunk) // 2)
             samples = np.frombuffer(chunk, dtype=np.int16)
             if leftover.size:
                 samples = np.concatenate([leftover, samples])
@@ -255,7 +260,35 @@ def _extract_rms(
     if return_code != 0:
         detail = bytes(stderr_buffer).decode("utf-8", errors="ignore").strip()
         raise AudioAnalysisError(detail or "FFmpeg audio extract failed", code="ffmpeg_extract_failed")
+    record("audio_extraction", rms_blocks=len(rms_values))
     return np.asarray(rms_values, dtype=np.float32)
+
+
+def _extract_rms(*, ffmpeg: str, request: AnalysisRequest, duration: float | None,
+                 audio_filter: str, cancellation: AnalysisCancellation, progress: _ProgressReporter,
+                 start_s: float | None = None, duration_s: float | None = None) -> np.ndarray:
+    # Filter state and RMS block origin are part of compatibility: no silent resampling.
+    from analysis.shared.audio import AudioEvidenceStore
+
+    cancellation.raise_if_cancelled()
+    store = AudioEvidenceStore()
+    descriptor = None
+    try:
+        descriptor = store.descriptor(request.path, hop_s=request.hop_s, sample_rate=request.sample_rate,
+                                      audio_filter=audio_filter, start_s=start_s, duration_s=duration_s)
+        cached = store.load(descriptor)
+        if cached is not None:
+            cancellation.raise_if_cancelled()
+            return cached
+    except OSError:
+        pass
+    result = _extract_rms_uncached(ffmpeg=ffmpeg, request=request, duration=duration,
+                                  audio_filter=audio_filter, cancellation=cancellation, progress=progress,
+                                  start_s=start_s, duration_s=duration_s)
+    cancellation.raise_if_cancelled()
+    if descriptor is not None:
+        store.save(descriptor, result)
+    return result
 
 
 VOICE_FILTER = "highpass=f=150,lowpass=f=3400,acompressor=threshold=0.10:ratio=4:attack=5:release=50"
@@ -297,6 +330,7 @@ def extract_rms_window(
                             cancellation=token, progress=progress, **window)
 
 
+@profiled("classic")
 def analyze_audio(
     request: AnalysisRequest,
     *,
@@ -362,7 +396,8 @@ def analyze_audio(
     if rms.size < 10:
         raise AudioAnalysisError("Audio troppo corto o non processabile.", code="audio_too_short")
 
-    auto_threshold = auto_threshold_from_rms(rms)
+    with submeasure("threshold_selection"):
+        auto_threshold = auto_threshold_from_rms(rms)
     if duration is None or duration <= 0.0:
         duration = float(rms.size) * request.hop_s
 

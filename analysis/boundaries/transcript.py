@@ -22,6 +22,7 @@ import sys
 import tempfile
 from typing import Any, Protocol
 
+from analysis.performance_profile import current_profile, measure, record
 from analysis.audio_service import AnalysisCancellation, AnalysisCancelled
 from .media import extract_wav
 from .models import EvidenceStatus, TimeRange, TranscriptSegment, TranscriptWord
@@ -201,20 +202,88 @@ class FasterWhisperEngine:
     def transcribe(self, video: str | Path, windows: Sequence[TimeRange], *,
                    cancellation: AnalysisCancellation | None = None
                    ) -> tuple[EvidenceStatus, list[list[TranscriptSegment]]]:
+        if not self.settings.use_cache or not windows:
+            return self._transcribe_exact(video, windows, cancellation=cancellation)
+        from analysis.gameplay.cache import video_identity
+        from analysis.shared.transcript import TranscriptCoverage, clip_segments
+
+        token = cancellation or AnalysisCancellation()
+        token.raise_if_cancelled()
+        identity = video_identity(Path(video).expanduser().resolve())
+        store = TranscriptCoverage(self.cache_directory, identity, self.settings.engine_options())
+        with store.hold(token):
+            for window in windows:
+                key = self._key(identity, window)
+                if self._load(key) is not None:
+                    store.register(key, window)  # Register legacy exact-window hits lazily.
+            if all(self._load(self._key(identity, window)) is not None for window in windows):
+                record("shared.transcript", exact_window_hits=len(windows))
+                profile = current_profile()
+                if profile:
+                    profile.cache("shared.transcript", "hit")
+                return self._transcribe_exact(video, windows, cancellation=token)
+            entries = store.entries(self._load)
+            plans = [store.plan(window, entries) for window in windows]
+            merged: list[TimeRange] = []
+            gaps = sorted((gap for _, gaps in plans for gap in gaps), key=lambda span: (span.start, span.end))
+            for gap in gaps:
+                if merged and gap.start <= merged[-1].end:
+                    merged[-1] = TimeRange(merged[-1].start, max(merged[-1].end, gap.end))
+                else:
+                    merged.append(gap)
+            record("shared.transcript", windows_requested=len(windows), missing_intervals=len(merged),
+                   covered_seconds=sum(span.duration for covered, _ in plans for span, _ in covered),
+                   requested_seconds=sum(window.duration for window in windows))
+            profile = current_profile()
+            if profile:
+                profile.cache("shared.transcript", "hit" if not merged else
+                              "partial" if any(c for c, _ in plans) else "miss")
+            if merged:
+                status, new = self._transcribe_exact(video, merged, cancellation=token)
+                if status.status in ("ok", "cached"):
+                    entries += list(zip(merged, new))
+            else:
+                if profile:
+                    profile.cache("boundaries.transcript", "hit")
+                    for phase in ("audio_extraction", "runtime_discovery", "inference"):
+                        profile.skip_unexecuted("boundaries.transcript." + phase, "source_coverage_hit")
+                record("boundaries.transcript", windows_requested=len(windows), cached_windows=len(windows))
+                status = EvidenceStatus("cached", "faster-whisper", "source interval coverage hit",
+                                        self.settings.engine_options())
+            entries.sort(key=lambda entry: (entry[0].start, -entry[0].end))
+            output = []
+            for window in windows:
+                covered, _ = store.plan(window, entries)
+                output.append([segment for span, segments in covered for segment in clip_segments(segments, span)])
+            token.raise_if_cancelled()
+            return status, output
+
+    def _transcribe_exact(self, video: str | Path, windows: Sequence[TimeRange], *,
+                   cancellation: AnalysisCancellation | None = None
+                   ) -> tuple[EvidenceStatus, list[list[TranscriptSegment]]]:
         from analysis.gameplay.cache import atomic_write_json, video_identity
 
         token = cancellation or AnalysisCancellation()
+        token.raise_if_cancelled()
         options = self.settings.engine_options()
         results: list[list[TranscriptSegment] | None] = [None] * len(windows)
         keys: list[str] = []
-        if self.settings.use_cache:
-            identity = video_identity(Path(video).expanduser().resolve())
-            keys = [self._key(identity, window) for window in windows]
-            results = [self._load(key) for key in keys]
+        with measure("boundaries.transcript.cache_lookup"):
+            if self.settings.use_cache:
+                identity = video_identity(Path(video).expanduser().resolve())
+                keys = [self._key(identity, window) for window in windows]
+                results = [self._load(key) for key in keys]
         missing = [i for i, value in enumerate(results) if value is None]
+        profile = current_profile()
+        if profile:
+            profile.cache("boundaries.transcript", ("disabled" if not self.settings.use_cache else
+                "hit" if not missing else "miss" if len(missing) == len(windows) else "partial"))
+        record("boundaries.transcript", windows_requested=len(windows), cached_windows=len(windows) - len(missing),
+               uncached_windows=len(missing))
         if not missing:
             return EvidenceStatus("cached", "faster-whisper", "", options), [r or [] for r in results]
-        python = find_whisper_python(self.settings.python)
+        with measure("boundaries.transcript.runtime_discovery"):
+            python = find_whisper_python(self.settings.python)
         if python is None:
             return (EvidenceStatus("unavailable", "faster-whisper",
                                    "faster-whisper not found (install it or set AUTO_CUTTER_WHISPER_PY)", options),
@@ -223,23 +292,30 @@ class FasterWhisperEngine:
 
         languages: list[str] = []
         with tempfile.TemporaryDirectory(prefix="recut-boundary-asr-") as folder:
-            files = [str(extract_wav(video, windows[i], Path(folder) / f"w{i}.wav", cancellation=token)) for i in missing]
+            with measure("boundaries.transcript.audio_extraction"):
+                files = [str(extract_wav(video, windows[i], Path(folder) / f"w{i}.wav", cancellation=token)) for i in missing]
+            record("boundaries.transcript.audio_extraction", windows=len(missing))
             job, output = Path(folder) / "job.json", Path(folder) / "out.json"
             job.write_text(json.dumps({"options": options, "files": files}), encoding="utf-8")
             env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
-            process = popen_no_window([python, "-c", HELPER, str(job), str(output)], stdout=subprocess.DEVNULL,
-                                      stderr=subprocess.PIPE, env=env)
-            token.attach_process(process)
-            try:
-                _, stderr = process.communicate()
-            finally:
-                token.detach_process(process)
+            with measure("boundaries.transcript.inference"):
+                process = popen_no_window([python, "-c", HELPER, str(job), str(output)], stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.PIPE, env=env)
+                token.attach_process(process)
+                try:
+                    _, stderr = process.communicate()
+                finally:
+                    token.detach_process(process)
+            record("boundaries.transcript.inference", windows=len(missing), helper_invocations=1)
             if token.is_cancelled:
                 raise AnalysisCancelled()
             if process.returncode != 0 or not output.is_file():
                 message = (stderr or b"").decode("utf-8", "ignore").strip().splitlines()[-1:] or ["unknown error"]
                 return (EvidenceStatus("failed", "faster-whisper", message[0], options), [r or [] for r in results])
             raw = json.loads(output.read_text(encoding="utf-8"))
+        if (not isinstance(raw, list) or len(raw) != len(missing)
+                or any(not isinstance(item, dict) or not isinstance(item.get("segments"), list) for item in raw)):
+            return EvidenceStatus("failed", "faster-whisper", "invalid helper output", options), [r or [] for r in results]
         for i, item in zip(missing, raw):
             segments = [s for s in (_shift(seg, windows[i]) for seg in item.get("segments", [])) if s is not None]
             results[i] = segments
@@ -251,6 +327,8 @@ class FasterWhisperEngine:
                     atomic_write_json(self.cache_directory / f"{keys[i]}.json", {
                         "format": "recut_boundary_transcript_cache", "key": keys[i], "language": item.get("language"),
                         "segments": [s.to_mapping() for s in segments]})
+                    from analysis.shared.transcript import TranscriptCoverage
+                    TranscriptCoverage(self.cache_directory, identity, options).register(keys[i], windows[i])
                 except OSError:
                     pass
         detail = "languages per transcribed window: " + ", ".join(languages)

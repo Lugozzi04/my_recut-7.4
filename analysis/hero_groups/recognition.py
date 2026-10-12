@@ -18,8 +18,8 @@ from typing import Any, Callable
 
 import numpy as np
 
+from analysis.performance_profile import current_profile, measure, profiled, record
 from analysis.audio_service import AnalysisCancellation
-from analysis.gameplay.hearthstone.visual.sampler import FFmpegFrameSampler
 from analysis.gameplay.hearthstone.visual.templates import require_opencv
 from core.project_file import media_fingerprint
 from utils.runtime_paths import cache_root
@@ -174,6 +174,7 @@ def registered_similarity(a: dict[str, np.ndarray], b: dict[str, np.ndarray]) ->
 
 
 def similarity(a: dict[str, np.ndarray], b: dict[str, np.ndarray]) -> tuple[float, float]:
+    record("hero_groups.comparisons", similarity_pairs=1, template_comparisons=2)
     cv = require_opencv()
     # Small translations tolerate capture jitter without matching unrelated art.
     gray = max(
@@ -192,6 +193,7 @@ def agrees(a: dict[str, np.ndarray], b: dict[str, np.ndarray], settings: Portrai
     return structural >= settings.similarity and color >= settings.color_similarity
 
 
+@profiled("hero_groups.signature")
 def signature(
     images: list[np.ndarray], settings: PortraitSettings
 ) -> tuple[dict[str, np.ndarray] | None, int, float, int]:
@@ -352,7 +354,9 @@ class HeroGroupingService:
         class_refs: Path | None = None,
     ) -> None:
         self.settings = settings or PortraitSettings()
-        self.sampler = sampler or FFmpegFrameSampler()
+        from analysis.shared.frames import FrameSamplingService
+
+        self.sampler = sampler or FrameSamplingService()
         self.cache_dir = cache_dir or cache_root() / "hero_groups"
         from .labels import default_class_refs
 
@@ -410,8 +414,10 @@ class HeroGroupingService:
         for side in (32, 36, 40, 44, 48, 52, 56, 60, 64, 80, 96):
             template = cv.cvtColor(cv.resize(reference, (side, side)), cv.COLOR_BGR2GRAY)
             best = max(best, float(cv.matchTemplate(query, template, cv.TM_CCOEFF_NORMED).max()))
+            record("hero_groups.comparisons", template_comparisons=1)
         return best
 
+    @profiled("hero_groups.hero_power")
     def _power_evidence(self, powers: list[np.ndarray], refs: dict[str, np.ndarray]) -> dict[str, Any]:
         from .labels import class_id
 
@@ -456,6 +462,7 @@ class HeroGroupingService:
         evidence = self._power_evidence(powers, refs)
         return evidence["class"] if evidence["status"] == "matched" else None
 
+    @profiled("hero_groups")
     def analyze(
         self,
         source: Path,
@@ -469,27 +476,39 @@ class HeroGroupingService:
         token = cancellation or AnalysisCancellation()
         token.raise_if_cancelled()
         source = source.expanduser().resolve()
-        refs = self._references()
-        identity = {
-            "source": str(source),
-            "size": source.stat().st_size,
-            "mtime": source.stat().st_mtime_ns,
-            "fingerprint": media_fingerprint(source),
-            "version": VERSION,
-            "settings": asdict(self.settings),
-            "board": self.profile_fingerprint,
-            "quality_asset": hashlib.sha256(
-                (Path(__file__).parent / "assets" / "confirmation.png").read_bytes()
-            ).hexdigest(),
-            "refs": {k: hashlib.sha256(v.tobytes()).hexdigest() for k, v in refs.items()},
-            "games": [{k: g.get(k) for k in ("id", "index", "start", "end", "result")} for g in games],
-            "samples": [(game_key(g), sample_times(g, duration, self.settings)) for g in games],
-        }
+        profile = current_profile()
+        if profile:
+            profile.node("hero_groups")["cache"] = "pending"
+        with measure("hero_groups.references"):
+            refs = self._references()
+        record("hero_groups", games_requested=len(games), references=len(refs))
+        with measure("hero_groups.identity"):
+            identity = {
+                "source": str(source),
+                "size": source.stat().st_size,
+                "mtime": source.stat().st_mtime_ns,
+                "fingerprint": media_fingerprint(source),
+                "version": VERSION,
+                "settings": asdict(self.settings),
+                "board": self.profile_fingerprint,
+                "quality_asset": hashlib.sha256(
+                    (Path(__file__).parent / "assets" / "confirmation.png").read_bytes()
+                ).hexdigest(),
+                "refs": {k: hashlib.sha256(v.tobytes()).hexdigest() for k, v in refs.items()},
+                "games": [{k: g.get(k) for k in ("id", "index", "start", "end", "result")} for g in games],
+                "samples": [(game_key(g), sample_times(g, duration, self.settings)) for g in games],
+            }
         key = digest(identity)
         cache = self.cache_dir / (key + ".json")
         try:
-            cached = json.loads(cache.read_text(encoding="utf-8"))
+            with measure("hero_groups.cache_lookup"):
+                cached = json.loads(cache.read_text(encoding="utf-8"))
             if cached.get("cache_key") == key and cached.get("version") == VERSION:
+                if profile:
+                    profile.cache("hero_groups", "hit")
+                    for stage in ("sampling", "signature", "hero_power", "classification"):
+                        profile.skip("hero_groups." + stage, "hero_group_cache_hit")
+                record("hero_groups", cached_games=len(cached.get("games", [])))
                 # Cached automatic result; edits remain project-owned and override it.
                 if cached.get("grouping_mode") == "class":
                     from .classes import class_groups
@@ -528,40 +547,58 @@ class HeroGroupingService:
                 return result
         except (OSError, ValueError, TypeError, KeyError, AttributeError):
             pass
+        if profile:
+            profile.cache("hero_groups", "miss")
         records = []
         for index, game in enumerate(games):
             token.raise_if_cancelled()
             images, powers, samples = [], [], []
-            for timestamp in sample_times(game, duration, self.settings):
+            record("hero_groups", games_started=1)
+            times = sample_times(game, duration, self.settings)
+            batched = None
+            if callable(getattr(self.sampler, "get_many", None)):
+                with measure("hero_groups.sampling"):
+                    batched = self.sampler.get_many(source, times, max_width=960, cancellation=token)
+            for timestamp in times:
+                record("hero_groups", samples_requested=1)
                 token.raise_if_cancelled()
-                frames = self.sampler.sample(
-                    source,
-                    fps=1.0,
-                    start_s=timestamp,
-                    end_s=min(timestamp + 0.10, duration),
-                    max_width=960,
-                    cancellation=token,
-                )
-                try:
-                    frame = next(frames, None)
-                finally:
-                    close = getattr(frames, "close", None)
-                    if close:
-                        close()
+                if batched is not None:
+                    frame = batched.get(timestamp)
+                else:
+                    frames = self.sampler.sample(
+                        source,
+                        fps=1.0,
+                        start_s=timestamp,
+                        end_s=min(timestamp + 0.10, duration),
+                        max_width=960,
+                        cancellation=token,
+                    )
+                    with measure("hero_groups.sampling"):
+                        try:
+                            frame = next(frames, None)
+                        finally:
+                            close = getattr(frames, "close", None)
+                            if close:
+                                close()
                 if frame is None:
                     continue
-                board_score = self.board_gate(frame.image)
+                record("hero_groups", frames=1)
+                with measure("hero_groups.board_gate"):
+                    board_score = self.board_gate(frame.image)
                 sample = {"requested": timestamp, "timestamp": frame.timestamp, "board": board_score}
                 samples.append(sample)
                 if board_score < self.settings.board_min:
+                    record("hero_groups", rejected_board_samples=1)
                     sample["rejected"] = "board not readable"
                     continue
+                record("hero_groups", accepted_board_samples=1)
                 portrait = crop(frame.image, self.settings.portrait_roi)
                 images.append(portrait)
                 powers.append(crop(frame.image, self.settings.power_roi))
                 sample["portrait"] = thumbnail(portrait)
                 sample["sha256"] = hashlib.sha256(portrait.tobytes()).hexdigest()
             feat, support, score, representative = signature(images, self.settings)
+            record("hero_groups.signature", games=1, consistent_samples=support)
             evidence = self._power_evidence(powers, refs)
             records.append(
                 {
@@ -582,9 +619,16 @@ class HeroGroupingService:
         from .classes import class_groups, classify_records
 
         if refs:
-            classify_records(records, self.settings)
+            with measure("hero_groups.classification"):
+                classify_records(records, self.settings)
+        elif profile:
+            profile.skip("hero_groups.classification", "no_references")
         grouping = class_groups if refs else group_signatures
-        automatic = grouping(records, self.settings)
+        with measure("hero_groups.grouping"):
+            automatic = grouping(records, self.settings)
+        record("hero_groups", games_processed=len(records),
+               games_classified=sum(bool(r.get("class_evidence")) for r in records),
+               groups=len(automatic.get("groups", {})))
         automatic.update(
             {
                 "cache_key": key,
@@ -594,7 +638,8 @@ class HeroGroupingService:
             }
         )
         token.raise_if_cancelled()
-        atomic_json(cache, automatic)
+        with measure("hero_groups.cache_write"):
+            atomic_json(cache, automatic)
         # Preserve stable project IDs as well as manual assignments on recalculation.
         result = grouping(records, self.settings, previous)
         result.update({k: automatic[k] for k in ("cache_key", "sample_fingerprint", "source_identity", "cache_hit")})

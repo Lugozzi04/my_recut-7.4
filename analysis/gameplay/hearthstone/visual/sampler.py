@@ -15,6 +15,7 @@ from typing import Protocol
 
 import numpy as np
 
+from analysis.performance_profile import current_profile, profiled, record, submeasure
 from analysis.audio_service import AnalysisCancellation, AnalysisCancelled
 from utils.ffmpeg import FFprobeCancelled, cancellable_probe_scope, ensure_ffmpeg, run_cmd
 from utils.subprocess_utils import popen_no_window
@@ -106,6 +107,7 @@ class FFmpegFrameSampler:
         self._metadata_lock = threading.Lock()
         self._metadata_cache: dict[Path, tuple[int, int, VideoInfo]] = {}
 
+    @profiled("sampling.probe")
     def probe(self, path: str | Path, *, cancellation: AnalysisCancellation | None = None) -> VideoInfo:
         token = cancellation or AnalysisCancellation()
         token.raise_if_cancelled()
@@ -117,13 +119,16 @@ class FFmpegFrameSampler:
             cached = self._metadata_cache.get(source)
             if cached is not None and cached[:2] == (signature.st_size, signature.st_mtime_ns):
                 token.raise_if_cancelled()
+                record("sampling.probe", cache_hits=1)
+                self._profile_info(cached[2])
                 return cached[2]
+        record("sampling.probe", cache_misses=1)
         _, ffprobe = ensure_ffmpeg()
         try:
             with cancellable_probe_scope(token):
                 result = run_cmd([
                     ffprobe, "-v", "error", "-select_streams", "v:0",
-                    "-show_entries", "stream=width,height,duration,start_time:format=format_name,duration,start_time",
+                    "-show_entries", "stream=width,height,duration,start_time,avg_frame_rate,codec_name:format=format_name,duration,start_time",
                     "-of", "json", str(source),
                 ], timeout_s=30.0)
             token.raise_if_cancelled()
@@ -155,7 +160,17 @@ class FFmpegFrameSampler:
                     duration = self._positive(duration - origin)
             if width <= 0 or height <= 0 or duration is None:
                 raise ValueError("Video dimensions/duration are unavailable or invalid.")
+            fps = None
+            try:
+                numerator, denominator = str(stream.get("avg_frame_rate", "0/0")).split("/")
+                fps = self._positive(float(numerator) / float(denominator))
+            except (ValueError, ZeroDivisionError):
+                pass
+            profile = current_profile()
+            if profile:
+                profile.video.update(fps=fps, codec=stream.get("codec_name"))
             info = VideoInfo(duration, width, height, origin)
+            self._profile_info(info)
             current = source.stat()
             if (current.st_size, current.st_mtime_ns) != (signature.st_size, signature.st_mtime_ns):
                 raise FrameSamplingError("Source changed while probing video.", code="source_changed")
@@ -173,6 +188,12 @@ class FFmpegFrameSampler:
             raise
         except (OSError, RuntimeError, ValueError, TypeError, KeyError, IndexError) as exc:
             raise FrameSamplingError(f"Could not inspect video: {exc}", code="invalid_video") from exc
+
+    @staticmethod
+    def _profile_info(info: VideoInfo) -> None:
+        profile = current_profile()
+        if profile:
+            profile.video.update(duration_s=info.duration_s, width=info.width, height=info.height)
 
     @staticmethod
     def _positive(value: object) -> float | None:
@@ -233,6 +254,19 @@ class FFmpegFrameSampler:
             roi=roi, reference_size=reference_size, output_size=output_size, cancellation=cancellation,
         )
 
+    def sample_at(self, path: str | Path, timestamps: list[float], *, max_width: int = 960,
+                  cancellation: AnalysisCancellation | None = None) -> Generator[SampledFrame, None, None]:
+        """First actual frame in each 100ms request, batched without changing source PTS."""
+        times = sorted(set(timestamps))
+        if not times:
+            return
+        if any(not math.isfinite(t) or t < 0 for t in times):
+            raise ValueError("Frame timestamps must be finite and non-negative")
+        if isinstance(max_width, bool) or not isinstance(max_width, int) or not 16 <= max_width <= 4096:
+            raise ValueError("Invalid max_width")
+        yield from self._sample(path, fps=1.0, start_s=times[0], end_s=times[-1] + 0.10,
+                                max_width=max_width, cancellation=cancellation, requested_times=times)
+
     @staticmethod
     def _roi_bounds(
         roi: tuple[float, float, float, float], width: int, height: int,
@@ -252,6 +286,7 @@ class FFmpegFrameSampler:
         reference_size: tuple[int, int] | None = None,
         output_size: tuple[int, int] | None = None,
         cancellation: AnalysisCancellation | None = None,
+        requested_times: list[float] | None = None,
     ) -> Generator[SampledFrame, None, None]:
         token = cancellation or AnalysisCancellation()
         token.raise_if_cancelled()
@@ -296,6 +331,10 @@ class FFmpegFrameSampler:
                 f"floor((t-start_t)*{fps:.12f}+0.5),"
                 f"floor((prev_selected_t-start_t)*{fps:.12f}+0.5))"
             )
+        if requested_times is not None:
+            selection = "+".join(
+                f"gte(t,{t:.9f})*lt(t,{t + 0.10:.9f})*(isnan(prev_selected_t)+lt(prev_selected_t,{t - 1e-7:.9f}))"
+                for t in requested_times)
         vf = f"select='{selection}',{crop_filter}scale={width}:{height},format=bgr24,showinfo"
         ffmpeg, _ = ensure_ffmpeg()
         command = [
@@ -305,8 +344,10 @@ class FFmpegFrameSampler:
             "-vf", vf, "-fps_mode", "passthrough", "-threads", "1",
             "-pix_fmt", "bgr24", "-f", "rawvideo", "pipe:1",
         ]
-        process = popen_no_window(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE, bufsize=0)
+        with submeasure("ffmpeg_process_startup"):
+            process = popen_no_window(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, bufsize=0)
+        record("sampling", streams=1, requested_source_seconds=finish - start_s)
         frames: queue.Queue[object] = queue.Queue(maxsize=2)
         timestamps: queue.Queue[object] = queue.Queue(maxsize=8)
         stop = threading.Event()
@@ -343,7 +384,7 @@ class FFmpegFrameSampler:
                         if len(buffer) != frame_bytes:
                             put(frames, _ReaderFailure("FFmpeg returned a truncated raw video frame."))
                             return
-                        if not put(frames, bytes(buffer)):
+                        if not put(frames, buffer):
                             return
                 except (OSError, ValueError) as exc:
                     put(frames, _ReaderFailure(str(exc)))
@@ -389,19 +430,24 @@ class FFmpegFrameSampler:
                 reader.start()
             previous = -math.inf
             while True:
-                raw = receive(frames)
+                with submeasure("frame_queue_wait"):
+                    raw = receive(frames)
                 if raw is _END:
                     break
-                timestamp = receive(timestamps)
+                with submeasure("timestamp_queue_wait"):
+                    timestamp = receive(timestamps)
                 if timestamp is _END:
                     raise FrameSamplingError("FFmpeg did not provide a timestamp for a sampled frame.")
-                assert isinstance(timestamp, float) and isinstance(raw, bytes)
+                assert isinstance(timestamp, float) and isinstance(raw, (bytes, bytearray))
                 if not math.isfinite(timestamp) or timestamp <= previous:
                     raise FrameSamplingError("FFmpeg returned invalid/non-increasing frame timestamps.")
                 previous = timestamp
                 if timestamp < start_s - 1e-6 or timestamp >= finish + 1e-6:
                     continue
-                image = np.frombuffer(raw, dtype=np.uint8).reshape(height, width, 3)
+                with submeasure("raw_frame_view"):
+                    image = np.frombuffer(raw, dtype=np.uint8).reshape(height, width, 3)
+                    image.setflags(write=False)  # Each queued buffer is owned by exactly one frame.
+                record("sampling", frames=1, raw_bytes=len(raw))
                 yield SampledFrame(timestamp, image)
             deadline = time.monotonic() + self.stall_timeout_s
             while process.poll() is None:

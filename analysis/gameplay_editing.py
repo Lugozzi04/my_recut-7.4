@@ -14,6 +14,8 @@ boundary work at all: they are simply outside every island.
 """
 from __future__ import annotations
 
+from analysis.performance_profile import current_profile, measure, profiled, record
+
 from collections.abc import Callable, Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
@@ -166,6 +168,7 @@ class GameplayEditResult:
 Detector = Callable[[Path, AnalysisCancellation, Callable[[int], None] | None], GameplayAnalysisResult]
 
 
+@profiled("detection.setup")
 def hearthstone_detector(settings: GameplayEditSettings) -> Detector:
     from analysis.gameplay.hearthstone.state_aware import StateAwareHearthstoneAnalyzer
 
@@ -192,6 +195,7 @@ class GameplayEditingService:
         self._analyzer = boundary_analyzer
         self._resolver = resolver
 
+    @profiled("gameplay_editing")
     def run(self, video: str | Path, *, cancellation: AnalysisCancellation | None = None,
             on_progress: Callable[[int], None] | None = None,
             analysis: GameplayAnalysisResult | None = None,
@@ -208,9 +212,14 @@ class GameplayEditingService:
                 on_progress(max(0, min(100, int(value))))
 
         started = time.perf_counter()
+        supplied_analysis = analysis is not None
         if analysis is None:
             detector = self._detector or hearthstone_detector(self.settings)
             analysis = detector(source, token, lambda v: progress(v * 0.7))
+        if supplied_analysis:
+            profile = current_profile()
+            if profile:
+                profile.skip("detection", "supplied_analysis")
         timings["gameplay_detection_s"] = round(time.perf_counter() - started, 3)
         token.raise_if_cancelled()
         boundary = replace(self.settings.boundary, keep_policy="wins")
@@ -248,56 +257,77 @@ class GameplayEditingService:
         pending: list[tuple[int, BoundaryType, Any]] = []
         executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="boundary-agent") if workers > 1 else None
         resolve_started = time.perf_counter()
-        try:
-            for position, game in enumerate(kept):
-                token.raise_if_cancelled()
-                started = time.perf_counter()
-                try:
-                    analysed = analyzer.analyze_game(source, analysis, game.index, require_removable=False,
-                                                     cancellation=token)
-                    contexts[game.index] = analysed.contexts
-                except Exception as exc:
-                    if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
-                        raise
-                    warnings.append(f"game {game.index}: boundary analysis failed ({exc}); anchors used")
-                    contexts[game.index] = {}
-                boundary_s += time.perf_counter() - started
-                for kind in (BoundaryType.START, BoundaryType.END):
-                    context = contexts[game.index].get(kind)
-                    if context is None:
-                        continue
-                    if executor is not None:
-                        pending.append((game.index, kind, executor.submit(resolver.resolve, context)))
-                    else:
-                        started = time.perf_counter()
-                        pending.append((game.index, kind, resolver.resolve(context)))
-                        resolve_s += time.perf_counter() - started
-                progress(70 + 20 * (position + 1) / max(1, len(kept)))
-            for done, (index, kind, item) in enumerate(pending, start=1):
-                if isinstance(item, Future):
-                    while True:  # wait in slices so a cancellation is noticed while the agents think
-                        token.raise_if_cancelled()
-                        try:
-                            decision = item.result(timeout=0.5)
-                            break
-                        except FutureTimeout:
+        with measure("boundaries"):
+            try:
+                if self._analyzer is None and kept:
+                    started = time.perf_counter()
+                    try:
+                        analyzer.prefetch_kept_transcripts(source, analysis, [g.index for g in kept], cancellation=token)
+                    except Exception as exc:
+                        if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
+                            raise
+                        # Optional cache preparation must not disable per-game evidence/fallbacks.
+                        record("boundaries.transcript", prefetch_failures=1)
+                    boundary_s += time.perf_counter() - started
+                for position, game in enumerate(kept):
+                    token.raise_if_cancelled()
+                    record("boundaries", games_started=1)
+                    started = time.perf_counter()
+                    try:
+                        analysed = analyzer.analyze_game(source, analysis, game.index, require_removable=False,
+                                                         cancellation=token)
+                        contexts[game.index] = analysed.contexts
+                    except Exception as exc:
+                        if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
+                            raise
+                        warnings.append(f"game {game.index}: boundary analysis failed ({exc}); anchors used")
+                        contexts[game.index] = {}
+                    boundary_s += time.perf_counter() - started
+                    for kind in (BoundaryType.START, BoundaryType.END):
+                        context = contexts[game.index].get(kind)
+                        if context is None:
                             continue
-                else:
-                    decision = item
-                decisions.setdefault(index, {})[kind] = decision
-                if decision.requested_resolver in REMOTE_MODES:
-                    if decision.metadata.get("cache_hit"):
-                        cache_hits += 1
-                    elif not decision.fallback or decision.metadata.get("error_code") != "cli_missing":
-                        agent_calls += 1
-                fallbacks += int(decision.fallback)
-                progress(90 + 10 * done / max(1, len(pending)))
-        finally:
-            if executor is not None:
-                executor.shutdown(wait=False, cancel_futures=True)
-        if executor is not None:  # wall time spent beyond the local analysis, i.e. what the agents really cost
-            resolve_s = max(0.0, time.perf_counter() - resolve_started - boundary_s)
-        keeps = policy.keeps(decisions)
+                        if executor is not None:
+                            pending.append((game.index, kind, executor.submit(resolver.resolve, context)))
+                        else:
+                            started = time.perf_counter()
+                            with measure("boundaries.selection." + self.settings.boundary_mode):
+                                pending.append((game.index, kind, resolver.resolve(context)))
+                            resolve_s += time.perf_counter() - started
+                    progress(70 + 20 * (position + 1) / max(1, len(kept)))
+                for done, (index, kind, item) in enumerate(pending, start=1):
+                    if isinstance(item, Future):
+                        while True:  # wait in slices so a cancellation is noticed while the agents think
+                            token.raise_if_cancelled()
+                            try:
+                                decision = item.result(timeout=0.5)
+                                break
+                            except FutureTimeout:
+                                continue
+                    else:
+                        decision = item
+                    decisions.setdefault(index, {})[kind] = decision
+                    if decision.requested_resolver in REMOTE_MODES:
+                        if decision.metadata.get("cache_hit"):
+                            cache_hits += 1
+                        elif not decision.fallback or decision.metadata.get("error_code") != "cli_missing":
+                            agent_calls += 1
+                    fallbacks += int(decision.fallback)
+                    progress(90 + 10 * done / max(1, len(pending)))
+            finally:
+                if executor is not None:
+                    executor.shutdown(wait=False, cancel_futures=True)
+            if executor is not None:  # wall time spent beyond the local analysis, i.e. what the agents really cost
+                resolve_s = max(0.0, time.perf_counter() - resolve_started - boundary_s)
+        profile = current_profile()
+        record("boundaries", games_selected=len(kept), decisions=len(pending),
+               agent_calls=agent_calls, agent_cache_hits=cache_hits, fallbacks=fallbacks)
+        if profile and not kept:
+            profile.skip("boundaries", "no_publishable_wins")
+            for stage in ("evidence", "transcript.inference", "transcript.audio_extraction", "selection.exact"):
+                profile.skip_unexecuted("boundaries." + stage, "no_publishable_wins")
+        with measure("keep_policy"):
+            keeps = policy.keeps(decisions)
         if source_range is not None:  # only the games of the range, clipped to it
             wanted = {g.index for g in kept}
             clipped = []

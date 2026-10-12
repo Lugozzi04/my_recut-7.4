@@ -1,0 +1,21 @@
+{
+  "scope": "72s stream-copy clip from videoprova; no detector/ASR/provider; one measured sample",
+  "legacy_seconds": 1.1168883999998798,
+  "legacy_processes": 10,
+  "strategies": [
+    {
+      "max_gap_s": 3.0,
+      "cold_seconds_including_persistence": 1.4090619999997216,
+      "warm_seconds": 0.12361670000063896,
+      "processes": 10,
+      "pixels_pts_equal": true
+    },
+    {
+      "max_gap_s": 8.0,
+      "cold_seconds_including_persistence": 2.0620230000004085,
+      "warm_seconds": 0.1268182000003435,
+      "processes": 3,
+      "pixels_pts_equal": true
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 """Cheap masked structural anchors; board evidence is never outcome evidence."""
 from __future__ import annotations
 
+from analysis.performance_profile import submeasure
 import numpy as np
 
 from .state_profile import StateAwareProfile, number
@@ -41,18 +42,21 @@ class BoardPresenceDetector:
     def score(self, normalized: np.ndarray) -> tuple[float, dict[str, float]]:
         if normalized.shape[:2] != (self.profile.reference_size[1], self.profile.reference_size[0]):
             raise ValueError('Board frame must use profile reference geometry')
-        gray = self.cv.cvtColor(normalized, self.cv.COLOR_BGR2GRAY) if normalized.ndim == 3 else normalized
+        with submeasure("image_preparation"):
+            gray = self.cv.cvtColor(normalized, self.cv.COLOR_BGR2GRAY) if normalized.ndim == 3 else normalized
         scores = {}
         for name, (left, top, right, bottom), padding, templates in self.anchors:
             roi = gray[max(0, top-padding):min(gray.shape[0], bottom+padding),
                        max(0, left-padding):min(gray.shape[1], right+padding)]
-            edge = self.cv.Canny(roi, 50, 120)
+            with submeasure("image_preparation"):
+                edge = self.cv.Canny(roi, 50, 120)
             best = 0.0
-            for template, mask in templates:
-                response = self.cv.matchTemplate(edge, template, self.cv.TM_CCORR_NORMED, mask=mask)
-                finite = response[np.isfinite(response)]
-                if finite.size:
-                    best = max(best, float(finite.max()))
+            with submeasure("template_matching"):
+                for template, mask in templates:
+                    response = self.cv.matchTemplate(edge, template, self.cv.TM_CCORR_NORMED, mask=mask)
+                    finite = response[np.isfinite(response)]
+                    if finite.size:
+                        best = max(best, float(finite.max()))
             scores[name] = min(1.0, best)
         # Conjunction, not a learned/probabilistic weighted sum. A single matching
         # button or portrait cannot assert that the entire board is still active.

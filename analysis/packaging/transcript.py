@@ -20,7 +20,7 @@ from analysis.boundaries.transcript import FasterWhisperEngine, TranscriptionEng
 
 from .cache import PackagingCache, stable_key
 from .models import TranscriptLine
-from .timeline import EditMap
+from analysis.shared.timeline import TimelineMapper as EditMap
 
 GRID_S = 120.0
 OVERLAP_S = 3.0
