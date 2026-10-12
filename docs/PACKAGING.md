@@ -10,6 +10,239 @@ L'unica modifica a codice esistente fuori dal pacchetto è l'estrazione di `run_
 `analysis/boundaries/agents.py` (stesso comportamento, test dei boundary resolver invariati) e la
 registrazione dei comandi in `automation/cli.py`.
 
+## Motore `gen` (default) — il modello finale compone la thumbnail
+
+ReCut seleziona e prepara; la composizione la fa un modello di immagini. Analisi, asset, opportunità e cache
+sono quelli V3, invariati.
+
+```text
+FAST  1 chiamata di planning (claude/codex): story + titoli + 4 concept con ROLE + ASSET PACKAGE (niente scene graph)
+      ─► generate.py: pacchetto per variante (webcam originale + 0-2 alternative, 1-2 board, 0-1 carta/dettaglio,
+         momento, hook, art direction), overlay webcam rimosso dai frame, JPEG ≤ 1280 px, immagini deduplicate
+      ─► 1 chiamata `codex exec --enable image_generation` (tool image_gen integrato, login ChatGPT, niente API key)
+         per TUTTE le varianti; file presi da $CODEX_HOME/generated_images (copiati, mai spostati)
+      ─► ritaglio 16:9, 1280x720 → thumbnails/concept_NN.png
+```
+
+- Ruoli obbligatori con 4 varianti: `reaction-led`, `card-led`, `board-led`, `narrative-led` (validazione con
+  1 repair). Al massimo 2 hook a domanda.
+- Il prompt di planning `gen` non ha la sezione scene graph, gli esempi preset, i ritagli S.. o il loro contact sheet:
+  26.3k caratteri e 5 immagini sulla videoprova, contro 34.8k e 6 della V3.
+- Il renderer locale disegna una bozza per ruolo (preset), usata per validazione, diversità e **fallback**. Le
+  bozze vanno in `thumbnails/local/`; per ogni variante che il generatore non produce resta la bozza.
+- `generation_request.json` contiene il prompt esatto e i pacchetti; `thumbnails/packages/` le immagini inviate.
+- Cache `generated`: la chiave è il prompt più l'hash dei file asset sorgente. `--only render` riusa le immagini
+  generate senza chiamate. `--thumbnail-engine v3` usa solo il render locale, senza modello di immagini.
+- Privacy: crop webcam e frame del pacchetto vanno al provider della CLI codex.
+
+### Aggiornamento dopo il primo run reale (videoprova)
+
+- **Ritagli delle carte.** Le letture dell'agent erano sistematicamente troppo alte: partivano sopra la carta e
+  tagliavano il fondo (testo, razza, attacco/vita). La finestra della carta ora si allarga di poco in alto, di
+  molto in basso (+30 %) e prende la proporzione di una carta (0.70). Il modello finale isola poi la carta. Una
+  lettura quasi quadrata è un servitore sulla board e resta com'è. La rilevazione del contorno è stata provata e
+  scartata: aloni, fumetti e carte adiacenti la rendono inaffidabile.
+- **Griglia di lettura.** Le etichette ora sono centrate sulla loro linea; prima stavano sopra ed erano ambigue.
+- **Regioni della board.** Le finestre i cui bordi attraversano contorni forti (carte o servitori tagliati a
+  metà) vengono penalizzate, ed è stata aggiunta una finestra più grande (0.74).
+- **Webcam.** Nel motore `gen` non c'è più il ritaglio locale: il modello scontorna la webcam originale. La bozza
+  locale usa la bolla.
+- **Originalità tra video.** Ogni variante riceve una ricetta di composizione per ruolo (posizione di volto e
+  testo, inquadratura), uno stile del testo e una gradazione colore (`generate.py`, `RECIPES`). La scelta:
+  - è deterministica per video, quindi un rilancio resta in cache;
+  - evita le ricette, gli stili e i colori usati negli ultimi 6 video (`<cache>/packaging/composition_history.json`);
+  - non mette mai il volto dallo stesso lato due volte nello stesso portfolio.
+
+  I concept restano dell'agent; cambia solo come vengono composti.
+- **Punch e ruoli** (`thumbnail_gen_v2`, `packaging_fast_gen_v2`):
+  - sono ammessi zoom, luce, bagliori e un cerchio o una freccia sull'elemento chiave;
+  - board-led sceglie il momento più spettacolare;
+  - narrative-led è la storia in un'immagine, mai un confronto prima/dopo tra due board ordinarie;
+  - al massimo un concept senza testo;
+  - l'agent non fissa più i piazzamenti.
+
+### Modificare e confermare le thumbnail
+
+Alla fine di `packaging` o di `process --packaging`, se lanciati da un terminale e senza `--json`, si apre la
+cartella `thumbnails` e il prompt resta in attesa:
+
+```text
+Invio                 esce
+2                     poi chiede cosa cambiare sulla copertina 2 (vuoto = annulla, ok = conferma)
+2 testo: BOARD        modifica in una riga
+ok 2                  conferma la copertina 2 -> thumbnails/thumbnail_final.png + selection.json
+back 2 0              torna alla versione 0 (l'originale)
+```
+
+Ogni modifica è una sola chiamata `image_gen` su una sola copertina. Al modello vanno la copertina attuale e i
+riferimenti originali (webcam, carta, board), così volto e dati di gioco restano reali. Le versioni sono in
+`thumbnails/edits/C2_v0.png` (originale), `v1`, `v2`…, la cronologia in `thumbnail_edits.json`. La conferma
+finisce nella memoria di stile del creator, se il run ne ha uno. `--no-interactive` disattiva la sessione.
+
+Senza interazione: `packaging-edit --output DIR --list`, `--concept 2 --request "..."`, `--revert 1` (con
+`--concept`) e `--approve 2`.
+
+GUI: scheda **Thumbnails** (Alt+4).
+- Si genera dal progetto corrente, di cui viene salvata un'istantanea `source_project.autocutter` nella cartella
+  di output, oppure da un video.
+- Si sceglie l'agent, il motore (generato o locale) e la lingua.
+- Un clic su una copertina apre l'anteprima con le versioni, "Cosa vuoi cambiare?", Applica, Usa questa versione
+  e Conferma.
+- "Open an existing run…" riapre un packaging già fatto.
+
+Nella sezione Gameplay editing c'è anche "End of games" (Tight/Balanced/Extended).
+
+## V3 — Art Direction System: asset, portfolio, scene graph
+
+`--thumbnail-engine v3` (render solo locale; base del motore `gen`; V2 resta disponibile con `--thumbnail-engine v2`). Le chiamate agent non
+cambiano: FAST = 1 chiamata standard (Codex effort `medium`), DEEP = story (+ eventuale approfondimento)
++ 1 chiamata di portfolio, `--only render` = 0 chiamate.
+
+```text
+Transcript / Games / Highlights / Frames (V1-V2, invariati, in cache)
+        │
+        ▼  analysis/packaging/assets.py + subjects.py           (locale)
+VisualAssetManifest  F.. frame · B.. regioni di board · W.. webcam · S.. ritagli soggetto · K.. carte
+        │
+        ▼  opportunities.py                                     (locale)
+Creative Opportunity Matrix  O.. ipotesi editoriali con evidenze, soggetti candidati, trattamenti
+        │
+        ▼  fast.py + creative.py  (1 chiamata Claude/Codex)
+PortfolioStrategy + VideoStory + 4 concept + titoli + scene graph
+        │
+        ▼  scene.py (validazione) · portfolio.py (diversità) · quality.py (gate)   (locale)
+ThumbnailScene ──► render.py SceneRenderer (livelli, alpha) ──► 4 PNG + PortfolioQualityReport
+```
+
+| Modulo | Contenuto |
+|---|---|
+| `assets.py` | `VisualAsset`/`VisualAssetManifest` (id, tipo, file, timestamp sorgente/edit, highlight/game, bbox nel genitore, dimensioni, qualità, alpha, provenienza, limiti, usi), regioni di board, crop carte |
+| `subjects.py` | ritaglio webcam: background plate per partita + trimap + GrabCut + controlli di qualità + fallback; adattatore ONNX opzionale |
+| `opportunities.py` | `CreativeOpportunity`, shortlist diversificata |
+| `scene.py` | `ThumbnailScene`: schema, limiti, validazione, preset (ex archetipi), adattatore V2 → V3 |
+| `render.py` | `SceneRenderer` a livelli (oltre al renderer V2) |
+| `portfolio.py` | `PortfolioStrategy` (schema), valutatore di diversità, `PortfolioQualityReport` |
+| `quality.py` | controlli V3 + correzioni locali deterministiche |
+| `pipeline_v3.py` | stadi V3 integrati nella pipeline (mixin) |
+| `style.py` | riferimenti visivi reali, polarità, categorie, sezioni del profilo |
+| `extensions.py` | `ImagePolishProvider` (solo interfaccia) |
+
+### Visual Asset Manifest
+
+Nessun asset è generato: ogni voce è un ritaglio del video montato con provenienza (`ffmpeg_frame`,
+`webcam_roi_crop`, `plate_grabcut`, `edge_energy_window`, `agent_reading_crop`), genitore, bbox normalizzato,
+qualità tecnica e limiti espliciti ("not isolated", "identity uncertain", "low webcam resolution"). Le
+famiglie (S→W, B→F, K→F) servono alla diversità: riusare un ritaglio equivale a riusare il frame.
+Le regioni di board (B..) sono finestre 16:9 a massima energia di bordi/saturazione nella fascia centrale
+della board, con overlay webcam, colonne HUD e fila della mano penalizzati.
+
+### Ritaglio del soggetto webcam
+
+Solo sui crop webcam già scelti (non sul VOD). Algoritmo locale, nessuna dipendenza nuova:
+1. *background plate* per partita: mediana dei crop webcam dei burst già decodificati, escludendo per ogni
+   campione l'inviluppo della persona (la stanza è statica, il creator si muove);
+2. trimap: ellisse testa + torso = probabile primo piano; differenze dalla plate nell'inviluppo testa-spalle =
+   probabile primo piano (mani, microfono); volto interno e petto = certo;
+3. GrabCut; poi pulizia della stanza statica (scaffali, lampada) fuori da volto e torso stretto, regola
+   geometrica "sopra la fronte solo capelli", componenti connesse al nucleo persona, chiusura e riempimento;
+4. due varianti (con/senza pulizia plate), si tiene la migliore valida;
+5. controllo maschera: copertura, volto interno, fuoriuscita dall'inviluppo, contorno frastagliato, contatto
+   laterale, "morsi" sulla testa, capelli presenti (testa non "calva"), stanza statica residua.
+Se un controllo fallisce: rettangolo sfumato del crop originale marcato `NOT isolated` (il renderer e il
+gate lo tengono piccolo o lo omettono). Il volto non viene mai generato o modificato.
+Adattatore opzionale `AUTO_CUTTER_SEGMENTATION_MODEL=<file .onnx>` (es. un export MODNet; input NCHW,
+output alpha 0..1) eseguito con l'onnxruntime già distribuito; nessun download automatico; non testato
+con pesi reali in questa iterazione.
+
+### Creative Opportunity Matrix
+
+Per highlight: tipi di storia candidati solo se supportati dai segnali (parole di decisione → 
+`strategic_decision`; spiegazione/lessico mazzo → `educational_explanation`; ultimi secondi di una WIN →
+`decisive_card`/`surprising_result`; parole di ribaltamento → `comeback`; reazione con volto isolato →
+`unexpected_reaction`; ...), evidenze (T../F..), soggetti candidati, trattamenti possibili, punti di forza e
+limiti visivi. Più un'opportunità "arco della partita" per gioco. La shortlist (≤ 10) penalizza tipi e
+partite ripetuti: un picco audio non domina un momento strategico. Le etichette locali sono ipotesi rumorose
+(es. "tengo" in un discorso sul giveaway): l'agente le conferma o le scarta.
+
+### Portfolio Planning (una chiamata)
+
+Il prompt FAST V3 organizza quattro compiti nella stessa chiamata — A. comprensione editoriale, B. portfolio
+(prima diversità narrativa, poi visiva; colore/font/una parola non sono differenze), C. art direction
+(messaggio, protagonista, supporto, atmosfera, testo o niente testo, cosa omettere; nessun obbligo di webcam,
+carta o testo), D. produzione (scene graph con soli id del manifest). Riceve: giochi, highlight, opportunità,
+manifest compatto, transcript selezionato, profilo creator, 2 preset di esempio e ≤ 7 immagini (contact sheet
+dei frame scelti, ritagli soggetto, regioni di board, 1 frame con griglia per le carte, ≤ 2 riferimenti di
+stile). Restituisce `portfolio_strategy` (piano + compromessi), story, 4 concept (story_type, messaggio,
+trattamento, protagonista, supporti, omissioni, titolo, testo, evidenze, scena) e i titoli.
+
+### Diversità (portfolio.py, deterministica)
+
+Bloccanti, se il materiale lo consente: < 3 tipi di storia, < 3 trattamenti, due concept con stessa storia +
+stessa famiglia del protagonista + stessa firma compositiva, testi che condividono ≥ 50 % delle parole di
+contenuto (stopword rimosse, radici a 5 lettere), render quasi identici (dHash ≤ 10 bit).
+Warning: stessi highlight raccontati allo stesso modo, stesso sfondo, stessa composizione, messaggi simili.
+Compromessi: ripetizioni giustificate da poche opportunità o trattamenti disponibili. I bloccanti in
+validazione producono la correzione minima (1 retry); dopo il render un duplicato visivo viene corretto
+localmente (sfondo alternativo dello stesso highlight); un duplicato narrativo non viene mascherato: il report
+raccomanda `--only thumbnails`, senza chiamate automatiche.
+
+### ThumbnailScene
+
+`background` {asset_id, crop, blur 0..1, dim 0..0.8, saturation 0.5..1.5}, `layers` (≤ 8, ≤ 2 testi) di tipo
+`image | subject_cutout | card | board_crop | text | gradient | shape | effect` con x, y (centro), height,
+width, z 0..20, rotation ±12°, opacity 0.2..1, shadow, outline, rim_light, blur 0..1, clip
+none/rounded/circle, blend limitati, brightness ±0.3, contrast 0.7..1.5, saturation 0.5..1.6; `focal_point`,
+`visual_hierarchy`, `style` {accent, text_color, typography}; canvas e safe areas sono di ReCut.
+Validazione: id esistenti, compatibilità tipo layer ↔ tipo asset (cut-out solo da `webcam_subject`, sfondo
+solo frame/regioni), intervalli, testo breve. I concept V2 vengono convertiti (`scene_from_v2`): reaction →
+cut-out (se isolato) altrimenti bolla circolare; board con carte → carte protagoniste; board senza carte →
+board nitida + pannello di dettaglio + fascia testo.
+
+### SceneRenderer
+
+Livelli in ordine z su canvas 2×, alpha compositing, ombra dalla silhouette del soggetto, rim light sottile,
+correzione colore per livello (contrasto attorno al tono medio, senza scurire), blur localizzato, clip,
+rotazione, gradienti, vignette, spotlight sul punto focale, testo V2 (autofit, spezzature pulite, outline,
+ombra). I cut-out vengono inquadrati testa-spalle attorno al volto e ingranditi al massimo 2.6× (oltre, un
+volto webcam diventa morbido). Metadati per livello: rettangolo, quota visibile, bordi tagliati, alpha,
+pixel sorgente, ingrandimento.
+
+### Quality Gate V3 e cache
+
+Oltre ai controlli V2: ritaglio non isolato mostrato grande, soggetto tagliato dal bordo (spalle in basso
+ammesse), testo sul volto o sulle carte, troppo testo (> 30 % del canvas, > 5 parole), punto focale debole
+(< 10 % del canvas), > 5 elementi di contenuto, protagonista ingrandito oltre 3.2×, sfondo sfocato.
+Correzioni locali (sposta testo, rientra nelle safe area, riduci, backdrop, rimpicciolisci/riposiziona il
+soggetto, sfondo alternativo), sempre ripartendo dalla scena dell'agente (`scene` resta l'originale,
+`scene_rendered` la versione corretta). Report `portfolio_quality_report.json`: vincoli tecnici e indizi
+visivi, nessuna stima di CTR.
+Cache: ritagli soggetto (hash crop + plate + versione), regioni e asset nel manifest, risposte agent,
+render (scena + digest dei file asset + hash del codice di `render.py`/`scene.py`). Un re-render non
+decodifica video e non chiama l'agent; un cambio di codice del renderer invalida solo i render.
+
+### Validazione V3 (videoprova + VOD 86, ambiente isolato)
+
+Esperimento A — stessi concept V2 (Codex FAST, Codex deep, Claude deep), nuovo motore:
+`packaging_validation/videoprova/v3/A_*.jpg` (sinistra V2, destra V3). Esperimento B — portfolio salvato
+(4 storie, 4 trattamenti, 4 protagonisti) passato per validazione, gate, renderer e valutatore:
+`v3/B_saved_portfolio/`. Esperimento C — VOD 86 (stanza diversa) con agente simulato: rilevamento webcam
+corretto, ritagli tutti in fallback sicuro. Run reale Codex: `v3/codex_fast_v3/` (confronto con la FAST V2:
+`v3/codex_fast_v2_vs_v3.jpg`).
+
+| Run FAST reale (videoprova, Codex effort medium) | V2 | V3 |
+|---|---|---|
+| chiamate agent | 1 | 1 |
+| prompt (caratteri) | ~19.6k | 34.8k |
+| immagini | n/d | 6 (1.66 MB) |
+| token | ~35.2k | 46.6k |
+| tempo agent | n/d | 159 s (171 s totali) |
+| portfolio | 3 concept | 4 concept: 3 tipi di storia, 4 trattamenti, 4 protagonisti, nessun bloccante |
+
+Limiti osservati: volti webcam morbidi (la webcam sorgente è ~290 px di altezza), ritaglio OpenCV in fallback
+sulla stanza del VOD 86 (consigliato un modello ONNX locale), etichette locali delle opportunità rumorose (Codex
+ha scartato O05/O09), adattatore ONNX non verificato con pesi reali, badge "WIN" della V2 non riprodotti dalla
+conversione V2 → V3.
+
 ## V2 — percorso FAST, Codex economico, thumbnail più curate
 
 Default `--mode fast`; la pipeline V1 (sezioni sotto) resta disponibile come `--mode deep`.
@@ -318,3 +551,8 @@ maiuscole accentate che toccavano la riga sopra, ROI webcam automatica troppo la
 - Codex non riporta costi in dollari; solo token.
 - Trend YouTube e generazione immagini: solo interfacce.
 - Nessuna schermata GUI in questa iterazione (comandi CLI e file JSON).
+
+
+## Separate class outputs
+
+Class exports can optionally generate an independent Packaging run per video. Use **Generate a cover for each video** in Export or **An exported class video** in the Thumbnails source selector. Only that output's kept games and frames are used. See [PER_OUTPUT_PACKAGING.md](PER_OUTPUT_PACKAGING.md).

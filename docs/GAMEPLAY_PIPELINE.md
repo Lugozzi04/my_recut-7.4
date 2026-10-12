@@ -339,3 +339,77 @@ Verifica sui keeps finali:
 - **Finestre editoriali:** START −45 s, END +60 s. Contenuto più lontano dal VS o dal risultato non può entrare in un'isola senza allargare `EDITORIAL_WINDOWS`.
 - **Ground truth dei confini:** manca ancora una misura manuale delle scelte semantiche.
 - **WIN consecutive:** le decisioni (END dell'una, START dell'altra) sono indipendenti; le isole possono fondersi.
+
+## Aggiornamento 2026-10-11 — giunzioni senza ripetizioni e END editoriale (tight/balanced/extended)
+
+### Ripetizione di 1–2 s dopo un taglio (export smart)
+
+Causa confermata su `pipeline_e2e/codex_keep_wins_v3/videoprova_wins_only.mp4`, con `method auto` risolto in
+`smart_hybrid`:
+
+- Ogni frame esportato è stato confrontato con il sorgente. Risultato: 6 ripetizioni da 0.55 a 1.53 s (1.07, 0.77,
+  1.53, 0.55, 1.22 e 0.98 s), 33 salti indietro e +12.9 s di frame in più. Durata 1070.40 s contro 1056.39 s di keep.
+- `utils/ffmpeg.scan_splice_safe_pts` leggeva come Annex B anche i pacchetti MP4. Un B-frame di 256–511 byte ha il
+  prefisso di lunghezza `00 00 01 xx`, che veniva scambiato per uno start code: il byte seguente era letto come NAL
+  IDR. Su videoprova risultavano IDR i punti 1335.083, 1335.166, … (B-frame), mentre i veri IDR sono ogni 2 s.
+- Un pezzo in stream copy che parte da uno di quei punti (`-ss 1335.083 -c:v copy`) in realtà parte dal sync sample
+  precedente (1334.000). Così il tratto già mostrato veniva ripetuto.
+
+Correzioni minime:
+
+1. Lo scanner fa parsing a lunghezza prefissata quando c'è `avcC`/`hvcC` e accetta solo pacchetti che sono keyframe
+   del container. Cache splice alla v2: i punti v1 sbagliati non vengono più letti.
+2. I pezzi smart vengono tagliati per numero di frame (`-frames:v`). Prima il copy sbordava di 1–3 frame nel GOP
+   successivo e i pezzi ricodificati venivano allungati.
+3. La concat TS dei pezzi usa per ogni file una `duration` pari all'estensione del video. Senza questo, lo sbordo
+   AAC (priming e ultimo frame parziale) spostava il video di 1–3 frame a ogni pezzo.
+4. smart_render e smart_hybrid ricostruiscono l'audio in un solo passaggio dai keep (`atrim` + `concat` con
+   gain/LUFS/limiter), mentre il video, ora esatto, viene copiato.
+
+Accurate (`filter_concat`) e Fast (`chunked_parallel`) erano già corretti e sono invariati.
+
+Verifica:
+
+- **Sorgente sintetico.** 60 fps, GOP 2 s, B-frame, timebase al millisecondo; indice del frame dipinto nei pixel e
+  blip audio a ogni secondo intero (`tests/test_export_junctions.py`). Tutti e 4 i metodi:
+  - ogni frame tenuto compare una sola volta, in ordine;
+  - nessun frame fuori dai keep;
+  - durata entro 0.1 s;
+  - A/V costante entro 2.5 frame.
+
+  Sul codice precedente lo stesso test fallisce per smart_render e smart_hybrid.
+- **Export reale completo dei 52 keep.** 1056.87 s contro 1056.85 s di keep normalizzati, 0 ripetizioni. I 12 keep
+  iniziali restano entro ±1.4 frame per keep.
+
+L'anteprima della GUI (seek di QMediaPlayer sul sorgente) non è stata modificata: la ripetizione segnalata era
+presente nell'MP4 esportato.
+
+### END delle partite tenute: rilevanza prima della completezza
+
+- **Etichette `boundary_agent_prompt_v4_end`, solo per l'END di partite KEEP:** `WIN_REACTION`,
+  `GAME_SPECIFIC_RECAP`, `GAME_STRATEGY`, `GENERAL_DECK_TALK`, `CHAT_INTERACTION`, `UNRELATED_COMMENTARY`,
+  `NEXT_GAME`, `UNCERTAIN`. START e partite rimosse restano su v3, con le loro cache.
+- **Priorità nel prompt:** rilevanza per il video YouTube, poi appartenenza alla partita, poi quantità di contenuto
+  inutile, poi naturalezza del taglio. Una domanda della chat sulla giocata è contenuto (`GAME_STRATEGY`).
+- **Politica deterministica** (`analysis/boundaries/end_policy.py`), applicata alle etichette dell'agent:
+  - la reazione resta sempre;
+  - recap e strategia restano entro un budget (`tight` 10 s, `balanced` 25 s, `extended` 60 s; `tight` esclude la
+    strategia);
+  - ci si ferma al primo blocco irrilevante;
+  - il candidato si sceglie per costo: secondi di parlato irrilevante tenuti, parlato rilevante tagliato,
+    naturalezza del punto;
+  - tenuta minima sulla schermata di vittoria: 2 s (1.5 in `tight`);
+  - la scelta dell'agent resta se è entro margine.
+- **Nuovi candidati `WORD_GAP`:** confini tra parole dopo il risultato, così si può tagliare dentro una frase
+  irrilevante invece di aspettare una pausa lontana.
+- **Default:** `balanced`. Opzione `--end-policy tight|balanced|extended` per `process`/`vod`, e
+  `python -m analysis.boundaries`.
+
+Prima e dopo su videoprova (contesti reali; etichette del test al posto dell'agent; nessuna chiamata agent):
+
+| Partita | Codex v3 (prima) | v4, tight / balanced / extended |
+|---|---|---|
+| 2 (WIN) | +31.5 s: commenti generali sul nerf, fino a "road to legend" | +14.7 s: subito dopo "Ma quanto è rotto? Nerfatelo!" |
+| 4 (WIN, nessuna reazione, chat su pet e skin) | +18.9 s | tight +1.7 s, balanced/extended +3.1 s (confine di parola nella chat) |
+
+Casi di regressione con intervallo accettabile e motivo editoriale: `tests/test_boundary_end_policy.py`.

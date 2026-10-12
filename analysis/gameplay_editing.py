@@ -15,6 +15,8 @@ boundary work at all: they are simply outside every island.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 import time
@@ -69,6 +71,10 @@ class GameplayEditSettings:
             raise ValueError(f"Unsupported --keep-games '{self.keep_games}' (choices: {', '.join(KEEP_MODES)})")
         if self.boundary_mode not in BOUNDARY_MODES:
             raise ValueError(f"Unknown boundary mode '{self.boundary_mode}' (choices: {', '.join(BOUNDARY_MODES)})")
+        from analysis.boundaries.end_policy import END_MODES
+
+        if self.resolver.end_policy not in END_MODES:
+            raise ValueError(f"Unknown END policy '{self.resolver.end_policy}' (choices: {', '.join(END_MODES)})")
 
     @property
     def sends_remote_context(self) -> bool:
@@ -188,7 +194,10 @@ class GameplayEditingService:
 
     def run(self, video: str | Path, *, cancellation: AnalysisCancellation | None = None,
             on_progress: Callable[[int], None] | None = None,
-            analysis: GameplayAnalysisResult | None = None) -> GameplayEditResult:
+            analysis: GameplayAnalysisResult | None = None,
+            source_range: tuple[float, float | None] | None = None) -> GameplayEditResult:
+        """source_range (seconds): only games entirely inside it are kept, and the kept islands are clipped to
+        it. None = the whole video. The detector (frozen, cached per file) still reads the whole file."""
         token = cancellation or AnalysisCancellation()
         source = Path(video).expanduser().resolve()
         timings: dict[str, float] = {}
@@ -208,43 +217,101 @@ class GameplayEditingService:
         timeline = GameplayTimeline(analysis, boundary.eof, policy=boundary.keep_policy)
         policy = GameKeepPolicy(timeline)
         kept = policy.publishable()
+        lo, hi = 0.0, float(timeline.duration)
+        if source_range is not None:
+            lo = max(0.0, float(source_range[0] or 0.0))
+            hi = min(hi, float(source_range[1])) if source_range[1] is not None else hi
+
+            def inside(game: Any) -> bool:
+                return game.start is not None and game.end is not None and float(game.start) >= lo - 1e-6 \
+                    and float(game.end) <= hi + 1e-6
+
+            for game in kept:
+                if not inside(game) and game.start is not None and game.end is not None \
+                        and float(game.end) > lo and float(game.start) < hi:
+                    warnings.append(f"game {game.index} ({game.result}) crosses the selected range "
+                                    f"[{lo:.1f}, {hi:.1f}] s: not kept (only complete games inside the range)")
+            kept = [g for g in kept if inside(g)]
         if not kept:
-            warnings.append("no complete WIN: nothing is publishable")
+            warnings.append("no complete WIN" + (f" inside [{lo:.1f}, {hi:.1f}] s" if source_range else "")
+                            + ": nothing is publishable")
         analyzer = self._analyzer or BoundaryAnalyzer(boundary)
         resolver = self._resolver or create_resolver(self.settings.boundary_mode, self.settings.resolver)
         contexts: dict[int, dict[BoundaryType, BoundaryContext]] = {}
         decisions: dict[int, dict[BoundaryType, BoundaryDecision]] = {}
         boundary_s = resolve_s = 0.0
         agent_calls = cache_hits = fallbacks = 0
-        for position, game in enumerate(kept):
-            token.raise_if_cancelled()
-            started = time.perf_counter()
-            try:
-                analysed = analyzer.analyze_game(source, analysis, game.index, require_removable=False,
-                                                 cancellation=token)
-                contexts[game.index] = analysed.contexts
-            except Exception as exc:
-                if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
-                    raise
-                warnings.append(f"game {game.index}: boundary analysis failed ({exc}); anchors used")
-                contexts[game.index] = {}
-            boundary_s += time.perf_counter() - started
-            started = time.perf_counter()
-            for kind in (BoundaryType.START, BoundaryType.END):
-                context = contexts[game.index].get(kind)
-                if context is None:
-                    continue
-                decision = resolver.resolve(context)
-                decisions.setdefault(game.index, {})[kind] = decision
+        # Agent decisions are pure waiting on the provider: they run in background threads while the main thread
+        # analyses the next game's windows (local ASR/audio = CPU), and up to max_concurrent of them overlap.
+        remote = self.settings.boundary_mode in REMOTE_MODES
+        workers = max(1, int(getattr(self.settings.resolver, "max_concurrent", 1) or 1)) if remote else 1
+        pending: list[tuple[int, BoundaryType, Any]] = []
+        executor = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="boundary-agent") if workers > 1 else None
+        resolve_started = time.perf_counter()
+        try:
+            for position, game in enumerate(kept):
+                token.raise_if_cancelled()
+                started = time.perf_counter()
+                try:
+                    analysed = analyzer.analyze_game(source, analysis, game.index, require_removable=False,
+                                                     cancellation=token)
+                    contexts[game.index] = analysed.contexts
+                except Exception as exc:
+                    if exc.__class__.__name__ in ("AnalysisCancelled", "PipelineAnalysisCancelled"):
+                        raise
+                    warnings.append(f"game {game.index}: boundary analysis failed ({exc}); anchors used")
+                    contexts[game.index] = {}
+                boundary_s += time.perf_counter() - started
+                for kind in (BoundaryType.START, BoundaryType.END):
+                    context = contexts[game.index].get(kind)
+                    if context is None:
+                        continue
+                    if executor is not None:
+                        pending.append((game.index, kind, executor.submit(resolver.resolve, context)))
+                    else:
+                        started = time.perf_counter()
+                        pending.append((game.index, kind, resolver.resolve(context)))
+                        resolve_s += time.perf_counter() - started
+                progress(70 + 20 * (position + 1) / max(1, len(kept)))
+            for done, (index, kind, item) in enumerate(pending, start=1):
+                if isinstance(item, Future):
+                    while True:  # wait in slices so a cancellation is noticed while the agents think
+                        token.raise_if_cancelled()
+                        try:
+                            decision = item.result(timeout=0.5)
+                            break
+                        except FutureTimeout:
+                            continue
+                else:
+                    decision = item
+                decisions.setdefault(index, {})[kind] = decision
                 if decision.requested_resolver in REMOTE_MODES:
                     if decision.metadata.get("cache_hit"):
                         cache_hits += 1
                     elif not decision.fallback or decision.metadata.get("error_code") != "cli_missing":
                         agent_calls += 1
                 fallbacks += int(decision.fallback)
-            resolve_s += time.perf_counter() - started
-            progress(70 + 30 * (position + 1) / max(1, len(kept)))
+                progress(90 + 10 * done / max(1, len(pending)))
+        finally:
+            if executor is not None:
+                executor.shutdown(wait=False, cancel_futures=True)
+        if executor is not None:  # wall time spent beyond the local analysis, i.e. what the agents really cost
+            resolve_s = max(0.0, time.perf_counter() - resolve_started - boundary_s)
         keeps = policy.keeps(decisions)
+        if source_range is not None:  # only the games of the range, clipped to it
+            wanted = {g.index for g in kept}
+            clipped = []
+            for keep in keeps:
+                if keep.game.index not in wanted:
+                    continue
+                a, b = max(lo, float(keep.segment.start)), min(hi, float(keep.segment.end))
+                if (a, b) != (float(keep.segment.start), float(keep.segment.end)):
+                    keep.adjustments.append(f"range: clipped to [{lo:.3f}, {hi:.3f}]")
+                if b > a:
+                    keep.segment = Segment(a, b)
+                    clipped.append(keep)
+            keeps = clipped
+            timings["source_range_start_s"], timings["source_range_end_s"] = round(lo, 3), round(hi, 3)
         timings.update({"boundary_analysis_s": round(boundary_s, 3), "resolver_s": round(resolve_s, 3),
                         "agent_calls": float(agent_calls), "agent_cache_hits": float(cache_hits),
                         "resolver_fallbacks": float(fallbacks)})

@@ -91,6 +91,8 @@ class Project:
     markers: List[Marker] = field(default_factory=list)
     fps: float = 30.0
     sample_rate: int = 48000
+    hero_group_output: dict = field(default_factory=dict)
+    packaging_outputs: list[dict] = field(default_factory=list)
 
     @classmethod
     def create_default(cls, name: str = "Untitled") -> "Project":

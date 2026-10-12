@@ -64,3 +64,5 @@ class TrackState:
     # JSON-safe per-island metadata (game index, smart boundary sources, resolver) for the inspector.
     gameplay_detected_keeps: list[Segment] = field(default_factory=list)
     gameplay_islands: list[dict] = field(default_factory=list)
+    gameplay_report: dict = field(default_factory=dict)  # all detected games, separate from cuts
+    gameplay_grouping: dict = field(default_factory=dict)  # automatic + persistent manual overrides

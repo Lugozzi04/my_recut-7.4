@@ -40,6 +40,8 @@ def parser() -> argparse.ArgumentParser:
     command.add_argument("--agent-model", default=None)
     command.add_argument("--agent-effort", default=None, help="claude --effort / codex model_reasoning_effort")
     command.add_argument("--agent-fallback", choices=("exact", "none"), default="exact")
+    command.add_argument("--end-policy", choices=("tight", "balanced", "extended"), default="balanced",
+                         help="END of kept games: editorial mode applied to the agent's segment labels")
     command.add_argument("--no-agent-cache", action="store_true")
     command.add_argument("--agent-log", type=Path, help="Local JSONL decision log (no transcript)")
     command.add_argument("--show-prompt", action="store_true", help="Print the agent prompt of each context")
@@ -134,7 +136,7 @@ def resolver_options(args: argparse.Namespace) -> Any:
 
     return ResolverOptions(timeout_s=args.agent_timeout, fallback=None if args.agent_fallback == "none" else "exact",
                            model=args.agent_model, effort=args.agent_effort, use_cache=not args.no_agent_cache,
-                           log_path=args.agent_log)
+                           log_path=args.agent_log, end_policy=getattr(args, "end_policy", "balanced"))
 
 
 def compare_resolvers(contexts: list[Any], modes: list[str], options: Any, human: TextIO,

@@ -34,6 +34,34 @@ class NoImageGeneration:
         raise RuntimeError("no image generation provider is configured")
 
 
+class ImagePolishProvider(Protocol):
+    """Future image editing of the BACKGROUND layer only (lighting, atmosphere, scene integration).
+
+    Contract: the provider receives the composited background (no protected layers) and returns a
+    polished background of the same size. Protected layers - authentic cards, text, the creator cut-out,
+    anything that must stay exact - are never sent and are re-composited on top by ReCut afterwards.
+    Results carry provenance (provider, model, prompt digest) and are labelled as edited in the report.
+    """
+
+    name: str
+
+    def available(self) -> bool: ...
+
+    def polish(self, background: Path, *, instructions: str, target: Path) -> dict[str, Any]: ...
+
+
+class NoImagePolish:
+    """Default: the graphic path stays fully offline and deterministic."""
+
+    name = "none"
+
+    def available(self) -> bool:
+        return False
+
+    def polish(self, background: Path, *, instructions: str, target: Path) -> dict[str, Any]:
+        raise RuntimeError("no image polish provider is configured")
+
+
 class TrendsProvider(Protocol):
     name: str
 
@@ -53,10 +81,13 @@ class NoTrends:
 
 
 def extension_status(image_generation: ImageGenerationProvider | None = None,
-                     trends: TrendsProvider | None = None) -> dict[str, Any]:
+                     trends: TrendsProvider | None = None, polish: ImagePolishProvider | None = None) -> dict[str, Any]:
     image_generation = image_generation or NoImageGeneration()
     trends = trends or NoTrends()
+    polish = polish or NoImagePolish()
     return {"image_generation": {"provider": image_generation.name, "available": image_generation.available(),
                                  "used": False},
+            "image_polish": {"provider": polish.name, "available": polish.available(), "used": False,
+                             "note": "background-only; protected layers are re-composited by ReCut"},
             "youtube_trends": {"provider": trends.name, "available": trends.available(), "used": False,
                                "note": "trends are never inferred; V1 does not query any trends source"}}

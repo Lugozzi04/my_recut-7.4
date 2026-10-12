@@ -146,11 +146,12 @@ def _images(games: Sequence[GameContext], highlights: Sequence[HighlightCandidat
             continue
         games_done.add(h.game_id)
         image = cv2.resize(frames.images[peak], (1280, 720), interpolation=cv2.INTER_AREA)
-        for k in range(1, 10):
+        for k in range(1, 10):  # labels centred ON their line (a label above a line was read as the band above)
             cv2.line(image, (128 * k, 0), (128 * k, 719), (0, 255, 255), 1)
             cv2.line(image, (0, 72 * k), (1279, 72 * k), (0, 255, 255), 1)
-            cv2.putText(image, f"{k / 10:.1f}", (128 * k + 3, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
-            cv2.putText(image, f"{k / 10:.1f}", (3, 72 * k - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+            for (lx, ly) in ((128 * k - 11, 12), (2, 72 * k + 4)):
+                cv2.rectangle(image, (lx - 1, ly - 10), (lx + 23, ly + 3), (0, 0, 0), -1)
+                cv2.putText(image, f"{k / 10:.1f}", (lx, ly), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
         path = work_dir / f"grid_{peak}.jpg"
         write_image(path, image, quality=88)
         images.append({"path": path, "grid": True,

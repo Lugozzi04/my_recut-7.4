@@ -23,7 +23,10 @@ from .models import BoundaryContext, BoundaryDecision, BoundaryFormatError, Boun
 AGENT_PAYLOAD_FORMAT = "recut_boundary_agent_request"
 AGENT_RESPONSE_SCHEMA = {"selected_candidate": "integer index into candidates", "confidence": "number in [0, 1]"}
 AGENT_RESPONSE_KEYS = frozenset({"selected_candidate", "confidence", "reason", "segment_labels"})
-SEGMENT_LABELS = ("PREVIOUS_CONTENT", "CURRENT_GAME_SPECIFIC", "GENERAL_COMMENTARY", "NEXT_CONTENT", "UNCERTAIN")
+SEGMENT_LABELS = ("PREVIOUS_CONTENT", "CURRENT_GAME_SPECIFIC", "GENERAL_COMMENTARY", "NEXT_CONTENT", "UNCERTAIN",
+                  # END of a KEPT game (end_policy.END_LABELS)
+                  "WIN_REACTION", "GAME_SPECIFIC_RECAP", "GAME_STRATEGY", "GENERAL_DECK_TALK", "CHAT_INTERACTION",
+                  "UNRELATED_COMMENTARY", "NEXT_GAME")
 
 BOUNDARY_MODES = ("exact", "claude", "codex")
 RESERVED_MODES = ("heuristic", "local")
@@ -139,6 +142,8 @@ class ResolverOptions:
     use_cache: bool = True
     cache_directory: str | Path | None = None
     log_path: str | Path | None = None  # local JSONL debug log; None = disabled
+    end_policy: str = "balanced"  # END of kept games: tight | balanced | extended (see end_policy.py)
+    max_concurrent: int = 4  # agent decisions in flight at once (pure waiting on the provider; 1 = sequential)
 
 
 def create_resolver(mode: str, options: ResolverOptions | None = None) -> BoundaryResolver:

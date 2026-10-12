@@ -39,14 +39,18 @@ from .style import CreatorStyleStore, prompt_summary
 from .timeline import EditMap
 from .transcript import build_transcript
 from .visual import VisualProfile, analyze_kept_visual
+from .pipeline_v3 import V3Stages
 from .webcam import RoiCheck, detect_webcam_roi, parse_roi, webcam_quality
 
 EFFORTS = ("low", "medium", "high")  # exposed levels; xhigh is deliberately not offered
 REPORT_FORMAT = "recut_packaging_report"
 REPORT_VERSION = 1
-ANALYSIS_FILES = ("content_analysis.json", "transcript.json", "game_contexts.json", "highlights.json")
-AGENT_FILES = ("video_story.json", "title_candidates.json", "thumbnail_concepts.json", "packaging_report.json")
-OUTPUT_DIRS = ("frames", "webcam", "cards", "contact_sheets", "thumbnails")
+ANALYSIS_FILES = ("content_analysis.json", "transcript.json", "game_contexts.json", "highlights.json",
+                  "visual_assets.json", "opportunities.json")
+AGENT_FILES = ("video_story.json", "title_candidates.json", "thumbnail_concepts.json", "packaging_report.json",
+               "generation_request.json",
+               "portfolio_strategy.json", "portfolio_quality_report.json")
+OUTPUT_DIRS = ("frames", "webcam", "cards", "contact_sheets", "thumbnails", "subjects", "regions")
 Progress = Callable[[str, str], None]
 
 
@@ -60,7 +64,10 @@ class PackagingSettings:
     asr_language: str | None = None  # default: same as language; "auto" = detect
     asr_model: str = "small"
     titles: int = 6
-    thumbnails: int = 3
+    thumbnails: int = 4
+    thumbnail_engine: str = "gen"  # gen: asset packages composed by the image model (local render = fallback)
+    #                                v3: assets + portfolio + local scene graphs | v2: archetype layouts
+    generator_timeout: float = 1500.0
     mode: str = "fast"  # fast: 1 agent call (brief -> story + concepts) | deep: story, deepen, creative
     webcam_roi: str | None = "auto"  # auto | none | x,y,w,h
     creator: str | None = None
@@ -98,10 +105,17 @@ class PackagingSettings:
             raise PackagingError("invalid_arguments", "--games must be auto, project, detect or none.")
         if self.image_format not in ("png", "jpg"):
             raise PackagingError("invalid_arguments", "--format must be png or jpg.")
+        if self.thumbnail_engine not in ("gen", "v3", "v2"):
+            raise PackagingError("invalid_arguments", "--thumbnail-engine must be gen, v3 or v2.")
         if self.mode not in ("fast", "deep"):
             raise PackagingError("invalid_arguments", "--mode must be fast or deep.")
         if self.agent_effort is not None and self.agent_effort not in EFFORTS:
             raise PackagingError("invalid_arguments", f"--agent-effort must be one of {', '.join(EFFORTS)}.")
+
+    @property
+    def asset_engine(self) -> bool:
+        """gen and v3 share assets, opportunities, the portfolio call and the scene renderer."""
+        return self.thumbnail_engine in ("gen", "v3")
 
     @property
     def deepen_limit(self) -> int:
@@ -130,12 +144,12 @@ class Evidence:
     sheets: list[dict[str, Any]] = field(default_factory=list)
 
 
-class PackagingPipeline:
+class PackagingPipeline(V3Stages):
     def __init__(self, settings: PackagingSettings, *, progress: Progress | None = None,
                  cancellation: AnalysisCancellation | None = None, agent: PackagingAgent | None = None,
                  transcription_engine: Any = None, rms_extractor: Any = None, keyframe_scanner: Any = None,
                  frame_sampler: Any = None, game_detector: Any = None, duration_probe: Any = None,
-                 planner: Any = None) -> None:
+                 planner: Any = None, generator: Any = None) -> None:
         settings.validate()
         self.settings = settings
         self.out = Path(settings.output).expanduser().resolve()
@@ -152,6 +166,7 @@ class PackagingPipeline:
         self._detector = game_detector
         self._duration_probe = duration_probe
         self._planner = planner
+        self._generator = generator
         self.frames: FrameExtractor | None = None
         self._stamp = time.strftime("%Y%m%d-%H%M%S")
 
@@ -203,35 +218,74 @@ class PackagingPipeline:
 
     # ---- run -------------------------------------------------------------------------------------
     def run(self) -> dict[str, Any]:
-        total = time.perf_counter()
+        early = self.prepare()
+        if early is not None:
+            return early
+        self.plan()
+        return self.finish()
+
+    # Three steps so a caller can overlap the waiting with other work (process --packaging: plan() runs in a
+    # background thread while the video export renders):
+    #   prepare()  local analysis (ASR, audio, frames, assets)       CPU, main thread
+    #   plan()     provider calls only (planning, image generation)  waiting, no Qt: background-safe
+    #   finish()   local renders (Qt), finals, report                main thread
+    def prepare(self) -> dict[str, Any] | None:
+        """Local analysis. Returns a finished report for --only / --analyze-only (nothing left to plan)."""
+        self._total = time.perf_counter()
         self._prepare_output()
         if self.settings.only is not None:
-            return self._regenerate(total)
-        evidence = self._analyze()
+            return self._regenerate(self._total)
+        self._evidence = self._analyze()
         if self.settings.analyze_only:
-            report = self._report(evidence, status="analyzed", total=total)
-            return report
-        agent = self._make_agent()
+            return self._report(self._evidence, status="analyzed", total=self._total)
+        return None
+
+    def plan(self) -> None:
+        """Agent planning + (engine gen) the image-model call. Errors are kept and re-raised by finish()."""
+        evidence = self._evidence
+        self._planned: tuple[Any, Any, Any] | None = None
+        self._plan_error: BaseException | None = None
+        agent: Any = None
         try:
+            agent = self._make_agent()  # inside: a missing CLI must surface in finish(), not die in a thread
             if self.settings.mode == "fast":
-                video_story, proposals = self._fast(agent, evidence)
+                if self.settings.asset_engine:
+                    video_story, proposals = self._fast_v3(agent, evidence)
+                else:
+                    video_story, proposals = self._fast(agent, evidence)
+            elif self.settings.asset_engine:
+                story = self._story(agent, evidence)  # deep: story (+ deepen), then ONE portfolio call
+                video_story, proposals = self._fast_v3(agent, evidence, story=story, task="creative_portfolio_v3")
             else:
                 video_story = self._story(agent, evidence)
                 cards = self._timed("cards", lambda: extract_cards(video_story.get("card_observations", []),
                                                                    self._frames(), evidence.lines))
                 self._write("cards.json", {"cards": [c.to_mapping() for c in cards]})
                 proposals = self._creative(agent, evidence, video_story, [c.to_mapping() for c in cards])
-        except PackagingError:
-            raise
-        except Exception as exc:
+            if self.settings.thumbnail_engine == "gen":
+                self._prefetched_generation = self._generate_images(proposals, evidence)
+            self._planned = (agent, video_story, proposals)
+        except BaseException as exc:  # finish() reports it on the main thread
+            self._planned = (agent, None, None)
+            self._plan_error = exc
+
+    def finish(self) -> dict[str, Any]:
+        evidence, total = self._evidence, self._total
+        agent, video_story, proposals = self._planned or (None, None, None)
+        error = getattr(self, "_plan_error", None)
+        if error is not None:
+            if isinstance(error, PackagingError):
+                raise error
             from analysis.boundaries.agents import AgentCallError
-            if isinstance(exc, AgentCallError):
-                self._report(evidence, status="agent_failed", total=total, error={"code": exc.code, "detail": exc.detail},
+            if isinstance(error, AgentCallError):
+                self._report(evidence, status="agent_failed", total=total, error={"code": error.code,
+                                                                                   "detail": error.detail},
                              agent=agent)
-                raise PackagingError(f"agent_{exc.code}", f"{self.settings.provider} failed ({exc.code}): {exc.detail}. "
-                                     "Local analysis is saved; re-run the same command to retry (cached evidence is "
-                                     "reused).") from exc
-            raise
+                raise PackagingError(f"agent_{error.code}", f"{self.settings.provider} failed ({error.code}): "
+                                     f"{error.detail}. Local analysis is saved; re-run the same command to retry "
+                                     "(cached evidence is reused).") from error
+            raise error
+        assert proposals is not None
         renders = self._render_all(proposals, evidence)
         return self._report(evidence, status="done", total=total, agent=agent, story_=video_story,
                             proposals=proposals, renders=renders)
@@ -297,6 +351,8 @@ class PackagingPipeline:
                             RoiCheck("absent", None, "", ""))
         self._timed("frame_extraction", lambda: self._extract_frames(evidence))
         self._timed("contact_sheets", lambda: self._sheets(evidence))
+        if self.settings.asset_engine:
+            self._timed("asset_preparation", lambda: self._prepare_assets(evidence))
         self._write_analysis(evidence)
         return evidence
 
@@ -337,10 +393,11 @@ class PackagingPipeline:
         frames = self._frames()
         edit_map = evidence.edit_map
         bursts: dict[str, list[tuple[float, np.ndarray]]] = {}
+        self._bursts = bursts  # reused by V3 subject extraction (webcam background plates)
         taken: list[int] = []  # visual hashes of every selected gameplay frame (no near-duplicates)
 
         def kept_frames(source_index: int, items: list[tuple[float, np.ndarray]]) -> list[tuple[float, np.ndarray]]:
-            return [(t, im) for t, im in items if edit_map.to_edited(t, source_index) is not None] or items
+            return [(t, im) for t, im in items if edit_map.to_edited(t, source_index) is not None]
 
         for h in evidence.highlights:
             self.cancellation.raise_if_cancelled()
@@ -501,6 +558,8 @@ class PackagingPipeline:
                                         games=evidence.games, highlights=evidence.highlights, lines=evidence.lines,
                                         frames=frame_maps, images=images, evidence_status=status,
                                         max_deepen=s.deepen_limit)
+            from analysis.hero_groups.packaging import group_context
+            prompt += "\n" + "\n".join(group_context(evidence.payload))
             result = self._timed("agent_story", lambda: agent.run(
                 "video_story", prompt=prompt, schema=story.RESPONSE_SCHEMA, system_prompt=story.SYSTEM_PROMPT,
                 prompt_version=story.PROMPT_VERSION, images=[Path(i["path"]) for i in images], validate=validator))
@@ -520,6 +579,7 @@ class PackagingPipeline:
                                                 transcript_ids={line.id for line in evidence.lines},
                                                 game_ids={g.game_id for g in evidence.games}, max_deepen=0,
                                                 edited_duration=evidence.edit_map.duration)
+                prompt += "\n" + "\n".join(group_context(evidence.payload))
                 refined = self._timed("agent_story_deepened", lambda: agent.run(
                     "video_story_deepened", prompt=prompt, schema=story.RESPONSE_SCHEMA,
                     system_prompt=story.SYSTEM_PROMPT, prompt_version=story.PROMPT_VERSION,
@@ -557,7 +617,8 @@ class PackagingPipeline:
         frames = self._frames()
         context = self._fast_context(evidence)
         profile = self._style_profile()
-        style_lines = prompt_summary(profile, max_examples=6)
+        from analysis.hero_groups.packaging import group_context
+        style_lines = prompt_summary(profile, max_examples=6) + group_context(evidence.payload)
         valid = {"highlights": sorted(context["highlight_ids"]), "gameplay frames": sorted(context["frame_ids"]),
                  "webcam frames": sorted(context["webcam_ids"]), "games": sorted(context["games"])}
 
@@ -707,7 +768,8 @@ class PackagingPipeline:
         supported |= {str(g.index) for g in evidence.games if g.index is not None}
         card_map = {c["id"]: c for c in cards}
         uncertain = [c["name"] for c in cards if c["status"] == "uncertain" and c.get("name")]
-        style_lines = prompt_summary(self._style_profile())
+        from analysis.hero_groups.packaging import group_context
+        style_lines = prompt_summary(self._style_profile()) + group_context(evidence.payload)
 
         def validator(raw: Any) -> dict[str, Any]:
             return creative.validate_creative(
@@ -767,6 +829,12 @@ class PackagingPipeline:
     def _render_all(self, proposals: dict[str, Any], evidence: Evidence | None) -> list[dict[str, Any]]:
         """Render every concept, run the deterministic quality gate, apply automatic fixes (max 3 renders each)."""
         from . import quality
+
+        if self.settings.asset_engine and evidence is not None:
+            scenes = self._render_scenes(proposals, evidence)
+            if self.settings.thumbnail_engine == "gen":
+                scenes = self._generate_finals(proposals, scenes, evidence)
+            return scenes
 
         frames = self._frames()
         profile = self._style_profile()
@@ -910,6 +978,22 @@ class PackagingPipeline:
                 raise PackagingError("missing_artifact", f"{record.path} is missing from the previous run")
             self.frames.records[record.id] = record
             self.frames.images[record.id] = image
+        if (self.out / "visual_assets.json").is_file():  # V3 runs: cut-outs (alpha) and board regions
+            from .assets import VisualAssetManifest
+            from .frames import read_image_unchanged
+            from .opportunities import from_mappings
+
+            self.manifest = VisualAssetManifest.from_mapping(
+                json.loads((self.out / "visual_assets.json").read_text(encoding="utf-8")))
+            for asset in self.manifest.assets:
+                if asset.id not in self.frames.images:
+                    loaded = read_image_unchanged(self.out / asset.path) if asset.has_alpha else \
+                        read_image(self.out / asset.path)
+                    if loaded is not None:
+                        self.frames.images[asset.id] = loaded
+            if (self.out / "opportunities.json").is_file():
+                self.opportunities = from_mappings(json.loads(
+                    (self.out / "opportunities.json").read_text(encoding="utf-8"))["opportunities"])
         cards: dict[str, Any] = {"cards": []}
         if (self.out / "cards.json").is_file():
             cards = json.loads((self.out / "cards.json").read_text(encoding="utf-8"))
@@ -937,9 +1021,26 @@ class PackagingPipeline:
         if only == "render":
             if not concepts.get("concepts"):
                 raise PackagingError("no_previous_run", "--only render needs thumbnail_concepts.json")
-            proposals = {"concepts": [{k: v for k, v in c.items() if k != "render"} for c in concepts["concepts"]],
+            proposals = {"concepts": [{k: v for k, v in c.items() if k not in ("render", "scene_rendered")}
+                                      for c in concepts["concepts"]],
+                         "portfolio_strategy": concepts.get("portfolio_strategy"),
                          "preferred_concept_id": concepts.get("preferred_concept_id"),
                          "titles": titles.get("titles", []), "preferred_title_id": titles.get("preferred_title_id")}
+            if self.settings.thumbnail_engine == "gen":
+                # Render-only is local: reuse this output's saved generation, never contact a provider.
+                finals: dict[str, Path] = {}
+                ids = [str(c["concept_id"]) for c in concepts["concepts"]]
+                for concept in concepts["concepts"]:
+                    raw = (concept.get("render") or {}).get("generated")
+                    if not raw:
+                        continue
+                    saved = (self.out / str(raw)).resolve()
+                    if saved.is_relative_to(self.out) and saved.is_file() and read_image(saved) is not None:
+                        finals[str(concept["concept_id"])] = saved
+                self._prefetched_generation = (finals, ids, {
+                    "engine": "gen", "status": "done" if len(finals) == len(ids) else "partial" if finals else "skipped",
+                    "calls_made": 0, "cache_hit": bool(finals), "reused_existing": True,
+                })
             renders = self._render_all(proposals, evidence)
             return self._report(evidence, status="done", total=total, story_=video_story, proposals=proposals,
                                 renders=renders)
@@ -949,7 +1050,17 @@ class PackagingPipeline:
         previous = {"concepts": [{k: v for k, v in c.items() if k != "render"} for c in concepts.get("concepts", [])],
                     "titles": titles.get("titles", [])}
         try:
-            proposals = self._creative(agent, evidence, video_story, cards, only=only, previous=previous)
+            if self.settings.asset_engine and self.manifest is not None:
+                _, proposals = self._fast_v3(agent, evidence, story=video_story, task=f"portfolio_{only}_v3")
+                if only == "titles" and previous["concepts"] and all("scene" in c for c in previous["concepts"]):
+                    by_order = {new["concept_id"]: old["concept_id"]
+                                for new, old in zip(proposals["concepts"], previous["concepts"])}
+                    for t in proposals["titles"]:  # keep the existing thumbnails, adopt the new titles
+                        t["concept_id"] = by_order.get(t["concept_id"], t["concept_id"])
+                    proposals["concepts"] = previous["concepts"]
+                    proposals["preferred_concept_id"] = concepts.get("preferred_concept_id")
+            else:
+                proposals = self._creative(agent, evidence, video_story, cards, only=only, previous=previous)
         except Exception as exc:
             from analysis.boundaries.agents import AgentCallError
             if isinstance(exc, AgentCallError):
@@ -991,7 +1102,14 @@ class PackagingPipeline:
             "titles": [{"title_id": t["title_id"], "title": t["title"], "concept_id": t["concept_id"],
                         "highlight_ids": t["highlight_ids"]} for t in (proposals or {}).get("titles", [])],
             "thumbnails": renders or [],
-            "mode": s.mode, "brief": getattr(self, "brief_stats", None),
+            "mode": s.mode, "brief": getattr(self, "brief_stats", None), "thumbnail_engine": s.thumbnail_engine,
+            "visual_assets": self.manifest.to_mapping()["counts"] if self.manifest is not None else None,
+            "generation": getattr(self, "generation_report", None),
+            "opportunities": len(self.opportunities),
+            "portfolio": ({"passed": self.portfolio_report["diversity"]["passed"],
+                           "regenerate_recommended": self.portfolio_report["regenerate_recommended"],
+                           "metrics": self.portfolio_report["diversity"]["metrics"]}
+                          if self.portfolio_report else None),
             "agent": {"provider": s.provider, "effort": s.effective_effort, "calls_made": len(
                           [c for c in calls if not c.get("cache_hit")]),
                       "cache_hits": len([c for c in calls if c.get("cache_hit")]), "calls": calls,

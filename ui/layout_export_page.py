@@ -79,6 +79,14 @@ def build_export_page(window) -> None:
     window.export_compatibility_label.setObjectName("RowHint")
     output.add(window.export_compatibility_label)
 
+    # ---- one existing renderer, optional outputs from the current WIN islands -----------------
+    from ui.hero_groups import HeroGroupsPanel
+
+    gameplay = Section("Videos by class", subtitle="One video per selected class")
+    window.section_gameplay_exports = gameplay
+    window.hero_groups_panel = HeroGroupsPanel(window)
+    gameplay.add(window.hero_groups_panel.outputs)
+
     # ---- export action: sticky footer, always visible under the scrolling settings -------------
     action = QFrame()
     action.setObjectName("InspectorFooter")
@@ -199,7 +207,7 @@ def build_export_page(window) -> None:
     col = QVBoxLayout(content)
     col.setContentsMargins(0, 0, 0, 0)
     col.setSpacing(0)
-    for s in (summary, output, adv, perf, log):
+    for s in (summary, output, gameplay, adv, perf, log):
         col.addWidget(s)
     col.addStretch(1)
     scroll = QScrollArea()

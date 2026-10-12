@@ -1,0 +1,16 @@
+{
+  "role": "sample_quality_rejection_only",
+  "source_vod": "videoprova.mp4",
+  "source_artifact": "docs/hero_group_validation/samples_initial.jpg",
+  "game": 1,
+  "sample_index": 0,
+  "timestamp_approx_s": 648.6,
+  "artifact_crop_pixels": [
+    0,
+    25,
+    64,
+    43
+  ],
+  "meaning": "Italian mulligan confirmation button covering the bottom player portrait; not a skin template",
+  "frozen_detector_assets_modified": false
+}

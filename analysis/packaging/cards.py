@@ -77,13 +77,40 @@ def transcript_mention(name: str, texts: Sequence[str], *, threshold: float = 0.
     return None
 
 
-def _crop(image: Any, box: Sequence[float]) -> Any:
+CARD_ASPECT = 0.70  # width / height of a full Hearthstone card (frame, gem, name banner, text box)
+REFINED_MARGIN = 0.0
+
+
+def refine_card_box(image: Any, box: Sequence[float]) -> tuple[list[float], dict[str, Any]]:
+    """Generous, predictable card window around the agent's reading box.
+
+    Agent readings are approximate and, on real videoprova frames, consistently too HIGH: they start above the
+    card and stop inside its text box, so the bottom (text, race, attack/health) was cut. Outline detection was
+    tried and is unreliable (golden glow, speech bubbles, adjacent cards). Instead the window grows a little
+    upwards and a lot downwards and is widened to the card aspect: the whole card is always inside, with some
+    context that the final image model crops away. A square-ish reading is a minion portrait, kept as read."""
+    h, w = image.shape[:2]
+    x, y, bw, bh = (float(v) for v in box)
+    if bw <= 0 or bh <= 0:
+        return [x, y, bw, bh], {"method": "agent_box"}
+    if (bw * w) / max(1e-6, bh * h) >= 0.85:  # a minion on the board, not a card
+        return [x, y, bw, bh], {"method": "agent_box_minion"}
+    top = y - 0.06 * bh
+    height = 1.36 * bh  # 6 % above, 30 % below
+    width = max(bw * 1.06, CARD_ASPECT * height * h / w)
+    left = x + bw / 2 - width / 2
+    left, top = max(0.0, left), max(0.0, top)
+    width, height = min(width, 1.0 - left), min(height, 1.0 - top)
+    return [left, top, width, height], {"method": "card_window", "agent_box": [x, y, bw, bh]}
+
+
+def _crop(image: Any, box: Sequence[float], margin: float = MARGIN) -> Any:
     h, w = image.shape[:2]
     x, y, bw, bh = box
-    left = max(0, int((x - bw * MARGIN) * w))
-    top = max(0, int((y - bh * MARGIN) * h))
-    right = min(w, int((x + bw * (1 + MARGIN)) * w))
-    bottom = min(h, int((y + bh * (1 + MARGIN)) * h))
+    left = max(0, int((x - bw * margin) * w))
+    top = max(0, int((y - bh * margin) * h))
+    right = min(w, int((x + bw * (1 + margin)) * w))
+    bottom = min(h, int((y + bh * (1 + margin)) * h))
     return image[top:bottom, left:right]
 
 
@@ -97,8 +124,9 @@ def extract_cards(observations: Sequence[dict[str, Any]], frames: FrameExtractor
         image = frames.images.get(str(item.get("frame_id")))
         if record is None or image is None:
             continue
-        box = [float(v) for v in item["box"]]
-        crop = _crop(image, box)
+        box, refined = refine_card_box(image, [float(v) for v in item["box"]])
+        margin = REFINED_MARGIN if refined["method"] == "card_outline" else MARGIN
+        crop = _crop(image, box, margin)
         if crop.size == 0 or min(crop.shape[:2]) < 12:
             continue
         name = (item.get("name") or "").strip() or None
@@ -109,7 +137,7 @@ def extract_cards(observations: Sequence[dict[str, Any]], frames: FrameExtractor
             best_score = frame_quality(crop)["score"]
             for _, other in burst:
                 tried += 1
-                candidate = _crop(other, box)
+                candidate = _crop(other, box, margin)
                 if candidate.size and frame_quality(candidate)["score"] > best_score + 0.05:
                     crop, best_score = candidate, frame_quality(candidate)["score"]
         cited = [by_id[i].text for i in item.get("transcript_ids", []) if i in by_id]
@@ -127,7 +155,8 @@ def extract_cards(observations: Sequence[dict[str, Any]], frames: FrameExtractor
         write_image(frames.output_dir / relative, crop)
         provenance: dict[str, Any] = {"type": "video_crop", "obs_id": item.get("obs_id"), "frame_id": record.id,
                                       "source_time": round(record.source_time, 3),
-                                      "box": box, "note": "crop of the creator's own video frame"}
+                                      "box": box, "agent_box": [float(v) for v in item["box"]],
+                                      "refine": refined, "note": "crop of the creator's own video frame"}
         official = provider.lookup(name) if name and status == "verified" else None
         if official is not None:
             provenance["official_asset"] = {"path": official[0], **official[1]}

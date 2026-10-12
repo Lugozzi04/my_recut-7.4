@@ -36,6 +36,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QToolTip, QWidget
 
 from analysis.cut_engine import Segment
+from analysis.hero_groups.labels import CLASS_COLORS, class_id, class_label
 from utils.timefmt import fmt_hms
 
 HEADER_W = 92
@@ -1322,16 +1323,23 @@ class TimelineWidget(QWidget):
             p.drawLine(QPointF(x2 - 3, top + 4), QPointF(x2 - 3, top + hh - 4))
         p.setRenderHint(QPainter.Antialiasing, False)
 
+    def _island_color(self, island: dict) -> QColor:
+        hero_class = class_id(island.get("meta", {}).get("hero_class"))
+        return QColor(CLASS_COLORS[hero_class]) if hero_class else self._colors.keep_island
+
+    @staticmethod
+    def _island_text_color(color: QColor) -> QColor:
+        brightness = .299 * color.redF() + .587 * color.greenF() + .114 * color.blueF()
+        return QColor("#171A20") if brightness > .55 else QColor("#FFFFFF")
+
     def _paint_gameplay_overlay(self, p: QPainter, lanes: list[_Lane]) -> None:
-        """Kept WIN islands as large green overlays; everything outside them dimmed."""
+        """Kept WIN islands as large color overlays; everything outside them dimmed."""
         islands = self._gameplay_islands()
         if not islands or not lanes:
             return
-        col = self._colors
         top = lanes[0].top
         bottom = lanes[-1].bottom
         video = next((ln for ln in lanes if ln.kind == "video"), lanes[0])
-        green = col.keep_island
         # dim everything that gameplay editing removes (outside the islands)
         for clip in self._audio_clips():
             if not clip.get("gameplay_keeps"):
@@ -1348,19 +1356,21 @@ class TimelineWidget(QWidget):
         fm = QFontMetrics(f)
         p.setRenderHint(QPainter.Antialiasing, True)
         for n, isl in enumerate(islands, start=1):
+            color = self._island_color(isl)
             x1, x2 = self._t_to_xf(isl["t0"]), self._t_to_xf(isl["t1"])
             if x2 < HEADER_W or x1 > self.width():
                 continue
             selected = self._selected_island == (isl["ts"], isl["index"])
             rect = QRectF(x1, top, max(2.0, x2 - x1), bottom - top)
-            # dominant green; lighter when selected so the cuts inside become readable
-            p.fillRect(rect, _alpha(green, 42 if selected else 96))
-            p.setPen(QPen(green.lighter(150) if selected else green.lighter(118), 2.5 if selected else 2.0))
+            # dominant color; lighter when selected so the cuts inside become readable
+            p.fillRect(rect, _alpha(color, 42 if selected else 96))
+            p.setPen(QPen(color.lighter(150) if selected else color.lighter(118), 2.5 if selected else 2.0))
             p.setBrush(Qt.NoBrush)
             p.drawRect(rect.adjusted(1, 1, -1, -1))
             # label tab at the top of the VIDEO lane
             game = isl["meta"].get("game_index")
-            label = "WIN" + (f" · game {game}" if game is not None else f" {n}")
+            hero_class = class_id(isl["meta"].get("hero_class"))
+            label = "WIN" + (" · " + class_label(hero_class) if hero_class else "") + (f" · game {game}" if game is not None else f" {n}")
             dur = isl["t1"] - isl["t0"]
             long_label = f"{label}   {fmt_hms(dur)} kept"
             text = long_label if fm.horizontalAdvance(long_label) + 20 < rect.width() else label
@@ -1368,10 +1378,10 @@ class TimelineWidget(QWidget):
                 tab_x = max(rect.left(), float(HEADER_W)) + 6
                 tab = QRectF(tab_x, video.top + 4, fm.horizontalAdvance(text) + 16, fm.height() + 6)
                 p.setPen(Qt.NoPen)
-                p.setBrush(green.darker(115) if not selected else green)
+                p.setBrush(color.darker(115) if not selected else color)
                 p.drawRoundedRect(tab, 4, 4)
                 p.setFont(f)
-                p.setPen(QColor("#FFFFFF"))
+                p.setPen(self._island_text_color(color))
                 p.drawText(tab, Qt.AlignCenter, text)
                 p.setFont(QFont(self.font()))
             if selected:
@@ -1383,30 +1393,30 @@ class TimelineWidget(QWidget):
         p.setRenderHint(QPainter.Antialiasing, False)
 
     def _paint_island_ruler_marks(self, p: QPainter) -> None:
-        """Green bars under the ruler for every island; times at the edges of the selected one."""
+        """Class-color bars under the ruler; times at the edges of the selected island."""
         islands = self._gameplay_islands()
         if not islands:
             return
-        col = self._colors
         f = QFont(p.font())
         f.setPixelSize(10)
         f.setBold(True)
         p.setFont(f)
         fm = QFontMetrics(f)
         for isl in islands:
+            color = self._island_color(isl)
             x1, x2 = self._t_to_xf(isl["t0"]), self._t_to_xf(isl["t1"])
             x1c, x2c = max(x1, float(HEADER_W)), min(x2, float(self.width()))
             if x2c <= x1c:
                 continue
-            p.fillRect(QRectF(x1c, RULER_H - 4, x2c - x1c, 3), col.keep_island)
+            p.fillRect(QRectF(x1c, RULER_H - 4, x2c - x1c, 3), color)
             if self._selected_island == (isl["ts"], isl["index"]):
                 for t, align_right in ((isl["t0"], False), (isl["t1"], True)):
                     label = fmt_hms(t)
                     x = self._t_to_xf(t)
                     tw = fm.horizontalAdvance(label) + 8
                     box = QRectF(x - tw if align_right else x, 2, tw, 14)
-                    p.fillRect(box, col.keep_island)
-                    p.setPen(QColor("#FFFFFF"))
+                    p.fillRect(box, color)
+                    p.setPen(self._island_text_color(color))
                     p.drawText(box, Qt.AlignCenter, label)
         p.setFont(QFont(self.font()))
 
@@ -1582,6 +1592,8 @@ class TimelineWidget(QWidget):
             meta["restored_range"] = (float(restored[1].start), float(restored[1].end)) if restored else None
             meta["selected"] = self.selectedCutIndices()
             meta["lane"] = lane.kind if lane is not None else None
+            island = self._island_at_x(x) if lane is not None and lane.kind in ("video", "audio", "cuts") else None
+            meta["island"] = {"track_state_idx": island["ts"], "index": island["index"]} if island else None
             self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
             return
 

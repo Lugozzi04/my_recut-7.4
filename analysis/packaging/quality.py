@@ -189,3 +189,171 @@ def apply_fix(composition: dict[str, Any], concept: dict[str, Any], fix: str) ->
             composition["layout"] = "story_focus"
         return True
     return False
+
+
+# ---------------------------------------------------------------------------------------------------
+# V3: checks on rendered scene graphs (SceneResult) and their local fixes
+
+MAX_TEXT_AREA = 0.30  # share of the canvas
+MAX_CONTENT_LAYERS = 5  # image-like layers + text: more reads as clutter at phone size
+MIN_FOCAL_AREA = 0.10
+MAX_PRIMARY_UPSCALE = 3.2
+
+
+def _face_rect(layer: dict[str, Any], asset: dict[str, Any] | None) -> list[float] | None:
+    """Face rectangle (output px) inside a drawn subject_cutout layer, from the cut-out's face box."""
+    if asset is None:
+        return None
+    face = (asset.get("provenance") or {}).get("face")
+    if not face:
+        return None
+    x, y, w, h = layer["rect"]
+    return [x + face[0] * w, y + face[1] * h, face[2] * w, face[3] * h]
+
+
+def inspect_scene(result: Any, scene: dict[str, Any], assets: dict[str, dict[str, Any]], *,
+                  reference_sharpness: float = 0.0) -> list[GateIssue]:
+    import cv2
+
+    from .frames import read_image
+    from .scene import primary_layer
+
+    issues: list[GateIssue] = []
+    image = read_image(Path(result.path))
+    if image is None:
+        return [GateIssue("unreadable_output", None, "rendered file cannot be read")]
+    h, w = image.shape[:2]
+    if (w, h) != (result.width, result.height) or w * 9 != h * 16:
+        issues.append(GateIssue("bad_size", None, f"{w}x{h} is not the requested 16:9 size"))
+    drawn = {d["id"]: d for d in result.layers}
+    texts = [d for d in result.layers if d.get("type") == "text"]
+    primary = primary_layer(scene)
+    primary_drawn = drawn.get(str(primary["id"])) if primary else None
+    for t in texts:
+        info = t.get("text") or {}
+        if not info.get("fits", True):
+            issues.append(GateIssue("text_outside_safe_area", "smaller_text", f"{t['id']} touches the margins"))
+        if not info.get("timestamp_zone_clear", True):
+            issues.append(GateIssue("text_in_duration_badge", "move_text", f"{t['id']} under the duration badge"))
+        if float(info.get("px_at_320", 99)) < MIN_CAP_AT_320:
+            issues.append(GateIssue("text_too_small", None, f"cap height {info.get('px_at_320')} px at 320 wide"))
+        bx, by, bw, bh = info.get("bounds") or t["rect"]
+        if bw * bh / (w * h) > MAX_TEXT_AREA:
+            issues.append(GateIssue("too_much_text", "smaller_text", f"text covers {bw * bh / (w * h):.0%} of the canvas"))
+        words = len(" ".join(info.get("lines", [])).split())
+        if words > 5:
+            issues.append(GateIssue("long_thumbnail_text", None, f"{words} words: hard to read at a glance"))
+        for layer in result.layers:
+            if layer.get("type") == "subject_cutout":
+                face = _face_rect(layer, assets.get(str(layer.get("asset_id"))))
+                target = face or [layer["rect"][0], layer["rect"][1], layer["rect"][2], layer["rect"][3] * 0.55]
+                covered = _intersection([bx, by, bw, bh], target) / max(1.0, _area(target))
+                if covered > 0.06:
+                    issues.append(GateIssue("text_covers_subject", "move_text", f"text covers {covered:.0%} of the face"))
+            elif layer.get("type") in ("card",) and layer.get("rect"):
+                covered = _intersection([bx, by, bw, bh], layer["rect"]) / max(1.0, _area(layer["rect"]))
+                if covered > 0.15:
+                    issues.append(GateIssue("text_covers_subject", "move_text", f"text covers {covered:.0%} of a card"))
+        region = image[max(0, int(by)):max(0, int(by + bh)), max(0, int(bx)):max(0, int(bx + bw))]
+        if region.size:
+            small = cv2.resize(cv2.cvtColor(region, cv2.COLOR_BGR2GRAY), (max(1, int(bw) // 4), max(1, int(bh) // 4)),
+                               interpolation=cv2.INTER_AREA)
+            if float(small.std()) < MIN_TEXT_CONTRAST:
+                issues.append(GateIssue("low_text_contrast", "backdrop", f"luminance std {float(small.std()):.0f}"))
+    for layer in result.layers:
+        kind = layer.get("type")
+        if kind not in ("subject_cutout", "card", "board_crop", "image"):
+            continue
+        asset = assets.get(str(layer.get("asset_id"))) or {}
+        if kind == "subject_cutout":
+            q = asset.get("quality") or {}
+            if not q.get("isolated", 1.0) and layer["rect"][3] > 0.45 * h:
+                issues.append(GateIssue("unisolated_subject_large", "shrink_subject",
+                                        "webcam is not isolated (rectangle) but shown large"))
+            edges = [e for e in layer.get("cut_edges", []) if e != "bottom"]  # shoulders may leave the frame
+            if edges and layer.get("visible_share", 1.0) < 0.85:
+                issues.append(GateIssue("subject_cropped", "fit_subject", f"{layer['id']} cut at {', '.join(edges)}"))
+        elif layer.get("visible_share", 1.0) < 0.8:
+            issues.append(GateIssue("subject_cropped", "fit_subject",
+                                    f"{layer['id']} only {layer.get('visible_share'):.0%} visible"))
+        if layer is primary_drawn and float(layer.get("upscale", 1.0)) > MAX_PRIMARY_UPSCALE:
+            issues.append(GateIssue("soft_primary", None, f"primary enlarged {layer.get('upscale')}x from its source"))
+    if primary_drawn is not None and primary_drawn.get("rect") and primary_drawn.get("type") != "text":
+        area = primary_drawn["rect"][2] * primary_drawn["rect"][3] * primary_drawn.get("visible_share", 1.0) / (w * h)
+        if area < MIN_FOCAL_AREA:
+            issues.append(GateIssue("weak_focal_point", None, f"primary element covers only {area:.0%} of the canvas"))
+    content = [d for d in result.layers if d.get("type") in ("subject_cutout", "card", "board_crop", "image", "text")]
+    if len(content) > MAX_CONTENT_LAYERS:
+        issues.append(GateIssue("crowded", None, f"{len(content)} content elements; keep one subject and few supports"))
+    background = drawn.get("background") or {}
+    if not background.get("blurred") and reference_sharpness and \
+            float(background.get("sharpness", 1e9)) < BLUR_RATIO * reference_sharpness and \
+            primary_drawn is not None and primary_drawn.get("type") in (None, "text"):
+        issues.append(GateIssue("background_blurry", "swap_background",
+                                f"sharpness {background.get('sharpness')} vs median {reference_sharpness:.0f}"))
+    return issues
+
+
+def apply_scene_fix(scene: dict[str, Any], fix: str, *, alternatives: Sequence[str] = ()) -> bool:
+    """Local, deterministic scene correction (geometry / tone only, never the idea)."""
+    layers = scene.get("layers", [])
+    texts = [layer for layer in layers if layer.get("type") == "text"]
+    subjects = [layer for layer in layers if layer.get("type") == "subject_cutout"]
+    if fix == "move_text" and texts:
+        for t in texts:
+            if subjects and abs(t["x"] - subjects[0]["x"]) < 0.35:
+                t["x"] = round(1.0 - t["x"], 3)  # opposite side of the subject
+                t["align"] = "left" if t["x"] < 0.5 else "right"
+            elif t["y"] > 0.55:
+                t["y"] = round(max(0.2, 1.0 - t["y"]), 3)  # out of the bottom band (duration badge)
+            else:
+                t["height"] = round(max(0.12, t["height"] * 0.8), 3)
+        return True
+    if fix == "smaller_text" and texts:
+        changed = False
+        for t in texts:
+            margin = 0.055  # keep the whole text box inside the 5% safe area
+            width = float(t.get("width") or 0.5)
+            x = min(max(t["x"], margin + width / 2), 1 - margin - width / 2)
+            y = min(max(t["y"], margin + t["height"] / 2), 1 - margin - t["height"] / 2)
+            if (round(x, 3), round(y, 3)) != (round(t["x"], 3), round(t["y"], 3)):
+                t["x"], t["y"] = round(x, 3), round(y, 3)
+                changed = True
+            elif t["height"] > 0.16:
+                t["height"] = round(t["height"] * 0.82, 3)
+                changed = True
+        return changed
+    if fix == "backdrop":
+        shades = [layer for layer in layers if layer.get("type") == "gradient"]
+        if shades:
+            if shades[0]["strength"] >= 0.95:
+                return False
+            shades[0]["strength"] = round(min(0.95, shades[0]["strength"] + 0.2), 2)
+            return True
+        from .scene import default_layer
+
+        side = "left" if texts and texts[0]["x"] < 0.5 else "right"
+        layers.append(default_layer("gradient", "auto_shade", side=side, strength=0.75, width=0.7, z=1))
+        return True
+    if fix in ("shrink_subject", "fit_subject") and subjects:
+        s = subjects[0]
+        if fix == "shrink_subject":
+            s["height"] = round(min(s["height"], 0.42), 3)
+        else:
+            s["height"] = round(max(0.3, s["height"] * 0.9), 3)
+            half_w = s["height"] * 0.5625 * (4 / 3) / 2  # webcam cut-outs are about 4:3; width in canvas units
+            s["x"] = round(min(max(s["x"], half_w + 0.01), 1 - half_w - 0.01), 3)
+            s["y"] = round(min(max(s["y"], s["height"] / 2), 1.0), 3)
+        return True
+    if fix == "fit_subject":
+        for layer in layers:
+            if layer.get("type") in ("card", "board_crop", "image"):
+                layer["height"] = round(max(0.2, layer["height"] * 0.9), 3)
+                layer["x"] = round(min(max(layer["x"], 0.18), 0.82), 3)
+                layer["y"] = round(min(max(layer["y"], 0.25), 0.75), 3)
+        return True
+    if fix == "swap_background" and alternatives:
+        scene["background"]["asset_id"] = alternatives[0]
+        scene["background"]["crop"] = None
+        return True
+    return False

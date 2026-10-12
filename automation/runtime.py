@@ -299,7 +299,8 @@ class PipelineRuntime:
         resolver = ResolverOptions(
             **{name: value for name, value in (("timeout_s", options.get("agent_timeout")),
                                                 ("model", options.get("agent_model")),
-                                                ("effort", options.get("agent_effort"))) if value is not None})
+                                                ("effort", options.get("agent_effort")),
+                                                ("end_policy", options.get("end_policy"))) if value is not None})
         if resolver.timeout_s <= 0:
             raise PipelineRuntimeError("invalid_gameplay", "--agent-timeout must be positive.", 2)
         try:

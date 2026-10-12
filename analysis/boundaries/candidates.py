@@ -24,6 +24,11 @@ class CandidateSettings:
     edge_tolerance_s: float = 0.1  # "at a silence/transcript edge" tolerance
     visual_radius_s: float = 0.75  # visual_change_score = max change within +-radius
     visual_candidate_min_change: float | None = 0.35  # None disables VISUAL_CHANGE candidates
+    # END after the result: gaps between words inside speech, so the editor can stop irrelevant talk without
+    # waiting for its pause (one per >= word_gap_spacing_s, at most word_gap_max per context)
+    word_gap_min_s: float = 0.0  # ASR often abuts words: a plain word boundary is still a valid cut
+    word_gap_spacing_s: float = 1.0
+    word_gap_max: int = 30
 
 
 # Earlier entries win the merged timestamp: exact anchors, then speech structure, then audio, then hints.
@@ -32,7 +37,7 @@ PRIORITY = [CandidateSource.GAME_START_ANCHOR, CandidateSource.RESULT_ANCHOR, Ca
             CandidateSource.SENTENCE_END, CandidateSource.SENTENCE_START, CandidateSource.TRANSCRIPT_SEGMENT_END,
             CandidateSource.TRANSCRIPT_SEGMENT_START, CandidateSource.SILENCE_START, CandidateSource.SILENCE_END,
             CandidateSource.BOARD_DISAPPEARED, CandidateSource.BOARD_REACQUIRED, CandidateSource.VISUAL_CHANGE,
-            CandidateSource.SILENCE_MID]
+            CandidateSource.SILENCE_MID, CandidateSource.WORD_GAP]
 
 FEATURE_NAMES: list[str] = [
     "is_end_boundary", "offset_from_anchor_s", "distance_from_game_start_s", "distance_from_game_end_s",
@@ -105,6 +110,19 @@ def raw_candidates(ev: Evidence, settings: CandidateSettings) -> list[tuple[floa
         for end, following in segment.sentence_boundaries():
             add(end, CandidateSource.SENTENCE_END)
             add(following, CandidateSource.SENTENCE_START)
+    if ev.boundary_type == BoundaryType.END and settings.word_gap_max > 0:
+        gaps: list[tuple[float, float]] = []
+        for segment in ev.transcript:
+            for spoken, nxt_word in zip(segment.words, segment.words[1:]):
+                gap = nxt_word.start - spoken.end
+                if spoken.end > ev.anchor and gap >= settings.word_gap_min_s:
+                    gaps.append(((spoken.end + nxt_word.start) / 2, gap))
+        last = -1e9
+        taken = 0
+        for t, gap in sorted(gaps):
+            if t - last >= settings.word_gap_spacing_s and taken < settings.word_gap_max:
+                add(t, CandidateSource.WORD_GAP, gap_s=round(gap, 3))
+                last, taken = t, taken + 1
     if settings.visual_candidate_min_change is not None:
         samples = list(ev.visual)
         for i, sample in enumerate(samples):

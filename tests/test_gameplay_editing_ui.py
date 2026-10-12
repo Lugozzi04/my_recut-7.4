@@ -72,7 +72,7 @@ class GameplayEditWorkerTests(unittest.TestCase):
         with patch("analysis.gameplay_editing.GameplayEditingService.run", fake_run):
             worker.run()
         self.assertEqual(seen, {"mode": "codex", "keep_games": "wins"})
-        self.assertEqual(progress, [50])
+        self.assertEqual(progress, [45, 100])
         self.assertEqual(results[0]["keeps"], [(1.0, 4.0)])
 
     def test_cancellation_is_reported_as_cancelled(self) -> None:
@@ -86,6 +86,71 @@ class GameplayEditWorkerTests(unittest.TestCase):
         worker.cancel()
         with patch("analysis.gameplay_editing.GameplayEditingService.run", fake_run):
             worker.run()
+        self.assertEqual(failures, ["cancelled"])
+
+    def test_classes_run_automatically_even_without_kept_wins(self) -> None:
+        previous = {"overrides": {"g1": "hunter"}}
+        worker = GameplayEditWorker("video.mp4", previous_grouping=previous)
+        previous["overrides"]["g1"] = "mage"
+        report = {"duration": 10.0, "games": [{"id": "g1", "result": "LOSS"}]}
+        result = SimpleNamespace(gameplay_keeps=[], report=lambda: report)
+        grouping = {"groups": {"hunter": {}}, "overrides": {"g1": "hunter"}}
+        results, progress, phases = [], [], []
+        worker.finished.connect(results.append)
+        worker.progress.connect(progress.append)
+        worker.phase.connect(phases.append)
+
+        def classify(source, games, **kwargs):
+            self.assertEqual(str(source), "video.mp4")
+            self.assertEqual(games, report["games"])
+            self.assertEqual(kwargs["duration"], 10.0)
+            self.assertEqual(kwargs["previous"]["overrides"]["g1"], "hunter")
+            self.assertIs(kwargs["cancellation"], worker._token)
+            kwargs["on_progress"](50)
+            return grouping
+
+        with patch("analysis.gameplay_editing.GameplayEditingService.run", return_value=result), \
+             patch("analysis.hero_groups.recognition.HeroGroupingService") as service:
+            service.return_value.analyze.side_effect = classify
+            worker.run()
+        self.assertEqual(results[0]["grouping"], grouping)
+        self.assertEqual(results[0]["keeps"], [])
+        self.assertEqual(progress, [95, 100])
+        self.assertEqual(phases, ["Analyzing player classes…"])
+
+    def test_class_failure_preserves_detected_games_and_keeps(self) -> None:
+        worker = GameplayEditWorker("video.mp4")
+        report = {"duration": 10.0, "games": [{"id": "g1", "result": "WIN"}]}
+        result = SimpleNamespace(gameplay_keeps=[Segment(1, 4)], report=lambda: report)
+        results, failures = [], []
+        worker.finished.connect(results.append)
+        worker.failed.connect(failures.append)
+        with patch("analysis.gameplay_editing.GameplayEditingService.run", return_value=result), \
+             patch("analysis.hero_groups.recognition.HeroGroupingService") as service:
+            service.return_value.analyze.side_effect = RuntimeError("reference unreadable")
+            worker.run()
+        self.assertEqual(failures, [])
+        self.assertEqual(results[0]["keeps"], [(1.0, 4.0)])
+        self.assertEqual(results[0]["report"], report)
+        self.assertIn("reference unreadable", results[0]["grouping_error"])
+
+    def test_cancel_during_class_analysis_emits_no_partial_result(self) -> None:
+        worker = GameplayEditWorker("video.mp4")
+        report = {"duration": 10.0, "games": [{"id": "g1", "result": "WIN"}]}
+        result = SimpleNamespace(gameplay_keeps=[Segment(1, 4)], report=lambda: report)
+        results, failures = [], []
+        worker.finished.connect(results.append)
+        worker.failed.connect(failures.append)
+
+        def cancel(*args, **kwargs):
+            worker.cancel()
+            kwargs["cancellation"].raise_if_cancelled()
+
+        with patch("analysis.gameplay_editing.GameplayEditingService.run", return_value=result), \
+             patch("analysis.hero_groups.recognition.HeroGroupingService") as service:
+            service.return_value.analyze.side_effect = cancel
+            worker.run()
+        self.assertEqual(results, [])
         self.assertEqual(failures, ["cancelled"])
 
 

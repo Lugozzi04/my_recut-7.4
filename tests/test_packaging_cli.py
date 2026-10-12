@@ -73,3 +73,30 @@ class PackagingCliTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_run_after_process_uses_the_job_project_and_writes_next_to_the_export(tmp_path):
+    import io
+    from unittest.mock import patch
+
+    from automation.packaging_cli import run_after_process
+
+    seen = []
+
+    class FakePipeline:
+        def __init__(self, settings, **kwargs):
+            seen.append(settings)
+
+        def run(self):
+            return {"status": "done"}
+
+    video = tmp_path / "match_wins.mp4"
+    with patch("analysis.packaging.pipeline.PackagingPipeline", FakePipeline):
+        run_after_process(project=str(tmp_path / "job.autocutter"), video=str(video), output=None, provider="codex",
+                          language="it", thumbnail_engine="gen", progress=io.StringIO())
+        run_after_process(project=None, video=str(video), output=str(tmp_path / "out"), provider="claude",
+                          language="en", thumbnail_engine="v3", progress=io.StringIO())
+    first, second = seen
+    assert first.project.endswith("job.autocutter") and first.video is None
+    assert first.output == str(tmp_path / "match_wins_packaging") and first.thumbnail_engine == "gen"
+    assert second.project is None and second.video == str(video) and second.output == str(tmp_path / "out")

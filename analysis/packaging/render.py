@@ -29,7 +29,7 @@ import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, cast
 
 import numpy as np
 
@@ -707,7 +707,7 @@ class ThumbnailRenderer:
         accent_room = cap * 0.24 if fitted.lines and any(c in ACCENTED_CAPS for c in fitted.lines[0]) else 0.0
         top = y + (h - total) / 2 if valign == "center" else (y if valign == "top" else y + h - total)
         top = max(top, y + accent_room)
-        emphasis = {e.strip().upper() for e in (plan.emphasis or "").split()} if plan.emphasis else set()
+        emphasis = {e.strip(".,!?:;\"'«»").upper() for e in (plan.emphasis or "").split()} if plan.emphasis else set()
         normal, accented = QPainterPath(), QPainterPath()
         space = metrics.horizontalAdvance(" ")
         for i, line in enumerate(fitted.lines):
@@ -947,3 +947,363 @@ def plan_from_mapping(plan: Mapping[str, Any], images: Mapping[str, np.ndarray],
         fonts=list(fonts) + list(type_fonts), mask_boxes=[list(b) for b in mask_boxes],
         webcam_scale=float(tuning.get("webcam_scale", style.get("webcam_scale", 1.0))),
         backdrop=float(tuning.get("backdrop", 1.0)), text_scale=float(tuning.get("text_scale", 1.0)))
+
+
+# ---------------------------------------------------------------------------------------------------
+# V3: layered scene renderer (scene graphs from analysis/packaging/scene.py)
+
+SCENE_RENDERER_VERSION = "scene_renderer_v1"
+MAX_SUBJECT_UPSCALE = 2.6  # a webcam face enlarged more than this reads soft: keep it smaller instead
+
+
+@dataclass
+class SceneResult:
+    path: str
+    width: int
+    height: int
+    bytes: int
+    format: str
+    layers: list[dict[str, Any]]  # what was actually drawn: id, type, rect (px at output size), visibility
+    text: dict[str, Any]
+    warnings: list[str]
+    focal_point: dict[str, float]
+
+    def to_mapping(self) -> dict[str, Any]:
+        return dict(self.__dict__)
+
+
+def _adjust(image: np.ndarray, brightness: float, contrast: float, saturation: float) -> np.ndarray:
+    import cv2
+
+    out = image
+    alpha = None
+    if out.ndim == 3 and out.shape[2] == 4:
+        out, alpha = out[..., :3], out[..., 3:]
+    if saturation != 1.0:
+        hsv = cv2.cvtColor(np.ascontiguousarray(out), cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[..., 1] = np.clip(hsv[..., 1] * saturation, 0, 255)
+        out = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    if contrast != 1.0 or brightness != 0.0:
+        mean = float(out.mean())  # contrast around the image's own mid-tone: no global darkening
+        out = cv2.convertScaleAbs(out, alpha=contrast, beta=(brightness * 255.0) - mean * (contrast - 1.0))
+    return np.dstack([out, alpha]) if alpha is not None else out
+
+
+def _bgra_qimage(image: np.ndarray) -> Any:
+    import cv2
+    from PySide6.QtGui import QImage
+
+    rgba = cv2.cvtColor(np.ascontiguousarray(image), cv2.COLOR_BGRA2RGBA)
+    return QImage(rgba.data, rgba.shape[1], rgba.shape[0], 4 * rgba.shape[1], QImage.Format.Format_RGBA8888).copy()
+
+
+def frame_subject(rgba: np.ndarray, *, face_share: float = 0.34) -> np.ndarray:
+    """Head-and-shoulders framing of a cut-out: limited headroom above the face, the face ~1/3 of the height
+    when the crop allows it, shoulders down to the bottom edge, width around the face. Unchanged without a face."""
+    bgr = np.ascontiguousarray(rgba[..., :3])
+    face = face_box(bgr)
+    if face is None:
+        return rgba
+    h, w = rgba.shape[:2]
+    fx, fy, fw, fh = face[0] * w, face[1] * h, face[2] * w, face[3] * h
+    top = max(0.0, fy - fh * 0.75)  # headroom: hair plus a little air, whatever the posture
+    ch = min(h - top, max(fh / face_share, fh * 2.2))
+    cw = min(float(w), max(ch * 1.05, fw * 2.6))
+    left = min(max(0.0, fx + fw / 2 - cw / 2), w - cw)
+    framed = rgba[int(top):int(top + ch), int(left):int(left + cw)]
+    return framed if framed.size else rgba
+
+
+class SceneRenderer(ThumbnailRenderer):
+    """Draws a validated ThumbnailScene layer by layer (z order) with alpha compositing."""
+
+    def render_scene(self, scene: Mapping[str, Any], images: Mapping[str, np.ndarray], target: Path, *,
+                     fmt: str = "png", mask_boxes: Sequence[Sequence[float]] = (),
+                     fonts: Sequence[str] = ()) -> SceneResult:
+        from PySide6.QtCore import Qt
+        from PySide6.QtGui import QImage, QPainter
+
+        W, H = self.size[0] * self.scale, self.size[1] * self.scale
+        canvas = QImage(W, H, QImage.Format.Format_ARGB32_Premultiplied)
+        canvas.fill(0xFF000000)
+        painter = QPainter(canvas)
+        painter.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.SmoothPixmapTransform |
+                               QPainter.RenderHint.TextAntialiasing)
+        warnings: list[str] = []
+        drawn: list[dict[str, Any]] = []
+        text_info: dict[str, Any] = {}
+        style = scene.get("style") or {}
+        type_fonts = list(fonts) + list(TYPE_STYLES.get(str(style.get("typography") or ""), ()))
+        try:
+            drawn.append(self._scene_background(painter, scene["background"], images, W, H, mask_boxes))
+            for layer in sorted(scene.get("layers", []), key=lambda item: int(item.get("z", 0))):
+                kind = layer["type"]
+                if kind == "gradient":
+                    self._scene_gradient(painter, layer, W, H)
+                    drawn.append({"id": layer["id"], "type": kind})
+                elif kind == "effect":
+                    self._scene_effect(painter, layer, scene, W, H)
+                    drawn.append({"id": layer["id"], "type": kind})
+                elif kind == "shape":
+                    drawn.append(self._scene_shape(painter, layer, style, W, H))
+                elif kind == "text":
+                    info = self._scene_text(painter, layer, style, type_fonts, W, H, warnings)
+                    if not text_info:
+                        text_info = info
+                    drawn.append({"id": layer["id"], "type": kind, "rect": list(info["bounds"]), "text": info})
+                else:
+                    image = images.get(str(layer.get("asset_id")))
+                    if image is None:
+                        warnings.append(f"layer {layer['id']}: asset {layer.get('asset_id')} has no image; skipped")
+                        continue
+                    drawn.append(self._scene_image(painter, layer, image, style, W, H, mask_boxes))
+        finally:
+            painter.end()
+        final = canvas.scaled(self.size[0], self.size[1], Qt.AspectRatioMode.IgnoreAspectRatio,
+                              Qt.TransformationMode.SmoothTransformation).convertToFormat(QImage.Format.Format_RGB32)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if fmt == "png":
+            final.save(str(target), "PNG")  # type: ignore[call-overload]  # PySide6 wants str at runtime
+            if target.stat().st_size > YOUTUBE_MAX_BYTES:
+                jpeg = target.with_suffix(".jpg")
+                self._save_jpeg(final, jpeg)
+                warnings.append(f"PNG exceeded 2 MB; YouTube-ready JPEG written to {jpeg.name}")
+        else:
+            self._save_jpeg(final, target)
+        if text_info:
+            text_info["px_at_320"] = round(text_info.get("cap_px", 0.0) * 320.0 / self.size[0], 1)
+        for item in drawn:
+            if item.pop("_px", False):  # canvas px (2x) -> output px
+                item["rect"] = [round(v / self.scale, 1) for v in item["rect"]]
+        focal = dict(scene.get("focal_point") or {"x": 0.5, "y": 0.5})
+        return SceneResult(str(target), self.size[0], self.size[1], target.stat().st_size, fmt, drawn, text_info,
+                           warnings, focal)
+
+    # ---- layers --------------------------------------------------------------------------------------
+    def _scene_background(self, painter: Any, background: Mapping[str, Any], images: Mapping[str, np.ndarray],
+                          W: int, H: int, mask_boxes: Sequence[Sequence[float]]) -> dict[str, Any]:
+        image = images[str(background["asset_id"])]
+        if image.ndim == 3 and image.shape[2] == 4:
+            image = image[..., :3]
+        prepared = prepare(image, background.get("crop"), (W, H), masks=mask_boxes,
+                           blur=float(background.get("blur", 0.0)) * W * 0.008,
+                           dim=1.0 - float(background.get("dim", 0.0)))
+        prepared = _adjust(prepared, 0.0, 1.04, float(background.get("saturation", 1.0)))
+        painter.drawImage(0, 0, to_qimage(prepared))
+        return {"id": "background", "type": "background", "asset_id": background["asset_id"],
+                "rect": [0.0, 0.0, float(self.size[0]), float(self.size[1])],
+                "sharpness": round(region_sharpness(image, background.get("crop")), 1),
+                "blurred": float(background.get("blur", 0.0)) > 0.15}
+
+    def _scene_gradient(self, painter: Any, layer: Mapping[str, Any], W: int, H: int) -> None:
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QLinearGradient, QRadialGradient
+
+        strength = int(255 * float(layer.get("strength", 0.6)) * float(layer.get("opacity", 1.0)))
+        color = str(layer.get("color") or "#000000")
+        side = layer.get("side") or "left"
+        if side == "radial":
+            radial = QRadialGradient(QPointF(float(layer["x"]) * W, float(layer["y"]) * H),
+                                     float(layer.get("height", 0.8)) * H)
+            radial.setColorAt(0.0, self._color(color, strength))
+            radial.setColorAt(1.0, self._color(color, 0))
+            painter.fillRect(0, 0, W, H, radial)
+            return
+        if side == "none":
+            return
+        reach = float(layer.get("width") or 0.7)
+        points = {"left": (QPointF(0, 0), QPointF(W * reach, 0)), "right": (QPointF(W, 0), QPointF(W * (1 - reach), 0)),
+                  "top": (QPointF(0, 0), QPointF(0, H * reach)), "bottom": (QPointF(0, H), QPointF(0, H * (1 - reach)))}
+        a, b = points[side]
+        linear = QLinearGradient(a, b)
+        linear.setColorAt(0.0, self._color(color, strength))
+        linear.setColorAt(0.55, self._color(color, int(strength * 0.55)))
+        linear.setColorAt(1.0, self._color(color, 0))
+        painter.fillRect(0, 0, W, H, linear)
+
+    def _scene_effect(self, painter: Any, layer: Mapping[str, Any], scene: Mapping[str, Any], W: int, H: int) -> None:
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QRadialGradient
+
+        strength = float(layer.get("strength", 0.5))
+        if layer.get("effect") == "vignette":
+            self._vignette(painter, W, H, int(60 + 140 * strength))
+            return
+        focal = scene.get("focal_point") or {"x": 0.5, "y": 0.5}
+        gradient = QRadialGradient(QPointF(float(focal["x"]) * W, float(focal["y"]) * H), max(W, H) * 0.55)
+        gradient.setColorAt(0.0, self._color("#000000", 0))
+        gradient.setColorAt(0.45, self._color("#000000", 0))
+        gradient.setColorAt(1.0, self._color("#000000", int(220 * strength)))
+        painter.fillRect(0, 0, W, H, gradient)
+
+    def _scene_shape(self, painter: Any, layer: Mapping[str, Any], style: Mapping[str, Any], W: int, H: int
+                     ) -> dict[str, Any]:
+        from PySide6.QtCore import QRectF
+        from PySide6.QtGui import QPainterPath
+
+        w = float(layer.get("width") or 0.3) * W
+        h = float(layer["height"]) * H
+        x, y = float(layer["x"]) * W - w / 2, float(layer["y"]) * H - h / 2
+        color = self._color(str(layer.get("color") or style.get("accent") or "#000000"),
+                            int(255 * float(layer.get("opacity", 1.0))))
+        path = QPainterPath()
+        if layer.get("shape") == "ellipse":
+            path.addEllipse(QRectF(x, y, w, h))
+        else:
+            radius = h * (0.5 if layer.get("shape") == "bar" else 0.08)
+            path.addRoundedRect(QRectF(x, y, w, h), radius, radius)
+        painter.save()
+        painter.translate(x + w / 2, y + h / 2)
+        painter.rotate(float(layer.get("rotation", 0.0)))
+        painter.translate(-(x + w / 2), -(y + h / 2))
+        painter.fillPath(path, color)
+        painter.restore()
+        return {"id": layer["id"], "type": "shape", "rect": [x, y, w, h], "_px": True}
+
+    def _scene_text(self, painter: Any, layer: Mapping[str, Any], style: Mapping[str, Any], fonts: Sequence[str],
+                    W: int, H: int, warnings: list[str]) -> dict[str, Any]:
+        from types import SimpleNamespace
+
+        w = float(layer.get("width") or 0.5) * W
+        h = float(layer["height"]) * H
+        x, y = float(layer["x"]) * W - w / 2, float(layer["y"]) * H - h / 2
+        plan = SimpleNamespace(headline=str(layer.get("text") or ""), fonts=list(fonts), text_scale=1.0,
+                               emphasis=layer.get("emphasis"),
+                               text_color=str(layer.get("color") or style.get("text_color") or "#FFFFFF"),
+                               accent=str(style.get("accent") or "#FFD400"))
+        return self._headline(painter, cast(RenderPlan, plan), (x, y, w, h), align=str(layer.get("align") or "left"),
+                              max_lines=3, W=W, H=H, warnings=warnings, max_px=h, valign="center")
+
+    def _scene_image(self, painter: Any, layer: Mapping[str, Any], image: np.ndarray, style: Mapping[str, Any],
+                     W: int, H: int, mask_boxes: Sequence[Sequence[float]]) -> dict[str, Any]:
+        """image / board_crop / card / subject_cutout: crop, scale, adjust, shadow, rim light, clip, rotate."""
+        import cv2
+        from PySide6.QtCore import QPointF, QRectF
+        from PySide6.QtGui import QPainterPath, QPen
+
+        kind = layer["type"]
+        source = image
+        if kind == "board_crop" and source.ndim == 3 and source.shape[2] == 3 and mask_boxes:
+            source = mask_regions(source, mask_boxes)
+        crop = layer.get("crop")
+        if crop:
+            ih, iw = source.shape[:2]
+            x0, y0 = int(crop[0] * iw), int(crop[1] * ih)
+            x1, y1 = max(x0 + 2, int((crop[0] + crop[2]) * iw)), max(y0 + 2, int((crop[1] + crop[3]) * ih))
+            source = source[y0:y1, x0:x1]
+        elif kind == "subject_cutout" and source.ndim == 3 and source.shape[2] == 4:
+            source = frame_subject(source)  # the face, not the webcam crop, sets the scale
+        h = float(layer["height"]) * H
+        limited = False
+        if kind == "subject_cutout" and h > source.shape[0] * MAX_SUBJECT_UPSCALE * self.scale:
+            bottom = float(layer["y"]) * H + h / 2  # keep the subject standing on the same line
+            h = source.shape[0] * MAX_SUBJECT_UPSCALE * self.scale
+            layer = {**layer, "y": (bottom - h / 2) / H}
+            limited = True
+        width = layer.get("width")
+        if width:  # a target box: cover-crop the source to its aspect
+            w = float(width) * W
+            ih, iw = source.shape[:2]
+            fx, fy, fw, fh = fit_box(None, iw, ih, w / h)
+            source = source[fy:fy + fh, fx:fx + fw]
+        else:
+            w = h * source.shape[1] / max(1, source.shape[0])
+        has_alpha = source.ndim == 3 and source.shape[2] == 4
+        resized = upscale(np.ascontiguousarray(source[..., :3]) if has_alpha else source, (max(2, int(w)), max(2, int(h))))
+        if has_alpha:
+            alpha = cv2.resize(np.ascontiguousarray(source[..., 3]), (resized.shape[1], resized.shape[0]),
+                               interpolation=cv2.INTER_LINEAR)
+            resized = np.dstack([resized, alpha])
+        resized = _adjust(resized, float(layer.get("brightness", 0.0)), float(layer.get("contrast", 1.0)),
+                          float(layer.get("saturation", 1.0)))
+        blur = float(layer.get("blur", 0.0))
+        if blur > 0:
+            sigma = blur * W * 0.004
+            resized = np.dstack([cv2.GaussianBlur(resized[..., :3], (0, 0), sigma), resized[..., 3]]) if has_alpha \
+                else cv2.GaussianBlur(resized, (0, 0), sigma)
+        cx, cy = float(layer["x"]) * W, float(layer["y"]) * H
+        rotation = float(layer.get("rotation", 0.0))
+        opacity = float(layer.get("opacity", 1.0))
+        clip = layer.get("clip") or "none"
+        if kind == "card" and clip == "none":
+            clip = "rounded"
+        radius = min(w, h) * 0.045 if clip == "rounded" else 0.0
+        shadow = float(layer.get("shadow", 0.0))
+        accent = str(style.get("accent") or "#FFD400")
+
+        def outline_path() -> Any:
+            path = QPainterPath()
+            if clip == "circle":
+                path.addEllipse(QRectF(-w / 2, -h / 2, w, h))
+            else:
+                path.addRoundedRect(QRectF(-w / 2, -h / 2, w, h), radius, radius)
+            return path
+
+        if has_alpha:
+            if shadow > 0:  # shadow cast by the subject's own silhouette
+                silhouette = np.zeros_like(resized)
+                silhouette[..., 3] = (resized[..., 3].astype(np.float32) * 0.85).astype(np.uint8)
+                shadow_image = _bgra_qimage(silhouette)
+
+                def silhouette_shape(p: Any, color: Any) -> None:
+                    p.save()
+                    p.translate(QPointF(cx, cy))
+                    p.rotate(rotation)
+                    p.drawImage(QRectF(-w / 2, -h / 2, w, h), shadow_image)
+                    p.restore()
+                self._shadow(painter, silhouette_shape, W, H, (W * 0.006, H * 0.012), H * 0.03 * (0.5 + shadow),
+                             alpha=int(200 * shadow))
+            rim = float(layer.get("rim_light", 0.0))
+            if rim > 0:  # a thin coloured light along the silhouette, drawn behind the subject
+                k = max(3, int(min(w, h) * 0.012)) | 1
+                ring = cv2.dilate(resized[..., 3], cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+                ring = cv2.GaussianBlur(ring, (0, 0), k / 2)
+                color = self._color(str(layer.get("color") or accent))
+                rim_image = np.zeros_like(resized)
+                rim_image[..., 0], rim_image[..., 1], rim_image[..., 2] = color.blue(), color.green(), color.red()
+                rim_image[..., 3] = (ring.astype(np.float32) * rim * 0.8).astype(np.uint8)
+                painter.save()
+                painter.translate(QPointF(cx, cy))
+                painter.rotate(rotation)
+                painter.drawImage(QRectF(-w / 2, -h / 2, w, h), _bgra_qimage(rim_image))
+                painter.restore()
+            painter.save()
+            painter.setOpacity(opacity)
+            painter.translate(QPointF(cx, cy))
+            painter.rotate(rotation)
+            painter.drawImage(QRectF(-w / 2, -h / 2, w, h), _bgra_qimage(resized))
+            painter.restore()
+        else:
+            qimage = to_qimage(resized)
+            if shadow > 0:
+                def box_shape(p: Any, color: Any) -> None:
+                    p.save()
+                    p.translate(QPointF(cx, cy))
+                    p.rotate(rotation)
+                    p.fillPath(outline_path(), color)
+                    p.restore()
+                self._shadow(painter, box_shape, W, H, (H * 0.01, H * 0.02), H * 0.03 * (0.5 + shadow),
+                             alpha=int(210 * shadow))
+            painter.save()
+            painter.setOpacity(opacity)
+            painter.translate(QPointF(cx, cy))
+            painter.rotate(rotation)
+            if clip != "none":
+                painter.setClipPath(outline_path())
+            painter.drawImage(QRectF(-w / 2, -h / 2, w, h), qimage)
+            painter.setClipping(False)
+            outline = float(layer.get("outline", 0.0))
+            if outline > 0:  # hairline light edge, never a thick frame
+                painter.setPen(QPen(self._color(str(layer.get("color") or "#FFFFFF"), int(110 + 110 * outline)),
+                                    max(1.5, H * 0.0035 * outline)))
+                painter.drawPath(outline_path())
+            painter.restore()
+        x, y = cx - w / 2, cy - h / 2
+        visible_w = max(0.0, min(W, x + w) - max(0.0, x))
+        visible_h = max(0.0, min(H, y + h) - max(0.0, y))
+        cut = {"left": x < -1, "right": x + w > W + 1, "top": y < -1, "bottom": y + h > H + 1}
+        return {"id": layer["id"], "type": kind, "asset_id": layer.get("asset_id"), "rect": [x, y, w, h],
+                "visible_share": round(visible_w * visible_h / max(1.0, w * h), 3),
+                "cut_edges": [k for k, v in cut.items() if v], "has_alpha": has_alpha,
+                "source_px": [int(source.shape[1]), int(source.shape[0])], "upscale_limited": limited,
+                "upscale": round(w / self.scale / max(1, source.shape[1]), 2), "_px": True}

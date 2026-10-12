@@ -334,7 +334,8 @@ def test_keep_mode_prompt_reasons_about_ownership_of_the_kept_game():
     start, end = build_prompt(result.contexts[BoundaryType.START]), build_prompt(result.contexts[BoundaryType.END])
     assert "which is KEPT in the final video" in start and "which is KEPT in the final video" in end
     assert "everything before START is removed" in start and "everything after END is removed" in end
-    assert "Never include PREVIOUS_CONTENT" in start and "Include the reaction to this game's result" in end
+    assert "Never include PREVIOUS_CONTENT" in start and "Keep the reaction to the win" in end
     assert "chatter not owned by a kept game is removed" in start
-    assert "Step 1: label every transcript segment" in start and "Step 3: choose the candidate" in end
+    assert "Step 1: label every transcript segment" in start and "Step 2: choose the candidate" in end
+    assert "MODE balanced" in end and "Sentence completeness never outweighs relevance" in end  # END policy v4
     assert "next game: game 2 result LOSS" in end and "also REMOVED" in end

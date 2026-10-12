@@ -260,6 +260,9 @@ def has_video_stream(path: str) -> bool:
 # -----------------------------
 _SPLICE_LOCK_GUARD = threading.Lock()
 _SPLICE_LOCKS: dict[str, threading.Lock] = {}
+# v2: points must also be container sync samples, and MP4 (avcC/hvcC) packets are never sniffed as Annex B.
+# v1 caches could contain B-frames whose 4-byte NAL length (00 00 01 xx) looked like a start code.
+_SPLICE_CACHE_VERSION = 2
 
 
 def _get_splice_lock(path: str) -> threading.Lock:
@@ -302,7 +305,7 @@ def _load_splice_cache(path: str) -> Optional[List[float]]:
         return None
     if int(data.get("size", -1)) != int(size):
         return None
-    if int(data.get("version", 0)) != 1:
+    if int(data.get("version", 0)) != _SPLICE_CACHE_VERSION:
         return None
     pts = data.get("points", [])
     if not isinstance(pts, list):
@@ -327,7 +330,7 @@ def _save_splice_cache(path: str, points: List[float]) -> None:
         "mtime": float(mtime),
         "size": int(size),
         "points": [float(v) for v in points],
-        "version": 1,
+        "version": _SPLICE_CACHE_VERSION,
     }
     tmp = cache_path.with_suffix(".tmp")
     try:
@@ -500,13 +503,18 @@ def _scan_splice_safe_pts_pyav(
             if not _in_intervals(pts_time):
                 continue
 
+            # A stream-copy seek can only start on a container sync sample: anything else is not splice-safe.
+            if not bool(getattr(packet, "is_keyframe", False)):
+                continue
+
             data = bytes(packet)
             if not data:
                 continue
 
-            is_annexb = (
-                (b"\x00\x00\x01" in data[:64]) or
-                (b"\x00\x00\x00\x01" in data[:64])
+            # MP4/MKV (avcC/hvcC extradata) packets are length-prefixed: a 4-byte NAL length 00 00 01 xx must not
+            # be mistaken for an Annex B start code (that turned small B-frames into fake IDRs).
+            is_annexb = nal_len_size is None and (
+                data.startswith(b"\x00\x00\x01") or data.startswith(b"\x00\x00\x00\x01")
             )
             if is_annexb:
                 nals = _iter_nals_annexb(data)

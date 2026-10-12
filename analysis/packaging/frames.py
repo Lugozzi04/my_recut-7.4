@@ -87,7 +87,7 @@ class FrameExtractor:
         return f"{prefix}{self._counters[prefix]:03d}"
 
     def burst(self, source_index: int, start: float, end: float, *, fps: float) -> list[tuple[float, np.ndarray]]:
-        """Real frames in [start, end) at about fps (cached as a compressed bundle)."""
+        """Kept frames in [start, end); the shared cache stores the unfiltered source bundle."""
         identity = self.edit_map.identities[source_index] if self.edit_map.identities else self.edit_map.sources[source_index]
         key = stable_key("burst", identity, round(start, 3), round(end, 3), fps, MAX_WIDTH)
         bundle = self.cache.file_path("frames", key, ".npz")
@@ -96,7 +96,8 @@ class FrameExtractor:
                 with np.load(bundle, allow_pickle=False) as data:
                     times, offsets, blob = data["times"], data["offsets"], data["blob"]
                 self.cache.stats["frames"]["hit"] += 1
-                return [(float(t), self._decode(blob[offsets[i]:offsets[i + 1]])) for i, t in enumerate(times)]
+                return self._kept(source_index, [(float(t), self._decode(blob[offsets[i]:offsets[i + 1]]))
+                                                 for i, t in enumerate(times)])
             except (OSError, ValueError, KeyError):
                 pass
         self.cache.stats["frames"]["miss"] += 1
@@ -115,7 +116,16 @@ class FrameExtractor:
                 temporary.replace(bundle)
             except (OSError, ValueError):
                 pass
-        return frames
+        return self._kept(source_index, frames)
+
+    def _kept(self, source_index: int, frames: list[tuple[float, np.ndarray]]) -> list[tuple[float, np.ndarray]]:
+        # Cache raw source frames; apply this edit's keeps AFTER reading/writing the shared bundle.
+        return [(t, image) for t, image in frames if self._contains(source_index, t)]
+
+    def _contains(self, source_index: int, t: float) -> bool:
+        # Frame timestamps are half-open: an exact cut-out frame belongs to the removed material.
+        return any(p.source_index == source_index and p.source_start <= t < p.source_end
+                   for p in self.edit_map.pieces)
 
     @staticmethod
     def _encode(image: np.ndarray) -> np.ndarray:
@@ -133,14 +143,14 @@ class FrameExtractor:
         frames = self.burst(source_index, max(0.0, t - radius), t + radius, fps=fps)
         kept = [(ft, image) for ft, image in frames if self.edit_map.to_edited(ft, source_index) is not None]
         if not kept:
-            kept = frames
-        if not kept:
             return None
         return max(kept, key=lambda item: frame_quality(item[1])["score"] - 0.05 * abs(item[0] - t))
 
     def save(self, image: np.ndarray, *, source_index: int, source_time: float, kind: str = "gameplay",
              highlight_id: str | None = None, role: str = "", notes: str = "", prefix: str = "F",
              folder: str = "frames") -> FrameRecord:
+        if not self._contains(source_index, source_time):
+            raise ValueError("Thumbnail evidence must belong to the exported edit's keeps.")
         frame_id = self._next_id(prefix)
         relative = f"{folder}/{frame_id}_{source_time:09.2f}s.jpg".replace(" ", "0")  # q95 JPEG: 1080p PNGs are ~3 MB
         write_image(self.output_dir / relative, image)
@@ -266,3 +276,14 @@ def pick_diverse(ranked: Sequence[tuple[float, float, np.ndarray]], *, k: int, t
         out.append(ranked[0])
         taken.append(visual_hash(ranked[0][2]))
     return out
+
+
+def read_image_unchanged(path: Path) -> np.ndarray | None:
+    """Read keeping an alpha channel (PNG cut-outs)."""
+    cv2 = require_cv2()
+    try:
+        data = np.frombuffer(Path(path).read_bytes(), dtype=np.uint8)
+    except OSError:
+        return None
+    image = cv2.imdecode(data, cv2.IMREAD_UNCHANGED)
+    return image if image is not None and image.size else None

@@ -15,7 +15,8 @@ from __future__ import annotations
 
 from .models import BoundaryContext, BoundaryType, CandidateSource
 
-DROP_ORDER = (frozenset({CandidateSource.SILENCE_MID}), frozenset({CandidateSource.VISUAL_CHANGE}))
+DROP_ORDER = (frozenset({CandidateSource.WORD_GAP}), frozenset({CandidateSource.SILENCE_MID}),
+              frozenset({CandidateSource.VISUAL_CHANGE}))
 EPSILON = 0.3  # candidate dedup can move an anchor by <= 0.25 s
 
 

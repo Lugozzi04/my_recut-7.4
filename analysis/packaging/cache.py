@@ -17,7 +17,7 @@ from typing import Any, Mapping
 
 from .models import EVIDENCE_VERSION
 
-NAMESPACES = ("transcript", "evidence", "frames", "agent", "render")
+NAMESPACES = ("transcript", "evidence", "frames", "agent", "render", "generated")
 
 
 def stable_key(*parts: Any) -> str:

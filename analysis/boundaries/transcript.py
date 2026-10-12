@@ -108,7 +108,55 @@ def find_whisper_python(explicit: str | None = None) -> str | None:
             for candidate in (root / name / "Scripts" / "python.exe", root / name / "bin" / "python"):
                 if candidate.exists() and _python_has_module(str(candidate), "faster_whisper"):
                     return str(candidate)
-    return None
+    return _system_whisper_python()
+
+
+_SYSTEM_WHISPER: list[str | None] = []  # memo: probing interpreters spawns processes
+
+
+def _system_whisper_python() -> str | None:
+    """faster-whisper installed in a SYSTEM Python (python.org installs, the py launcher, PATH): found without
+    AUTO_CUTTER_WHISPER_PY, so a plain command line gets transcripts too. Probed once per process."""
+    if _SYSTEM_WHISPER:
+        return _SYSTEM_WHISPER[0]
+    import os
+    import shutil
+    import subprocess
+
+    from analysis.ai_pipeline import _python_has_module
+
+    candidates: list[str] = []
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        candidates += [str(p) for p in sorted((Path(local) / "Programs" / "Python").glob("Python3*/python.exe"),
+                                              reverse=True)]
+    for program_files in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
+        if program_files:
+            candidates += [str(p) for p in sorted(Path(program_files).glob("Python3*/python.exe"), reverse=True)]
+    launcher = shutil.which("py")
+    if launcher:
+        try:
+            listed = subprocess.run([launcher, "-0p"], capture_output=True, text=True, timeout=10,
+                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
+            candidates += [line.split()[-1] for line in listed.splitlines() if line.strip().endswith(".exe")]
+        except (OSError, subprocess.SubprocessError):
+            pass
+    for name in ("python", "python3"):
+        found = shutil.which(name)
+        if found and "WindowsApps" not in found:  # the Store alias opens the Store instead of running
+            candidates.append(found)
+    seen: set[str] = set()
+    result = None
+    for candidate in candidates:
+        key = os.path.normcase(os.path.abspath(candidate))
+        if key in seen or key == os.path.normcase(os.path.abspath(sys.executable)):
+            continue
+        seen.add(key)
+        if Path(candidate).exists() and _python_has_module(candidate, "faster_whisper"):
+            result = candidate
+            break
+    _SYSTEM_WHISPER.append(result)
+    return result
 
 
 def _shift(raw: dict[str, Any], window: TimeRange) -> TranscriptSegment | None:

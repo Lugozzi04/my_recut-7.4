@@ -449,6 +449,17 @@ def build_analysis_page(window) -> None:
         window.gameplay_boundary_combo.setItemData(window.gameplay_boundary_combo.count() - 1, tip, Qt.ToolTipRole)
     gp.add(PropertyRow("Boundaries", window.gameplay_boundary_combo,
                        tooltip="How each kept game's START/END is chosen"))
+    window.gameplay_end_policy_combo = QComboBox()
+    for key, label, tip in (("tight", "Tight", "Reaction to the win plus one essential sentence"),
+                            ("balanced", "Balanced", "Reaction plus a short recap specific to the game (default)"),
+                            ("extended", "Extended", "Reaction plus a longer explanation specific to the game")):
+        window.gameplay_end_policy_combo.addItem(label, key)
+        window.gameplay_end_policy_combo.setItemData(window.gameplay_end_policy_combo.count() - 1, tip,
+                                                     Qt.ToolTipRole)
+    window.gameplay_end_policy_combo.setCurrentIndex(1)
+    gp.add(PropertyRow("End of games", window.gameplay_end_policy_combo,
+                       tooltip="With Claude/Codex: how much talk after each win is kept. Chat, unrelated talk "
+                               "and the move to the next game are always cut."))
     window.lbl_gameplay_boundary_hint = Hint("")
     gp.add(window.lbl_gameplay_boundary_hint)
     window.btn_gameplay_run = QPushButton("Detect games")
@@ -471,6 +482,7 @@ def build_analysis_page(window) -> None:
     window.btn_gameplay_reset_all.setCursor(Qt.PointingHandCursor)
     window.btn_gameplay_reset_all.setToolTip("Restore every kept game to the boundaries found by the pipeline")
     gp.add(window.btn_gameplay_reset_all)
+    gp.add(window.hero_groups_panel)
 
     window.analysis_scroll = _scroll_page(window.page_analysis, [mode, ai, stats, gp], name="InspectorScroll")
 

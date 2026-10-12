@@ -62,6 +62,37 @@ Opzioni `process` e `vod`:
 | `--dry-run` | Solo metadata, intervallo, preset e destinazione; nessun job/download/analisi/export/upload. |
 | `--json` | Un solo risultato JSON su stdout; progress e log su stderr. |
 
+Gameplay editing e packaging nello stesso comando (facoltativi):
+
+| Opzione | Comportamento |
+|---|---|
+| `--gameplay hearthstone --keep-games wins` | Tiene solo le partite vinte complete. Con `--start`/`--end`/`--duration` valgono solo le partite **interamente** dentro l'intervallo: quelle a cavallo dei bordi sono escluse (avviso nel report) e le isole tenute non escono dall'intervallo. Senza intervallo si usa tutto il video. Il detector legge comunque l'intero file, ma il risultato è in cache. |
+| `--boundary-mode exact\|claude\|codex` | Confini editoriali; claude/codex inviano il transcript attorno ai confini. |
+| `--end-policy tight\|balanced\|extended` | Fine delle partite tenute (default `balanced`). |
+| `--packaging` | Dopo un export riuscito genera titoli e thumbnail dal progetto del job (come `packaging --project`). Non combinabile con `--analyze-only`. |
+| `--packaging-provider codex\|claude` | Agent per titoli e concept (default codex). |
+| `--thumbnail-engine gen\|v3\|v2` | `gen` (default): il modello immagini compone; `v3`/`v2`: solo render locale. |
+| `--packaging-language CODE` | Lingua di titoli e testo (default `it`). |
+| `--packaging-output DIR` | Cartella del packaging (default `<video>_packaging` accanto all'export). |
+
+```powershell
+python main.py process "C:\Videos\videoprova.mp4" --gameplay hearthstone --keep-games wins `
+    --boundary-mode codex --end-policy balanced --output "C:\Videos\prova\videoprova_wins.mp4" --packaging
+```
+
+Ordine con `--packaging`. Le fasi CPU non si sovrappongono mai; le attese verso i provider sì:
+
+1. analisi del job. Le decisioni dei boundary claude/codex sono concorrenti (`max_concurrent` 4) e si
+   sovrappongono all'analisi locale della partita successiva;
+2. analisi locale del packaging (ASR, frame, asset);
+3. export del video **mentre**, in un thread in background, girano il planning dell'agent e la generazione
+   delle immagini (solo attesa di rete);
+4. al termine, render locali delle bozze e report.
+
+Se il packaging fallisce, il video esportato resta valido: il risultato riporta `packaging.status = failed`
+con l'errore, e il comando esce comunque con successo. L'eventuale upload YouTube avviene durante il passo 3,
+quindi una thumbnail generata va caricata in seguito con `--thumbnail`.
+
 TIME accetta secondi (`90`), minuti/secondi (`01:30`) e ore/minuti/secondi (`01:02:30`), anche secondi frazionari. Internamente vengono usati float in secondi. Start deve precedere la fine; end deve superare start. Un piccolo superamento della durata viene limitato con avviso; superamenti maggiori vengono rifiutati. Per un file locale lo stesso cut engine esclude le parti fuori intervallo, senza scaricare o riscrivere il source.
 
 ```powershell
@@ -144,3 +175,8 @@ Override disponibili: `AUTO_CUTTER_CONFIG_DIR`, `AUTO_CUTTER_DATA_DIR`, `AUTO_CU
 | 75 | Job già posseduto da un altro executor. |
 
 Con `--json`, il successo contiene `ok`, `command` e il risultato; una failure contiene `ok:false`, `error.code`, `error.message` e `exit_code`. I messaggi vengono redatti e nessun token o URL di sessione resumable viene incluso nel job o nell'output.
+
+
+## Gruppi per ritratto del giocatore
+
+Il comando `groups PROJECT.autocutter` mostra le classi salvate. `--analyze` confronta localmente ritratti e poteri eroe delle partite già rilevate usando automaticamente `class_refs` incluso nel progetto/app. `--class-refs DIR` resta un override CLI opzionale. `--export hunter` oppure `--export selected`, con `--output-dir DIR`, crea progetti e video indipendenti usando i keep/boundary esistenti. Nessuna detection/ASR aggiuntiva. Supporta `--json` e `--help`. Vedi [HERO_GROUPS.md](HERO_GROUPS.md) per workflow, cache, correzioni manuali, colori e limiti.

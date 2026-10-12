@@ -67,3 +67,8 @@ cert-test/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local visual-validation artifacts (frames, previews and generated packaging reports)
+# Keep source code, tests/fixtures, class_refs/ and application assets versioned.
+/docs/hero_group_validation/
+/docs/packaging_validation/videoprova/v3/

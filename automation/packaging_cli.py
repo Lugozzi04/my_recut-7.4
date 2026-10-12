@@ -32,11 +32,18 @@ def add_parsers(sub: Any, json_option: Any) -> None:
                       help="fast (default): ONE agent call from a compact brief; deep: story, deepening and creative "
                            "calls (2-3 calls).")
     pack.add_argument("--titles", type=int, default=6, help="Number of titles, 5-10 (default 6).")
-    pack.add_argument("--thumbnails", "--variants", dest="thumbnails", type=int, default=3,
-                      help="Number of thumbnail concepts rendered, 3-6 (default 3).")
+    pack.add_argument("--thumbnails", "--variants", dest="thumbnails", type=int, default=4,
+                      help="Number of thumbnail concepts rendered, 3-6 (default 4: one planned portfolio).")
+    pack.add_argument("--thumbnail-engine", choices=("gen", "v3", "v2"), default="gen",
+                      help="gen (default): the agent picks a role and an asset package per variant, then ONE codex "
+                           "image_gen call composes the final thumbnails (local render kept as draft/fallback); "
+                           "v3: local layered scene graphs only (no image model); v2: archetype layouts.")
+    pack.add_argument("--generator-timeout", type=float, default=1500.0,
+                      help="Seconds for the single image-generation call (default 1500).")
     pack.add_argument("--webcam-roi", default="auto",
                       help="Webcam region x,y,w,h normalized 0..1, 'auto' (creator profile or face detection) or 'none'.")
-    pack.add_argument("--creator", help="Creator style profile name (see packaging-style).")
+    pack.add_argument("--creator", "--style-profile", dest="creator",
+                      help="Creator style profile name (see packaging-style).")
     pack.add_argument("--no-style", action="store_true", help="Ignore the creator style memory for this run.")
     pack.add_argument("--games", choices=("auto", "project", "detect", "none"), default="auto",
                       help="Game contexts: project gameplay data (auto), the cached Hearthstone detector (detect), or none.")
@@ -59,6 +66,9 @@ def add_parsers(sub: Any, json_option: Any) -> None:
     pack.add_argument("--agent-budget-usd", type=float,
                       help="Claude only: --max-budget-usd per call. Codex has no cost cap; its tokens are logged.")
     pack.add_argument("--agent-timeout", type=float, default=900.0, help="Seconds per agent call (default 900).")
+    pack.add_argument("--no-interactive", action="store_true",
+                      help="Do not open the thumbnails folder nor ask for edits at the end (default: ask when run "
+                           "from a terminal).")
     json_option(pack)
 
     style = sub.add_parser("packaging-style", help="Manage creator style profiles used by packaging.")
@@ -96,6 +106,10 @@ def add_parsers(sub: Any, json_option: Any) -> None:
     importer.add_argument("name")
     importer.add_argument("--titles", help="UTF-8 text file with one title per line.")
     importer.add_argument("--thumbnails", nargs="*", default=[], help="Image files or folders.")
+    importer.add_argument("--categories", default="",
+                          help="Comma separated story types / treatments the thumbnails illustrate "
+                               "(e.g. unexpected_reaction,card_hero): used to pick visual references.")
+    importer.add_argument("--negative", action="store_true", help="Mark the imported thumbnails as examples to avoid.")
 
     feedback = sub.add_parser("packaging-feedback", help="Select/approve/reject packaging results and update style memory.")
     feedback.add_argument("--output", required=True, help="Folder of a packaging run.")
@@ -108,6 +122,7 @@ def add_parsers(sub: Any, json_option: Any) -> None:
     feedback.add_argument("--reject-thumbnail", nargs="*", default=[])
     feedback.add_argument("--note", help="Free feedback text stored in the style memory.")
     json_option(feedback)
+    add_edit_parser(sub, json_option)
 
 
 def _default_output(source: str) -> Path:
@@ -121,6 +136,8 @@ def execute(args: argparse.Namespace, progress: TextIO) -> dict[str, Any]:
         return _packaging(args, progress)
     if args.command == "packaging-style":
         return _style(args)
+    if args.command == "packaging-edit":
+        return _edit(args, progress)
     return _feedback(args)
 
 
@@ -142,7 +159,8 @@ def _packaging(args: argparse.Namespace, progress: TextIO) -> dict[str, Any]:
         only=args.only, analyze_only=args.analyze_only, use_cache=not args.no_cache, overwrite=args.overwrite,
         max_highlights=args.max_highlights, max_deepen=args.max_deepen, image_format=args.image_format,
         agent_model=args.agent_model, agent_effort=args.agent_effort, agent_timeout=args.agent_timeout,
-        mode=args.mode, agent_max_input=args.agent_max_input, agent_budget_usd=args.agent_budget_usd)
+        mode=args.mode, agent_max_input=args.agent_max_input, agent_budget_usd=args.agent_budget_usd,
+        thumbnail_engine=args.thumbnail_engine, generator_timeout=args.generator_timeout)
 
     def report(stage: str, message: str) -> None:
         print(f"[Packaging:{stage}] {message}", file=progress, flush=True)
@@ -151,7 +169,107 @@ def _packaging(args: argparse.Namespace, progress: TextIO) -> dict[str, Any]:
     from automation.cli import _ctrl_c
     with _ctrl_c(_CtrlC(cancellation)):
         result = PackagingPipeline(settings, progress=report, cancellation=cancellation).run()
-    return {"packaging": result}
+    out: dict[str, Any] = {"packaging": result}
+    if wants_interactive(args) and result.get("status") == "done" and result.get("thumbnails"):
+        human("packaging", out, progress)
+        out["thumbnail_session"] = interactive_session(result["output"], progress)
+    return out
+
+
+def wants_interactive(args: argparse.Namespace) -> bool:
+    return not getattr(args, "no_interactive", False) and not getattr(args, "json", False) and _interactive_terminal()
+
+
+def run_after_process(*, project: str | None, video: str | None, output: str | None, provider: str, language: str,
+                      thumbnail_engine: str, progress: TextIO) -> dict[str, Any]:
+    """Packaging right after `process`/`vod`: the job's project (final keeps + gameplay data) is the input;
+    without a project, the exported video is analysed instead. Default output: next to the export."""
+    from analysis.audio_service import AnalysisCancellation
+    from analysis.packaging.pipeline import PackagingPipeline, PackagingSettings
+
+    if not project and not video:
+        raise ValueError("--packaging needs a finished export (no project or video to analyse).")
+    if output:
+        target = Path(output)
+    elif video:
+        target = Path(video).with_name(f"{Path(video).stem}_packaging")
+    else:
+        target = _default_output(str(project))
+    settings = PackagingSettings(output=str(target), project=project if project else None,
+                                 video=None if project else video, provider=provider, language=language,
+                                 thumbnail_engine=thumbnail_engine, overwrite=True)
+
+    def report(stage: str, message: str) -> None:
+        print(f"[Packaging:{stage}] {message}", file=progress, flush=True)
+
+    cancellation = AnalysisCancellation()
+    from automation.cli import _ctrl_c
+    with _ctrl_c(_CtrlC(cancellation)):
+        return PackagingPipeline(settings, progress=report, cancellation=cancellation).run()
+
+
+class ParallelPackaging:
+    """process --packaging without idle waiting: local analysis first (CPU, before the export), then the
+    provider calls (planning + image generation, pure waiting) in a background thread WHILE the video export
+    renders, then the light local finish (Qt renders, report) on the main thread. CPU-heavy stages never overlap."""
+
+    def __init__(self, *, project: str | None, video: str | None, output: str | None, provider: str, language: str,
+                 thumbnail_engine: str, progress: TextIO) -> None:
+        from analysis.audio_service import AnalysisCancellation
+        from analysis.packaging.pipeline import PackagingPipeline, PackagingSettings
+
+        if not project and not video:
+            raise ValueError("--packaging needs the job project or a video to analyse.")
+        if output:
+            target = Path(output)
+        elif video:
+            target = Path(video).with_name(f"{Path(video).stem}_packaging")
+        else:
+            target = _default_output(str(project))
+        settings = PackagingSettings(output=str(target), project=project if project else None,
+                                     video=None if project else video, provider=provider, language=language,
+                                     thumbnail_engine=thumbnail_engine, overwrite=True)
+        self.progress = progress
+        self.cancellation = AnalysisCancellation()
+        self.pipeline = PackagingPipeline(settings, progress=self._report, cancellation=self.cancellation)
+        self._thread: Any = None
+        self._early: dict[str, Any] | None = None
+
+    def _report(self, stage: str, message: str) -> None:
+        print(f"[Packaging:{stage}] {message}", file=self.progress, flush=True)
+
+    def prepare(self) -> None:
+        self._early = self.pipeline.prepare()
+
+    def start(self) -> None:
+        """Provider calls in the background (no Qt, no heavy CPU)."""
+        import threading
+
+        if self._early is not None:
+            return
+        self._report("parallel", "agent planning and image generation run while the video is exported")
+        self._thread = threading.Thread(target=self.pipeline.plan, name="packaging-plan", daemon=True)
+        self._thread.start()
+
+    def cancel(self) -> None:
+        self.cancellation.cancel()
+
+    def finish(self, check_cancelled: Any = None) -> dict[str, Any]:
+        """Wait for the background provider calls (check_cancelled raises the pipeline's own cancellation)."""
+        if self._early is not None:
+            return self._early
+        if self._thread is not None:
+            if self._thread.is_alive():
+                self._report("parallel", "export done; waiting for the provider")
+            while self._thread.is_alive():
+                self._thread.join(timeout=0.5)
+                if check_cancelled is not None:
+                    try:
+                        check_cancelled()
+                    except BaseException:
+                        self.cancel()
+                        raise
+        return self.pipeline.finish()
 
 
 class _CtrlC:
@@ -209,7 +327,9 @@ def _style(args: argparse.Namespace) -> dict[str, Any]:
             images += sorted(p for p in path.iterdir() if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"))
         elif path.is_file():
             images.append(path)
-    return {"profile": store.import_examples(args.name, titles=titles, thumbnails=images)}
+    categories = [c.strip() for c in args.categories.split(",") if c.strip()]
+    return {"profile": store.import_examples(args.name, titles=titles, thumbnails=images, categories=categories,
+                                             negative=args.negative)}
 
 
 def _feedback(args: argparse.Namespace) -> dict[str, Any]:
@@ -267,6 +387,22 @@ def _feedback(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def human(command: str, result: dict[str, Any], stream: TextIO) -> None:
+    session = result.get("thumbnail_session")
+    if command == "packaging" and session:  # the summary was printed before the interactive session
+        final = next((a["approved"]["final"] for a in session.get("actions", [])[::-1] if "approved" in a), None)
+        print(f"Thumbnail confermata:\n{final}" if final else "Sessione thumbnail chiusa.", file=stream)
+        return
+    if command == "packaging-edit":
+        for key, label in (("edited", "Nuova versione"), ("reverted", "Ripristinata"), ("approved", "Confermata")):
+            if key in result:
+                item = result[key]
+                print(f"{label}: {item['concept_id']} v{item.get('version', 0)} -> "
+                      f"{item.get('current') or item.get('final')}", file=stream)
+        for item in result.get("thumbnails", []):
+            flags = (f" v{item['current_version']}" if item["current_version"] else "") + \
+                    (" [CONFERMATA]" if item["approved"] else "")
+            print(f"  {item['number']}. {item['hook'] or '(senza testo)'} - {item['path']}{flags}", file=stream)
+        return
     if command == "packaging":
         report = result["packaging"]
         print(f"PACKAGING {report['status'].upper()}\nOutput:\n{report['output']}", file=stream)
@@ -286,3 +422,128 @@ def human(command: str, result: dict[str, Any], stream: TextIO) -> None:
             print(f"Agent cost reported by the CLI: ${agent['cost_usd_total']}", file=stream)
         return
     print(json.dumps(result, ensure_ascii=False, indent=2), file=stream)
+
+
+# ---- thumbnail editing (packaging-edit and the interactive loop after a run) ---------------------------------
+def add_edit_parser(sub: Any, json_option: Any) -> None:
+    edit = sub.add_parser("packaging-edit", help="Edit, revert or approve the thumbnails of a packaging run.",
+                          description="Without an action, opens an interactive session on the run's thumbnails.")
+    edit.add_argument("--output", required=True, help="Folder of a packaging run.")
+    edit.add_argument("--concept", help="Thumbnail to edit/revert: number (1-4) or concept id (C2).")
+    edit.add_argument("--request", help="What to change, sent to the image model (e.g. \"testo: BOARD, font squadrato\").")
+    edit.add_argument("--revert", type=int, metavar="VERSION", help="Make an earlier version of --concept current.")
+    edit.add_argument("--approve", metavar="CONCEPT", help="Confirm a thumbnail: thumbnails/thumbnail_final.png.")
+    edit.add_argument("--list", action="store_true", help="List thumbnails, versions and edits.")
+    edit.add_argument("--creator", help="Style profile that stores the approval (default: the run's --creator).")
+    edit.add_argument("--no-open", action="store_true", help="Interactive session without opening the folder.")
+    json_option(edit)
+
+
+def _edit(args: argparse.Namespace, progress: TextIO) -> dict[str, Any]:
+    from analysis.packaging.edit import ThumbnailEditor
+
+    editor = ThumbnailEditor(args.output, progress=lambda m: print(f"[Thumbnails] {m}", file=progress, flush=True))
+    if args.approve:
+        return {"approved": editor.approve(args.approve, creator=args.creator), "thumbnails": editor.concepts()}
+    if args.revert is not None:
+        if not args.concept:
+            raise ValueError("--revert needs --concept")
+        return {"reverted": editor.revert(args.concept, args.revert), "thumbnails": editor.concepts()}
+    if args.request:
+        if not args.concept:
+            raise ValueError("--request needs --concept")
+        return {"edited": editor.edit(args.concept, args.request), "thumbnails": editor.concepts()}
+    if args.list or getattr(args, "json", False) or not _interactive_terminal():
+        return {"thumbnails": editor.concepts()}
+    return interactive_session(args.output, progress, open_folder=not args.no_open, creator=args.creator)
+
+
+def _interactive_terminal() -> bool:
+    import sys
+
+    try:
+        return bool(sys.stdin and sys.stdin.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+def interactive_session(output: str | Path, progress: TextIO, *, open_folder: bool = True, creator: str | None = None,
+                        read_line: Any = None) -> dict[str, Any]:
+    """After a run: open the thumbnails folder and loop until Enter.
+
+      Enter                      exit
+      N                          then type the request for thumbnail N (empty = cancel, ok = approve)
+      N <request>                edit thumbnail N in one line
+      ok N                       approve thumbnail N (thumbnail_final.png)
+      back N V                   make version V of thumbnail N current again
+    """
+    import sys
+
+    from analysis.packaging.edit import EditError, ThumbnailEditor, open_in_file_manager
+
+    def say(text: str = "") -> None:
+        print(text, file=progress, flush=True)
+
+    def ask(prompt: str) -> str:
+        print(prompt, end="", file=progress, flush=True)
+        line = (read_line or sys.stdin.readline)()
+        if line == "":  # EOF: behave like Enter
+            return ""
+        return str(line).strip()
+
+    editor = ThumbnailEditor(output, progress=lambda m: say(f"[Thumbnails] {m}"))
+    if open_folder:
+        open_in_file_manager(editor.thumbs)
+    actions: list[dict[str, Any]] = []
+
+    def show() -> None:
+        say("")
+        say("Thumbnails (" + str(editor.thumbs) + "):")
+        for item in editor.concepts():
+            flags = (f" v{item['current_version']}" if item["current_version"] else "") + \
+                    ("  [CONFERMATA]" if item["approved"] else "")
+            say(f"  {item['number']}. {item['hook'] or '(senza testo)'}  -  {item['title']}{flags}")
+        say("Invio = esci | <numero> = modifica | <numero> <richiesta> | ok <numero> = conferma | "
+            "back <numero> <versione> = ripristina")
+
+    show()
+    while True:
+        line = ask("> ")
+        if not line:
+            break
+        parts = line.split(maxsplit=1)
+        head = parts[0].lower()
+        try:
+            if head in ("ok", "conferma", "approve") and len(parts) == 2:
+                result = editor.approve(parts[1].strip(), creator=creator)
+                actions.append({"approved": result})
+                say(f"Confermata {result['concept_id']} -> {result['final']}")
+                continue
+            if head in ("back", "ripristina") and len(parts) == 2:
+                ref, _, version = parts[1].partition(" ")
+                result = editor.revert(ref, int(version))
+                actions.append({"reverted": result})
+                say(f"{result['concept_id']} riportata alla versione {result['version']}")
+                show()
+                continue
+            item = editor.resolve(head)
+            request = parts[1].strip() if len(parts) == 2 else ask(
+                f"Copertina {item['number']} ({item['hook'] or 'senza testo'}): cosa vuoi cambiare? "
+                "(vuoto = annulla, ok = conferma) ")
+            if not request:
+                continue
+            if request.lower() in ("ok", "conferma"):
+                result = editor.approve(item["number"], creator=creator)
+                actions.append({"approved": result})
+                say(f"Confermata {result['concept_id']} -> {result['final']}")
+                continue
+            say("Invio la richiesta al modello (circa 1-3 minuti)...")
+            result = editor.edit(item["number"], request)
+            actions.append({"edited": result})
+            say(f"Nuova versione v{result['version']} di {result['concept_id']} ({result['runtime_s']} s): {result['current']}")
+            if open_folder:
+                open_in_file_manager(result["current"])
+            show()
+        except (EditError, ValueError) as exc:
+            say(f"Errore: {exc}")
+    return {"thumbnails": editor.concepts(), "actions": actions}

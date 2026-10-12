@@ -325,3 +325,212 @@ def validate_creative(raw: Any, *, n_titles: int, n_concepts: int, highlight_ids
     if problems:
         raise ValueError("; ".join(list(dict.fromkeys(problems))[:15]))
     return raw
+
+
+# ---------------------------------------------------------------------------------------------------
+# V3: portfolio art direction (scene graphs instead of fixed layouts)
+
+PROMPT_VERSION_V3 = "packaging_portfolio_v3"
+
+
+def _concept_v3_schema() -> dict[str, Any]:
+    from .opportunities import STORY_TYPES, TREATMENTS
+    from .scene import SCENE_SCHEMA
+
+    return _obj({
+        "concept_id": {"type": "string"},
+        "opportunity_id": {"type": "string"},
+        "story_type": {"type": "string", "enum": list(STORY_TYPES)},
+        "narrative_angle": {"type": "string"},
+        "message": {"type": "string", "description": "the idea a viewer gets in one second"},
+        "treatment": {"type": "string", "enum": list(TREATMENTS)},
+        "primary_subject": {"type": "string", "description": "asset id of the protagonist"},
+        "supporting": _IDS,
+        "omitted": {"type": "string", "description": "what you deliberately leave out and why"},
+        "mood": {"type": "string"},
+        "title": {"type": "string"},
+        "thumbnail_text": {"type": "string", "description": "2-4 words, or empty string for no text"},
+        "highlight_ids": _IDS,
+        "evidence": {"type": "array", "items": _obj({
+            "claim": {"type": "string"}, "highlight_id": {"type": "string"}, "transcript_ids": _IDS,
+            "asset_ids": _IDS})},
+        "scene": SCENE_SCHEMA,
+        "risk_notes": {"type": "string"},
+    })
+
+
+def portfolio_sections(*, n_concepts: int, n_titles: int, language: str) -> list[str]:
+    """The four tasks of the single art-direction call (shared by FAST v3 and DEEP v3)."""
+    from .opportunities import TREATMENTS
+    from .scene import LAYER_TYPES, MAX_LAYERS
+
+    return [
+        "A. EDITORIAL UNDERSTANDING - what really makes this video worth watching, and which evidence ids support "
+        "each hook. Opportunities below are local hypotheses: confirm, merge, reframe or reject them.",
+        f"B. PORTFOLIO PLANNING - design ONE coherent portfolio of exactly {n_concepts} strategies, not "
+        f"{n_concepts} independent thumbnails. First decide narrative diversity (different moments or different "
+        "readings of a moment, different messages), then visual diversity. Concepts must differ in several of: "
+        "moment/story, message, protagonist, treatment, composition, use of text, assets. Colour, font or one word "
+        "is NOT a difference. With enough material: >= 3 different story angles, >= 3 treatments, no two concepts "
+        "with the same story + protagonist + composition, no shared main frame without an editorial reason. With "
+        "little material, give the same event genuinely different readings; never invent events. Explain choices "
+        "in portfolio_strategy (plan + tradeoffs).",
+        "C. ART DIRECTION per concept - one immediately readable message; one protagonist (face, card, board "
+        "situation or moment) and at most one or two supports; mood; foreground/background relation; text or no "
+        "text; what to omit. Do NOT force a webcam, a card or text into every concept; do not make all concepts "
+        "look like one template; no decorative frames, arrows, glows or badges.",
+        f"D. PRODUCTION - a scene graph per concept using ONLY asset ids from the manifest. Layer types: "
+        f"{', '.join(LAYER_TYPES)}; at most {MAX_LAYERS} layers. Coordinates: x, y = centre in 0..1 of the 1280x720 "
+        "canvas; height = share of canvas height; width = share of canvas width (needed for text, gradient reach, "
+        "shapes, board crops shown as panels). Keep text inside x 0.05-0.95 / y 0.05-0.95 and out of the bottom-right "
+        "corner (YouTube duration badge). visual_hierarchy lists layer ids, protagonist first. Use subject_cutout only "
+        "with webcam_subject assets marked isolated (non-isolated ones: small or omit). card layers use obs_id values "
+        "of your card_observations (O1...) or listed card assets. Treatments: " + ", ".join(TREATMENTS) + ".",
+        f"TITLES: exactly {n_titles} YouTube titles in {language}: descriptive, natural, specific, <= 70 characters "
+        "preferred (never > 100), varied in style; each linked to a concept; titles and thumbnail text complement each "
+        "other (never the same words). Thumbnail text: 2-4 words, or empty; spoken and natural, no generic slogans.",
+        "EVIDENCE RULES: no invented cards, results, numbers, combos or quotes; facial expressions are not proof of "
+        "emotions; no CTR or view promises; clarity at small size first.",
+    ]
+
+
+def preset_examples() -> str:
+    """Compact scene examples (presets) so the model sees valid structures; they are starting points only."""
+    import json as _json
+
+    from .scene import preset_board, preset_reaction
+
+    reaction = preset_reaction(background="F010", subject="S004", text="Quale tengo?", element="O1", side="right")
+    board = preset_board(background="F021", text=None, region="B003")
+    slim = []
+    for scene in (reaction, board):
+        compact = {**scene, "layers": [{k: v for k, v in layer.items() if v not in (None, "none", 0, 0.0) or
+                                        k in ("id", "type", "x", "y", "height", "z")} for layer in scene["layers"]]}
+        slim.append(_json.dumps(compact, ensure_ascii=False))
+    return "\n".join(slim)
+
+
+def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highlight_ids: set[str],
+                              assets: Mapping[str, Mapping[str, Any]], transcript: Mapping[str, str],
+                              games: Mapping[str, Mapping[str, Any]], highlight_games: Mapping[str, str | None],
+                              supported_numbers: set[str], opportunities: Mapping[str, Mapping[str, Any]],
+                              available_story_types: int, available_treatments: int) -> dict[str, Any]:
+    """Validate concepts (scene graphs + evidence), titles and portfolio diversity; ValueError lists problems."""
+    from .portfolio import evaluate_portfolio
+    from .scene import validate_scene
+
+    if not isinstance(raw, dict):
+        raise ValueError("answer must be a JSON object")
+    problems: list[str] = []
+    observations = {str(o.get("obs_id")): o for o in raw.get("card_observations") or []}
+    lookup: dict[str, Mapping[str, Any]] = dict(assets)
+    for obs_id, obs in observations.items():  # card readings become (virtual) card assets for validation
+        legible = obs.get("legibility") == "clear" and bool(obs.get("name"))
+        lookup[obs_id] = {"type": "card_crop", "parent_id": obs.get("frame_id"),
+                          "provenance": {"status": "legible" if legible else "uncertain", "name": obs.get("name")}}
+    uncertain = [str(o.get("name")) for o in observations.values()
+                 if o.get("name") and not (o.get("legibility") == "clear")]
+    concepts = raw.get("concepts") or []
+    titles = raw.get("titles") or []
+    if len(concepts) != n_concepts:
+        problems.append(f"expected exactly {n_concepts} concepts, got {len(concepts)}")
+    if len(titles) != n_titles:
+        problems.append(f"expected exactly {n_titles} titles, got {len(titles)}")
+    concept_ids = [c.get("concept_id") for c in concepts]
+    if len(set(concept_ids)) != len(concept_ids):
+        problems.append("concept_id values must be unique")
+
+    def check_text(label: str, text: str, cited: set[str]) -> None:
+        if PERFORMANCE_CLAIMS.search(text):
+            problems.append(f"{label}: performance/CTR promises are not allowed")
+        unsupported = _numbers(text) - supported_numbers - cited
+        if unsupported:
+            problems.append(f"{label}: numbers {sorted(unsupported)} are not supported by cited evidence")
+        for name in uncertain:
+            if len(name) >= 4 and name.lower() in text.lower():
+                problems.append(f"{label}: '{name}' is an uncertain card reading and cannot be named")
+
+    for concept in concepts:
+        cid = concept.get("concept_id")
+        if concept.get("opportunity_id") not in opportunities:
+            problems.append(f"{cid}: opportunity_id must be a listed opportunity")
+        hl = concept.get("highlight_ids") or []
+        if not hl or any(h not in highlight_ids for h in hl):
+            problems.append(f"{cid}: highlight_ids must reference listed highlights")
+        scene = concept.get("scene")
+        problems += validate_scene(scene, lookup, where=f"{cid}.scene")
+        if concept.get("primary_subject") not in lookup:
+            problems.append(f"{cid}: primary_subject must be an asset id")
+        elif isinstance(scene, Mapping):
+            used = {(scene.get("background") or {}).get("asset_id")} | {layer.get("asset_id") for layer in
+                                                                        scene.get("layers") or [] if isinstance(layer, Mapping)}
+            if concept.get("primary_subject") not in used:
+                problems.append(f"{cid}: primary_subject {concept.get('primary_subject')} is not drawn in its scene")
+            for layer in scene.get("layers") or []:
+                if isinstance(layer, Mapping) and layer.get("type") == "card":
+                    info = lookup.get(str(layer.get("asset_id"))) or {}
+                    if (info.get("provenance") or {}).get("status") == "uncertain" and \
+                            layer.get("id") in (scene.get("visual_hierarchy") or [])[:1]:
+                        problems.append(f"{cid}: an uncertain card reading cannot be the protagonist")
+        text = " ".join(str(concept.get("thumbnail_text") or "").split())
+        if text and (len(text.split()) > THUMB_TEXT_MAX_WORDS or len(text) > THUMB_TEXT_MAX_CHARS):
+            problems.append(f"{cid}: thumbnail_text must have at most {THUMB_TEXT_MAX_WORDS} words and "
+                            f"{THUMB_TEXT_MAX_CHARS} characters (or be empty)")
+        if isinstance(scene, Mapping):
+            layer_texts = [" ".join(str(layer.get("text") or "").split()) for layer in scene.get("layers") or []
+                           if isinstance(layer, Mapping) and layer.get("type") == "text"]
+            if text and text not in layer_texts:
+                problems.append(f"{cid}: thumbnail_text must appear as a text layer of its scene")
+            if not text and layer_texts:
+                problems.append(f"{cid}: text layers present but thumbnail_text is empty")
+        words = _words(text)
+        if len(words) >= 2 and " ".join(words) in " ".join(_words(str(concept.get("title", "")))):
+            problems.append(f"{cid}: thumbnail_text repeats the title; it must add something")
+        cited: set[str] = set()
+        for item in concept.get("evidence") or []:
+            if item.get("highlight_id") not in highlight_ids:
+                problems.append(f"{cid}: evidence cites unknown highlight {item.get('highlight_id')}")
+            bad = [t for t in item.get("transcript_ids") or [] if t not in transcript]
+            bad += [a for a in item.get("asset_ids") or [] if a not in lookup]
+            if bad:
+                problems.append(f"{cid}: evidence cites unknown ids {bad[:4]}")
+            cited |= {n for t in item.get("transcript_ids") or [] for n in _numbers(transcript.get(t, ""))}
+        if not concept.get("evidence"):
+            problems.append(f"{cid}: evidence must not be empty")
+        check_text(f"{cid} title", str(concept.get("title", "")), cited)
+        check_text(f"{cid} thumbnail_text", text, cited)
+        badge_words = {"WIN", "VITTORIA", "VINTA"}
+        if any(w.upper() in badge_words for w in text.split()):
+            results = {games.get(str(highlight_games.get(h)), {}).get("result") for h in hl}
+            if "WIN" not in results:
+                problems.append(f"{cid}: claims a win for a highlight whose game is not a WIN")
+    title_ids = [t.get("title_id") for t in titles]
+    seen: set[str] = set()
+    for t in titles:
+        tid, text = t.get("title_id"), " ".join(str(t.get("title", "")).split())
+        if not TITLE_MIN_CHARS <= len(text) <= TITLE_MAX_CHARS:
+            problems.append(f"{tid}: title length must be {TITLE_MIN_CHARS}-{TITLE_MAX_CHARS} characters")
+        letters = [c for c in text if c.isalpha()]
+        if letters and sum(c.isupper() for c in letters) / len(letters) > 0.6:
+            problems.append(f"{tid}: avoid ALL-CAPS titles")
+        if text.lower() in seen:
+            problems.append(f"{tid}: duplicate title")
+        seen.add(text.lower())
+        if t.get("concept_id") not in concept_ids:
+            problems.append(f"{tid}: concept_id must reference a concept")
+        if any(h not in highlight_ids for h in t.get("highlight_ids") or []) or not t.get("highlight_ids"):
+            problems.append(f"{tid}: highlight_ids must reference listed highlights")
+        check_text(str(tid), text, {n for x in t.get("transcript_ids") or [] for n in _numbers(transcript.get(x, ""))})
+    if raw.get("preferred_title_id") not in title_ids:
+        problems.append("preferred_title_id must be one of the titles")
+    if raw.get("preferred_concept_id") not in concept_ids:
+        problems.append("preferred_concept_id must be one of the concepts")
+    if not problems:
+        diversity = evaluate_portfolio(concepts, lookup, available_story_types=available_story_types,
+                                       available_treatments=available_treatments,
+                                       available_opportunities=len(opportunities))
+        for finding in diversity.blocking:
+            problems.append(f"portfolio {finding.code} ({', '.join(finding.concepts)}): {finding.detail}")
+    if problems:
+        raise ValueError("; ".join(list(dict.fromkeys(problems))[:15]))
+    return raw

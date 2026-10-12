@@ -90,6 +90,7 @@ from .gameplay_editing_ui import (
     GameplayEditWorker,
     complement as gameplay_complement,
     island_metadata,
+    remove_gameplay_island,
     resize_island,
     to_segment_domain,
 )
@@ -523,9 +524,11 @@ class MainWindow(QMainWindow):
         # No widget-level stylesheets here: a selector-less sheet on a page cascades to every child
         # and overrides the themed buttons/segmented controls. Pages simply inherit the panel colour.
         self.page_analysis = QWidget()
+        self.page_thumbnails = QWidget()
         self.pages.addWidget(self.page_main)
         self.pages.addWidget(self.page_export)
         self.pages.addWidget(self.page_analysis)
+        self.pages.addWidget(self.page_thumbnails)
 
         self.seg_main = QToolButton()
         self.seg_main.setText("Edit")
@@ -538,6 +541,10 @@ class MainWindow(QMainWindow):
         self.seg_analysis = QToolButton()
         self.seg_analysis.setText("Analysis")
         self.seg_analysis.setCheckable(True)
+
+        self.seg_thumbnails = QToolButton()
+        self.seg_thumbnails.setText("Thumbnails")
+        self.seg_thumbnails.setCheckable(True)
 
         # -----------------------------
         # Main page widgets (required by layout_main_page)
@@ -1046,6 +1053,7 @@ class MainWindow(QMainWindow):
         self.seg_main.clicked.connect(lambda: self._switch_page(0))
         self.seg_export.clicked.connect(lambda: self._switch_page(1))
         self.seg_analysis.clicked.connect(lambda: self._switch_page(2))
+        self.seg_thumbnails.clicked.connect(lambda: self._switch_page(3))
         self.timeline.selectionChanged.connect(self._on_timeline_selection_changed)
         self.timeline.cutResizeRequested.connect(self._on_cut_resize_requested)
         self.timeline.viewChanged.connect(lambda _i: self._push_zoom_to_web())
@@ -3263,6 +3271,8 @@ class MainWindow(QMainWindow):
         t.gameplay_mode = str(getattr(src, "gameplay_mode", "") or "")
         t.gameplay_detected_keeps = self._clone_segments_list(getattr(src, "gameplay_detected_keeps", []))
         t.gameplay_islands = copy.deepcopy(list(getattr(src, "gameplay_islands", []) or []))
+        t.gameplay_report = copy.deepcopy(getattr(src, "gameplay_report", {}) or {})
+        t.gameplay_grouping = copy.deepcopy(getattr(src, "gameplay_grouping", {}) or {})
         t.ai_speech = self._clone_segments_list(getattr(src, "ai_speech", []))
         t.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
@@ -3550,6 +3560,8 @@ class MainWindow(QMainWindow):
         dup.gameplay_mode = str(getattr(src, "gameplay_mode", "") or "")
         dup.gameplay_detected_keeps = self._clone_segments_list(getattr(src, "gameplay_detected_keeps", []))
         dup.gameplay_islands = copy.deepcopy(list(getattr(src, "gameplay_islands", []) or []))
+        dup.gameplay_report = copy.deepcopy(getattr(src, "gameplay_report", {}) or {})
+        dup.gameplay_grouping = copy.deepcopy(getattr(src, "gameplay_grouping", {}) or {})
         dup.ai_speech = self._clone_segments_list(getattr(src, "ai_speech", []))
         dup.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
@@ -3760,6 +3772,8 @@ class MainWindow(QMainWindow):
             self._ai_processing = False
             self._video_color_cursor = 0
             self.project = Project.create_default("Untitled")
+            if hasattr(self, "thumbnails"):
+                self.thumbnails.restore_outputs()
             self._project_file_path = None
             self._mark_project_dirty(False)
             self._offline_project_items = []
@@ -3881,6 +3895,7 @@ class MainWindow(QMainWindow):
         self._reset_workspace(confirm=True)
 
     def _refresh_timeline_tracks(self, reset_view: bool = False) -> None:
+        from analysis.hero_groups.labels import timeline_islands
         tracks: list[dict] = []
         self._timeline_track_map = []
 
@@ -3965,7 +3980,10 @@ class MainWindow(QMainWindow):
                                 "gameplay_keeps": list(getattr(t, "gameplay_keeps", None) or [])
                                 if getattr(t, "gameplay_cuts_enabled", False) else [],
                                 "restored_cuts": merge_overlaps(list(getattr(t, "suppressed_cuts", None) or [])),
-                                "gameplay_islands": list(getattr(t, "gameplay_islands", None) or []),
+                                "gameplay_islands": timeline_islands(
+                                     list(getattr(t, "gameplay_islands", None) or []),
+                                     getattr(t, "gameplay_grouping", {}) or {},
+                                 ),
                                 "cut_kinds": classify_cuts(
                                     list(t.cuts or []), getattr(t, "manual_cuts", None), self._enabled_gameplay_cuts(t)
                                 ),
@@ -5033,6 +5051,17 @@ class MainWindow(QMainWindow):
     @Slot(str)
 
     def closeEvent(self, event):
+        groups = getattr(self, "hero_groups_panel", None)
+        if groups is not None and groups.running():
+            groups.cancel_work()
+            event.ignore()
+            QTimer.singleShot(250, self.close)
+            return
+        thumbnails = getattr(self, "thumbnails", None)
+        if thumbnails is not None and thumbnails.cancel_for_close():
+            event.ignore()
+            QTimer.singleShot(250, self.close)
+            return
         self._app_log(
             "app_close_begin",
             input_loaded=bool(self.input_path),
@@ -6720,6 +6749,9 @@ class MainWindow(QMainWindow):
             "version": PROJECT_VERSION,
             "saved_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "project_name": str(getattr(self.project, "name", "Untitled") or "Untitled"),
+            "project_id": str(self.project.id),
+            "hero_group_output": copy.deepcopy(getattr(self.project, "hero_group_output", {}) or {}),
+            "packaging_outputs": copy.deepcopy(getattr(self.project, "packaging_outputs", []) or []),
             "global": {
                 "analysis_mode": str(getattr(self, "analysis_mode", "classic") or "classic"),
                 "active_track_index": int(getattr(self, "_active_track_index", 0) or 0),
@@ -6906,6 +6938,9 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, f"{source_label} load failed", str(exc))
             return False
         items = raw["tracks"]
+        if isinstance(raw.get("gameplay"), dict):
+            for item in items:
+                item.setdefault("gameplay_report", copy.deepcopy(raw["gameplay"]))
 
         valid_items, missing_items = resolve_project_items(items, source_path)
         if missing_items and source_path is not None:
@@ -6998,6 +7033,11 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
+        self.project.id = str(raw.get("project_id") or self.project.id)
+        self.project.hero_group_output = copy.deepcopy(raw.get("hero_group_output") or {})
+        self.project.packaging_outputs = copy.deepcopy(raw.get("packaging_outputs") or [])
+        if hasattr(self, "thumbnails"):
+            self.thumbnails.restore_outputs()
         self._apply_project_global_state(raw.get("global", {}))
         self._mark_project_dirty(False)
         self._web_push_full_state()
@@ -7104,6 +7144,8 @@ class MainWindow(QMainWindow):
             "gameplay_mode",
             "gameplay_detected_keeps",
             "gameplay_islands",
+            "gameplay_report",
+            "gameplay_grouping",
             "segment_source_in",
             "segment_source_out",
             "segment_group_id",
@@ -7256,6 +7298,8 @@ class MainWindow(QMainWindow):
             track.ai_suppressed_cuts = []
             track.ai_cuts_enabled = False
 
+        track.gameplay_report = copy.deepcopy(restore_state.get("gameplay_report", {}) or {})
+        track.gameplay_grouping = copy.deepcopy(restore_state.get("gameplay_grouping", {}) or {})
         try:
             track.gameplay_cuts = self._segments_from_payload(restore_state.get("gameplay_cuts"))
             track.gameplay_cuts_enabled = bool(restore_state.get("gameplay_cuts_enabled", bool(track.gameplay_cuts)))
@@ -7450,6 +7494,8 @@ class MainWindow(QMainWindow):
                 if isinstance(cfg, dict) and cfg:
                     item["cfg"] = self._normalize_preset_cfg(dict(cfg))
             if include_cuts:
+                item["gameplay_report"] = copy.deepcopy(getattr(t, "gameplay_report", {}) or {})
+                item["gameplay_grouping"] = copy.deepcopy(getattr(t, "gameplay_grouping", {}) or {})
                 if t is self._get_active_track():
                     try:
                         self._save_workspace_for_mode(t)
@@ -7831,6 +7877,8 @@ class MainWindow(QMainWindow):
         self.seg_export.setChecked(idx == 1)
         if getattr(self, "seg_analysis", None) is not None:
             self.seg_analysis.setChecked(idx == 2)
+        if getattr(self, "seg_thumbnails", None) is not None:
+            self.seg_thumbnails.setChecked(idx == 3)
         if idx == 1:
             try:
                 self._refresh_export_summary()
@@ -8712,6 +8760,9 @@ class MainWindow(QMainWindow):
         )
 
     def _export_in_progress(self) -> bool:
+        groups = getattr(self, "hero_groups_panel", None)
+        if groups is not None and groups.running() and groups.worker is not None and groups.worker.output_dir:
+            return True
         try:
             th = getattr(self, "ex_thread", None)
             if th is not None and th.isRunning():
@@ -10782,7 +10833,7 @@ class MainWindow(QMainWindow):
         ("Project", "Ctrl+S", "Save project"),
         ("Project", "Ctrl+Shift+S", "Save project as"),
         ("Project", "Ctrl+E", "Export video"),
-        ("Project", "Alt+1 / Alt+2 / Alt+3", "Inspector: Edit / Analysis / Export"),
+        ("Project", "Alt+1 / Alt+2 / Alt+3 / Alt+4", "Inspector: Edit / Analysis / Export / Thumbnails"),
         ("Help", "F1", "This list"),
     ]
 
@@ -10827,6 +10878,7 @@ class MainWindow(QMainWindow):
         sc("Alt+1", lambda: self._switch_page(0))
         sc("Alt+2", lambda: self._switch_page(2))
         sc("Alt+3", lambda: self._switch_page(1))
+        sc("Alt+4", lambda: self._switch_page(3))
         sc("F1", self._show_shortcuts)
         # Arrow nudges only while the timeline or the viewer has focus, so they never fight with
         # sliders/spin boxes in the inspector.
@@ -11300,6 +11352,9 @@ class MainWindow(QMainWindow):
         self._start_gameplay_edit()
 
     def _start_gameplay_edit(self) -> None:
+        if hasattr(self, "hero_groups_panel") and self.hero_groups_panel.running():
+            self.statusBar().showMessage("Wait for portrait grouping/export to finish.", 2500)
+            return
         if not self.input_path or not self._tracks:
             self.statusBar().showMessage("Import a video first.", 2500)
             return
@@ -11338,12 +11393,17 @@ class MainWindow(QMainWindow):
             self._finish_gameplay_edit()
             return
         video = queue.pop(0)
-        worker = GameplayEditWorker(video, self._gameplay_mode)
+        previous_grouping = next((getattr(t, "gameplay_grouping", {}) for t in self._tracks
+                                  if self._same_local_path(getattr(t, "path", None), video)), {})
+        worker = GameplayEditWorker(video, self._gameplay_mode,
+                                    str(self.gameplay_end_policy_combo.currentData() or "balanced"),
+                                    previous_grouping=previous_grouping)
         thread = QThread(self)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
         # bound methods of the window: Qt delivers these on the GUI thread
         worker.progress.connect(self._on_gameplay_progress, Qt.QueuedConnection)
+        worker.phase.connect(self.lbl_gameplay_status.setText, Qt.QueuedConnection)
         worker.finished.connect(self._on_gameplay_source_done, Qt.QueuedConnection)
         worker.failed.connect(self._on_gameplay_source_failed, Qt.QueuedConnection)
         worker.finished.connect(thread.quit)
@@ -11370,6 +11430,8 @@ class MainWindow(QMainWindow):
     def _on_gameplay_source_done(self, payload: object) -> None:
         if isinstance(payload, dict):
             self._gameplay_results.append(payload)
+            if payload.get("grouping_error"):
+                self._gameplay_errors.append(str(payload["grouping_error"]))
 
     def _on_gameplay_source_failed(self, message: str) -> None:
         if message == "cancelled":
@@ -11393,6 +11455,18 @@ class MainWindow(QMainWindow):
             self.lbl_gameplay_status.setText("Cancelled. Nothing was changed.")
             self._ui_set_state("Cancelled")
             return
+        # Keep all detected games (also LOSS/partial) for local portrait grouping.
+        for result in results:
+            for track in self._tracks:
+                if self._same_local_path(getattr(track, "path", None), result.get("video")):
+                    track.gameplay_report = copy.deepcopy(result.get("report") or {})
+                    if "grouping" in result:
+                        track.gameplay_grouping = copy.deepcopy(result["grouping"])
+        if results:
+            self._mark_project_dirty()
+            panel = getattr(self, "hero_groups_panel", None)
+            if panel is not None:
+                panel.refresh()
         usable = [r for r in results if r.get("keeps")]
         if not usable:
             reason = "; ".join(errors) if errors else "no complete WIN was found, so nothing would be kept"
@@ -11420,7 +11494,7 @@ class MainWindow(QMainWindow):
         kept = sum(len(self._tracks[i].gameplay_keeps) for i in affected)
         note = f" ({'; '.join(errors)})" if errors else ""
         self.lbl_gameplay_status.setText(f"✓ {kept} complete WIN{'s' if kept != 1 else ''} kept{note}. "
-                                         "Select a green island on the VIDEO lane to inspect or adjust it.")
+                                         "Select a WIN island on the VIDEO lane to inspect or adjust it.")
         self.statusBar().showMessage(f"Gameplay edit applied: {kept} WIN island{'s' if kept != 1 else ''} kept "
                                      "· Ctrl+Z to undo", 5000)
         self._app_log("gameplay_edit_applied", islands=kept, tracks=len(affected))
@@ -11477,6 +11551,18 @@ class MainWindow(QMainWindow):
             f"WIN island now {fmt_hms(self._clip_timeline_in(ts) + k.start)} – "
             f"{fmt_hms(self._clip_timeline_in(ts) + k.end)} · Ctrl+Z to undo", 3500)
 
+    def _remove_gameplay_island(self, ts: int, index: int) -> None:
+        if not 0 <= ts < len(self._tracks) or not 0 <= index < len(self._tracks[ts].gameplay_keeps):
+            return
+        self._push_undo_state(kind="timeline")
+        affected = remove_gameplay_island(self._tracks, ts, index)
+        self.timeline.setSelectedIsland(None)
+        self._recompute_gameplay_tracks(affected)
+        self._refresh_gameplay_panel()
+        self._refresh_cut_panels()
+        self.lbl_gameplay_status.setText("WIN removed from the edit · Ctrl+Z to undo.")
+        self.statusBar().showMessage("WIN removed. Remaining games keep their chronological order · Ctrl+Z to undo", 4000)
+
     def _clip_timeline_in(self, ts: int) -> float:
         try:
             clip = self._audio_clip_for_track(int(ts))
@@ -11510,6 +11596,8 @@ class MainWindow(QMainWindow):
             t = self._tracks[i]
             _a, _b, seg_len = self._segment_bounds(t)
             t.gameplay_keeps = self._clone_segments_list(t.gameplay_detected_keeps)
+            if t.gameplay_report.get("keep_islands"):
+                t.gameplay_islands = island_metadata(t.gameplay_report, _a, _b)
             t.gameplay_cuts = gameplay_complement(t.gameplay_keeps, seg_len)
         self._recompute_gameplay_tracks(affected)
 
@@ -11520,6 +11608,8 @@ class MainWindow(QMainWindow):
             self._seek_to(self._clip_timeline_in(ts) + float(track.gameplay_keeps[i].start))
 
     def _refresh_gameplay_panel(self) -> None:
+        if hasattr(self, "hero_groups_panel"):
+            self.hero_groups_panel.refresh()
         if not hasattr(self, "chk_gameplay_apply"):
             return
         has_keeps = any(getattr(t, "gameplay_keeps", None) for t in self._tracks)
@@ -11729,6 +11819,12 @@ class MainWindow(QMainWindow):
             act.setEnabled(bool(enabled))
             actions[act] = fn
             return act
+
+        island = cut_meta.get("island") if isinstance(cut_meta, dict) else None
+        if isinstance(island, dict) and island.get("track_state_idx") is not None:
+            add("Remove this WIN from the edit", lambda ts=int(island["track_state_idx"]), i=int(island["index"]):
+                self._remove_gameplay_island(ts, i))
+            menu.addSeparator()
 
         if can_edit_cuts:
             if cut_idx is None and isinstance(self.cuts, list):
@@ -12880,6 +12976,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.ex_thread = QThread(self)
+            self._thumb_export_target = str(out_path)  # titles/thumbnails page: last exported video
             self.ex_worker = ExportWorker(
                 ffmpeg_path=self.ffmpeg_path,
                 input_path=self.input_path,
@@ -13374,6 +13471,12 @@ class MainWindow(QMainWindow):
             self._retire_export_refs()
             return
         self._app_log("export_done")
+        target = getattr(self, "_thumb_export_target", None)
+        if target and getattr(self, "thumbnails", None) is not None:
+            try:
+                self.thumbnails.set_last_export(str(target))
+            except Exception:
+                pass
         self.export_progress.setValue(100)
         self.export_progress.setFormat("100%")
         self.export_status.setText("Export complete.")

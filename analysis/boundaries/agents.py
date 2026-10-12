@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from typing import Any
 
@@ -36,6 +37,10 @@ from .shortlist import shortlist
 # v3: content ownership for KEPT games (keep-games wins: only complete WIN islands survive).
 # v2 (removal semantics) and v1 decisions are never reused: the version is part of the cache key.
 PROMPT_VERSION = "boundary_agent_prompt_v3"
+# END of a KEPT game: editorial relevance labels + tight/balanced/extended (end_policy.py). Only these
+# contexts change meaning; START and removed games keep v3 and their cached decisions.
+END_PROMPT_VERSION = "boundary_agent_prompt_v4_end"
+_LOG_LOCK = threading.Lock()  # decisions may run concurrently (gameplay_editing): one JSONL line each
 
 LABELS = ("PREVIOUS_CONTENT", "CURRENT_GAME_SPECIFIC", "GENERAL_COMMENTARY", "NEXT_CONTENT", "UNCERTAIN")
 
@@ -51,6 +56,19 @@ RESPONSE_SCHEMA: dict[str, Any] = {
     "required": ["segment_labels", "selected_candidate", "confidence", "reason"],
     "additionalProperties": False,
 }
+
+def _schema(labels: tuple[str, ...]) -> dict[str, Any]:
+    return {**RESPONSE_SCHEMA, "properties": {**RESPONSE_SCHEMA["properties"], "segment_labels": {
+        **RESPONSE_SCHEMA["properties"]["segment_labels"], "items": {"type": "string", "enum": list(labels)}}}}
+
+
+def is_kept_end(context: BoundaryContext) -> bool:
+    return context.boundary_type == BoundaryType.END and context.game.disposition == GameDisposition.KEEP
+
+
+def prompt_version(context: BoundaryContext) -> str:
+    return END_PROMPT_VERSION if is_kept_end(context) else PROMPT_VERSION
+
 
 SYSTEM_PROMPT = (
     "You assist a video editor that removes some gameplay matches from a long livestream recording "
@@ -160,25 +178,55 @@ def _segment_id(context: BoundaryContext, start: float | None) -> str:
     return "-"
 
 
+KEPT_END_GOALS = [
+    "THIS game is KEPT and was WON. The final video keeps this game up to this END cut; everything after END is "
+    "removed. The video is a YouTube edit: the viewer wants the game and the reaction to it, not the stream.",
+    "Decide in this order of priority: (1) relevance of each sentence for the YouTube video; (2) whether it "
+    "belongs to the game that just ended; (3) how much useless content would be kept; (4) how natural the cut "
+    "point is. Sentence completeness never outweighs relevance.",
+    "Step 1: label every transcript segment with the labels below. Step 2: choose the candidate right after the "
+    "last relevant segment. Keep the reaction to the win; keep a recap or strategy point only when it is "
+    "specific to THIS game and adds value; cut chat small talk, personal or unrelated talk, thanks, generic "
+    "deck/stream talk and the transition to the next game - even when it is mixed with relevant sentences later.",
+    "If irrelevant talk starts and goes on, it is better to cut in the middle of that sentence (a WORD_GAP "
+    "candidate) than to keep 15-30 more seconds of it. Prefer a pause or a sentence end when one is close.",
+    "Never cut the reaction to the win. Keep at least a moment of the result screen.",
+]
+KEPT_END_COMMON = [
+    "Only candidates at or after the result anchor are listed. WORD_GAP candidates are pauses between two words "
+    "inside speech.",
+    "The ASR transcript may contain recognition errors; label garbled text UNCERTAIN.",
+]
+
+
 def build_prompt(context: BoundaryContext, *, indices: list[int] | None = None, max_transcript_segments: int = 80,
-                 max_text_chars: int = 500) -> str:
+                 max_text_chars: int = 500, end_policy: str | None = None) -> str:
     """Versioned prompt: anchors, neighbours, full window transcript, evidence, shortlisted candidates."""
+    from .end_policy import LABEL_GUIDE as END_LABEL_GUIDE
+    from .end_policy import MODE_PROMPT, mode as end_mode
+
     c = context
+    kept_end = is_kept_end(c)
     shown = indices if indices is not None else shortlist(c)
     anchor = float(c.settings.get("anchor", c.window.start))
     anchor_kind = str(c.settings.get("anchor_kind", "game_start" if c.boundary_type == BoundaryType.START else "game_end"))
     terminal = c.game.termination == GameTermination.IN_PROGRESS_AT_EOF
     mode = "KEEP" if c.game.disposition == GameDisposition.KEEP else "REMOVE"
     fate = "KEPT in the final video" if mode == "KEEP" else "REMOVED from the final video"
-    lines = [f"PROMPT_VERSION: {PROMPT_VERSION}",
+    lines = [f"PROMPT_VERSION: {prompt_version(c)}",
              f"BOUNDARY: {c.boundary_type.value} of game {c.game.index}, which is {fate} "
              f"(result {c.game.result}, "
              f"completeness {c.game.termination.value}"
              f"{', the video ends while it is still being played' if terminal else ''}). Policy decision: {c.game.reason}",
              f"ANCHOR: {anchor:.2f}s = {ANCHOR_KINDS.get(anchor_kind, anchor_kind)}. Offsets below are relative to it.",
              "", "TASK:"]
-    lines += [f"- {goal}" for goal in GOALS[(mode, c.boundary_type)] + COMMON_GOALS]
-    lines += ["", "SEGMENT LABELS (label every transcript segment first):"] + [f"- {item}" for item in LABEL_GUIDE]
+    if kept_end:
+        lines += [f"- {goal}" for goal in KEPT_END_GOALS + [MODE_PROMPT[end_mode(end_policy).name]] + KEPT_END_COMMON]
+        lines += ["", "SEGMENT LABELS (label every transcript segment first; speech before the result is the game "
+                      "itself - label it GAME_SPECIFIC_RECAP):"] + [f"- {item}" for item in END_LABEL_GUIDE]
+    else:
+        lines += [f"- {goal}" for goal in GOALS[(mode, c.boundary_type)] + COMMON_GOALS]
+        lines += ["", "SEGMENT LABELS (label every transcript segment first):"] + [f"- {item}" for item in LABEL_GUIDE]
     a = c.anchors
     lines += ["", "TIMELINE (seconds; offsets relative to the anchor):",
               f"- this game start (VS): {_rel(a.get('game_start'), anchor)}",
@@ -228,6 +276,25 @@ def build_prompt(context: BoundaryContext, *, indices: list[int] | None = None, 
 def context_digest(context: BoundaryContext) -> str:
     canonical = json.dumps(context.to_mapping(), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def apply_end_policy(context: BoundaryContext, decision: BoundaryDecision, policy: str | None,
+                     choose: Any = None) -> BoundaryDecision:
+    """Deterministic END policy over the agent's own segment labels (kept games only); see end_policy.py."""
+    from .end_policy import choose_end
+    from .shortlist import eligible
+
+    labels = list(decision.metadata.get("segment_labels") or [])
+    if not labels:
+        return decision
+    index, trace = (choose or choose_end)(context, labels, decision.candidate_index, eligible(context), policy)
+    meta = {**decision.metadata, "end_policy_trace": trace}
+    if index is None or index == decision.candidate_index:
+        return replace(decision, metadata=meta)
+    detail = (f"{decision.detail} | end policy {trace.get('mode')}: moved to #{index} "
+              f"(relevant speech ends {trace.get('target')}, stopped by {trace.get('stopped_by')})")
+    return replace(decision, timestamp=context.candidates[index].timestamp, candidate_index=index,
+                   detail=detail[:500], metadata=meta)
 
 
 class AgentCallError(RuntimeError):
@@ -311,12 +378,14 @@ class AgentCliResolver:
         raise NotImplementedError
 
     # ---- shared flow ---------------------------------------------------------------------------
-    def cache_key(self, digest: str) -> str:
-        value = {"context": digest, "resolver": self.name, "prompt_version": PROMPT_VERSION,
-                 "model": self.options.model, "effort": self.options.effort}
+    def cache_key(self, digest: str, version: str | None = None, end_policy: str | None = None) -> str:
+        value: dict[str, Any] = {"context": digest, "resolver": self.name, "prompt_version": version or PROMPT_VERSION,
+                                 "model": self.options.model, "effort": self.options.effort}
+        if end_policy is not None:  # only kept-END prompts depend on the editorial mode
+            value["end_policy"] = end_policy
         return hashlib.sha256(json.dumps(value, sort_keys=True).encode("utf-8")).hexdigest()
 
-    def call(self, prompt: str) -> tuple[Any, dict[str, Any]]:
+    def call(self, prompt: str, schema: dict[str, Any] | None = None) -> tuple[Any, dict[str, Any]]:
         executable = self.locate()
         if executable is None:
             raise AgentCallError("cli_missing", f"'{self.executable_names[0]}' not found (set {self.env_var})")
@@ -325,31 +394,39 @@ class AgentCliResolver:
             workdir = root / "empty"
             workdir.mkdir()
             schema_path, output_path = root / "schema.json", root / "answer.json"
-            schema_path.write_text(json.dumps(RESPONSE_SCHEMA), encoding="utf-8")
+            schema_path.write_text(json.dumps(schema or RESPONSE_SCHEMA), encoding="utf-8")
             cmd = self.command(executable, workdir, schema_path, output_path)
             stdout, _ = run_agent_process(cmd, self.stdin(prompt), workdir, self.options.timeout_s)
             return self.read_answer(stdout, output_path)
 
     def resolve(self, context: BoundaryContext) -> BoundaryDecision:
+        from .end_policy import END_LABELS, choose_end, mode as end_mode
+
         started = time.perf_counter()
         digest = context_digest(context)
-        meta: dict[str, Any] = {"prompt_version": PROMPT_VERSION, "context_id": digest[:16], "model": self.options.model,
+        kept_end = is_kept_end(context)
+        version = prompt_version(context)
+        policy = end_mode(self.options.end_policy).name if kept_end else None
+        meta: dict[str, Any] = {"prompt_version": version, "context_id": digest[:16], "model": self.options.model,
                                 "effort": self.options.effort, "cache_hit": False}
-        key = self.cache_key(digest)
+        if policy:
+            meta["end_policy"] = policy
+        key = self.cache_key(digest, version, policy)
         cache_file = self.cache_directory / f"{key}.json"
         try:
             answer, extra = None, {}
             if self.options.use_cache and cache_file.is_file():
                 try:
                     cached = json.loads(cache_file.read_text(encoding="utf-8"))
-                    if cached.get("key") == key and cached.get("prompt_version") == PROMPT_VERSION:
+                    if cached.get("key") == key and cached.get("prompt_version") == version:
                         answer, extra, meta["cache_hit"] = cached["answer"], dict(cached.get("call", {})), True
                 except (OSError, ValueError, KeyError):
                     answer = None
             indices = shortlist(context)
             meta["shown_candidates"] = indices
             if answer is None:
-                answer, extra = self.call(build_prompt(context, indices=indices))
+                answer, extra = self.call(build_prompt(context, indices=indices, end_policy=policy),
+                                          _schema(END_LABELS) if kept_end else _schema(LABELS))
             meta.update(extra)
             meta["runtime_s"] = round(time.perf_counter() - started, 3)
             try:
@@ -358,7 +435,9 @@ class AgentCliResolver:
             except BoundaryFormatError as exc:
                 raise AgentCallError("invalid_output", str(exc)) from exc
             if self.options.use_cache and not meta["cache_hit"]:
-                self._write_cache(cache_file, key, answer, extra)
+                self._write_cache(cache_file, key, answer, extra, version)
+            if kept_end:
+                decision = apply_end_policy(context, decision, policy, choose_end)
         except AgentCallError as error:
             decision = self._fallback(context, error, meta, started)
         self._log(context, decision)
@@ -374,12 +453,13 @@ class AgentCliResolver:
         return replace(base, requested_resolver=self.name, fallback=True,
                        detail=f"{self.name} failed ({error.code}); used {base.resolver}", metadata=meta)
 
-    def _write_cache(self, path: Path, key: str, answer: Any, extra: dict[str, Any]) -> None:
+    def _write_cache(self, path: Path, key: str, answer: Any, extra: dict[str, Any],
+                     version: str | None = None) -> None:
         from analysis.gameplay.cache import atomic_write_json
 
         try:
             atomic_write_json(path, {"format": "recut_boundary_agent_decision_cache", "key": key,
-                                     "resolver": self.name, "prompt_version": PROMPT_VERSION,
+                                     "resolver": self.name, "prompt_version": version or PROMPT_VERSION,
                                      "answer": answer, "call": extra})
         except OSError:
             pass
@@ -398,7 +478,7 @@ class AgentCliResolver:
                   "model": meta.get("model"), "cost_usd": meta.get("cost_usd")}
         path = Path(self.options.log_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as stream:
+        with _LOG_LOCK, path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(record) + "\n")
 
 
@@ -410,7 +490,8 @@ class ClaudeBoundaryResolver(AgentCliResolver):
     env_var = "AUTO_CUTTER_CLAUDE_CLI"
 
     def command(self, executable: str, workdir: Path, schema_path: Path, output_path: Path) -> list[str]:
-        cmd = [executable, "-p", "--output-format", "json", "--json-schema", json.dumps(RESPONSE_SCHEMA),
+        schema = json.loads(schema_path.read_text(encoding="utf-8")) if schema_path.is_file() else RESPONSE_SCHEMA
+        cmd = [executable, "-p", "--output-format", "json", "--json-schema", json.dumps(schema),
                "--tools", "", "--strict-mcp-config", "--no-session-persistence", "--system-prompt", SYSTEM_PROMPT]
         if self.options.model:
             cmd += ["--model", self.options.model]

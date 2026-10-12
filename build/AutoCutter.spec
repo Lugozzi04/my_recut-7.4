@@ -18,7 +18,7 @@ binaries = []
 hiddenimports = []
 
 # Project assets
-for folder in ("icons", "webui", "bin"):
+for folder in ("icons", "webui", "bin", "class_refs"):
     source = project_root / folder
     if source.exists():
         datas.append((str(source), folder))
@@ -33,6 +33,9 @@ for document_name in ("VERSION", "README.md", "PRIVACY.md", "CHANGELOG.md"):
 third_party_dir = project_root / "build" / "third_party"
 if third_party_dir.exists():
     datas.append((str(third_party_dir), "licenses"))
+
+# Local portrait readability reference (no runtime download).
+datas += collect_data_files("analysis.hero_groups", includes=["assets/*.png"])
 
 # Third-party runtime assets
 datas += collect_data_files("av")

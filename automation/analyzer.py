@@ -267,11 +267,14 @@ class PipelineProjectAnalyzer:
                         last_progress = value
                         self._emit_progress(on_progress, value)
 
-                gameplay = self._run_gameplay(source, gameplay_settings, token, report_gameplay)
+                selected = self._source_range(job)
+                window = None if selected is None else (float(selected["start_s"] or 0.0), selected["end_s"])
+                gameplay = self._run_gameplay(source, gameplay_settings, token, report_gameplay, window)
             gameplay_keeps = gameplay.gameplay_keeps if gameplay is not None else []
             if gameplay is not None and not gameplay_keeps:
+                scope = " inside the selected --start/--end range" if self._source_range(job) is not None else ""
                 raise PipelineAnalysisError("no_publishable_games",
-                                            "No complete WIN was found: --keep-games wins would export nothing.")
+                                            f"No complete WIN was found{scope}: --keep-games wins would export nothing.")
             gameplay_cuts = gameplay.gameplay_cuts if gameplay is not None else []
             classic_only, _ = self._classic(result, preset, range_cuts, [])
             cuts, keeps = self._classic(result, preset, range_cuts, gameplay_cuts)
@@ -340,11 +343,15 @@ class PipelineProjectAnalyzer:
             raise PipelineAnalysisError("invalid_gameplay", f"Invalid gameplay settings: {exc}") from exc
 
     @staticmethod
-    def _run_gameplay(source: Path, settings: Any, token: AnalysisCancellation, on_progress: ProgressCallback) -> Any:
+    def _run_gameplay(source: Path, settings: Any, token: AnalysisCancellation, on_progress: ProgressCallback,
+                      source_range: tuple[float, float | None] | None = None) -> Any:
         from analysis.gameplay_editing import GameplayEditingService
 
         try:
-            return GameplayEditingService(settings).run(source, cancellation=token, on_progress=on_progress)
+            service = GameplayEditingService(settings)
+            if source_range is None:  # whole video: unchanged call
+                return service.run(source, cancellation=token, on_progress=on_progress)
+            return service.run(source, cancellation=token, on_progress=on_progress, source_range=source_range)
         except (AnalysisCancelled, PipelineAnalysisError):
             raise
         except Exception as exc:

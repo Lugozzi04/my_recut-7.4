@@ -54,7 +54,7 @@ class CliTests(unittest.TestCase):
             metadata_resolver=SimpleNamespace(metadata=lambda url: {"id": "123", "title": "VOD", "duration_s": 10.0}),
         )
 
-        def fake_run(job_id, *, resume=False, cancellation=None):
+        def fake_run(job_id, *, resume=False, cancellation=None, stop_after_analysis=False):
             self.runs.append((job_id, resume))
             print("worker legacy diagnostic")
             on_event({"job_id": job_id, "stage": "analysis", "progress": 50})
@@ -124,6 +124,51 @@ class CliTests(unittest.TestCase):
         for value in ("", "-1", "NaN", "inf", "1:60", "1:60:00", "1:2:3:4", "1.5:00"):
             with self.subTest(value=value), self.assertRaises(argparse.ArgumentTypeError):
                 parse_time(value)
+
+    def test_process_with_packaging_overlaps_provider_calls_with_the_export(self):
+        events = []
+
+        class FakeParallel:
+            def __init__(self, **kwargs):
+                events.append(("init", kwargs))
+
+            def prepare(self):
+                events.append(("prepare", None))
+
+            def start(self):
+                events.append(("start", None))
+
+            def cancel(self):
+                events.append(("cancel", None))
+
+            def finish(self, check_cancelled=None):
+                events.append(("finish", None))
+                return {"status": "done", "output": "pk", "titles": [], "thumbnails": [], "warnings": [],
+                        "timings_s": {}, "agent": {}}
+
+        with patch("automation.packaging_cli.ParallelPackaging", FakeParallel):
+            code, out, err = self.invoke(["process", str(self.source), "--packaging", "--thumbnail-engine", "v3",
+                                          "--packaging-provider", "claude", "--json"])
+        self.assertEqual(code, 0, err)
+        result = json.loads(out)
+        job_id = result["job"]["id"]
+        kwargs = events[0][1]
+        self.assertEqual(kwargs["project"], str(self.root / (job_id + ".autocutter")))
+        self.assertEqual((kwargs["provider"], kwargs["thumbnail_engine"], kwargs["language"]), ("claude", "v3", "it"))
+        self.assertEqual([e for e, _ in events], ["init", "prepare", "start", "finish"])
+        self.assertEqual(len(self.runs), 2)  # analysis stop, then the export resumes while packaging plans
+        self.assertEqual(result["packaging"]["status"], "done")
+
+    def test_packaging_options_need_packaging_and_an_export(self):
+        with patch("automation.packaging_cli.ParallelPackaging") as runner:
+            code, _out, _err = self.invoke(["process", str(self.source), "--thumbnail-engine", "gen", "--json"])
+            self.assertNotEqual(code, 0)
+            code, _out, _err = self.invoke(["process", str(self.source), "--packaging", "--analyze-only", "--json"])
+            self.assertNotEqual(code, 0)
+            code, _out, _err = self.invoke(["process", str(self.source), "--json"])
+            self.assertEqual(code, 0)
+        runner.assert_not_called()
+        self.assertEqual(self.runs and len(self.runs), 1)  # only the plain process ran
 
     def test_presets_json_is_actual_catalog(self):
         code, out, err = self.invoke(["presets", "--json"])

@@ -27,6 +27,7 @@ def make(tmp_path: Path, *, agent=None, engine=None, rms=fake_rms, sampler=None,
     if not media.exists():
         media.write_bytes(b"x" * 2048)
     base: dict[str, Any] = dict(output=str(tmp_path / "out"), video=str(media), webcam_roi=WEBCAM_ROI, titles=6, thumbnails=3,
+                thumbnail_engine="v2",  # this file is the V2-engine regression suite (V3: test_youtube_packaging_v3.py)
                 cache_dir=str(tmp_path / "cache"), style_dir=str(tmp_path / "styles"), max_deepen=0)
     base.update(settings)
     pipeline = PackagingPipeline(PackagingSettings(**base), agent=cast(Any, agent if agent is not None else FakeAgent()),

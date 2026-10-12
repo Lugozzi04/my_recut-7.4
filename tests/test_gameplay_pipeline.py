@@ -160,7 +160,8 @@ def test_analysis_stage_keeps_only_win_islands_and_applies_classic_cuts_inside(c
     _runtime, job = plan_job(cli)
     calls = []
 
-    def run(self, video, *, cancellation=None, on_progress=None):
+    def run(self, video, *, cancellation=None, on_progress=None, source_range=None):
+        assert source_range == (0.0, 10.0)
         calls.append(Path(video))
         on_progress(50)
         return FakeEdit()

@@ -8,6 +8,7 @@ from ui.widgets.inspector import SegmentedControl
 
 from .layout_export_page import build_export_page
 from .layout_main_page import build_analysis_page, build_main_page
+from .thumbnails_page import build_thumbnails_page
 
 
 def build_right_panel(window) -> QWidget:
@@ -37,9 +38,10 @@ def build_right_panel(window) -> QWidget:
     window.seg_main.setToolTip("Cuts, preset and detection settings  (Alt+1)")
     window.seg_analysis.setToolTip("Classic / AI analysis and gameplay  (Alt+2)")
     window.seg_export.setToolTip("Output settings and export  (Alt+3)")
-    window.inspector_tabs = SegmentedControl([window.seg_main, window.seg_analysis, window.seg_export],
-                                             object_name="Segmented")
-    for b in (window.seg_main, window.seg_analysis, window.seg_export):
+    window.seg_thumbnails.setToolTip("YouTube titles and thumbnails: generate, edit, confirm  (Alt+4)")
+    window.inspector_tabs = SegmentedControl([window.seg_main, window.seg_analysis, window.seg_export,
+                                              window.seg_thumbnails], object_name="Segmented")
+    for b in (window.seg_main, window.seg_analysis, window.seg_export, window.seg_thumbnails):
         b.setFixedHeight(28)
     head_l.addWidget(window.inspector_tabs)
     outer.addWidget(header)
@@ -47,6 +49,7 @@ def build_right_panel(window) -> QWidget:
     build_main_page(window)
     build_export_page(window)
     build_analysis_page(window)
+    window.thumbnails = build_thumbnails_page(window)
 
     outer.addWidget(window.pages, stretch=1)
     window.stats_panel_container = None

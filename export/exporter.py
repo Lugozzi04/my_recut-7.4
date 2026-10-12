@@ -3049,13 +3049,62 @@ class ExportWorker(ExportProcessMixin, QObject):
     # -----------------------------
     # Chunk final concat
     # -----------------------------
+    def _ts_video_extent(self, path: str) -> tuple[float, float, float] | None:
+        """(file start_time, first video pts, end of the last video frame) in file time; None if unknown."""
+        ffprobe = self._find_ffprobe()
+        if not ffprobe:
+            return None
+        try:
+            fmt = run_cmd([ffprobe, "-v", "error", "-show_entries", "format=start_time", "-of",
+                           "default=nk=1:nw=1", path])
+            pk = run_cmd([ffprobe, "-v", "error", "-select_streams", "v:0", "-show_entries",
+                          "packet=pts_time,duration_time", "-of", "csv=p=0", path])
+            if fmt.returncode != 0 or pk.returncode != 0:
+                return None
+            start = float((fmt.stdout or "").strip().splitlines()[0])
+            first, end = math.inf, -math.inf
+            for line in (pk.stdout or "").splitlines():
+                parts = [p for p in line.strip().split(",") if p]
+                if not parts or parts[0] == "N/A":
+                    continue
+                pts = float(parts[0])
+                dur = float(parts[1]) if len(parts) > 1 and parts[1] != "N/A" else 0.0
+                first, end = min(first, pts), max(end, pts + dur)
+            if not (math.isfinite(start) and math.isfinite(first) and math.isfinite(end)) or end <= first:
+                return None
+            return start, first, end
+        except Exception:
+            return None
+
+    def _concat_video_durations(self, files: list[str]) -> list[float | None]:
+        """Per-file ffconcat `duration` so that every file's first video frame follows the previous file's
+        last video frame exactly. Without it the concat demuxer advances by the file duration, which includes
+        the AAC overhang (priming + last partial frame, 20-40 ms per piece): video froze for 1-3 frames at
+        every piece boundary and drifted against the audio over many splices."""
+        extents = [self._ts_video_extent(f) for f in files]
+        out: list[float | None] = []
+        for i, ext in enumerate(extents):
+            nxt = extents[i + 1] if i + 1 < len(extents) else None
+            if ext is None or nxt is None:
+                out.append(None)
+                continue
+            start, _first, end = ext
+            n_start, n_first, _n_end = nxt
+            dur = (end - start) - (n_first - n_start)
+            out.append(dur if dur > 0 else None)
+        return out
+
     def _concat_ts_list(self, files: list[str], temp_files: list[str], out_ts: str) -> str:
         def _q(p: str) -> str:
             return quote_ffconcat_path(os.path.abspath(p))
 
+        durations = self._concat_video_durations(files) if len(files) > 1 else [None] * len(files)
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8", newline="\n") as f:
-            for cf in files:
+            f.write("ffconcat version 1.0\n")
+            for cf, dur in zip(files, durations):
                 f.write(f"file {_q(cf)}\n")
+                if dur is not None:
+                    f.write(f"duration {dur:.6f}\n")
             list_file = f.name
         temp_files.append(list_file)
 
@@ -6463,6 +6512,23 @@ class ExportWorker(ExportProcessMixin, QObject):
             return [("reencode", a, b)]
         return out
 
+    @staticmethod
+    def _piece_frame_count(start: float, end: float, fps: float) -> int:
+        """Frames of a constant-rate source whose timestamp lies in [start, end) (0 when unknown).
+
+        Smart pieces are cut by frame count, not only by -t: in stream copy -t is checked on decode
+        timestamps, so with B-frames the next GOP's keyframe (and 1-3 frames) leaked into the piece and the
+        following piece showed them again; re-encoded pieces were padded with copies of their last frame.
+        Both made the export longer than the keeps and drifted audio against video at every splice.
+        """
+        try:
+            f = float(fps)
+        except Exception:
+            return 0
+        if not (f > 1.0 and math.isfinite(f)) or end <= start:
+            return 0
+        return max(0, int(math.ceil(float(end) * f - 1e-3)) - int(math.ceil(float(start) * f - 1e-3)))
+
     def _build_cmd_smart_segment(
         self,
         src_path: str,
@@ -6478,12 +6544,15 @@ class ExportWorker(ExportProcessMixin, QObject):
         force_fps: float = 0.0,
     ) -> list[str]:
         dur = max(0.0, float(end) - float(start))
+        frames = self._piece_frame_count(start, end, force_fps)
+        frame_limit = ["-frames:v", str(frames)] if frames > 0 else []
         if mode == "copy":
             # fast seek (keyframe-aligned)
             copy_ss = float(start)
             copy_dur = max(1e-6, dur)
             seek_eps = self._copy_seek_epsilon(force_fps)
-            tail_eps = self._cut_boundary_epsilon(force_fps)
+            # with a frame limit the video end is exact; -t then only bounds audio and must not be shortened
+            tail_eps = 0.0 if frame_limit else self._cut_boundary_epsilon(force_fps)
             trim_total = max(0.0, seek_eps) + max(0.0, tail_eps)
             if trim_total > 0.0 and copy_dur > (trim_total + 1e-6):
                 copy_ss = max(0.0, copy_ss + seek_eps)
@@ -6498,6 +6567,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 "-i", src_path,
                 "-t", f"{copy_dur:.6f}",
                 "-map", "0:v:0",
+                *frame_limit,
                 "-dn", "-sn",
                 *self._drop_chapters_args(),
                 *self._ffmpeg_thread_args(),
@@ -6528,6 +6598,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             cmd += [
                 "-t", f"{dur:.6f}",
                 "-map", "0:v:0",
+                *frame_limit,
                 "-dn", "-sn",
                 *self._drop_chapters_args(),
                 *self._ffmpeg_thread_args(),
@@ -6698,6 +6769,9 @@ class ExportWorker(ExportProcessMixin, QObject):
         elif len(seg_files) > 400:
             group_size = 60
         concat_ts = self._tree_concat_ts(seg_files, temp_files, group_size, label="smart")
+        unified = self._audio_from_keeps(concat_ts, keeps_sorted, src_path, temp_files)
+        if unified is not None:
+            concat_ts, audio_mode = unified
 
         t_remux = time.time()
         self._remux_mp4_from_ts(
@@ -6707,6 +6781,65 @@ class ExportWorker(ExportProcessMixin, QObject):
             src_probe_path=src_path,
         )
         self._log(f"smart_remux done elapsed={time.time() - t_remux:.2f}s")
+
+    def _audio_from_keeps(
+        self,
+        video_ts: str,
+        keeps_sorted: list[Segment],
+        src_path: str,
+        temp_files: list[str],
+    ) -> tuple[str, str] | None:
+        """Replace the per-piece audio of a smart export with ONE track cut from the source by the keeps.
+
+        Smart pieces carry their own AAC (priming + a partial last frame, 20-40 ms each): concatenated by the
+        video timeline they overlapped and drifted against the picture at every splice. The source audio is
+        decoded once over the kept range and trimmed sample-accurately (atrim + concat), with the export's
+        gain/LUFS/limiter chain; the already frame-exact video is copied. Returns (ts_path, audio_mode) or
+        None when not applicable (no audio, empty or non-monotonic keeps): the caller keeps the piece audio.
+        """
+        keeps = [k for k in keeps_sorted if float(k.end) > float(k.start)]
+        if not keeps or len(keeps) > 2000:
+            return None
+        if any(float(b.start) + 1e-6 < float(a.end) for a, b in zip(keeps, keeps[1:])):
+            return None
+        try:
+            if not has_audio_stream(src_path):
+                return None
+        except Exception:
+            return None
+        base = max(0.0, float(keeps[0].start) - 1.0)
+        span = float(keeps[-1].end) - base + 1.0
+        n = len(keeps)
+        parts = [f"[1:a:0]asplit={n}" + "".join(f"[s{i}]" for i in range(n)) if n > 1 else "[1:a:0]anull[s0]"]
+        for i, k in enumerate(keeps):
+            parts.append(f"[s{i}]atrim=start={float(k.start) - base:.6f}:end={float(k.end) - base:.6f},"
+                         f"asetpts=PTS-STARTPTS[a{i}]")
+        chain = self._build_audio_filter_chain(include_legacy_gain_limiter=True)
+        tail = f",{chain}" if chain else ""
+        parts.append("".join(f"[a{i}]" for i in range(n)) + f"concat=n={n}:v=0:a=1{tail}[aout]")
+        graph_file = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8")
+        with graph_file:
+            graph_file.write(";\n".join(parts))
+        temp_files.append(graph_file.name)
+        out_ts = os.path.join(os.path.dirname(os.path.abspath(video_ts)), "unified_audio_final.ts")
+        temp_files.append(out_ts)
+        cmd = [
+            self.ffmpeg_path, "-hide_banner", "-v", "error", "-y", "-nostdin",
+            "-i", video_ts,
+            "-ss", f"{base:.6f}", "-t", f"{span:.6f}", "-vn", "-i", src_path,
+            "-filter_complex_script", graph_file.name,
+            "-map", "0:v:0", "-map", "[aout]",
+            "-c:v", "copy", *self._audio_output_args(),
+            *self._drop_chapters_args(),
+            "-max_interleave_delta", "0", "-muxpreload", "0", "-muxdelay", "0",
+            "-f", "mpegts", out_ts,
+        ]
+        self._log(f"ffmpeg_cmd_audio_from_keeps={self._fmt_cmd(cmd)}")
+        rc, _out, err = self._run_ffmpeg(cmd)
+        if rc != 0:
+            self._log(f"audio_from_keeps failed rc={rc}: {(err or '').strip()[:300]}; piece audio kept")
+            return None
+        return out_ts, "encoded_segments_aac"
 
     def _run_smart_hybrid(
         self,
@@ -7657,6 +7790,10 @@ class ExportWorker(ExportProcessMixin, QObject):
         elif len(seg_files) > 400:
             group_size = 60
         concat_ts = self._tree_concat_ts(seg_files, temp_files, group_size, label="hybrid")
+        if not segments_context and not non_monotonic_timeline:
+            unified = self._audio_from_keeps(concat_ts, keeps_sorted, src_path, temp_files)
+            if unified is not None:
+                concat_ts, audio_mode = unified
 
         target_out = out_path if out_path else self.output_path
         if target_out and str(target_out).lower().endswith(".ts"):

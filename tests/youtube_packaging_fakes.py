@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -275,3 +275,173 @@ class FakeAgent:
                    "concept_id": f"C{i % n_concepts + 1}", "style": "narrative", "highlight_ids": highlights[:1],
                    "transcript_ids": [], "rationale": "test"} for i in range(n_titles)]
         return {"concepts": concepts, "titles": titles, "preferred_title_id": "T1", "preferred_concept_id": "C1"}
+
+
+class FakeAgentV3(FakeAgent):
+    """Answers the V3 portfolio call from the manifest, opportunities and ids printed in the prompt."""
+
+    def __init__(self, *, duplicate: bool = False, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.duplicate = duplicate  # produce a non-diverse portfolio (validation must reject it)
+
+    def run(self, task: str, *, prompt: str, schema: dict[str, Any], system_prompt: str, prompt_version: str,
+            images: Any = None, validate: Any = None, repair: Any = None):
+        if "v3" not in task:
+            return super().run(task, prompt=prompt, schema=schema, system_prompt=system_prompt,
+                               prompt_version=prompt_version, images=images, validate=validate, repair=repair)
+        self.calls.append({"task": task, "images": len(images or []), "prompt_chars": len(prompt), "cost_usd": 0.01,
+                           "prompt": prompt})
+        if self.fail is not None:
+            raise self.fail
+        answer = self.portfolio(prompt)
+        try:
+            answer = validate(answer) if validate is not None else answer
+        except ValueError as error:
+            from analysis.boundaries.agents import AgentCallError
+            raise AgentCallError("invalid_output", str(error)) from error
+        return SimpleNamespace(answer=answer, meta={})
+
+    def portfolio(self, prompt: str) -> dict[str, Any]:
+        from analysis.packaging.scene import preset_board, preset_story
+
+        n_concepts = int(re.findall(r"exactly (\d+) strategies", prompt)[0])
+        n_titles = int(re.findall(r"exactly (\d+) YouTube titles", prompt)[0])
+        manifest = prompt.split("VISUAL ASSET MANIFEST")[1]
+        frames = re.findall(r"^- (F\d{3}) (?:gameplay_frame|frame) ", manifest, re.M)
+        regions = re.findall(r"^- (B\d{3}) (?:board_region|region) ", manifest, re.M)
+        opps = re.findall(r"^- (O\d{2}) (\w+) ", prompt, re.M)
+        highlights = re.findall(r"^- (H\d+) game=", prompt, re.M)
+        games = re.findall(r"^- ((?:g-|segment-|video)[\w-]*): index", prompt, re.M)
+        lines = re.findall(r"^(T\d{4}) \[", prompt, re.M)
+        story_types = [t for _, t in opps]
+        if self.duplicate:
+            story_types = [story_types[0]] * len(story_types)
+        texts = ["Che lettura", "Rimonta pazza", "Turno chiave", "Mossa giusta", "Finale", "Ultimo turno"]
+        treatments = ["board_zoom", "split_moments", "cinematic_moment", "card_hero", "text_led", "board_zoom"]
+        concepts = []
+        for i in range(n_concepts):
+            text = texts[0] if self.duplicate else texts[i]
+            bg = frames[i % len(frames)]
+            treatment = treatments[0] if self.duplicate else treatments[i]
+            if treatment == "board_zoom" and regions:
+                scene = preset_board(background=bg, text=text, region=regions[i % len(regions)])
+                primary = regions[i % len(regions)]
+            elif treatment == "split_moments":
+                scene = preset_story(background=bg, text=text, inset=frames[(i + 1) % len(frames)])
+                primary = frames[(i + 1) % len(frames)]
+            elif treatment == "card_hero":
+                scene = preset_board(background=bg, text=text, cards=["O1"])
+                primary = "O1"
+            else:
+                scene = preset_story(background=bg, text=text)
+                primary = bg
+            concepts.append({
+                "concept_id": f"C{i + 1}", "opportunity_id": opps[i % len(opps)][0],
+                "story_type": story_types[i % len(story_types)], "narrative_angle": f"angolo {i + 1}",
+                "message": f"messaggio {i + 1}", "treatment": treatment, "primary_subject": primary,
+                "supporting": [], "omitted": "", "mood": "teso",
+                "title": f"Una partita vinta con una lettura perfetta, versione {'ABCDEF'[i]}",
+                "thumbnail_text": text, "highlight_ids": [highlights[i % len(highlights)]],
+                "evidence": [{"claim": "momento", "highlight_id": highlights[0], "transcript_ids": lines[:1],
+                              "asset_ids": [bg]}],
+                "scene": scene, "risk_notes": ""})
+        titles = [{"title_id": f"T{i + 1}", "title": f"Titolo numero {chr(65 + i)} di una vittoria pulita",
+                   "concept_id": f"C{i % n_concepts + 1}", "style": "narrative", "highlight_ids": highlights[:1],
+                   "transcript_ids": [], "rationale": "test"} for i in range(n_titles)]
+        return {"language": "it", "main_topic": "Due vittorie", "summary": "s", "themes": ["rimonta"],
+                "why_interesting": "w",
+                "games": [{"game_id": g, "summary": "partita", "key_moments": [], "deck_talk": [], "conclusion": "c"}
+                          for g in games],
+                "strongest_highlights": [{"highlight_id": h, "why": "w", "strength": 0.8} for h in highlights[:3]],
+                "narrative_angles": [{"angle_id": "A1", "angle": "a", "highlight_ids": highlights[:1]}],
+                "card_observations": [{"obs_id": "O1", "frame_id": frames[0], "box": [0.1, 0.25, 0.2, 0.35],
+                                       "name": "Minion", "legibility": "clear", "confidence": 0.7,
+                                       "transcript_ids": lines[:1]}],
+                "risky_claims": [], "concepts": concepts, "titles": titles, "preferred_title_id": "T1",
+                "preferred_concept_id": "C1", "deepen_requests": [],
+                "portfolio_strategy": {"rationale": "r", "tradeoffs": "", "plan": [
+                    {"concept_id": c["concept_id"], "opportunity_id": c["opportunity_id"], "story_type": c["story_type"],
+                     "message": c["message"], "treatment": c["treatment"], "primary_subject": c["primary_subject"],
+                     "differs_by": "story"} for c in concepts]}}
+
+
+class FakeAgentGen(FakeAgentV3):
+    """Answers the GEN planning call: the V3 fake portfolio turned into roles + asset packages."""
+
+    def run(self, task: str, *, prompt: str, schema: dict[str, Any], system_prompt: str, prompt_version: str,
+            images: Any = None, validate: Any = None, repair: Any = None):
+        if "_gen" not in task:
+            return super().run(task, prompt=prompt, schema=schema, system_prompt=system_prompt,
+                               prompt_version=prompt_version, images=images, validate=validate, repair=repair)
+        self.calls.append({"task": task, "images": len(images or []), "prompt_chars": len(prompt), "prompt": prompt})
+        if self.fail is not None:
+            raise self.fail
+        answer = self.packages(prompt)
+        try:
+            answer = validate(answer) if validate is not None else answer
+        except ValueError as error:
+            from analysis.boundaries.agents import AgentCallError
+            raise AgentCallError("invalid_output", str(error)) from error
+        return SimpleNamespace(answer=answer, meta={})
+
+    def packages(self, prompt: str) -> dict[str, Any]:
+        from analysis.packaging.generate import ROLES
+
+        answer = self.portfolio(prompt)
+        manifest = prompt.split("VISUAL ASSET MANIFEST")[1]
+        frames = re.findall(r"^- (F\d{3}) (?:gameplay_frame|frame) ", manifest, re.M)
+        regions = re.findall(r"^- (B\d{3}) (?:board_region|region) ", manifest, re.M)
+        webcams = re.findall(r"^- (W\d{3}) (?:webcam_original|webcam) ", manifest, re.M)
+        for i, concept in enumerate(answer["concepts"]):
+            role = ROLES[0] if self.duplicate else ROLES[i % len(ROLES)]
+            board = [frames[i % len(frames)]]
+            package: dict[str, list[str]] = {"face": [], "board": board, "detail": []}
+            if role == "reaction-led":
+                package["face"] = webcams[:2]
+            elif role == "card-led":
+                package["detail"] = ["O1"]
+            elif role == "board-led":
+                package["board"] = [regions[i % len(regions)]] if regions else board
+            else:
+                package["board"] = board + [frames[(i + 1) % len(frames)]]
+            concept.pop("scene", None)
+            concept.pop("treatment", None)
+            concept.update(role=role, package=package, moment=f"momento {i + 1}",
+                           art_direction=f"direzione artistica {i + 1}")
+        return answer
+
+
+class FakeGenerator:
+    """Stands in for the codex image_gen call: writes one 3:2 image per concept (distinct patterns)."""
+
+    name = "fake_image_gen"
+
+    def __init__(self, *, available: bool = True, fail: Exception | None = None, skip: Sequence[str] = ()) -> None:
+        self._available = available
+        self.fail = fail
+        self.skip = set(skip)
+        self.calls: list[dict[str, Any]] = []
+        self.meta: dict[str, Any] = {}
+
+    def available(self) -> bool:
+        return self._available
+
+    def generate(self, prompt: str, images: Sequence[Path], concept_ids: Sequence[str], out_dir: Path) -> dict[str, Path]:
+        from analysis.packaging.frames import write_image
+
+        self.calls.append({"prompt": prompt, "images": list(images), "concept_ids": list(concept_ids)})
+        if self.fail is not None:
+            raise self.fail
+        out_dir.mkdir(parents=True, exist_ok=True)
+        result = {}
+        rng = np.random.default_rng(7)
+        for n, cid in enumerate(concept_ids):
+            if cid in self.skip:
+                continue
+            image = (rng.random((1024, 1536, 3)) * 255).astype(np.uint8)
+            image[:, : 300 * (n + 1)] //= 3
+            path = out_dir / f"ig_{n}.png"
+            write_image(path, image)
+            result[cid] = path
+        self.meta = {"runtime_s": 1.0, "tokens_used": 1234}
+        return result

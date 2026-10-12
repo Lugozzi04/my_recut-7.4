@@ -118,7 +118,10 @@ class CreatorStyleStore:
         return self.save(profile)
 
     def import_examples(self, name: str, *, titles: Sequence[str] = (), thumbnails: Sequence[Path] = (),
-                        source: str = "local import") -> dict[str, Any]:
+                        source: str = "local import", categories: Sequence[str] = (),
+                        negative: bool = False) -> dict[str, Any]:
+        """Import example titles / thumbnails. categories: story types or treatments the thumbnails
+        illustrate (e.g. unexpected_reaction, card_hero); negative=True marks examples to avoid."""
         profile = self.load(name)
         folder = self.path(name).parent / "references"
         stamp = time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -137,13 +140,19 @@ class CreatorStyleStore:
             copy = folder / f"{ref_id}{image.suffix.lower()}"
             shutil.copyfile(image, copy)  # the profile owns a copy; the original is never modified
             profile["references"].append({"id": ref_id, "kind": "thumbnail", "path": str(copy.relative_to(folder.parent)),
-                                          "original": str(image), "source": source, "added": stamp})
+                                          "original": str(image), "source": source, "added": stamp,
+                                          "polarity": "negative" if negative else "positive",
+                                          "categories": [str(c) for c in categories]})
         profile["title_style"]["observed"] = analyze_titles(
             [r["text"] for r in profile["references"] if r["kind"] == "title"] +
             [a["value"] for a in profile["approved"] if a.get("kind") == "title"])
         profile["thumbnail_style"]["observed"] = analyze_thumbnails(
-            [folder.parent / r["path"] for r in profile["references"] if r["kind"] == "thumbnail"])
+            [folder.parent / r["path"] for r in profile["references"]
+             if r["kind"] == "thumbnail" and r.get("polarity", "positive") == "positive"])
         return self.save(profile)
+
+    def reference_path(self, name: str, reference: dict[str, Any]) -> Path:
+        return self.path(name).parent / str(reference["path"])
 
     def record_feedback(self, name: str, entries: Iterable[dict[str, Any]]) -> dict[str, Any]:
         """entries: {"action": approve|reject|note, "kind": title|thumbnail|concept, "value", "id", "run", "note"}."""
@@ -249,3 +258,41 @@ def prompt_summary(profile: dict[str, Any] | None, *, max_examples: int = 12) ->
     if len(lines) == 1:
         lines.append("- the profile has no evidence yet: do not assume any preference")
     return lines
+
+
+def select_references(profile: dict[str, Any] | None, story_types: Sequence[str], *, k: int = 3) -> list[dict[str, Any]]:
+    """2-3 real thumbnails of the creator that fit this video's opportunities (no embeddings needed).
+
+    Positive examples first, ranked by category overlap with the story types, then approved ones
+    and recency; at most one negative example (shown as "avoid"). Disabled profiles return nothing.
+    """
+    if not profile or not profile.get("enabled", True):
+        return []
+    approved_ids = {a.get("id") for a in profile.get("approved", [])}
+    wanted = set(story_types)
+    thumbs = [r for r in profile.get("references", []) if r.get("kind") == "thumbnail" and r.get("path")]
+
+    def rank(ref: dict[str, Any]) -> tuple[int, int, str]:
+        return (len(wanted & set(ref.get("categories") or [])), 1 if ref.get("id") in approved_ids else 0,
+                str(ref.get("added", "")))
+
+    positive = sorted((r for r in thumbs if r.get("polarity", "positive") == "positive"), key=rank, reverse=True)
+    negative = sorted((r for r in thumbs if r.get("polarity") == "negative"), key=rank, reverse=True)
+    chosen = positive[: max(0, k - (1 if negative else 0))] + negative[:1]
+    return chosen[:k]
+
+
+def style_sections(profile: dict[str, Any] | None) -> dict[str, Any]:
+    """The profile split into what should stay stable and what only guides one video."""
+    if not profile:
+        return {}
+    brand = profile.get("brand", {})
+    return {"identity": {"colors": brand.get("colors", []), "fonts": brand.get("fonts", []),
+                         "typography": brand.get("typography")},
+            "composition": {"webcam_size": brand.get("webcam_size"), "cards": brand.get("cards"),
+                            "text": brand.get("text"), "layouts": brand.get("layouts", [])},
+            "titles": (profile.get("title_style") or {}).get("observed", {}),
+            "positive_examples": len([r for r in profile.get("references", [])
+                                      if r.get("kind") == "thumbnail" and r.get("polarity", "positive") == "positive"]),
+            "negative_examples": len([r for r in profile.get("references", []) if r.get("polarity") == "negative"]),
+            "recent_feedback": [f.get("note") or f.get("value") for f in profile.get("feedback", [])[-5:]]}

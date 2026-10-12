@@ -97,13 +97,30 @@ def _processing_options(parser: argparse.ArgumentParser) -> None:
     gameplay.add_argument("--agent-timeout", type=float, help="Seconds per agent decision (default 120); failures fall back to exact.")
     gameplay.add_argument("--agent-model", help="Model passed to the claude/codex CLI.")
     gameplay.add_argument("--agent-effort", help="claude --effort / codex model_reasoning_effort.")
+    gameplay.add_argument("--end-policy", choices=("tight", "balanced", "extended"),
+                          help="END of kept games with claude/codex (default balanced): tight = reaction + essential "
+                               "conclusion; balanced = reaction + short game-specific recap; extended = longer "
+                               "game-specific explanation. Chat, unrelated talk and next-game transitions are cut.")
     gameplay.add_argument("--report", help="Write the gameplay edit report JSON here (default: next to the job project).")
+    packaging = parser.add_argument_group("YouTube packaging after the export (optional)")
+    packaging.add_argument("--packaging", action="store_true",
+                           help="After a successful export, generate titles and thumbnails from the job's project "
+                                "(same as `packaging --project`). Sends transcript excerpts and frames to the provider.")
+    packaging.add_argument("--packaging-provider", choices=("codex", "claude"),
+                           help="Agent for titles/concepts (default codex).")
+    packaging.add_argument("--packaging-language", help="Language of titles and thumbnail text (default it).")
+    packaging.add_argument("--thumbnail-engine", choices=("gen", "v3", "v2"),
+                           help="gen (default): image model composes the thumbnails; v3/v2: local render only.")
+    packaging.add_argument("--packaging-output", help="Packaging folder (default: <export>_packaging next to the video).")
+    packaging.add_argument("--no-interactive", action="store_true",
+                           help="With --packaging: do not open the thumbnails nor ask for edits at the end.")
     parser.add_argument("--analyze-only", action="store_true",
                         help="Run analysis and cut composition, write the project/report, but do not render; resume to export later.")
     _json_option(parser)
 
 
-COMMANDS = {"presets", "jobs", "process", "vod", "resume", "auth", "packaging", "packaging-style", "packaging-feedback"}
+COMMANDS = {"groups", "presets", "jobs", "process", "vod", "resume", "auth", "packaging", "packaging-style", "packaging-feedback",
+            "packaging-edit"}
 
 
 VIDEO_SUFFIXES = (".mp4", ".mkv", ".mov", ".flv", ".ts", ".webm", ".m4v", ".avi")
@@ -163,6 +180,8 @@ def build_parser() -> argparse.ArgumentParser:
         _json_option(provider_parser)
     from automation.packaging_cli import add_parsers as add_packaging_parsers  # argparse only; no engine import
     add_packaging_parsers(sub, _json_option)
+    from automation.hero_groups_cli import add_parser as add_groups_parser
+    add_groups_parser(sub, _json_option)
     return parser
 
 
@@ -367,6 +386,9 @@ def run_cli(argv: Sequence[str] | None = None, *, runtime_factory: Callable[...,
 
 def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callable[..., Any] | None) -> dict[str, Any]:
     command = args.command
+    if command == "groups":
+        from automation.hero_groups_cli import execute as execute_groups
+        return execute_groups(args, progress)
     if command == "presets":
         from core.presets import PresetRepository
         return {"presets": PresetRepository().load()}
@@ -378,7 +400,7 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         return {"jobs": [job.to_mapping() for job in manager.list_jobs()]}
     if command == "auth":
         return {"provider": args.provider, **(_auth_twitch(args, progress) if args.provider == "twitch" else _auth_youtube(args, progress))}
-    if command in ("packaging", "packaging-style", "packaging-feedback"):
+    if command in ("packaging", "packaging-style", "packaging-feedback", "packaging-edit"):
         from automation.packaging_cli import execute as execute_packaging
         return execute_packaging(args, progress)
     from automation.runtime import PipelineCancellation, PipelineRuntime
@@ -400,14 +422,20 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         "start", "end", "duration", "preset", "output", "output_dir", "youtube", "title",
         "description", "thumbnail", "keep_source", "force", "quality",
     )}
-    gameplay_flags = ("keep_games", "boundary_mode", "agent_timeout", "agent_model", "agent_effort", "report")
+    gameplay_flags = ("keep_games", "boundary_mode", "agent_timeout", "agent_model", "agent_effort", "end_policy",
+                      "report")
     if args.gameplay is None and any(getattr(args, key) is not None for key in gameplay_flags):
         raise _ArgumentError("--keep-games/--boundary-mode/--agent-*/--report require --gameplay.")
+    packaging_flags = ("packaging_provider", "packaging_language", "thumbnail_engine", "packaging_output")
+    if not args.packaging and any(getattr(args, key) is not None for key in packaging_flags):
+        raise _ArgumentError("--packaging-*/--thumbnail-engine require --packaging.")
+    if args.packaging and args.analyze_only:
+        raise _ArgumentError("--packaging needs an export; it cannot be combined with --analyze-only.")
     if args.gameplay is not None:
         options["gameplay"] = {"game": args.gameplay, "keep_games": args.keep_games or "wins",
                                "boundary_mode": args.boundary_mode or "exact", "agent_timeout": args.agent_timeout,
                                "agent_model": args.agent_model, "agent_effort": args.agent_effort,
-                               "report": args.report}
+                               "end_policy": args.end_policy, "report": args.report}
         if options["gameplay"]["boundary_mode"] in ("claude", "codex"):
             print(f"NOTE: --boundary-mode {options['gameplay']['boundary_mode']} sends the local transcript/timing context "
                   "around the boundaries of the kept games to the provider configured in that CLI. Use --boundary-mode exact to send nothing.",
@@ -428,13 +456,58 @@ def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callab
         print(f"Job: {job.id}", file=progress, flush=True)
         print(f"Source: {plan['media']['title']}\nPreset: {plan['preset']['name']}", file=progress, flush=True)
         run_options = {"stop_after_analysis": True} if args.analyze_only else {}
-        completed = runtime.run(job.id, cancellation=cancellation, **run_options)
+        packaging = None
+        packaging_error: str | None = None
+        if args.packaging:
+            # analysis -> packaging local stage -> [export || provider calls] -> packaging finish
+            analysed = runtime.run(job.id, cancellation=cancellation, stop_after_analysis=True)
+            from automation.packaging_cli import ParallelPackaging
+
+            try:
+                packaging = ParallelPackaging(
+                    project=analysed.project_path, video=plan.get("delivery", {}).get("output_path"),
+                    output=args.packaging_output, provider=args.packaging_provider or "codex",
+                    language=args.packaging_language or "it", thumbnail_engine=args.thumbnail_engine or "gen",
+                    progress=progress)
+                packaging.prepare()
+                packaging.start()
+            except Exception as exc:  # the video still gets exported
+                packaging, packaging_error = None, f"{type(exc).__name__}: {exc}"
+                print(f"[Packaging] FAILED before the export: {packaging_error}", file=progress, flush=True)
+        try:
+            completed = runtime.run(job.id, cancellation=cancellation, **run_options)
+        except BaseException:
+            if packaging is not None:
+                packaging.cancel()
+            raise
+        packaging_result: dict[str, Any] | None = None
+        if packaging is not None:
+            try:
+                packaging_result = packaging.finish(check_cancelled=cancellation.raise_if_cancelled)
+            except Exception as exc:
+                if cancellation.cancelled:
+                    raise
+                packaging_error = f"{type(exc).__name__}: {exc}"
+                print(f"[Packaging] FAILED: {packaging_error} (the video export is complete)", file=progress,
+                      flush=True)
     if args.analyze_only:
         return {"analyze_only": True, "job": completed.to_mapping(), "project": completed.project_path,
                 "report": completed.metadata.get("gameplay_report_path"),
                 "summary": completed.metadata.get("analysis_summary", {})}
-    return {"job": completed.to_mapping(), "output": completed.export_path, "youtube_video_id": completed.youtube_video_id,
-            "report": completed.metadata.get("gameplay_report_path"), "summary": completed.metadata.get("analysis_summary", {})}
+    result = {"job": completed.to_mapping(), "output": completed.export_path,
+              "youtube_video_id": completed.youtube_video_id,
+              "report": completed.metadata.get("gameplay_report_path"),
+              "summary": completed.metadata.get("analysis_summary", {})}
+    if args.packaging:
+        result["packaging"] = packaging_result if packaging_result is not None else {
+            "status": "failed", "error": packaging_error or "packaging did not run"}
+        from automation.packaging_cli import human, interactive_session, wants_interactive
+
+        if packaging_result and packaging_result.get("status") == "done" and wants_interactive(args):
+            print(f"DONE\nOutput:\n{completed.export_path}", file=progress, flush=True)
+            human("packaging", {"packaging": packaging_result}, progress)
+            result["thumbnail_session"] = interactive_session(packaging_result["output"], progress)
+    return result
 
 
 def _error_info(exc: Exception, command: str) -> tuple[int, str, str]:
@@ -467,7 +540,10 @@ def _error_info(exc: Exception, command: str) -> tuple[int, str, str]:
 
 
 def _human_result(command: str, result: dict[str, Any], stream: TextIO) -> None:
-    if command.startswith("packaging"):
+    if command == "groups":
+        from automation.hero_groups_cli import human as human_groups
+        human_groups(result, stream)
+    elif command.startswith("packaging"):
         from automation.packaging_cli import human
         human(command, result, stream)
     elif "version" in result:
@@ -497,6 +573,17 @@ def _human_result(command: str, result: dict[str, Any], stream: TextIO) -> None:
             print(f"Gameplay report:\n{result['report']}", file=stream)
         if result.get("youtube_video_id"):
             print(f"YouTube video (PRIVATE):\n{result['youtube_video_id']}", file=stream)
+        if result.get("thumbnail_session"):  # summary already shown before the interactive session
+            final = next((a["approved"]["final"] for a in result["thumbnail_session"].get("actions", [])[::-1]
+                          if "approved" in a), None)
+            if final:
+                print(f"Thumbnail confermata:\n{final}", file=stream)
+        elif result.get("packaging"):
+            if result["packaging"].get("status") == "failed" and "output" not in result["packaging"]:
+                print(f"PACKAGING FAILED: {result['packaging'].get('error')}", file=stream)
+            else:
+                from automation.packaging_cli import human
+                human("packaging", {"packaging": result["packaging"]}, stream)
     elif "job" in result:
         print(json.dumps(result["job"], ensure_ascii=False, indent=2), file=stream)
     elif command == "auth":

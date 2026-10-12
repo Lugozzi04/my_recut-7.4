@@ -42,6 +42,7 @@ class CandidateSource(str, Enum):
     SENTENCE_START = "SENTENCE_START"
     SENTENCE_END = "SENTENCE_END"
     VISUAL_CHANGE = "VISUAL_CHANGE"
+    WORD_GAP = "WORD_GAP"  # gap between two words inside speech (END after the result only): a cut that may end a sentence early
     START_OF_FILE = "START_OF_FILE"
     END_OF_FILE = "END_OF_FILE"
 
