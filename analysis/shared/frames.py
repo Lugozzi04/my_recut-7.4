@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 from zipfile import BadZipFile
-from typing import Any
+from typing import Any, Iterator
 
 import numpy as np
 
@@ -18,12 +18,112 @@ from utils.runtime_paths import cache_root
 
 
 class FrameSamplingService:
+    """Selected frames: persistent cache, FFmpeg batching, optional in-process access.
+
+    in_process=True serves cache misses with one decoder session per worker
+    (analysis.shared.inprocess_frames) instead of an FFmpeg process per seek or
+    batch. Same frames and PTS; any reader failure returns to the FFmpeg route.
+    """
+
     def __init__(self, sampler: Any = None, *, directory: str | Path | None = None,
-                 max_gap_s: float = 3.0, max_span_s: float = 24.0, enabled: bool = True) -> None:
+                 max_gap_s: float = 3.0, max_span_s: float = 24.0, enabled: bool = True,
+                 in_process: bool = False, workers: int = 4) -> None:
         self.sampler = sampler or FFmpegFrameSampler()
         self.directory = Path(directory) if directory is not None else cache_root() / "selected_frames"
         self.max_gap_s, self.max_span_s = max_gap_s, max_span_s
         self.enabled = enabled
+        self.in_process = in_process
+        self.workers = workers
+        self._reader: Any = None
+        self._reader_failed = False
+
+    def _in_process_reader(self) -> Any:
+        if not self.in_process or self._reader_failed:
+            return None
+        if self._reader is None:
+            from . import inprocess_frames
+            if not inprocess_frames.available():
+                self._reader_failed = True
+                record("shared.frames", in_process_unavailable=1)
+                return None
+            self._reader = inprocess_frames.InProcessFrameReader(workers=self.workers)
+        return self._reader
+
+    def _disable_reader(self) -> None:
+        self._reader_failed = True
+        record("shared.frames", in_process_failures=1)
+        self.close()
+
+    def close(self) -> None:
+        """Release in-process decoder sessions; the service remains usable."""
+        reader, self._reader = self._reader, None
+        if reader is not None:
+            reader.close()
+
+    def access_counters(self) -> dict[str, float]:
+        reader = self._reader
+        if reader is None:
+            return {}
+        return {**dict(reader.counts), "seek_cost_s": reader.costs.seek_s,
+                "forward_cost_s_per_s": reader.costs.forward_s_per_s,
+                "break_even_s": reader.costs.break_even_s()}
+
+    def _geometry(self, source: str | Path, max_width: int, token: AnalysisCancellation) -> tuple[int, int, float]:
+        info = self.sampler.probe(source, cancellation=token)
+        width = min(info.width, max_width)
+        return width, max(1, round(info.height * width / info.width)), info.duration_s
+
+    def scan(self, source: str | Path, *, fps: float, start_s: float, end_s: float, max_width: int = 960,
+             cancellation: AnalysisCancellation | None = None) -> Iterator[SampledFrame]:
+        """Sequential frames like sample(); one in-process decoder session when enabled."""
+        token = cancellation or AnalysisCancellation()
+        reader = self._in_process_reader()
+        if reader is not None:
+            width, height, duration = self._geometry(source, max_width, token)
+            record("shared.frames", in_process_scans=1)
+            delivered = 0
+            try:
+                for frame in reader.scan(source, start=start_s, finish=min(duration, end_s), fps=fps,
+                                         width=width, height=height, cancellation=token):
+                    delivered += 1
+                    yield frame
+                return
+            except AnalysisCancelled:
+                raise
+            except Exception:
+                if delivered:
+                    raise
+                self._disable_reader()
+        with closing(self.sample(source, fps=fps, start_s=start_s, end_s=end_s, max_width=max_width,
+                                 cancellation=token)) as frames:
+            yield from frames
+
+    def iter_many(self, source: str | Path, timestamps: list[float], *, max_width: int = 960,
+                  cancellation: AnalysisCancellation | None = None) -> Iterator[tuple[float, SampledFrame | None]]:
+        """Like get_many, yielding each request as soon as its frame is available."""
+        token = cancellation or AnalysisCancellation()
+        reader = self._in_process_reader()
+        if reader is None:
+            yield from self.get_many(source, timestamps, max_width=max_width, cancellation=token).items()
+            return
+        times = sorted(set(timestamps))
+        if any(not np.isfinite(t) or t < 0 for t in times):
+            raise ValueError("Invalid requested timestamp")
+        width, height, _ = self._geometry(source, max_width, token)
+        record("shared.frames", requested_frames=len(times), in_process_batches=1)
+        served: set[float] = set()
+        try:
+            for timestamp, frame in reader.iter_many(source, times, width=width, height=height, cancellation=token):
+                served.add(timestamp)
+                record("shared.frames", decoded_frames=int(frame is not None))
+                yield timestamp, frame
+            return
+        except AnalysisCancelled:
+            raise
+        except Exception:
+            self._disable_reader()
+        remaining = [t for t in times if t not in served]
+        yield from self.get_many(source, remaining, max_width=max_width, cancellation=token).items()
 
     def probe(self, *args: Any, **kwargs: Any) -> Any:
         return self.sampler.probe(*args, **kwargs)

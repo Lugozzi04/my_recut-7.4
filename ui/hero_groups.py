@@ -85,6 +85,23 @@ class GroupWorker(QObject):
             self.ended.emit()
 
 
+def game_spans(games: list[dict[str, Any]], duration: float) -> list[tuple[float, float] | None]:
+    """Display interval of each game: observed START/END; a missing side extends to the
+    nearest boundary of a neighbouring game (or the file edge). None when not valid."""
+    anchors = [(g.get("start"), g.get("end")) for g in games]
+    out: list[tuple[float, float] | None] = []
+    for index, (start, end) in enumerate(anchors):
+        own = [float(t) for t in (start, end) if t is not None]
+        if not own:
+            out.append(None)
+            continue
+        others = [float(t) for i, pair in enumerate(anchors) if i != index for t in pair if t is not None]
+        a = float(start) if start is not None else max((t for t in others if t < min(own)), default=0.0)
+        b = float(end) if end is not None else min((t for t in others if t > max(own)), default=duration)
+        out.append((a, b) if b > a else None)
+    return out
+
+
 class HeroGroupsPanel(QWidget):
     def __init__(self, window: Any) -> None:
         super().__init__(window)
@@ -93,6 +110,8 @@ class HeroGroupsPanel(QWidget):
         self.worker: GroupWorker | None = None
         self.source = ""
         self.syncing = False
+        self.highlighted: Any = None  # key of the game shown in yellow on the timeline (view-only)
+        self.track_index: int | None = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 4, 0, 0)
         layout.addWidget(QLabel("Player classes"))
@@ -135,6 +154,7 @@ class HeroGroupsPanel(QWidget):
         self.cancel.clicked.connect(self.cancel_work)
         self.export.clicked.connect(self.start_export)
         self.games.itemDoubleClicked.connect(self.edit_game)
+        self.games.itemClicked.connect(self.toggle_highlight)
         self.groups.itemDoubleClicked.connect(self.edit_name)
         self.groups.itemChanged.connect(self.select_groups)
         self.refresh()
@@ -162,6 +182,7 @@ class HeroGroupsPanel(QWidget):
         candidates = [active] if active and getattr(active, "gameplay_report", None) else []
         candidates += [t for t in getattr(self.owner, "_tracks", []) if getattr(t, "gameplay_report", None)]
         track = candidates[0] if candidates else None
+        self.track_index = next((i for i, t in enumerate(getattr(self.owner, "_tracks", []) or []) if t is track), None)
         self.source = str(Path(track.path).resolve()) if track else ""
         report = getattr(track, "gameplay_report", {}) if track else {}
         grouping = getattr(track, "gameplay_grouping", {}) if track else {}
@@ -171,10 +192,11 @@ class HeroGroupsPanel(QWidget):
         section = getattr(self.owner, "section_gameplay_exports", None)
         if section is not None:
             section.setVisible(bool(available))
+        spans = game_spans([row["game"] for row in rows], float(report.get("duration") or getattr(track, "duration", 0) or 0))
         self.syncing = True
         try:
             self.games.clear()
-            for row in rows:
+            for row, span in zip(rows, spans):
                 game = row["game"]
                 group = row.get("group")
                 name = grouping.get("groups", {}).get(group, {}).get("name", "")
@@ -198,6 +220,7 @@ class HeroGroupsPanel(QWidget):
                     ]
                 )
                 item.setData(0, Qt.ItemDataRole.UserRole, row.get("key"))
+                item.setData(1, Qt.ItemDataRole.UserRole, span)
                 item.setToolTip(0, row.get("reason", ""))
                 hero_class = class_id(group) or class_id(grouping.get("groups", {}).get(group, {}).get("class_name"))
                 if hero_class:
@@ -211,6 +234,8 @@ class HeroGroupsPanel(QWidget):
                     pixmap.loadFromData(base64.b64decode(row["portrait"]))
                     item.setIcon(0, QIcon(pixmap))
                 self.games.addTopLevelItem(item)
+                if self.highlighted is not None and row.get("key") == self.highlighted:
+                    item.setSelected(True)
             self.groups.clear()
             for key, group in sorted(grouping.get("groups", {}).items()):
                 if key not in available:
@@ -236,6 +261,10 @@ class HeroGroupsPanel(QWidget):
                 self.groups.addTopLevelItem(item)
         finally:
             self.syncing = False
+        if self.highlighted is not None:
+            current = [self.games.topLevelItem(i) for i in range(self.games.topLevelItemCount())]
+            match = next((it for it in current if it is not None and it.data(0, Qt.ItemDataRole.UserRole) == self.highlighted), None)
+            self._show_highlight(match)
         self.export.setEnabled(any(g in available for g in grouping.get("selected", [])))
         self.games.setEnabled(True)
         self.groups.setEnabled(True)
@@ -244,6 +273,28 @@ class HeroGroupsPanel(QWidget):
                 self.status.setText("Classes ready. Review estimated matches (≈), select classes and save the project.")
             elif report.get("games"):
                 self.status.setText("Run Detect games to analyze player classes automatically.")
+
+    def toggle_highlight(self, item: QTreeWidgetItem, _column: int = 0) -> None:
+        """Click: show this game in yellow on the timeline; click it again to hide (view-only)."""
+        key = item.data(0, Qt.ItemDataRole.UserRole)
+        if self.highlighted is not None and key == self.highlighted:
+            self.games.clearSelection()
+            self._show_highlight(None)
+        else:
+            self._show_highlight(item)
+
+    def _show_highlight(self, item: QTreeWidgetItem | None) -> None:
+        span = item.data(1, Qt.ItemDataRole.UserRole) if item is not None else None
+        timeline = getattr(self.owner, "timeline", None)
+        index = self.track_index
+        if item is None or not span or index is None:
+            self.highlighted = None
+            if timeline is not None and hasattr(timeline, "setGameHighlight"):
+                timeline.setGameHighlight(None)
+            return
+        self.highlighted = item.data(0, Qt.ItemDataRole.UserRole)
+        if timeline is not None and hasattr(timeline, "setGameHighlight"):
+            timeline.setGameHighlight(index, span[0], span[1])
 
     def _available(self) -> dict[str, set[str]]:
         # Lightweight snapshot: no RMS arrays, probe, detection, ASR or boundary work.

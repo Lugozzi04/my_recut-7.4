@@ -1,0 +1,4349 @@
+{
+ "format": "recut_adaptive_v2_accuracy_audit_v1",
+ "source": "THEORYCRAFTING DAY 1.mp4",
+ "duration_s": 25349.999,
+ "scope": "detection only; no ASR/AI/packaging; caches disabled",
+ "traditional": {
+  "detector_version": "hearthstone-state-aware-v2",
+  "events": [
+   [
+    "VS_SCREEN",
+    4230.632333
+   ],
+   [
+    "DEFEAT",
+    4901.082333
+   ],
+   [
+    "VS_SCREEN",
+    4959.332333
+   ],
+   [
+    "VICTORY",
+    5385.982333
+   ],
+   [
+    "VS_SCREEN",
+    5419.799333
+   ],
+   [
+    "DEFEAT",
+    6391.982333
+   ],
+   [
+    "VS_SCREEN",
+    6463.799333
+   ],
+   [
+    "VICTORY",
+    7125.499333
+   ],
+   [
+    "VS_SCREEN",
+    7228.799333
+   ],
+   [
+    "VICTORY",
+    7834.949333
+   ],
+   [
+    "VS_SCREEN",
+    7906.282333
+   ],
+   [
+    "VICTORY",
+    8831.965333
+   ],
+   [
+    "VICTORY",
+    9010.099333
+   ],
+   [
+    "VS_SCREEN",
+    9035.799333
+   ],
+   [
+    "VS_SCREEN",
+    9711.449333
+   ],
+   [
+    "VICTORY",
+    10339.882333
+   ],
+   [
+    "VS_SCREEN",
+    10448.632333
+   ],
+   [
+    "VS_SCREEN",
+    11362.282333
+   ],
+   [
+    "VICTORY",
+    11993.799333
+   ],
+   [
+    "VS_SCREEN",
+    12268.282333
+   ],
+   [
+    "DEFEAT",
+    12778.049333
+   ],
+   [
+    "VS_SCREEN",
+    13287.632333
+   ],
+   [
+    "VS_SCREEN",
+    13642.799333
+   ],
+   [
+    "DEFEAT",
+    14274.865333
+   ],
+   [
+    "VS_SCREEN",
+    14586.632333
+   ],
+   [
+    "VICTORY",
+    14955.699333
+   ],
+   [
+    "VS_SCREEN",
+    14993.449333
+   ],
+   [
+    "DEFEAT",
+    15007.915333
+   ],
+   [
+    "VS_SCREEN",
+    15075.282333
+   ],
+   [
+    "DEFEAT",
+    15380.332333
+   ],
+   [
+    "VS_SCREEN",
+    15730.799333
+   ],
+   [
+    "VICTORY",
+    16254.249333
+   ],
+   [
+    "VS_SCREEN",
+    16527.099333
+   ],
+   [
+    "DEFEAT",
+    16806.415333
+   ],
+   [
+    "VS_SCREEN",
+    17232.632333
+   ],
+   [
+    "VICTORY",
+    17545.515333
+   ],
+   [
+    "VS_SCREEN",
+    17585.282333
+   ],
+   [
+    "VICTORY",
+    18492.115333
+   ],
+   [
+    "VS_SCREEN",
+    18572.632333
+   ],
+   [
+    "VICTORY",
+    19135.782333
+   ],
+   [
+    "VS_SCREEN",
+    19190.799333
+   ],
+   [
+    "VICTORY",
+    19572.582333
+   ],
+   [
+    "VS_SCREEN",
+    19618.449333
+   ],
+   [
+    "VICTORY",
+    20395.932333
+   ],
+   [
+    "VS_SCREEN",
+    20424.632333
+   ],
+   [
+    "DEFEAT",
+    20643.282333
+   ],
+   [
+    "VICTORY",
+    20906.965333
+   ],
+   [
+    "VICTORY",
+    21224.449333
+   ],
+   [
+    "VS_SCREEN",
+    21266.249333
+   ],
+   [
+    "VS_SCREEN",
+    21268.182333
+   ],
+   [
+    "VICTORY",
+    21823.949333
+   ],
+   [
+    "VS_SCREEN",
+    21975.449333
+   ],
+   [
+    "VICTORY",
+    22639.815333
+   ],
+   [
+    "VS_SCREEN",
+    22861.149333
+   ],
+   [
+    "DEFEAT",
+    23605.049333
+   ]
+  ],
+  "games": [
+   {
+    "start": 4230.632333,
+    "end": 4901.082333,
+    "result": "LOSS"
+   },
+   {
+    "start": 4959.332333,
+    "end": 5385.982333,
+    "result": "WIN"
+   },
+   {
+    "start": 5419.799333,
+    "end": 6391.982333,
+    "result": "LOSS"
+   },
+   {
+    "start": 6463.799333,
+    "end": 7125.499333,
+    "result": "WIN"
+   },
+   {
+    "start": 7228.799333,
+    "end": 7834.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 7906.282333,
+    "end": 8831.965333,
+    "result": "WIN"
+   },
+   {
+    "start": null,
+    "end": 9010.099333,
+    "result": "WIN"
+   },
+   {
+    "start": 9035.799333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 9711.449333,
+    "end": 10339.882333,
+    "result": "WIN"
+   },
+   {
+    "start": 10448.632333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 11362.282333,
+    "end": 11993.799333,
+    "result": "WIN"
+   },
+   {
+    "start": 12268.282333,
+    "end": 12778.049333,
+    "result": "LOSS"
+   },
+   {
+    "start": 13287.632333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 13642.799333,
+    "end": 14274.865333,
+    "result": "LOSS"
+   },
+   {
+    "start": 14586.632333,
+    "end": 14955.699333,
+    "result": "WIN"
+   },
+   {
+    "start": 14993.449333,
+    "end": 15007.915333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15075.282333,
+    "end": 15380.332333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15730.799333,
+    "end": 16254.249333,
+    "result": "WIN"
+   },
+   {
+    "start": 16527.099333,
+    "end": 16806.415333,
+    "result": "LOSS"
+   },
+   {
+    "start": 17232.632333,
+    "end": 17545.515333,
+    "result": "WIN"
+   },
+   {
+    "start": 17585.282333,
+    "end": 18492.115333,
+    "result": "WIN"
+   },
+   {
+    "start": 18572.632333,
+    "end": 19135.782333,
+    "result": "WIN"
+   },
+   {
+    "start": 19190.799333,
+    "end": 19572.582333,
+    "result": "WIN"
+   },
+   {
+    "start": 19618.449333,
+    "end": 20395.932333,
+    "result": "WIN"
+   },
+   {
+    "start": 20424.632333,
+    "end": 20643.282333,
+    "result": "LOSS"
+   },
+   {
+    "start": null,
+    "end": 20906.965333,
+    "result": "WIN"
+   },
+   {
+    "start": null,
+    "end": 21224.449333,
+    "result": "WIN"
+   },
+   {
+    "start": 21266.249333,
+    "end": 21823.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 21975.449333,
+    "end": 22639.815333,
+    "result": "WIN"
+   },
+   {
+    "start": 22861.149333,
+    "end": 23605.049333,
+    "result": "LOSS"
+   }
+  ],
+  "result_windows": [
+   [
+    4342.049333,
+    4349.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    4352.049333,
+    4359.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    4425.049333,
+    4432.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    4900.049333,
+    4907.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    5380.049333,
+    5391.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    6183.049333,
+    6190.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    6211.049333,
+    6218.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    6390.049333,
+    6397.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    7005.049333,
+    7012.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7124.049333,
+    7131.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    7138.049333,
+    7145.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7519.049333,
+    7526.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7553.049333,
+    7560.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7618.049333,
+    7625.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7628.049333,
+    7635.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7734.049333,
+    7741.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    7826.049333,
+    7840.049333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    8653.049333,
+    8660.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    8708.049333,
+    8715.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    8830.049333,
+    8837.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    9009.049333,
+    9022.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    9178.049333,
+    9185.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    10338.049333,
+    10345.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    10352.049333,
+    10359.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    11162.049333,
+    11169.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    11419.049333,
+    11426.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    11986.049333,
+    11999.049333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    12773.049333,
+    12780.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    13291.049333,
+    13298.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    13563.049333,
+    13570.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    13842.049333,
+    13849.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    14273.049333,
+    14280.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    14954.049333,
+    14961.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    15006.049333,
+    15016.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    15380.049333,
+    15387.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    16129.049333,
+    16136.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    16253.049333,
+    16265.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    16544.049333,
+    16551.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    16655.049333,
+    16662.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    16805.049333,
+    16812.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    17536.049333,
+    17543.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    17544.049333,
+    17551.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    18491.049333,
+    18498.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    18607.049333,
+    18614.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    19134.049333,
+    19141.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ],
+   [
+    19571.049333,
+    19583.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    20394.049333,
+    20401.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    20403.049333,
+    20410.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    20643.049333,
+    20651.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    20905.049333,
+    20919.049333,
+    [
+     "weak_result",
+     "board_disappeared"
+    ]
+   ],
+   [
+    21213.049333,
+    21220.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    21223.049333,
+    21230.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    21814.049333,
+    21821.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    21822.049333,
+    21829.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    22107.049333,
+    22114.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    22630.049333,
+    22637.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    22638.049333,
+    22645.049333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    23442.049333,
+    23449.049333,
+    [
+     "board_disappeared"
+    ]
+   ],
+   [
+    23597.049333,
+    23610.049333,
+    [
+     "board_disappeared",
+     "weak_result"
+    ]
+   ]
+  ],
+  "wall_seconds": 796.0523625999995,
+  "phases": {
+   "monitor": {
+    "wall_seconds": 676.9283121999979,
+    "counters": {
+     "frames": 25350,
+     "weak_result_candidate_frames": 121,
+     "board_below_low_frames": 4768
+    }
+   },
+   "vs_refinement": {
+    "wall_seconds": 13.640990800005966,
+    "counters": {
+     "windows": 28,
+     "frames": 1420,
+     "completed_windows": 28
+    }
+   },
+   "result_windows": {
+    "wall_seconds": 104.85257969999657,
+    "counters": {
+     "windows": 59,
+     "source_window_seconds": 463.0,
+     "frames": 27780,
+     "completed_windows": 59,
+     "candidates": 3954
+    }
+   },
+   "sampling": {
+    "wall_seconds": 0.0,
+    "counters": {
+     "streams": 88,
+     "seek_sessions": 87,
+     "requested_source_seconds": 26058.999,
+     "frames": 54550,
+     "raw_bytes": 42676787520
+    }
+   }
+  }
+ },
+ "v2_gui_run_before_fix": {
+  "detector_version": "hearthstone-adaptive-sparse-v2.1",
+  "events": [
+   [
+    "VS_SCREEN",
+    4230.582333
+   ],
+   [
+    "DEFEAT",
+    4901.082333
+   ],
+   [
+    "VS_SCREEN",
+    4959.449333
+   ],
+   [
+    "VICTORY",
+    5385.982333
+   ],
+   [
+    "VS_SCREEN",
+    5419.749333
+   ],
+   [
+    "VS_SCREEN",
+    6463.749333
+   ],
+   [
+    "VICTORY",
+    7125.499333
+   ],
+   [
+    "VS_SCREEN",
+    7228.932333
+   ],
+   [
+    "VICTORY",
+    7834.949333
+   ],
+   [
+    "VS_SCREEN",
+    7906.399333
+   ],
+   [
+    "VICTORY",
+    8831.965333
+   ],
+   [
+    "VICTORY",
+    9010.099333
+   ],
+   [
+    "VS_SCREEN",
+    9035.932333
+   ],
+   [
+    "VS_SCREEN",
+    9711.582333
+   ],
+   [
+    "VICTORY",
+    10339.882333
+   ],
+   [
+    "VS_SCREEN",
+    10448.749333
+   ],
+   [
+    "VS_SCREEN",
+    11362.232333
+   ],
+   [
+    "VICTORY",
+    11993.799333
+   ],
+   [
+    "VS_SCREEN",
+    12268.232333
+   ],
+   [
+    "VS_SCREEN",
+    13287.749333
+   ],
+   [
+    "VS_SCREEN",
+    13642.749333
+   ],
+   [
+    "DEFEAT",
+    14275.015333
+   ],
+   [
+    "VS_SCREEN",
+    14586.582333
+   ],
+   [
+    "VICTORY",
+    14955.699333
+   ],
+   [
+    "VS_SCREEN",
+    14993.399333
+   ],
+   [
+    "DEFEAT",
+    15007.915333
+   ],
+   [
+    "VS_SCREEN",
+    15075.232333
+   ],
+   [
+    "DEFEAT",
+    15380.332333
+   ],
+   [
+    "VS_SCREEN",
+    15730.749333
+   ],
+   [
+    "VICTORY",
+    16254.249333
+   ],
+   [
+    "VS_SCREEN",
+    16527.232333
+   ],
+   [
+    "DEFEAT",
+    16806.415333
+   ],
+   [
+    "VS_SCREEN",
+    17232.582333
+   ],
+   [
+    "VICTORY",
+    17545.515333
+   ],
+   [
+    "VS_SCREEN",
+    17585.232333
+   ],
+   [
+    "VICTORY",
+    18492.115333
+   ],
+   [
+    "VS_SCREEN",
+    18572.582333
+   ],
+   [
+    "VICTORY",
+    19135.782333
+   ],
+   [
+    "VS_SCREEN",
+    19190.932333
+   ],
+   [
+    "VICTORY",
+    19572.582333
+   ],
+   [
+    "VS_SCREEN",
+    19618.399333
+   ],
+   [
+    "VICTORY",
+    20395.932333
+   ],
+   [
+    "VS_SCREEN",
+    20424.582333
+   ],
+   [
+    "DEFEAT",
+    20643.282333
+   ],
+   [
+    "VICTORY",
+    20906.965333
+   ],
+   [
+    "VS_SCREEN",
+    20951.999333
+   ],
+   [
+    "VICTORY",
+    21224.449333
+   ],
+   [
+    "VS_SCREEN",
+    21266.199333
+   ],
+   [
+    "VICTORY",
+    21823.949333
+   ],
+   [
+    "VS_SCREEN",
+    21975.399333
+   ],
+   [
+    "VICTORY",
+    22639.815333
+   ],
+   [
+    "VS_SCREEN",
+    22861.099333
+   ],
+   [
+    "DEFEAT",
+    23605.049333
+   ]
+  ],
+  "games": [
+   {
+    "start": 4230.582333,
+    "end": 4901.082333,
+    "result": "LOSS"
+   },
+   {
+    "start": 4959.449333,
+    "end": 5385.982333,
+    "result": "WIN"
+   },
+   {
+    "start": 5419.749333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 6463.749333,
+    "end": 7125.499333,
+    "result": "WIN"
+   },
+   {
+    "start": 7228.932333,
+    "end": 7834.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 7906.399333,
+    "end": 8831.965333,
+    "result": "WIN"
+   },
+   {
+    "start": null,
+    "end": 9010.099333,
+    "result": "WIN"
+   },
+   {
+    "start": 9035.932333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 9711.582333,
+    "end": 10339.882333,
+    "result": "WIN"
+   },
+   {
+    "start": 10448.749333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 11362.232333,
+    "end": 11993.799333,
+    "result": "WIN"
+   },
+   {
+    "start": 12268.232333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 13287.749333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 13642.749333,
+    "end": 14275.015333,
+    "result": "LOSS"
+   },
+   {
+    "start": 14586.582333,
+    "end": 14955.699333,
+    "result": "WIN"
+   },
+   {
+    "start": 14993.399333,
+    "end": 15007.915333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15075.232333,
+    "end": 15380.332333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15730.749333,
+    "end": 16254.249333,
+    "result": "WIN"
+   },
+   {
+    "start": 16527.232333,
+    "end": 16806.415333,
+    "result": "LOSS"
+   },
+   {
+    "start": 17232.582333,
+    "end": 17545.515333,
+    "result": "WIN"
+   },
+   {
+    "start": 17585.232333,
+    "end": 18492.115333,
+    "result": "WIN"
+   },
+   {
+    "start": 18572.582333,
+    "end": 19135.782333,
+    "result": "WIN"
+   },
+   {
+    "start": 19190.932333,
+    "end": 19572.582333,
+    "result": "WIN"
+   },
+   {
+    "start": 19618.399333,
+    "end": 20395.932333,
+    "result": "WIN"
+   },
+   {
+    "start": 20424.582333,
+    "end": 20643.282333,
+    "result": "LOSS"
+   },
+   {
+    "start": null,
+    "end": 20906.965333,
+    "result": "WIN"
+   },
+   {
+    "start": 20951.999333,
+    "end": 21224.449333,
+    "result": "WIN"
+   },
+   {
+    "start": 21266.199333,
+    "end": 21823.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 21975.399333,
+    "end": 22639.815333,
+    "result": "WIN"
+   },
+   {
+    "start": 22861.099333,
+    "end": 23605.049333,
+    "result": "LOSS"
+   }
+  ],
+  "result_windows": [
+   [
+    4342.015333,
+    4349.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4352.015333,
+    4359.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4425.015333,
+    4432.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4900.015333,
+    4907.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    5381.015333,
+    5391.015333,
+    [
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    6211.015333,
+    6218.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    6394.015333,
+    6401.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7005.015333,
+    7012.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7124.015333,
+    7131.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    7138.015333,
+    7145.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7519.015333,
+    7526.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7618.015333,
+    7625.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7628.015333,
+    7635.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7734.015333,
+    7741.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7826.015333,
+    7840.015333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8653.015333,
+    8660.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8708.015333,
+    8715.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8830.015333,
+    8837.015333,
+    [
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    9009.015333,
+    9016.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    9030.015333,
+    9037.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    9178.015333,
+    9185.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    10338.015333,
+    10345.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    10352.015333,
+    10359.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11162.015333,
+    11169.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11419.015333,
+    11426.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11988.015333,
+    11999.015333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    12780.015333,
+    12787.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    13563.015333,
+    13570.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    13842.015333,
+    13849.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    14275.015333,
+    14282.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    14954.015333,
+    14966.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    15006.015333,
+    15016.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    15379.015333,
+    15387.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16253.015333,
+    16265.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16544.015333,
+    16551.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16655.015333,
+    16662.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16805.015333,
+    16812.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    17536.015333,
+    17543.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    17544.015333,
+    17551.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    18491.015333,
+    18498.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    18607.015333,
+    18614.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    19134.015333,
+    19141.015333,
+    [
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    19571.015333,
+    19583.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20394.015333,
+    20401.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    20403.015333,
+    20410.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20643.015333,
+    20651.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20905.015333,
+    20919.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    21210.015333,
+    21217.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    21223.015333,
+    21230.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    21814.015333,
+    21821.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    21822.015333,
+    21829.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    22107.015333,
+    22114.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    22630.015333,
+    22637.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    22638.015333,
+    22645.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    23604.015333,
+    23611.015333,
+    [
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ]
+  ],
+  "wall_seconds": null,
+  "phases": {}
+ },
+ "v2_after_fix": {
+  "detector_version": "hearthstone-adaptive-sparse-v2.2",
+  "events": [
+   [
+    "VS_SCREEN",
+    4230.582333
+   ],
+   [
+    "DEFEAT",
+    4901.082333
+   ],
+   [
+    "VS_SCREEN",
+    4959.449333
+   ],
+   [
+    "VICTORY",
+    5385.982333
+   ],
+   [
+    "VS_SCREEN",
+    5419.749333
+   ],
+   [
+    "DEFEAT",
+    6391.982333
+   ],
+   [
+    "VS_SCREEN",
+    6463.749333
+   ],
+   [
+    "VICTORY",
+    7125.499333
+   ],
+   [
+    "VS_SCREEN",
+    7228.932333
+   ],
+   [
+    "VICTORY",
+    7834.949333
+   ],
+   [
+    "VS_SCREEN",
+    7906.399333
+   ],
+   [
+    "VICTORY",
+    8831.965333
+   ],
+   [
+    "VICTORY",
+    9010.099333
+   ],
+   [
+    "VS_SCREEN",
+    9035.932333
+   ],
+   [
+    "VS_SCREEN",
+    9711.582333
+   ],
+   [
+    "VICTORY",
+    10339.882333
+   ],
+   [
+    "VS_SCREEN",
+    10448.749333
+   ],
+   [
+    "VS_SCREEN",
+    11362.232333
+   ],
+   [
+    "VICTORY",
+    11993.799333
+   ],
+   [
+    "VS_SCREEN",
+    12268.232333
+   ],
+   [
+    "DEFEAT",
+    12778.049333
+   ],
+   [
+    "VS_SCREEN",
+    13287.749333
+   ],
+   [
+    "DEFEAT",
+    13562.299333
+   ],
+   [
+    "VS_SCREEN",
+    13642.749333
+   ],
+   [
+    "DEFEAT",
+    14274.865333
+   ],
+   [
+    "VS_SCREEN",
+    14586.582333
+   ],
+   [
+    "VICTORY",
+    14955.699333
+   ],
+   [
+    "VS_SCREEN",
+    14993.399333
+   ],
+   [
+    "DEFEAT",
+    15007.915333
+   ],
+   [
+    "VS_SCREEN",
+    15075.232333
+   ],
+   [
+    "DEFEAT",
+    15380.332333
+   ],
+   [
+    "VS_SCREEN",
+    15730.749333
+   ],
+   [
+    "VICTORY",
+    16254.249333
+   ],
+   [
+    "VS_SCREEN",
+    16527.232333
+   ],
+   [
+    "DEFEAT",
+    16806.415333
+   ],
+   [
+    "VS_SCREEN",
+    17232.582333
+   ],
+   [
+    "VICTORY",
+    17545.515333
+   ],
+   [
+    "VS_SCREEN",
+    17585.232333
+   ],
+   [
+    "VICTORY",
+    18492.115333
+   ],
+   [
+    "VS_SCREEN",
+    18572.582333
+   ],
+   [
+    "VICTORY",
+    19135.782333
+   ],
+   [
+    "VS_SCREEN",
+    19190.932333
+   ],
+   [
+    "VICTORY",
+    19572.582333
+   ],
+   [
+    "VS_SCREEN",
+    19618.399333
+   ],
+   [
+    "VICTORY",
+    20395.932333
+   ],
+   [
+    "VS_SCREEN",
+    20424.582333
+   ],
+   [
+    "DEFEAT",
+    20643.282333
+   ],
+   [
+    "VICTORY",
+    20906.965333
+   ],
+   [
+    "VS_SCREEN",
+    20951.999333
+   ],
+   [
+    "VICTORY",
+    21224.449333
+   ],
+   [
+    "VS_SCREEN",
+    21266.199333
+   ],
+   [
+    "VICTORY",
+    21823.949333
+   ],
+   [
+    "VS_SCREEN",
+    21975.399333
+   ],
+   [
+    "VICTORY",
+    22639.815333
+   ],
+   [
+    "VS_SCREEN",
+    22861.099333
+   ],
+   [
+    "DEFEAT",
+    23605.049333
+   ]
+  ],
+  "games": [
+   {
+    "start": 4230.582333,
+    "end": 4901.082333,
+    "result": "LOSS"
+   },
+   {
+    "start": 4959.449333,
+    "end": 5385.982333,
+    "result": "WIN"
+   },
+   {
+    "start": 5419.749333,
+    "end": 6391.982333,
+    "result": "LOSS"
+   },
+   {
+    "start": 6463.749333,
+    "end": 7125.499333,
+    "result": "WIN"
+   },
+   {
+    "start": 7228.932333,
+    "end": 7834.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 7906.399333,
+    "end": 8831.965333,
+    "result": "WIN"
+   },
+   {
+    "start": null,
+    "end": 9010.099333,
+    "result": "WIN"
+   },
+   {
+    "start": 9035.932333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 9711.582333,
+    "end": 10339.882333,
+    "result": "WIN"
+   },
+   {
+    "start": 10448.749333,
+    "end": null,
+    "result": "UNKNOWN"
+   },
+   {
+    "start": 11362.232333,
+    "end": 11993.799333,
+    "result": "WIN"
+   },
+   {
+    "start": 12268.232333,
+    "end": 12778.049333,
+    "result": "LOSS"
+   },
+   {
+    "start": 13287.749333,
+    "end": 13562.299333,
+    "result": "LOSS"
+   },
+   {
+    "start": 13642.749333,
+    "end": 14274.865333,
+    "result": "LOSS"
+   },
+   {
+    "start": 14586.582333,
+    "end": 14955.699333,
+    "result": "WIN"
+   },
+   {
+    "start": 14993.399333,
+    "end": 15007.915333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15075.232333,
+    "end": 15380.332333,
+    "result": "LOSS"
+   },
+   {
+    "start": 15730.749333,
+    "end": 16254.249333,
+    "result": "WIN"
+   },
+   {
+    "start": 16527.232333,
+    "end": 16806.415333,
+    "result": "LOSS"
+   },
+   {
+    "start": 17232.582333,
+    "end": 17545.515333,
+    "result": "WIN"
+   },
+   {
+    "start": 17585.232333,
+    "end": 18492.115333,
+    "result": "WIN"
+   },
+   {
+    "start": 18572.582333,
+    "end": 19135.782333,
+    "result": "WIN"
+   },
+   {
+    "start": 19190.932333,
+    "end": 19572.582333,
+    "result": "WIN"
+   },
+   {
+    "start": 19618.399333,
+    "end": 20395.932333,
+    "result": "WIN"
+   },
+   {
+    "start": 20424.582333,
+    "end": 20643.282333,
+    "result": "LOSS"
+   },
+   {
+    "start": null,
+    "end": 20906.965333,
+    "result": "WIN"
+   },
+   {
+    "start": 20951.999333,
+    "end": 21224.449333,
+    "result": "WIN"
+   },
+   {
+    "start": 21266.199333,
+    "end": 21823.949333,
+    "result": "WIN"
+   },
+   {
+    "start": 21975.399333,
+    "end": 22639.815333,
+    "result": "WIN"
+   },
+   {
+    "start": 22861.099333,
+    "end": 23605.049333,
+    "result": "LOSS"
+   }
+  ],
+  "result_windows": [
+   [
+    4342.015333,
+    4349.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4352.015333,
+    4359.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4425.015333,
+    4432.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    4896.015333,
+    4907.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    5378.015333,
+    5391.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    6183.015333,
+    6190.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    6211.015333,
+    6218.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    6386.015333,
+    6401.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7005.015333,
+    7012.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7124.015333,
+    7145.015333,
+    [
+     "weak_result",
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7519.015333,
+    7526.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7618.015333,
+    7625.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7628.015333,
+    7635.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7734.015333,
+    7741.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    7826.015333,
+    7840.015333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8653.015333,
+    8660.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8708.015333,
+    8715.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    8824.015333,
+    8837.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    9009.015333,
+    9037.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared"
+    ]
+   ],
+   [
+    9178.015333,
+    9188.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared"
+    ]
+   ],
+   [
+    10338.015333,
+    10359.015333,
+    [
+     "weak_result",
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11155.015333,
+    11169.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11419.015333,
+    11426.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    11988.015333,
+    11999.015333,
+    [
+     "board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    12773.015333,
+    12794.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared"
+    ]
+   ],
+   [
+    13557.015333,
+    13570.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    13842.015333,
+    13849.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    14267.015333,
+    14282.015333,
+    [
+     "sustained_board_disappeared",
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    14954.015333,
+    14966.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    15003.015333,
+    15016.015333,
+    [
+     "sustained_board_disappeared",
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    15375.015333,
+    15389.015333,
+    [
+     "sustained_board_disappeared",
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16253.015333,
+    16265.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16544.015333,
+    16551.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16655.015333,
+    16662.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    16805.015333,
+    16812.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    17536.015333,
+    17543.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    17544.015333,
+    17551.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    18365.015333,
+    18372.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    18483.015333,
+    18498.015333,
+    [
+     "sustained_board_disappeared"
+    ]
+   ],
+   [
+    18607.015333,
+    18614.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    19128.015333,
+    19141.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    19571.015333,
+    19583.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20394.015333,
+    20410.015333,
+    [
+     "weak_result",
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20639.015333,
+    20654.015333,
+    [
+     "sustained_board_disappeared",
+     "weak_result",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    20905.015333,
+    20924.015333,
+    [
+     "weak_result",
+     "board_disappeared",
+     "sustained_board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    21210.015333,
+    21220.015333,
+    [
+     "board_disappeared",
+     "orphan_board_disappeared",
+     "sustained_board_disappeared"
+    ]
+   ],
+   [
+    21223.015333,
+    21230.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    21813.015333,
+    21821.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    21822.015333,
+    21829.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    22107.015333,
+    22114.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    22630.015333,
+    22637.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "orphan_board_disappeared"
+    ]
+   ],
+   [
+    22638.015333,
+    22645.015333,
+    [
+     "weak_result"
+    ]
+   ],
+   [
+    23597.015333,
+    23611.015333,
+    [
+     "sustained_board_disappeared",
+     "board_disappeared",
+     "weak_result",
+     "orphan_board_disappeared"
+    ]
+   ]
+  ],
+  "wall_seconds": 369.0683474999969,
+  "phases": {
+   "monitor": {
+    "wall_seconds": 221.9500756999987,
+    "counters": {
+     "frames": 14639
+    }
+   },
+   "vs_refinement": {
+    "wall_seconds": 15.67471690000093,
+    "counters": {
+     "windows": 28,
+     "frames": 1426,
+     "completed_windows": 28
+    }
+   },
+   "result_windows": {
+    "wall_seconds": 130.73888859999715,
+    "counters": {
+     "windows": 53,
+     "source_window_seconds": 575.0,
+     "frames": 34500,
+     "completed_windows": 53,
+     "candidates": 4146
+    }
+   },
+   "adaptive_v2.routing": {
+    "wall_seconds": 0.0,
+    "counters": {
+     "guard_samples": 1695,
+     "seek_requests": 14639,
+     "lattice_samples": 11623,
+     "OUT_OF_GAME": 2383,
+     "mana_readings": 524,
+     "IN_GAME": 4402,
+     "UNKNOWN": 4838,
+     "intervals_examined": 9348,
+     "plausible_intervals": 266,
+     "agreeing_leaves": 9439,
+     "refill_leaves": 1917,
+     "refill_rows": 3016,
+     "present_refill_rows": 1098,
+     "planner_rows": 25350,
+     "imputed_rows": 10711,
+     "monitor_frames_delivered": 14639,
+     "vs_calls": 14639
+    }
+   },
+   "sampling": {
+    "wall_seconds": 0.0,
+    "counters": {
+     "streams": 81,
+     "seek_sessions": 81,
+     "requested_source_seconds": 822.0,
+     "frames": 35926,
+     "raw_bytes": 3514363200
+    }
+   }
+  }
+ },
+ "comparison_before_fix": {
+  "tolerance_s": 1.0,
+  "reference_events": 55,
+  "candidate_events": 53,
+  "matched_events": 52,
+  "missing_events": 3,
+  "extra_events": 1,
+  "event_recall": 0.9454545454545454,
+  "event_precision": 0.9811320754716981,
+  "mean_timestamp_error_s": 0.04198076923097897,
+  "max_timestamp_error_s": 0.1499999999996362,
+  "events": [
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 4230.632333,
+    "candidate_timestamp": 4230.582333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 4901.082333,
+    "candidate_timestamp": 4901.082333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 4959.332333,
+    "candidate_timestamp": 4959.449333,
+    "error_s": 0.11699999999927968,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 5385.982333,
+    "candidate_timestamp": 5385.982333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 5419.799333,
+    "candidate_timestamp": 5419.749333,
+    "error_s": 0.0500000000001819,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 6391.982333,
+    "candidate_timestamp": null,
+    "error_s": null,
+    "status": "missing"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 6463.799333,
+    "candidate_timestamp": 6463.749333,
+    "error_s": 0.0500000000001819,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 7125.499333,
+    "candidate_timestamp": 7125.499333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 7228.799333,
+    "candidate_timestamp": 7228.932333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 7834.949333,
+    "candidate_timestamp": 7834.949333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 7906.282333,
+    "candidate_timestamp": 7906.399333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 8831.965333,
+    "candidate_timestamp": 8831.965333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 9010.099333,
+    "candidate_timestamp": 9010.099333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 9035.799333,
+    "candidate_timestamp": 9035.932333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 9711.449333,
+    "candidate_timestamp": 9711.582333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 10339.882333,
+    "candidate_timestamp": 10339.882333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 10448.632333,
+    "candidate_timestamp": 10448.749333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 11362.282333,
+    "candidate_timestamp": 11362.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 11993.799333,
+    "candidate_timestamp": 11993.799333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 12268.282333,
+    "candidate_timestamp": 12268.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 12778.049333,
+    "candidate_timestamp": null,
+    "error_s": null,
+    "status": "missing"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 13287.632333,
+    "candidate_timestamp": 13287.749333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 13642.799333,
+    "candidate_timestamp": 13642.749333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 14274.865333,
+    "candidate_timestamp": 14275.015333,
+    "error_s": 0.1499999999996362,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 14586.632333,
+    "candidate_timestamp": 14586.582333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 14955.699333,
+    "candidate_timestamp": 14955.699333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 14993.449333,
+    "candidate_timestamp": 14993.399333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 15007.915333,
+    "candidate_timestamp": 15007.915333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 15075.282333,
+    "candidate_timestamp": 15075.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 15380.332333,
+    "candidate_timestamp": 15380.332333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 15730.799333,
+    "candidate_timestamp": 15730.749333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 16254.249333,
+    "candidate_timestamp": 16254.249333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 16527.099333,
+    "candidate_timestamp": 16527.232333,
+    "error_s": 0.13300000000162981,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 16806.415333,
+    "candidate_timestamp": 16806.415333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 17232.632333,
+    "candidate_timestamp": 17232.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 17545.515333,
+    "candidate_timestamp": 17545.515333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 17585.282333,
+    "candidate_timestamp": 17585.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 18492.115333,
+    "candidate_timestamp": 18492.115333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 18572.632333,
+    "candidate_timestamp": 18572.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 19135.782333,
+    "candidate_timestamp": 19135.782333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 19190.799333,
+    "candidate_timestamp": 19190.932333,
+    "error_s": 0.13300000000162981,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 19572.582333,
+    "candidate_timestamp": 19572.582333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 19618.449333,
+    "candidate_timestamp": 19618.399333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 20395.932333,
+    "candidate_timestamp": 20395.932333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 20424.632333,
+    "candidate_timestamp": 20424.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 20643.282333,
+    "candidate_timestamp": 20643.282333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 20906.965333,
+    "candidate_timestamp": 20906.965333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 21224.449333,
+    "candidate_timestamp": 21224.449333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21266.249333,
+    "candidate_timestamp": 21266.199333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21268.182333,
+    "candidate_timestamp": null,
+    "error_s": null,
+    "status": "missing"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 21823.949333,
+    "candidate_timestamp": 21823.949333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21975.449333,
+    "candidate_timestamp": 21975.399333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 22639.815333,
+    "candidate_timestamp": 22639.815333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 22861.149333,
+    "candidate_timestamp": 22861.099333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 23605.049333,
+    "candidate_timestamp": 23605.049333,
+    "error_s": 0.0,
+    "status": "matched"
+   }
+  ],
+  "extras": [
+   {
+    "type": "VS_SCREEN",
+    "timestamp": 20951.999333
+   }
+  ],
+  "games": [
+   {
+    "reference_index": 1,
+    "start": 4230.632333,
+    "end": 4901.082333,
+    "result": "LOSS",
+    "candidate_index": 1,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 2,
+    "start": 4959.332333,
+    "end": 5385.982333,
+    "result": "WIN",
+    "candidate_index": 2,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 3,
+    "start": 5419.799333,
+    "end": 6391.982333,
+    "result": "LOSS",
+    "candidate_index": null,
+    "candidate_result": null,
+    "status": "different"
+   },
+   {
+    "reference_index": 4,
+    "start": 6463.799333,
+    "end": 7125.499333,
+    "result": "WIN",
+    "candidate_index": 4,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 5,
+    "start": 7228.799333,
+    "end": 7834.949333,
+    "result": "WIN",
+    "candidate_index": 5,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 6,
+    "start": 7906.282333,
+    "end": 8831.965333,
+    "result": "WIN",
+    "candidate_index": 6,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 7,
+    "start": null,
+    "end": 9010.099333,
+    "result": "WIN",
+    "candidate_index": 7,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 8,
+    "start": 9035.799333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": 8,
+    "candidate_result": "UNKNOWN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 9,
+    "start": 9711.449333,
+    "end": 10339.882333,
+    "result": "WIN",
+    "candidate_index": 9,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 10,
+    "start": 10448.632333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": 10,
+    "candidate_result": "UNKNOWN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 11,
+    "start": 11362.282333,
+    "end": 11993.799333,
+    "result": "WIN",
+    "candidate_index": 11,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 12,
+    "start": 12268.282333,
+    "end": 12778.049333,
+    "result": "LOSS",
+    "candidate_index": null,
+    "candidate_result": null,
+    "status": "different"
+   },
+   {
+    "reference_index": 13,
+    "start": 13287.632333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": 13,
+    "candidate_result": "UNKNOWN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 14,
+    "start": 13642.799333,
+    "end": 14274.865333,
+    "result": "LOSS",
+    "candidate_index": 14,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 15,
+    "start": 14586.632333,
+    "end": 14955.699333,
+    "result": "WIN",
+    "candidate_index": 15,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 16,
+    "start": 14993.449333,
+    "end": 15007.915333,
+    "result": "LOSS",
+    "candidate_index": 16,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 17,
+    "start": 15075.282333,
+    "end": 15380.332333,
+    "result": "LOSS",
+    "candidate_index": 17,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 18,
+    "start": 15730.799333,
+    "end": 16254.249333,
+    "result": "WIN",
+    "candidate_index": 18,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 19,
+    "start": 16527.099333,
+    "end": 16806.415333,
+    "result": "LOSS",
+    "candidate_index": 19,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 20,
+    "start": 17232.632333,
+    "end": 17545.515333,
+    "result": "WIN",
+    "candidate_index": 20,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 21,
+    "start": 17585.282333,
+    "end": 18492.115333,
+    "result": "WIN",
+    "candidate_index": 21,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 22,
+    "start": 18572.632333,
+    "end": 19135.782333,
+    "result": "WIN",
+    "candidate_index": 22,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 23,
+    "start": 19190.799333,
+    "end": 19572.582333,
+    "result": "WIN",
+    "candidate_index": 23,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 24,
+    "start": 19618.449333,
+    "end": 20395.932333,
+    "result": "WIN",
+    "candidate_index": 24,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 25,
+    "start": 20424.632333,
+    "end": 20643.282333,
+    "result": "LOSS",
+    "candidate_index": 25,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 26,
+    "start": null,
+    "end": 20906.965333,
+    "result": "WIN",
+    "candidate_index": 26,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 27,
+    "start": null,
+    "end": 21224.449333,
+    "result": "WIN",
+    "candidate_index": null,
+    "candidate_result": null,
+    "status": "different"
+   },
+   {
+    "reference_index": 28,
+    "start": 21266.249333,
+    "end": 21823.949333,
+    "result": "WIN",
+    "candidate_index": 28,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 29,
+    "start": 21975.449333,
+    "end": 22639.815333,
+    "result": "WIN",
+    "candidate_index": 29,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 30,
+    "start": 22861.149333,
+    "end": 23605.049333,
+    "result": "LOSS",
+    "candidate_index": 30,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   }
+  ],
+  "extra_games": [
+   {
+    "id": "game-4a7ac94042a569a34e96",
+    "index": 3,
+    "start": 5419.749333,
+    "end": null,
+    "result": "UNKNOWN",
+    "start_confidence": 0.9958195090293884,
+    "end_confidence": 0.0,
+    "result_confidence": 0.0,
+    "start_source": "template_matching",
+    "end_source": null,
+    "result_source": null,
+    "markers": [
+     {
+      "timestamp": 5419.749333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9958195090293884,
+      "source": "template_matching",
+      "metadata": {
+       "candidate_only": false,
+       "template_id": "templates/vs/calibration_cursor_free.png",
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "raw_similarity": 0.9958195090293884,
+       "second_best_similarity": -1.0,
+       "class_margin": 1.9958195090293884,
+       "class_scores": {
+        "VS_SCREEN": 0.9958195090293884
+       },
+       "threshold": 0.92,
+       "scale": 1.0,
+       "matched_rect_normalized": [
+        0.44895833333333335,
+        0.37777777777777777,
+        0.128125,
+        0.24814814814814815
+       ],
+       "detector_version": "hearthstone-template-v3",
+       "observation_count": 31,
+       "first_seen": 5419.749333,
+       "last_seen": 5425.182333,
+       "peak_timestamp": 5423.082333,
+       "temporal_span_s": 5.432999999999993
+      }
+     }
+    ],
+    "user_override": false,
+    "metadata": {
+     "issues": [
+      "missing_end"
+     ],
+     "boundary_kind": "visual_anchor"
+    }
+   },
+   {
+    "id": "game-6476febf417bf58bed8f",
+    "index": 12,
+    "start": 12268.232333,
+    "end": null,
+    "result": "UNKNOWN",
+    "start_confidence": 0.9993258118629456,
+    "end_confidence": 0.0,
+    "result_confidence": 0.0,
+    "start_source": "template_matching",
+    "end_source": null,
+    "result_source": null,
+    "markers": [
+     {
+      "timestamp": 12268.232333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9993258118629456,
+      "source": "template_matching",
+      "metadata": {
+       "candidate_only": false,
+       "template_id": "templates/vs/calibration_cursor_free.png",
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "raw_similarity": 0.9993258118629456,
+       "second_best_similarity": -1.0,
+       "class_margin": 1.9993258118629456,
+       "class_scores": {
+        "VS_SCREEN": 0.9993258118629456
+       },
+       "threshold": 0.92,
+       "scale": 1.0,
+       "matched_rect_normalized": [
+        0.44895833333333335,
+        0.37777777777777777,
+        0.128125,
+        0.24814814814814815
+       ],
+       "detector_version": "hearthstone-template-v3",
+       "observation_count": 32,
+       "first_seen": 12268.232333,
+       "last_seen": 12273.649333,
+       "peak_timestamp": 12271.732333,
+       "temporal_span_s": 5.416999999999462
+      }
+     }
+    ],
+    "user_override": false,
+    "metadata": {
+     "issues": [
+      "missing_end"
+     ],
+     "boundary_kind": "visual_anchor"
+    }
+   },
+   {
+    "id": "game-9ccda0eec36761e2d5d6",
+    "index": 27,
+    "start": 20951.999333,
+    "end": 21224.449333,
+    "result": "WIN",
+    "start_confidence": 0.9569593071937561,
+    "end_confidence": 0.9924293756484985,
+    "result_confidence": 0.9924293756484985,
+    "start_source": "template_matching",
+    "end_source": "template_matching",
+    "result_source": "template_matching",
+    "markers": [
+     {
+      "timestamp": 20951.999333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9569593071937561,
+      "source": "template_matching",
+      "metadata": {
+       "candidate_only": false,
+       "template_id": "templates/vs/calibration_cursor_free.png",
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "raw_similarity": 0.9569593071937561,
+       "second_best_similarity": -1.0,
+       "class_margin": 1.956959307193756,
+       "class_scores": {
+        "VS_SCREEN": 0.9569593071937561
+       },
+       "threshold": 0.92,
+       "scale": 1.0,
+       "matched_rect_normalized": [
+        0.44895833333333335,
+        0.37777777777777777,
+        0.128125,
+        0.24814814814814815
+       ],
+       "detector_version": "hearthstone-template-v3",
+       "observation_count": 3,
+       "first_seen": 20951.999333,
+       "last_seen": 20952.532333,
+       "peak_timestamp": 20952.532333,
+       "temporal_span_s": 0.532999999999447
+      }
+     },
+     {
+      "timestamp": 21224.449333,
+      "type": "VICTORY",
+      "confidence": 0.9924293756484985,
+      "source": "template_matching",
+      "metadata": {
+       "threshold": 0.65,
+       "representation": "gray",
+       "roi": [
+        0.425,
+        0.5,
+        0.15,
+        0.16111111111111112
+       ],
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "detector_version": "hearthstone-result-text-v1",
+       "template_id": "v74_820",
+       "scale": 1.0,
+       "location": [
+        30,
+        44
+       ],
+       "raw_similarity": 0.9924293756484985,
+       "class_scores": {
+        "VICTORY": 0.9924293756484985,
+        "DEFEAT": 0.39276719093322754
+       },
+       "class_margin": 0.599662184715271,
+       "observation_count": 334,
+       "first_seen": 21224.449333,
+       "last_seen": 21229.999333,
+       "peak_timestamp": 21224.932333,
+       "temporal_span_s": 5.549999999999272,
+       "result_acceptance": "event_peak_argmax",
+       "opposite_support": 0,
+       "decision_policy": "result-decision-v1"
+      }
+     }
+    ],
+    "user_override": false,
+    "metadata": {
+     "issues": [],
+     "boundary_kind": "visual_anchor"
+    }
+   }
+  ],
+  "pairing_errors": 0,
+  "reference_complete": 24,
+  "candidate_complete": 23,
+  "result_window_candidate_recall": 0.8888888888888888,
+  "vs_window_candidate_recall": 1.0,
+  "equivalent": false,
+  "exact_event_timestamps": false
+ },
+ "comparison_after_fix": {
+  "tolerance_s": 1.0,
+  "reference_events": 55,
+  "candidate_events": 56,
+  "matched_events": 54,
+  "missing_events": 1,
+  "extra_events": 2,
+  "event_recall": 0.9818181818181818,
+  "event_precision": 0.9642857142857143,
+  "mean_timestamp_error_s": 0.03764814814835686,
+  "max_timestamp_error_s": 0.13300000000162981,
+  "events": [
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 4230.632333,
+    "candidate_timestamp": 4230.582333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 4901.082333,
+    "candidate_timestamp": 4901.082333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 4959.332333,
+    "candidate_timestamp": 4959.449333,
+    "error_s": 0.11699999999927968,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 5385.982333,
+    "candidate_timestamp": 5385.982333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 5419.799333,
+    "candidate_timestamp": 5419.749333,
+    "error_s": 0.0500000000001819,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 6391.982333,
+    "candidate_timestamp": 6391.982333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 6463.799333,
+    "candidate_timestamp": 6463.749333,
+    "error_s": 0.0500000000001819,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 7125.499333,
+    "candidate_timestamp": 7125.499333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 7228.799333,
+    "candidate_timestamp": 7228.932333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 7834.949333,
+    "candidate_timestamp": 7834.949333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 7906.282333,
+    "candidate_timestamp": 7906.399333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 8831.965333,
+    "candidate_timestamp": 8831.965333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 9010.099333,
+    "candidate_timestamp": 9010.099333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 9035.799333,
+    "candidate_timestamp": 9035.932333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 9711.449333,
+    "candidate_timestamp": 9711.582333,
+    "error_s": 0.13299999999981083,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 10339.882333,
+    "candidate_timestamp": 10339.882333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 10448.632333,
+    "candidate_timestamp": 10448.749333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 11362.282333,
+    "candidate_timestamp": 11362.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 11993.799333,
+    "candidate_timestamp": 11993.799333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 12268.282333,
+    "candidate_timestamp": 12268.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 12778.049333,
+    "candidate_timestamp": 12778.049333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 13287.632333,
+    "candidate_timestamp": 13287.749333,
+    "error_s": 0.11700000000018917,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 13642.799333,
+    "candidate_timestamp": 13642.749333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 14274.865333,
+    "candidate_timestamp": 14274.865333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 14586.632333,
+    "candidate_timestamp": 14586.582333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 14955.699333,
+    "candidate_timestamp": 14955.699333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 14993.449333,
+    "candidate_timestamp": 14993.399333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 15007.915333,
+    "candidate_timestamp": 15007.915333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 15075.282333,
+    "candidate_timestamp": 15075.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 15380.332333,
+    "candidate_timestamp": 15380.332333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 15730.799333,
+    "candidate_timestamp": 15730.749333,
+    "error_s": 0.050000000001091394,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 16254.249333,
+    "candidate_timestamp": 16254.249333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 16527.099333,
+    "candidate_timestamp": 16527.232333,
+    "error_s": 0.13300000000162981,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 16806.415333,
+    "candidate_timestamp": 16806.415333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 17232.632333,
+    "candidate_timestamp": 17232.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 17545.515333,
+    "candidate_timestamp": 17545.515333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 17585.282333,
+    "candidate_timestamp": 17585.232333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 18492.115333,
+    "candidate_timestamp": 18492.115333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 18572.632333,
+    "candidate_timestamp": 18572.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 19135.782333,
+    "candidate_timestamp": 19135.782333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 19190.799333,
+    "candidate_timestamp": 19190.932333,
+    "error_s": 0.13300000000162981,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 19572.582333,
+    "candidate_timestamp": 19572.582333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 19618.449333,
+    "candidate_timestamp": 19618.399333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 20395.932333,
+    "candidate_timestamp": 20395.932333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 20424.632333,
+    "candidate_timestamp": 20424.582333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 20643.282333,
+    "candidate_timestamp": 20643.282333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 20906.965333,
+    "candidate_timestamp": 20906.965333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 21224.449333,
+    "candidate_timestamp": 21224.449333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21266.249333,
+    "candidate_timestamp": 21266.199333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21268.182333,
+    "candidate_timestamp": null,
+    "error_s": null,
+    "status": "missing"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 21823.949333,
+    "candidate_timestamp": 21823.949333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 21975.449333,
+    "candidate_timestamp": 21975.399333,
+    "error_s": 0.049999999999272404,
+    "status": "matched"
+   },
+   {
+    "type": "VICTORY",
+    "reference_timestamp": 22639.815333,
+    "candidate_timestamp": 22639.815333,
+    "error_s": 0.0,
+    "status": "matched"
+   },
+   {
+    "type": "VS_SCREEN",
+    "reference_timestamp": 22861.149333,
+    "candidate_timestamp": 22861.099333,
+    "error_s": 0.05000000000291038,
+    "status": "matched"
+   },
+   {
+    "type": "DEFEAT",
+    "reference_timestamp": 23605.049333,
+    "candidate_timestamp": 23605.049333,
+    "error_s": 0.0,
+    "status": "matched"
+   }
+  ],
+  "extras": [
+   {
+    "type": "DEFEAT",
+    "timestamp": 13562.299333
+   },
+   {
+    "type": "VS_SCREEN",
+    "timestamp": 20951.999333
+   }
+  ],
+  "games": [
+   {
+    "reference_index": 1,
+    "start": 4230.632333,
+    "end": 4901.082333,
+    "result": "LOSS",
+    "candidate_index": 1,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 2,
+    "start": 4959.332333,
+    "end": 5385.982333,
+    "result": "WIN",
+    "candidate_index": 2,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 3,
+    "start": 5419.799333,
+    "end": 6391.982333,
+    "result": "LOSS",
+    "candidate_index": 3,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 4,
+    "start": 6463.799333,
+    "end": 7125.499333,
+    "result": "WIN",
+    "candidate_index": 4,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 5,
+    "start": 7228.799333,
+    "end": 7834.949333,
+    "result": "WIN",
+    "candidate_index": 5,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 6,
+    "start": 7906.282333,
+    "end": 8831.965333,
+    "result": "WIN",
+    "candidate_index": 6,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 7,
+    "start": null,
+    "end": 9010.099333,
+    "result": "WIN",
+    "candidate_index": 7,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 8,
+    "start": 9035.799333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": 8,
+    "candidate_result": "UNKNOWN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 9,
+    "start": 9711.449333,
+    "end": 10339.882333,
+    "result": "WIN",
+    "candidate_index": 9,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 10,
+    "start": 10448.632333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": 10,
+    "candidate_result": "UNKNOWN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 11,
+    "start": 11362.282333,
+    "end": 11993.799333,
+    "result": "WIN",
+    "candidate_index": 11,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 12,
+    "start": 12268.282333,
+    "end": 12778.049333,
+    "result": "LOSS",
+    "candidate_index": 12,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 13,
+    "start": 13287.632333,
+    "end": null,
+    "result": "UNKNOWN",
+    "candidate_index": null,
+    "candidate_result": null,
+    "status": "different"
+   },
+   {
+    "reference_index": 14,
+    "start": 13642.799333,
+    "end": 14274.865333,
+    "result": "LOSS",
+    "candidate_index": 14,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 15,
+    "start": 14586.632333,
+    "end": 14955.699333,
+    "result": "WIN",
+    "candidate_index": 15,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 16,
+    "start": 14993.449333,
+    "end": 15007.915333,
+    "result": "LOSS",
+    "candidate_index": 16,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 17,
+    "start": 15075.282333,
+    "end": 15380.332333,
+    "result": "LOSS",
+    "candidate_index": 17,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 18,
+    "start": 15730.799333,
+    "end": 16254.249333,
+    "result": "WIN",
+    "candidate_index": 18,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 19,
+    "start": 16527.099333,
+    "end": 16806.415333,
+    "result": "LOSS",
+    "candidate_index": 19,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 20,
+    "start": 17232.632333,
+    "end": 17545.515333,
+    "result": "WIN",
+    "candidate_index": 20,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 21,
+    "start": 17585.282333,
+    "end": 18492.115333,
+    "result": "WIN",
+    "candidate_index": 21,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 22,
+    "start": 18572.632333,
+    "end": 19135.782333,
+    "result": "WIN",
+    "candidate_index": 22,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 23,
+    "start": 19190.799333,
+    "end": 19572.582333,
+    "result": "WIN",
+    "candidate_index": 23,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 24,
+    "start": 19618.449333,
+    "end": 20395.932333,
+    "result": "WIN",
+    "candidate_index": 24,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 25,
+    "start": 20424.632333,
+    "end": 20643.282333,
+    "result": "LOSS",
+    "candidate_index": 25,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   },
+   {
+    "reference_index": 26,
+    "start": null,
+    "end": 20906.965333,
+    "result": "WIN",
+    "candidate_index": 26,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 27,
+    "start": null,
+    "end": 21224.449333,
+    "result": "WIN",
+    "candidate_index": null,
+    "candidate_result": null,
+    "status": "different"
+   },
+   {
+    "reference_index": 28,
+    "start": 21266.249333,
+    "end": 21823.949333,
+    "result": "WIN",
+    "candidate_index": 28,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 29,
+    "start": 21975.449333,
+    "end": 22639.815333,
+    "result": "WIN",
+    "candidate_index": 29,
+    "candidate_result": "WIN",
+    "status": "matched"
+   },
+   {
+    "reference_index": 30,
+    "start": 22861.149333,
+    "end": 23605.049333,
+    "result": "LOSS",
+    "candidate_index": 30,
+    "candidate_result": "LOSS",
+    "status": "matched"
+   }
+  ],
+  "extra_games": [
+   {
+    "id": "game-509af4a175ff2b244513",
+    "index": 13,
+    "start": 13287.749333,
+    "end": 13562.299333,
+    "result": "LOSS",
+    "start_confidence": 0.992526650428772,
+    "end_confidence": 0.9598889350891113,
+    "result_confidence": 0.9598889350891113,
+    "start_source": "template_matching",
+    "end_source": "template_matching",
+    "result_source": "template_matching",
+    "markers": [
+     {
+      "timestamp": 13287.749333,
+      "type": "VS_SCREEN",
+      "confidence": 0.992526650428772,
+      "source": "template_matching",
+      "metadata": {
+       "candidate_only": false,
+       "template_id": "templates/vs/calibration_cursor_free.png",
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "raw_similarity": 0.992526650428772,
+       "second_best_similarity": -1.0,
+       "class_margin": 1.992526650428772,
+       "class_scores": {
+        "VS_SCREEN": 0.992526650428772
+       },
+       "threshold": 0.92,
+       "scale": 1.0,
+       "matched_rect_normalized": [
+        0.44895833333333335,
+        0.37777777777777777,
+        0.128125,
+        0.24814814814814815
+       ],
+       "detector_version": "hearthstone-template-v3",
+       "observation_count": 29,
+       "first_seen": 13287.749333,
+       "last_seen": 13292.832333,
+       "peak_timestamp": 13292.832333,
+       "temporal_span_s": 5.083000000000538
+      }
+     },
+     {
+      "timestamp": 13562.299333,
+      "type": "DEFEAT",
+      "confidence": 0.9598889350891113,
+      "source": "template_matching",
+      "metadata": {
+       "threshold": 0.65,
+       "representation": "gray",
+       "roi": [
+        0.425,
+        0.5,
+        0.15,
+        0.16111111111111112
+       ],
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "detector_version": "hearthstone-result-text-v1",
+       "template_id": "d74_6092",
+       "scale": 1.0,
+       "location": [
+        27,
+        38
+       ],
+       "raw_similarity": 0.9598889350891113,
+       "class_scores": {
+        "VICTORY": 0.3331674039363861,
+        "DEFEAT": 0.9598889350891113
+       },
+       "class_margin": 0.6267215311527252,
+       "observation_count": 10,
+       "first_seen": 13562.299333,
+       "last_seen": 13562.482333,
+       "peak_timestamp": 13562.415333,
+       "temporal_span_s": 0.18299999999908323,
+       "result_acceptance": "event_peak_argmax",
+       "opposite_support": 0,
+       "decision_policy": "result-decision-v1"
+      }
+     }
+    ],
+    "user_override": false,
+    "metadata": {
+     "issues": [],
+     "boundary_kind": "visual_anchor"
+    }
+   },
+   {
+    "id": "game-9ccda0eec36761e2d5d6",
+    "index": 27,
+    "start": 20951.999333,
+    "end": 21224.449333,
+    "result": "WIN",
+    "start_confidence": 0.9569593071937561,
+    "end_confidence": 0.9924293756484985,
+    "result_confidence": 0.9924293756484985,
+    "start_source": "template_matching",
+    "end_source": "template_matching",
+    "result_source": "template_matching",
+    "markers": [
+     {
+      "timestamp": 20951.999333,
+      "type": "VS_SCREEN",
+      "confidence": 0.9569593071937561,
+      "source": "template_matching",
+      "metadata": {
+       "candidate_only": false,
+       "template_id": "templates/vs/calibration_cursor_free.png",
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "raw_similarity": 0.9569593071937561,
+       "second_best_similarity": -1.0,
+       "class_margin": 1.956959307193756,
+       "class_scores": {
+        "VS_SCREEN": 0.9569593071937561
+       },
+       "threshold": 0.92,
+       "scale": 1.0,
+       "matched_rect_normalized": [
+        0.44895833333333335,
+        0.37777777777777777,
+        0.128125,
+        0.24814814814814815
+       ],
+       "detector_version": "hearthstone-template-v3",
+       "observation_count": 3,
+       "first_seen": 20951.999333,
+       "last_seen": 20952.532333,
+       "peak_timestamp": 20952.532333,
+       "temporal_span_s": 0.532999999999447
+      }
+     },
+     {
+      "timestamp": 21224.449333,
+      "type": "VICTORY",
+      "confidence": 0.9924293756484985,
+      "source": "template_matching",
+      "metadata": {
+       "threshold": 0.65,
+       "representation": "gray",
+       "roi": [
+        0.425,
+        0.5,
+        0.15,
+        0.16111111111111112
+       ],
+       "similarity_method": "TM_CCOEFF_NORMED",
+       "detector_version": "hearthstone-result-text-v1",
+       "template_id": "v74_820",
+       "scale": 1.0,
+       "location": [
+        30,
+        44
+       ],
+       "raw_similarity": 0.9924293756484985,
+       "class_scores": {
+        "VICTORY": 0.9924293756484985,
+        "DEFEAT": 0.39276719093322754
+       },
+       "class_margin": 0.599662184715271,
+       "observation_count": 334,
+       "first_seen": 21224.449333,
+       "last_seen": 21229.999333,
+       "peak_timestamp": 21224.932333,
+       "temporal_span_s": 5.549999999999272,
+       "result_acceptance": "event_peak_argmax",
+       "opposite_support": 0,
+       "decision_policy": "result-decision-v1"
+      }
+     }
+    ],
+    "user_override": false,
+    "metadata": {
+     "issues": [],
+     "boundary_kind": "visual_anchor"
+    }
+   }
+  ],
+  "pairing_errors": 0,
+  "reference_complete": 24,
+  "candidate_complete": 26,
+  "result_window_candidate_recall": 1.0,
+  "vs_window_candidate_recall": 1.0,
+  "equivalent": false,
+  "exact_event_timestamps": false
+ }
+}

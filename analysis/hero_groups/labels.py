@@ -19,7 +19,7 @@ CLASS_COLORS = {
     "warlock": "#8788EE",
     "warrior": "#C69B6D",
 }
-ALIASES = {"dk": "death_knight", "dh": "demon_hunter", "deathknight": "death_knight", "demonhunter": "demon_hunter"}
+ALIASES = {"dk": "death_knight", "dh": "demon_hunter", "deathknight": "death_knight", "hero_11bp": "death_knight", "demonhunter": "demon_hunter"}
 
 
 def class_id(value: Any) -> str | None:

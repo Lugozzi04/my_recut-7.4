@@ -345,3 +345,18 @@ def test_retired_group_ids_are_not_reused_for_a_different_skin():
     assert result["games"][0]["group"] == "B"
     assert "A" in result["allocated_ids"] and "D" in result["allocated_ids"]
     assert result["groups"]["B"]["name"] == ""
+
+
+def test_game_without_start_samples_before_end_after_previous_game():
+    from analysis.hero_groups.recognition import PortraitSettings, previous_boundaries, sample_times
+    settings = PortraitSettings()
+    games = [{"start": 100.0, "end": 400.0}, {"start": 600.0, "end": 900.0}, {"start": None, "end": 500.0}]
+    assert previous_boundaries(games) == [0.0, 500.0, 400.0]  # chronological, not list order
+    times = sample_times(games[2], 1000.0, settings, after=400.0)
+    span = settings.horizon_s - settings.delay_s
+    assert len(times) == settings.samples
+    assert times[0] == 500.0 - span and times[-1] == 498.0
+    # Never sample the previous game, and too little gameplay means no samples.
+    assert sample_times({"start": None, "end": 430.0}, 1000.0, settings, after=400.0)[0] == 400.0
+    assert sample_times({"start": None, "end": 405.0}, 1000.0, settings, after=400.0) == []
+    assert sample_times({"start": None, "end": None}, 1000.0, settings, after=400.0) == []

@@ -229,3 +229,62 @@ def test_group_export_saved_boundary_order_with_track_splits(tmp_path):
     child = group_project(p, "A")
     assert [t["segment_source_in"] for t in child["tracks"]] == [0.0, 250.0]
     assert child["tracks"][0]["keeps"][1]["start"] == 120.0
+
+
+def test_clicking_a_game_toggles_a_yellow_band_on_the_timeline(tmp_path):
+    """View-only: click shows the game's span on the timeline, same click hides it, another moves it."""
+    from analysis.cut_engine import Segment
+    from test_timeline_widget import make_timeline
+    from ui.hero_groups import HeroGroupsPanel, game_spans
+
+    p = project(tmp_path)
+    t = p["tracks"][0]
+    track = TrackState(path=t["path"], duration=t["duration"], cuts_enabled=True,
+                       keeps=[Segment(**k) for k in t["keeps"]], gameplay_mode="keep",
+                       gameplay_keeps=[Segment(**k) for k in t["gameplay_keeps"]],
+                       gameplay_report=t["gameplay_report"], gameplay_grouping=t["gameplay_grouping"])
+    owner = QWidget()
+    owner._tracks = [track]
+    owner._active_track_index = 0
+    dirty = []
+    owner._mark_project_dirty = lambda: dirty.append(True)
+    owner.timeline = make_timeline()
+    panel = HeroGroupsPanel(owner)
+    first, second = panel.games.topLevelItem(0), panel.games.topLevelItem(1)
+    span = first.data(1, Qt.ItemDataRole.UserRole)
+    panel.toggle_highlight(first)
+    assert owner.timeline.gameHighlight() == (0, span[0], span[1])
+    panel.toggle_highlight(second)
+    other = second.data(1, Qt.ItemDataRole.UserRole)
+    assert owner.timeline.gameHighlight() == (0, other[0], other[1])
+    panel.toggle_highlight(second)
+    assert owner.timeline.gameHighlight() is None and not panel.games.selectedItems()
+    assert not dirty  # never saved in the project
+    owner.close()
+
+    # Incomplete games (UNKNOWN without END, result without START) still get a bounded span.
+    games = [{"start": 10.0, "end": 40.0}, {"start": 50.0, "end": None}, {"start": None, "end": 90.0},
+             {"start": None, "end": None}]
+    assert game_spans(games, 100.0) == [(10.0, 40.0), (50.0, 90.0), (50.0, 90.0), None]
+
+
+def test_game_band_is_painted_yellow_without_rebuilding_the_static_layer():
+    from test_timeline_widget import make_timeline
+
+    timeline = make_timeline(gameplay=False)
+    timeline.show()
+    timeline.grab()
+    before = timeline.grab().toImage()
+    renders = timeline.static_renders
+    timeline.setGameHighlight(0, 70.0, 90.0)
+    after = timeline.grab().toImage()
+    assert timeline.static_renders == renders  # dynamic layer only: playback unaffected
+    x = timeline._t_to_x(80.0)
+    y = timeline._lanes()[0].top + 20
+    old, new = before.pixelColor(x, int(y)), after.pixelColor(x, int(y))
+    assert new.red() > old.red() and new.green() > old.green() and new.blue() <= old.blue() + 5
+    outside = timeline._t_to_x(20.0)
+    assert after.pixelColor(outside, int(y)) == before.pixelColor(outside, int(y))
+    timeline.setGameHighlight(None)
+    assert timeline.gameHighlight() is None
+    timeline.close()

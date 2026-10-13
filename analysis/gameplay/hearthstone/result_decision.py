@@ -172,3 +172,67 @@ def decide_cluster(frames: tuple[ResultEvidence, ...], policy: ResultDecisionPol
 
 def decide_results(evidence: Iterable[ResultEvidence], policy: ResultDecisionPolicy) -> list[ResultDecision]:
     return [decide_cluster(cluster, policy) for cluster in cluster_evidence(evidence, policy)]
+
+
+@dataclass(frozen=True)
+class SingleFrameConfirmation:
+    """Opt-in confirmation of a result screen seen in ONE frame of the 60 FPS windows.
+
+    Some result banners are on screen for a few frames only (animation, scene
+    switch), so the ordinary two-PTS support never forms. A single PTS is
+    confirmed only by its 60 FPS neighbourhood, re-measured around it:
+
+    - the peak reaches ``peak_score`` and is the strict local maximum;
+    - the opposite class at the peak, and every opposite-class neighbour, stay
+      at or below ``negative_ceiling``;
+    - at least one distinct neighbour of the same class exceeds ``negative_ceiling``.
+
+    Defaults are existing calibration numbers, not new tuning:
+    peak_score 0.85 = iteration-5 per-frame acceptance; negative_ceiling 0.511 =
+    highest score of any reviewed hard negative (0.478), game/menu frame (0.437)
+    or wrong-class result frame (0.511) in result_decision/calibration_study.json.
+    """
+
+    peak_score: float = 0.85
+    negative_ceiling: float = 0.511
+    neighbourhood_s: float = 0.25
+
+    def __post_init__(self) -> None:
+        _number(self.peak_score, 'peak_score', 1e-9, 1.0)
+        _number(self.negative_ceiling, 'negative_ceiling', 1e-9, 1.0)
+        _number(self.neighbourhood_s, 'neighbourhood_s', 1.0 / 120, 1.0)
+        if self.negative_ceiling >= self.peak_score:
+            raise ValueError('negative_ceiling must be below peak_score')
+
+    def to_mapping(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def evaluate(self, peak: ResultEvidence, neighbourhood: Iterable[ResultEvidence]) -> tuple[str | None, str]:
+        """Return (VICTORY/DEFEAT, reason) when confirmed, else (None, rejection reason)."""
+        winner = peak.winner
+        if winner is None or peak.score < self.peak_score:
+            return None, 'peak_below_gate'
+        if min(peak.victory, peak.defeat) > self.negative_ceiling:
+            return None, 'ambiguous_peak'
+        others = [item for item in neighbourhood if abs(item.timestamp - peak.timestamp) > 1e-6
+                  and abs(item.timestamp - peak.timestamp) <= self.neighbourhood_s + 1e-9]
+        before = [item for item in others if item.timestamp < peak.timestamp]
+        after = [item for item in others if item.timestamp > peak.timestamp]
+        if not before or not after:
+            return None, 'incomplete_neighbourhood'
+        if any(item.score >= peak.score for item in others):
+            return None, 'not_strict_local_peak'
+        if any(item.winner not in (None, winner) and item.score > self.negative_ceiling for item in others):
+            return None, 'conflicting_neighbour'
+        if not any(item.winner == winner and item.score > self.negative_ceiling for item in others):
+            return None, 'unsupported_isolated_peak'
+        return winner, 'single_frame_local_peak'
+
+    def confirm(self, decision: ResultDecision, neighbourhood: Iterable[ResultEvidence]) -> ResultDecision:
+        """Upgrade a one-PTS NO_RESULT decision; anything else is returned unchanged."""
+        if decision.outcome != NO_RESULT or decision.reason != 'insufficient_support' or len(decision.frames) != 1:
+            return decision
+        winner, reason = self.evaluate(decision.peak, neighbourhood)
+        if winner is None:
+            return ResultDecision(NO_RESULT, 'single_frame_' + reason, decision.frames, decision.peak)
+        return ResultDecision(winner, reason, decision.frames, decision.peak)

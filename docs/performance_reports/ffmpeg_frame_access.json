@@ -1,0 +1,1368 @@
+{
+  "format": "recut_ffmpeg_frame_access_v1",
+  "video": "videoprova.mp4",
+  "size_bytes": 2896751780,
+  "duration_s": 3749.999667,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+  "max_width": 960,
+  "repeats": 2,
+  "probe_seconds_excluded": 0.06855670000004466,
+  "cache": "application frame cache disabled; OS disk cache not flushed",
+  "scope": "three 61-second windows only; no detector or ASR",
+  "runs": [
+    {
+      "repeat": 1,
+      "window_start_s": 600.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.3736949999984063,
+      "first_frame_seconds": 0.10232629999882192,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.003887300001224503,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 600.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.2949449999978242,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.012286500004847767,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 600.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.3231403999998292,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004714099999546306,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 600.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.3319742999992741,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.01215079999747104,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 600.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.2144479999988107,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.00419540000075358,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 1500.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.586365700000897,
+      "first_frame_seconds": 0.10208710000006249,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004438899999513524,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 1500.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.32604150000042864,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.012947700000950135,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 1500.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.516282599997794,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004233399999066023,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 1500.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.35373989999789046,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.012930400000186637,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 1500.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.23544140000012703,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004374000000098022,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 2900.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.566874200001621,
+      "first_frame_seconds": 0.09911400000055437,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0042317000006733,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 2900.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.3295415000029607,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.01280120000228635,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 2900.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.5143807000022207,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004604400000971509,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 2900.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.3205778999981703,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.011039200002414873,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 1,
+      "window_start_s": 2900.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.20392490000085672,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.004294899998058099,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 600.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.2168223999979091,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0033427000016672537,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 600.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.32379849999779253,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.00829629999861936,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 600.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.3217387000004237,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0026715000021795277,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 600.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.29531739999947604,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.008058899999014102,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 600.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.3762300000016694,
+      "first_frame_seconds": 0.10193319999962114,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.002496400000381982,
+      "requested_frames": {
+        "600.0": {
+          "pts_s": 600.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "68a935ddef4cc46c74dbf83c70aa7cc6b41893e5359042cbb97e51abae37d88a"
+        },
+        "601.0": {
+          "pts_s": 601.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "6aeea4ae0c300cc04288111064a8edccfee9eb47a877ca5b1f29c605da82743a"
+        },
+        "602.0": {
+          "pts_s": 602.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "9802ee215f9216ed5d59e96139a51e70712c2cb0e3878bfb966567a6a329d7c8"
+        },
+        "630.0": {
+          "pts_s": 630.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "15e2fc578c3c3dfab192ebd28d7f036822d4ece1ca2bbe8297fa5d5cd862ec5f"
+        },
+        "660.0": {
+          "pts_s": 660.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "24154087388a948ac6e5579a36ac4f26b63f4251f78783be2b12bfd4759515e2"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 1500.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.2313122999985353,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0033159000013256446,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 1500.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.3431194000004325,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.00893789999463479,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 1500.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.5166325000027427,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0027412000017648097,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 1500.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.31984210000155144,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.008781500000623055,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 1500.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.5590785000022152,
+      "first_frame_seconds": 0.10303780000322149,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0028987999976379797,
+      "requested_frames": {
+        "1500.0": {
+          "pts_s": 1500.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "62545f94012926651cc020b40f17c5123efed947481d1f51bbaa253625c3ea5a"
+        },
+        "1501.0": {
+          "pts_s": 1501.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "440304b93bc88e9cbb920a777c6b62f95e3f13258e2c4f069f8bbabf2e74a4ae"
+        },
+        "1502.0": {
+          "pts_s": 1502.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "fc8fc4a6c1a82309dfea7651da669fccaad6b6400f75c2895572133e77d826b0"
+        },
+        "1530.0": {
+          "pts_s": 1530.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bcea042b2171b119ea9dc092d5e1824876f715de7335936ec0bcd4bead0d4110"
+        },
+        "1560.0": {
+          "pts_s": 1560.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "bde988dfe5a628c8e9c184a5d3174f24760ef586200c2e143ae34865870b7edc"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 2900.0,
+      "mode": "nearby_default_batch",
+      "wall_seconds": 0.2162028000020655,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0028624999977182597,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 2900.0,
+      "mode": "nearby_single_seeks",
+      "wall_seconds": 0.32077249999929336,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.010027899999840884,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 2900.0,
+      "mode": "sparse_30s_forced_batch",
+      "wall_seconds": 1.5205939000006765,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.0026909999978670385,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 2900.0,
+      "mode": "sparse_30s_seeks",
+      "wall_seconds": 0.3264287999991211,
+      "first_frame_seconds": null,
+      "frames_returned": 3,
+      "ffmpeg_processes": 3,
+      "popen_return_seconds": 0.009018899996590335,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    },
+    {
+      "repeat": 2,
+      "window_start_s": 2900.0,
+      "mode": "sequential_1fps",
+      "wall_seconds": 1.5307174000008672,
+      "first_frame_seconds": 0.09681620000264957,
+      "frames_returned": 61,
+      "ffmpeg_processes": 1,
+      "popen_return_seconds": 0.002834199996868847,
+      "requested_frames": {
+        "2900.0": {
+          "pts_s": 2900.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "978fbab23bac178e52317bb7e38c281bbf5f21094902230980561624049e3cb8"
+        },
+        "2901.0": {
+          "pts_s": 2901.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f7b1b7f7747c66f7af95b63211c1beea12dd8d436ecc6e1acf1f1efe3cba2e38"
+        },
+        "2902.0": {
+          "pts_s": 2902.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "b50f5d8cbc4367635f7a96e50bb751c7a43196f980b6804e1a12ccc7bb4d5647"
+        },
+        "2930.0": {
+          "pts_s": 2930.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "f636f8a0e1987af2d0e0c1db8713f045b894bd090fa19015d6c4e7ce64fe1136"
+        },
+        "2960.0": {
+          "pts_s": 2960.0,
+          "shape": [
+            540,
+            960,
+            3
+          ],
+          "pixel_sha256": "4e95d096556cefc1f748852819a28769c2bb783c750ca3c534d7f33625b55138"
+        }
+      },
+      "same_pts_and_pixels_as_sequential": true
+    }
+  ],
+  "summary": {
+    "sequential_1fps": {
+      "total_wall_seconds": 8.992960800005676,
+      "median_window_seconds": 1.5448979500015412,
+      "ffmpeg_processes": 6,
+      "frames_returned": 366,
+      "popen_return_seconds": 0.020787299996300135,
+      "same_pts_and_pixels_as_sequential": true
+    },
+    "sparse_30s_seeks": {
+      "total_wall_seconds": 1.892116300001362,
+      "median_window_seconds": 0.32294180000099004,
+      "ffmpeg_processes": 18,
+      "frames_returned": 18,
+      "popen_return_seconds": 0.06389470000431174,
+      "same_pts_and_pixels_as_sequential": true
+    },
+    "sparse_30s_forced_batch": {
+      "total_wall_seconds": 8.712768800003687,
+      "median_window_seconds": 1.5153316500000074,
+      "ffmpeg_processes": 6,
+      "frames_returned": 18,
+      "popen_return_seconds": 0.021655600001395214,
+      "same_pts_and_pixels_as_sequential": true
+    },
+    "nearby_single_seeks": {
+      "total_wall_seconds": 1.9939824999928533,
+      "median_window_seconds": 0.3278863999985333,
+      "ffmpeg_processes": 18,
+      "frames_returned": 18,
+      "popen_return_seconds": 0.06338249999316758,
+      "same_pts_and_pixels_as_sequential": true
+    },
+    "nearby_default_batch": {
+      "total_wall_seconds": 1.3181517999983043,
+      "median_window_seconds": 0.2165125999999873,
+      "ffmpeg_processes": 6,
+      "frames_returned": 18,
+      "popen_return_seconds": 0.02238539999962086,
+      "same_pts_and_pixels_as_sequential": true
+    }
+  }
+}

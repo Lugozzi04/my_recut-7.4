@@ -24,7 +24,7 @@ from pathlib import Path
 import time
 from typing import Any
 
-from analysis.audio_service import AnalysisCancellation
+from analysis.audio_service import AnalysisCancellation, AnalysisCancelled
 from analysis.boundaries.analyzer import BoundaryAnalyzer, BoundarySettings
 from analysis.boundaries.keep_policy import GameKeepPolicy, GameplayKeep
 from analysis.boundaries.gameplay import GameplayTimeline
@@ -178,11 +178,73 @@ def hearthstone_detector(settings: GameplayEditSettings) -> Detector:
     for path in (profile, pack):
         if not path.is_file():
             raise FileNotFoundError(f"Gameplay detector asset not found: {path}")
-    detector = StateAwareHearthstoneAnalyzer(state_profile=profile, template_pack=pack,
-                                             use_cache=settings.use_detector_cache)
+    import os
+
+    backend = os.environ.get("AUTO_CUTTER_GAMEPLAY_BACKEND", "traditional").strip().lower()
+    if backend not in {"traditional", "adaptive", "adaptive-shadow", "adaptive-v2", "adaptive-v2-shadow"}:
+        raise ValueError("AUTO_CUTTER_GAMEPLAY_BACKEND must be traditional, adaptive, adaptive-shadow, adaptive-v2 or adaptive-v2-shadow")
+    options: dict[str, Any] = {"state_profile": profile, "template_pack": pack, "use_cache": settings.use_detector_cache}
+    detector: StateAwareHearthstoneAnalyzer
+    candidate: StateAwareHearthstoneAnalyzer | None = None
+    if backend in {"adaptive-v2", "adaptive-v2-shadow"}:
+        from analysis.gameplay.hearthstone.adaptive_v2 import SparseAdaptiveHearthstoneAnalyzer, SparseSettings
+        candidate = SparseAdaptiveHearthstoneAnalyzer(**options, sparse_settings=SparseSettings(
+            force_full_fallback=os.environ.get("AUTO_CUTTER_ADAPTIVE_FULL_FALLBACK", "0") == "1",
+            scheduler=os.environ.get("AUTO_CUTTER_ADAPTIVE_SCHEDULER", "lattice")))
+        if backend == "adaptive-v2":
+            detector = candidate
+    elif backend != "traditional":
+        from analysis.gameplay.hearthstone.adaptive import AdaptiveHearthstoneAnalyzer
+        from analysis.gameplay.hearthstone.adaptive_policy import AdaptiveSettings
+        adaptive_settings = AdaptiveSettings(
+            coarse_step_s=float(os.environ.get("AUTO_CUTTER_ADAPTIVE_STEP_S", "5")),
+            force_full_fallback=os.environ.get("AUTO_CUTTER_ADAPTIVE_FULL_FALLBACK", "0") == "1")
+        candidate = AdaptiveHearthstoneAnalyzer(**options, adaptive_settings=adaptive_settings)
+        if backend == "adaptive":
+            detector = candidate
+    if backend not in {"adaptive", "adaptive-v2"}:
+        detector = StateAwareHearthstoneAnalyzer(**options)
 
     def run(video: Path, token: AnalysisCancellation, on_progress: Callable[[int], None] | None) -> GameplayAnalysisResult:
-        return detector.analyze(video, cancellation=token, on_progress=on_progress)
+        reference_started = time.perf_counter()
+        result = detector.analyze(video, cancellation=token,
+            on_progress=(lambda p: on_progress(p // 2)) if backend in {"adaptive-shadow", "adaptive-v2-shadow"} and on_progress else on_progress)
+        reference_wall = time.perf_counter() - reference_started
+        if backend in {"adaptive-shadow", "adaptive-v2-shadow"}:
+            from analysis.gameplay.hearthstone.adaptive_compare import compare_analyses
+            from analysis.performance_profile import current_profile, measure, record
+            assert candidate is not None
+            with measure("adaptive.shadow"):
+                candidate_started = time.perf_counter()
+                try:
+                    alternate = candidate.analyze(video, cancellation=token,
+                        on_progress=(lambda p: on_progress(50 + p // 2)) if on_progress else None)
+                except AnalysisCancelled:
+                    raise
+                except Exception as exc:
+                    result.warnings.append("Adaptive shadow failed; traditional analysis retained: " + type(exc).__name__)
+                    result.metadata["adaptive_shadow"] = {"status": "failed", "error_type": type(exc).__name__}
+                    active = current_profile()
+                    if active:
+                        active.node("adaptive.comparison").update(status="failed", error_type=type(exc).__name__)
+                    if on_progress:
+                        on_progress(100)
+                    return result
+                candidate_wall = time.perf_counter() - candidate_started
+                comparison = compare_analyses(result, alternate)
+                comparison.update(reference_wall_seconds=reference_wall, candidate_wall_seconds=candidate_wall,
+                                  delta_wall_seconds=candidate_wall-reference_wall)
+                comparison["reference_cache_hit"] = result.metadata.get("cache_hit", False)
+                comparison["candidate_cache_hit"] = alternate.metadata.get("cache_hit", False)
+                result.metadata["adaptive_shadow"] = comparison
+                record("adaptive.comparison", reference_events=comparison["reference_events"],
+                       missing_events=comparison["missing_events"], extra_events=comparison["extra_events"],
+                       pairing_errors=comparison["pairing_errors"])
+                active = current_profile()
+                if active:
+                    active.node("adaptive.comparison")["comparison"] = comparison
+                    active.modes["detector_backend"] = backend + " (traditional returned)"
+        return result
 
     return run
 

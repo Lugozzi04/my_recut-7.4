@@ -1,0 +1,1823 @@
+{
+  "source_name": "74.mp4",
+  "source_start_s": 780.0,
+  "requested_duration_s": 120.0,
+  "scope": "bounded clip; no full-VOD accuracy/speed claim",
+  "cache": "detector disabled, no ASR",
+  "runs": [
+    {
+      "backend": "traditional",
+      "coarse_step_s": null,
+      "wall_seconds": 4.082894099999976,
+      "monitor_seconds": 2.5494840999999724,
+      "events": [
+        {
+          "type": "VICTORY",
+          "timestamp": 40.2
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 40.2,
+          "result": "WIN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 4.082865200000015,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 2.5494840999999724,
+          "counters": {
+            "frames": 121,
+            "weak_result_candidate_frames": 3,
+            "board_below_low_frames": 7
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 3.5000011848751456e-06,
+          "counters": {}
+        },
+        "result_windows": {
+          "wall_seconds": 1.4706526000009035,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 7.0,
+            "frames": 420,
+            "candidates": 177,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.00030020000122021884,
+          "counters": {
+            "input_candidates": 177,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00012819999938074034,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 1,
+            "losses": 0,
+            "unknown": 0
+          }
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.06011990000115475,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.06006080000042857,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 1.2831146999960765,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.004026599999633618,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 2,
+            "seek_sessions": 1,
+            "requested_source_seconds": 127.066667,
+            "frames": 541,
+            "raw_bytes": 203964480
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 1.2207578999914404,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0007837999874027446,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0016467999848828185,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.03728580000824877,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.4044681999985187,
+          "counters": {
+            "comparisons": 726,
+            "frames": 121
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.04214190000311646,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.35567719999016845,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.4299939000120503,
+          "counters": {
+            "comparisons": 2904,
+            "frames": 121
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.00029400000130408444,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.42719879999822297,
+          "counters": {}
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.38333140001486754,
+          "counters": {
+            "comparisons": 726,
+            "frames": 121,
+            "candidates": 0
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.3737571999990905,
+          "counters": {}
+        },
+        "window_planning": {
+          "wall_seconds": 0.00012910000077681616,
+          "counters": {
+            "start_events": 0,
+            "result_windows": 1,
+            "board_reacquisitions": 0
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.2562154999886843,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.004287299998395611,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.18938919998254278,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0016435999968962278,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0013813999757985584,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 1.2066692999869701,
+          "counters": {
+            "comparisons": 10080,
+            "frames": 420
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.012868600002548192,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 1.1887659000203712,
+          "counters": {}
+        }
+      },
+      "adaptive": null
+    },
+    {
+      "backend": "adaptive",
+      "coarse_step_s": 5,
+      "wall_seconds": 6.503731099999641,
+      "monitor_seconds": 4.952849999997852,
+      "events": [
+        {
+          "type": "VICTORY",
+          "timestamp": 40.2
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 40.2,
+          "result": "WIN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 6.5037056999990455,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.952849999997852,
+          "counters": {
+            "frames": 146,
+            "weak_result_candidate_frames": 3,
+            "board_below_low_frames": 8
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 3.300001480965875e-06,
+          "counters": {}
+        },
+        "result_windows": {
+          "wall_seconds": 1.4914181000003737,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 7.0,
+            "frames": 420,
+            "candidates": 177,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.00029569999969680794,
+          "counters": {
+            "input_candidates": 177,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00012250000145286322,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 1,
+            "losses": 0,
+            "unknown": 0
+          }
+        },
+        "adaptive.total": {
+          "wall_seconds": 6.503713100000823,
+          "counters": {}
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.05579860000034387,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.05588449999959266,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 3
+          }
+        },
+        "adaptive.routing": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "requested_targets": 25,
+            "scored_frames": 25,
+            "vs_calls_avoided": 1,
+            "intervals_refined": 1,
+            "fallback_source_seconds": 120.066667,
+            "fallback_percent": 100.0
+          }
+        },
+        "adaptive.reconnaissance": {
+          "wall_seconds": 2.4335836000009294,
+          "counters": {
+            "frames": 25
+          }
+        },
+        "shared.frames": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "stream_requests": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 3.452046299991707,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.007123400000637048,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 3,
+            "seek_sessions": 1,
+            "requested_source_seconds": 247.133334,
+            "frames": 566,
+            "raw_bytes": 242844480
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 3.3156866999888734,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0010314000082871644,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.002131299999746261,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.04224499999145337,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.4665384999898379,
+          "counters": {
+            "comparisons": 876,
+            "frames": 146
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.048970199984978535,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.4097041999903013,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.5061226000070747,
+          "counters": {
+            "comparisons": 3504,
+            "frames": 146
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.0003670999994938029,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.5021867000177735,
+          "counters": {}
+        },
+        "adaptive.fingerprint": {
+          "wall_seconds": 0.009968900001695147,
+          "counters": {
+            "frames": 25
+          }
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.455956600009813,
+          "counters": {
+            "comparisons": 870,
+            "frames": 145,
+            "candidates": 0
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.44349220000185596,
+          "counters": {}
+        },
+        "adaptive.planning": {
+          "wall_seconds": 0.0006898999999975786,
+          "counters": {}
+        },
+        "adaptive.recovery": {
+          "wall_seconds": 2.5193958999989263,
+          "counters": {
+            "windows": 1,
+            "requested_targets": 121,
+            "frames": 121
+          }
+        },
+        "window_planning": {
+          "wall_seconds": 0.00019640000027720816,
+          "counters": {
+            "start_events": 0,
+            "result_windows": 1,
+            "board_reacquisitions": 0
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.26790269998855365,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.002639800000906689,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.1917100000064238,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0016808999953354942,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0014967999723012326,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 1.2152286000091408,
+          "counters": {
+            "comparisons": 10080,
+            "frames": 420
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.01415880000240577,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 1.1957952000175283,
+          "counters": {}
+        }
+      },
+      "adaptive": {
+        "coarse_step_s": 5,
+        "reconnaissance_frames": 25,
+        "states": [
+          {
+            "timestamp": 0.0,
+            "state": "IN_GAME",
+            "continuity": 0.0,
+            "reasons": []
+          },
+          {
+            "timestamp": 5.0,
+            "state": "IN_GAME",
+            "continuity": 0.9591392874717712,
+            "reasons": []
+          },
+          {
+            "timestamp": 10.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.3875163793563843,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 15.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.22836293280124664,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 20.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.034729667007923126,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 25.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.5451443195343018,
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_power",
+              "changed_structure_end_turn",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 30.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.07046735286712646,
+            "reasons": [
+              "changed_structure_end_turn"
+            ]
+          },
+          {
+            "timestamp": 35.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.07075870037078857,
+            "reasons": [
+              "changed_structure_end_turn"
+            ]
+          },
+          {
+            "timestamp": 40.0,
+            "state": "POSSIBLE_END",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board",
+              "board_transition"
+            ]
+          },
+          {
+            "timestamp": 45.0,
+            "state": "OUT_OF_GAME",
+            "continuity": 0.0,
+            "reasons": []
+          },
+          {
+            "timestamp": 50.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 55.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 60.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 65.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 70.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 75.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 80.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 85.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 90.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 95.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 100.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 105.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 110.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 115.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 120.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          }
+        ],
+        "recovery_intervals": [
+          {
+            "start": 0,
+            "end": 120.066667,
+            "reasons": [
+              "full_fallback"
+            ]
+          }
+        ],
+        "fallback_source_seconds": 120.066667,
+        "fallback_fraction": 1.0,
+        "full_fallback": true,
+        "invisible_transition_guarantee": false,
+        "mana_reader": "unavailable; no numeric mana inferred",
+        "scan_wall_seconds": 4.953776299998935,
+        "vs_candidate_windows": []
+      },
+      "comparison": {
+        "tolerance_s": 1.0,
+        "reference_events": 1,
+        "candidate_events": 1,
+        "matched_events": 1,
+        "missing_events": 0,
+        "extra_events": 0,
+        "event_recall": 1.0,
+        "event_precision": 1.0,
+        "mean_timestamp_error_s": 0.0,
+        "max_timestamp_error_s": 0.0,
+        "events": [
+          {
+            "type": "VICTORY",
+            "reference_timestamp": 40.2,
+            "candidate_timestamp": 40.2,
+            "error_s": 0.0,
+            "status": "matched"
+          }
+        ],
+        "extras": [],
+        "games": [
+          {
+            "reference_index": 1,
+            "start": null,
+            "end": 40.2,
+            "result": "WIN",
+            "candidate_index": 1,
+            "candidate_result": "WIN",
+            "status": "matched"
+          }
+        ],
+        "extra_games": [],
+        "pairing_errors": 0,
+        "reference_complete": 0,
+        "candidate_complete": 0,
+        "result_window_candidate_recall": 1.0,
+        "vs_window_candidate_recall": null,
+        "equivalent": true,
+        "exact_event_timestamps": true
+      },
+      "scan_change_percent": 94.26871499210002
+    },
+    {
+      "backend": "adaptive",
+      "coarse_step_s": 10,
+      "wall_seconds": 6.479838100000052,
+      "monitor_seconds": 4.934314500000255,
+      "events": [
+        {
+          "type": "VICTORY",
+          "timestamp": 40.2
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 40.2,
+          "result": "WIN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 6.479749200001606,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.934314500000255,
+          "counters": {
+            "frames": 134,
+            "weak_result_candidate_frames": 3,
+            "board_below_low_frames": 7
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 2.4000000848900527e-06,
+          "counters": {}
+        },
+        "result_windows": {
+          "wall_seconds": 1.4882056999995257,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 7.0,
+            "frames": 420,
+            "candidates": 177,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.0003057999983866466,
+          "counters": {
+            "input_candidates": 177,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00012250000145286322,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 1,
+            "losses": 0,
+            "unknown": 0
+          }
+        },
+        "adaptive.total": {
+          "wall_seconds": 6.479757099999915,
+          "counters": {}
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.053996799999367795,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.05426009999791859,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 3
+          }
+        },
+        "adaptive.routing": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "requested_targets": 13,
+            "scored_frames": 13,
+            "intervals_refined": 1,
+            "fallback_source_seconds": 120.066667,
+            "fallback_percent": 100.0
+          }
+        },
+        "adaptive.reconnaissance": {
+          "wall_seconds": 2.418897300000026,
+          "counters": {
+            "frames": 13
+          }
+        },
+        "shared.frames": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "stream_requests": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 3.566214199994647,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.007032500001514563,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 3,
+            "seek_sessions": 1,
+            "requested_source_seconds": 247.133334,
+            "frames": 554,
+            "raw_bytes": 224182080
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 3.419872399994347,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0008948000067903195,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.001748999997289502,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.03565059999891673,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.4230312000017875,
+          "counters": {
+            "comparisons": 804,
+            "frames": 134
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.04223189997173904,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.3743904000020848,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.4562212999971962,
+          "counters": {
+            "comparisons": 3216,
+            "frames": 134
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.0002750000148807885,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.4529690999988816,
+          "counters": {}
+        },
+        "adaptive.fingerprint": {
+          "wall_seconds": 0.005061999998360989,
+          "counters": {
+            "frames": 13
+          }
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.43177489998561214,
+          "counters": {
+            "comparisons": 804,
+            "frames": 134,
+            "candidates": 0
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.4207269000071392,
+          "counters": {}
+        },
+        "adaptive.planning": {
+          "wall_seconds": 0.00032559999999648426,
+          "counters": {}
+        },
+        "adaptive.recovery": {
+          "wall_seconds": 2.5157316000004357,
+          "counters": {
+            "windows": 1,
+            "requested_targets": 121,
+            "frames": 121
+          }
+        },
+        "window_planning": {
+          "wall_seconds": 0.00012629999946511816,
+          "counters": {
+            "start_events": 0,
+            "result_windows": 1,
+            "board_reacquisitions": 0
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.26312029998371145,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.003104400000665919,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.187821299994539,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0016478000125061953,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0013392000073508825,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 1.2172242000033293,
+          "counters": {
+            "comparisons": 10080,
+            "frames": 420
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.013206499983425601,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 1.198972699994556,
+          "counters": {}
+        }
+      },
+      "adaptive": {
+        "coarse_step_s": 10,
+        "reconnaissance_frames": 13,
+        "states": [
+          {
+            "timestamp": 0.0,
+            "state": "IN_GAME",
+            "continuity": 0.0,
+            "reasons": []
+          },
+          {
+            "timestamp": 10.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.3675578534603119,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 20.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.3214258551597595,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 30.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_power",
+              "changed_structure_end_turn",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 40.0,
+            "state": "POSSIBLE_END",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board",
+              "board_transition"
+            ]
+          },
+          {
+            "timestamp": 50.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 60.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 70.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 80.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 90.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 100.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 110.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 120.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          }
+        ],
+        "recovery_intervals": [
+          {
+            "start": 0,
+            "end": 120.066667,
+            "reasons": [
+              "full_fallback"
+            ]
+          }
+        ],
+        "fallback_source_seconds": 120.066667,
+        "fallback_fraction": 1.0,
+        "full_fallback": true,
+        "invisible_transition_guarantee": false,
+        "mana_reader": "unavailable; no numeric mana inferred",
+        "scan_wall_seconds": 4.935039300000426,
+        "vs_candidate_windows": []
+      },
+      "comparison": {
+        "tolerance_s": 1.0,
+        "reference_events": 1,
+        "candidate_events": 1,
+        "matched_events": 1,
+        "missing_events": 0,
+        "extra_events": 0,
+        "event_recall": 1.0,
+        "event_precision": 1.0,
+        "mean_timestamp_error_s": 0.0,
+        "max_timestamp_error_s": 0.0,
+        "events": [
+          {
+            "type": "VICTORY",
+            "reference_timestamp": 40.2,
+            "candidate_timestamp": 40.2,
+            "error_s": 0.0,
+            "status": "matched"
+          }
+        ],
+        "extras": [],
+        "games": [
+          {
+            "reference_index": 1,
+            "start": null,
+            "end": 40.2,
+            "result": "WIN",
+            "candidate_index": 1,
+            "candidate_result": "WIN",
+            "status": "matched"
+          }
+        ],
+        "extra_games": [],
+        "pairing_errors": 0,
+        "reference_complete": 0,
+        "candidate_complete": 0,
+        "result_window_candidate_recall": 1.0,
+        "vs_window_candidate_recall": null,
+        "equivalent": true,
+        "exact_event_timestamps": true
+      },
+      "scan_change_percent": 93.54168555121834
+    },
+    {
+      "backend": "adaptive",
+      "coarse_step_s": 20,
+      "wall_seconds": 6.4804444999990665,
+      "monitor_seconds": 4.923760399999082,
+      "events": [
+        {
+          "type": "VICTORY",
+          "timestamp": 40.2
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 40.2,
+          "result": "WIN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 6.480350499999986,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.923760399999082,
+          "counters": {
+            "frames": 128,
+            "weak_result_candidate_frames": 3,
+            "board_below_low_frames": 7
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 3.6999990697950125e-06,
+          "counters": {}
+        },
+        "result_windows": {
+          "wall_seconds": 1.499058099998365,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 7.0,
+            "frames": 420,
+            "candidates": 177,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.00029490000088117085,
+          "counters": {
+            "input_candidates": 177,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00012179999976069666,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 1,
+            "losses": 0,
+            "unknown": 0
+          }
+        },
+        "adaptive.total": {
+          "wall_seconds": 6.480359099999987,
+          "counters": {}
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.054427700000815094,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.054710299998987466,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 3
+          }
+        },
+        "adaptive.routing": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "requested_targets": 7,
+            "scored_frames": 7,
+            "intervals_refined": 1,
+            "fallback_source_seconds": 120.066667,
+            "fallback_percent": 100.0
+          }
+        },
+        "adaptive.reconnaissance": {
+          "wall_seconds": 2.400891999999658,
+          "counters": {
+            "frames": 7
+          }
+        },
+        "shared.frames": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "stream_requests": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 3.6311372999862215,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.006703799997922033,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 3,
+            "seek_sessions": 1,
+            "requested_source_seconds": 247.133334,
+            "frames": 548,
+            "raw_bytes": 214850880
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 3.4966926999804855,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0008627000115666306,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0016275999932986451,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.03559789999417262,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.3996446000110154,
+          "counters": {
+            "comparisons": 768,
+            "frames": 128
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.041866699984893785,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.351012000000992,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.44078849999823433,
+          "counters": {
+            "comparisons": 3072,
+            "frames": 128
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.0002688000095076859,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.43767480000497017,
+          "counters": {}
+        },
+        "adaptive.fingerprint": {
+          "wall_seconds": 0.0026790999982040375,
+          "counters": {
+            "frames": 7
+          }
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.4008940999992774,
+          "counters": {
+            "comparisons": 768,
+            "frames": 128,
+            "candidates": 0
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.3903107999922213,
+          "counters": {}
+        },
+        "adaptive.planning": {
+          "wall_seconds": 0.00026360000083514024,
+          "counters": {}
+        },
+        "adaptive.recovery": {
+          "wall_seconds": 2.522965500000282,
+          "counters": {
+            "windows": 1,
+            "requested_targets": 121,
+            "frames": 121
+          }
+        },
+        "window_planning": {
+          "wall_seconds": 0.00023639999926672317,
+          "counters": {
+            "start_events": 0,
+            "result_windows": 1,
+            "board_reacquisitions": 0
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.26771309999458026,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.0026816999998118263,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.19403330000932328,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0016644000224914635,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0015536999726464273,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 1.2229481999820564,
+          "counters": {
+            "comparisons": 10080,
+            "frames": 420
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.014603899973735679,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 1.2029019000292465,
+          "counters": {}
+        }
+      },
+      "adaptive": {
+        "coarse_step_s": 20,
+        "reconnaissance_frames": 7,
+        "states": [
+          {
+            "timestamp": 0.0,
+            "state": "IN_GAME",
+            "continuity": 0.0,
+            "reasons": []
+          },
+          {
+            "timestamp": 20.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.8043056130409241,
+            "reasons": [
+              "changed_opponent_portrait"
+            ]
+          },
+          {
+            "timestamp": 40.0,
+            "state": "POSSIBLE_END",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board",
+              "board_transition"
+            ]
+          },
+          {
+            "timestamp": 60.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 80.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 100.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 120.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          }
+        ],
+        "recovery_intervals": [
+          {
+            "start": 0,
+            "end": 120.066667,
+            "reasons": [
+              "full_fallback"
+            ]
+          }
+        ],
+        "fallback_source_seconds": 120.066667,
+        "fallback_fraction": 1.0,
+        "full_fallback": true,
+        "invisible_transition_guarantee": false,
+        "mana_reader": "unavailable; no numeric mana inferred",
+        "scan_wall_seconds": 4.924219400001675,
+        "vs_candidate_windows": []
+      },
+      "comparison": {
+        "tolerance_s": 1.0,
+        "reference_events": 1,
+        "candidate_events": 1,
+        "matched_events": 1,
+        "missing_events": 0,
+        "extra_events": 0,
+        "event_recall": 1.0,
+        "event_precision": 1.0,
+        "mean_timestamp_error_s": 0.0,
+        "max_timestamp_error_s": 0.0,
+        "events": [
+          {
+            "type": "VICTORY",
+            "reference_timestamp": 40.2,
+            "candidate_timestamp": 40.2,
+            "error_s": 0.0,
+            "status": "matched"
+          }
+        ],
+        "extras": [],
+        "games": [
+          {
+            "reference_index": 1,
+            "start": null,
+            "end": 40.2,
+            "result": "WIN",
+            "candidate_index": 1,
+            "candidate_result": "WIN",
+            "status": "matched"
+          }
+        ],
+        "extra_games": [],
+        "pairing_errors": 0,
+        "reference_complete": 0,
+        "candidate_complete": 0,
+        "result_window_candidate_recall": 1.0,
+        "vs_window_candidate_recall": null,
+        "equivalent": true,
+        "exact_event_timestamps": true
+      },
+      "scan_change_percent": 93.12771552484425
+    },
+    {
+      "backend": "adaptive",
+      "coarse_step_s": 30,
+      "wall_seconds": 6.446499600000607,
+      "monitor_seconds": 4.904298400000698,
+      "events": [
+        {
+          "type": "VICTORY",
+          "timestamp": 40.2
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 40.2,
+          "result": "WIN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 6.446383500000593,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.904298400000698,
+          "counters": {
+            "frames": 126,
+            "weak_result_candidate_frames": 3,
+            "board_below_low_frames": 7
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 3.600000127335079e-06,
+          "counters": {}
+        },
+        "result_windows": {
+          "wall_seconds": 1.4839828999993188,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 7.0,
+            "frames": 420,
+            "candidates": 177,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.0003643000000010943,
+          "counters": {
+            "input_candidates": 177,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00012550000064948108,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 1,
+            "losses": 0,
+            "unknown": 0
+          }
+        },
+        "adaptive.total": {
+          "wall_seconds": 6.446393899999748,
+          "counters": {}
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.05478589999984251,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.05495329999939713,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 3
+          }
+        },
+        "adaptive.routing": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "requested_targets": 5,
+            "scored_frames": 5,
+            "intervals_refined": 1,
+            "fallback_source_seconds": 120.066667,
+            "fallback_percent": 100.0
+          }
+        },
+        "adaptive.reconnaissance": {
+          "wall_seconds": 2.3946360999998433,
+          "counters": {
+            "frames": 5
+          }
+        },
+        "shared.frames": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "stream_requests": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 3.608641800004989,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.0067103000001225155,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 3,
+            "seek_sessions": 1,
+            "requested_source_seconds": 247.133334,
+            "frames": 546,
+            "raw_bytes": 211740480
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 3.48103520001132,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0007982999995874707,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0015409000043291599,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.03413989999535261,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.3990586999934749,
+          "counters": {
+            "comparisons": 756,
+            "frames": 126
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.03985139999713283,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.3524175999846193,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.45459560000381316,
+          "counters": {
+            "comparisons": 3024,
+            "frames": 126
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.0002722999997786246,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.45133900001019356,
+          "counters": {}
+        },
+        "adaptive.fingerprint": {
+          "wall_seconds": 0.0018911999995907536,
+          "counters": {
+            "frames": 5
+          }
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.39339960000688734,
+          "counters": {
+            "comparisons": 756,
+            "frames": 126,
+            "candidates": 0
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.3820119999945746,
+          "counters": {}
+        },
+        "adaptive.planning": {
+          "wall_seconds": 0.00025999999888881575,
+          "counters": {}
+        },
+        "adaptive.recovery": {
+          "wall_seconds": 2.5097836000004463,
+          "counters": {
+            "windows": 1,
+            "requested_targets": 121,
+            "frames": 121
+          }
+        },
+        "window_planning": {
+          "wall_seconds": 0.00020229999972798396,
+          "counters": {
+            "start_events": 0,
+            "result_windows": 1,
+            "board_reacquisitions": 0
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.25631320002139546,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.0029250000006868504,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.1908999999977823,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0016279000119538978,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0014073000038479222,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 1.2197173000113253,
+          "counters": {
+            "comparisons": 10080,
+            "frames": 420
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.013170099997296347,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 1.2014145999928587,
+          "counters": {}
+        }
+      },
+      "adaptive": {
+        "coarse_step_s": 30,
+        "reconnaissance_frames": 5,
+        "states": [
+          {
+            "timestamp": 0.0,
+            "state": "IN_GAME",
+            "continuity": 0.0,
+            "reasons": []
+          },
+          {
+            "timestamp": 30.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "changed_player_power",
+              "changed_structure_end_turn",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 60.0,
+            "state": "POSSIBLE_END",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board",
+              "board_transition"
+            ]
+          },
+          {
+            "timestamp": 90.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          },
+          {
+            "timestamp": 120.0,
+            "state": "UNKNOWN_RECOVERY",
+            "continuity": 0.0,
+            "reasons": [
+              "uncertain_board"
+            ]
+          }
+        ],
+        "recovery_intervals": [
+          {
+            "start": 0,
+            "end": 120.066667,
+            "reasons": [
+              "full_fallback"
+            ]
+          }
+        ],
+        "fallback_source_seconds": 120.066667,
+        "fallback_fraction": 1.0,
+        "full_fallback": true,
+        "invisible_transition_guarantee": false,
+        "mana_reader": "unavailable; no numeric mana inferred",
+        "scan_wall_seconds": 4.90478240000084,
+        "vs_candidate_windows": []
+      },
+      "comparison": {
+        "tolerance_s": 1.0,
+        "reference_events": 1,
+        "candidate_events": 1,
+        "matched_events": 1,
+        "missing_events": 0,
+        "extra_events": 0,
+        "event_recall": 1.0,
+        "event_precision": 1.0,
+        "mean_timestamp_error_s": 0.0,
+        "max_timestamp_error_s": 0.0,
+        "events": [
+          {
+            "type": "VICTORY",
+            "reference_timestamp": 40.2,
+            "candidate_timestamp": 40.2,
+            "error_s": 0.0,
+            "status": "matched"
+          }
+        ],
+        "extras": [],
+        "games": [
+          {
+            "reference_index": 1,
+            "start": null,
+            "end": 40.2,
+            "result": "WIN",
+            "candidate_index": 1,
+            "candidate_result": "WIN",
+            "status": "matched"
+          }
+        ],
+        "extra_games": [],
+        "pairing_errors": 0,
+        "reference_complete": 0,
+        "candidate_complete": 0,
+        "result_window_candidate_recall": 1.0,
+        "vs_window_candidate_recall": null,
+        "equivalent": true,
+        "exact_event_timestamps": true
+      },
+      "scan_change_percent": 92.36434539837887
+    }
+  ]
+}

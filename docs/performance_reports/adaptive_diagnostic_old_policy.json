@@ -1,0 +1,30 @@
+{
+  "states": {
+    "OUT_OF_GAME": 74,
+    "UNKNOWN_RECOVERY": 555,
+    "POSSIBLE_START": 57,
+    "POSSIBLE_END": 50,
+    "IN_GAME": 14
+  },
+  "raw_interval_requests": 892,
+  "raw_coverage_seconds": 3621.999667,
+  "raw_coverage_percent": 96.58666636356264,
+  "reason_source_seconds_overlapping": {
+    "leading_recovery": 5,
+    "trailing_recovery": 5,
+    "periodic_recovery": 1122,
+    "uncertain_board": 1649,
+    "transition_followup": 369,
+    "weak_start": 55,
+    "board_transition": 741,
+    "changed_opponent_power": 455,
+    "changed_player_power": 688,
+    "unreadable_portrait": 23,
+    "unreadable_structure": 23,
+    "changed_structure_hero_power": 504,
+    "changed_opponent_portrait": 1562,
+    "changed_structure_end_turn": 533,
+    "changed_player_portrait": 1164,
+    "weak_result": 18
+  }
+}

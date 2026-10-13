@@ -146,3 +146,92 @@ def test_calibration_traces_74_86_replay_without_errors():
             assert classified and all(d.outcome == item['truth'] for d in classified), item['group']
             assert not any(d.outcome == UNKNOWN for d in decisions), item['group']
     assert results == 20 and negatives == 24
+
+
+# --- Single-frame confirmation (opt-in, used by Adaptive V2) ---------------------------
+
+SINGLE = Path(__file__).parent / 'fixtures' / 'gameplay' / 'single_frame_result_traces.json'
+
+
+def _single_frame_case(name: str) -> tuple[ResultEvidence, list[ResultEvidence]]:
+    case = json.loads(SINGLE.read_text(encoding='utf-8'))['cases'][name]
+    frames = [ResultEvidence(t, v, d) for t, v, d in case['frames']]
+    return max(frames, key=lambda f: f.score), frames
+
+
+def test_real_isolated_defeat_banner_is_confirmed_from_its_60fps_neighbourhood():
+    # THEORYCRAFTING game 10: "Sconfitta!" above the floor in one PTS only.
+    from analysis.gameplay.hearthstone.result_decision import NO_RESULT, SingleFrameConfirmation
+    peak, frames = _single_frame_case('theorycrafting_g10_isolated_defeat')
+    decision = decide_results([f for f in frames if f.score >= POLICY.evidence_score], POLICY)
+    assert [(d.outcome, d.reason) for d in decision] == [(NO_RESULT, 'insufficient_support')]  # ordinary policy unchanged
+    confirmed = SingleFrameConfirmation().confirm(decision[0], frames)
+    assert confirmed.outcome == 'DEFEAT' and confirmed.reason == 'single_frame_local_peak'
+    event = confirmed.to_event()
+    assert event is not None and event.type == GameEventType.DEFEAT and event.timestamp == peak.timestamp
+
+
+def test_trailing_echo_frames_are_real_banner_frames_or_rejected():
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    rule = SingleFrameConfirmation()
+    peak, frames = _single_frame_case('theorycrafting_g3_trailing_defeat_echo')
+    assert rule.evaluate(peak, frames) == (None, 'peak_below_gate')
+    peak, frames = _single_frame_case('theorycrafting_g17_trailing_defeat_echo')
+    assert rule.evaluate(peak, frames)[0] == 'DEFEAT'  # same class as the LOSS it follows; deduplicated
+
+
+@pytest.mark.parametrize('neighbours,reason', [
+    ([(0.95, .1, .52), (1.05, .1, .52)], 'single_frame_local_peak'),
+    ([(0.95, .1, .40), (1.05, .1, .45)], 'unsupported_isolated_peak'),   # below every negative seen
+    ([(0.95, .1, .55), (1.05, .62, .2)], 'conflicting_neighbour'),
+    ([(0.95, .1, .91), (1.05, .1, .55)], 'not_strict_local_peak'),
+    ([(0.95, .1, .55)], 'incomplete_neighbourhood'),
+])
+def test_single_frame_rule_requires_coherent_same_class_neighbourhood(neighbours, reason):
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    peak = ResultEvidence(1.0, .30, .90)
+    winner, why = SingleFrameConfirmation().evaluate(peak, [peak, *(ResultEvidence(*n) for n in neighbours)])
+    assert why == reason and (winner == 'DEFEAT') == (reason == 'single_frame_local_peak')
+
+
+@pytest.mark.parametrize('peak,reason', [((.30, .84), 'peak_below_gate'), ((.55, .90), 'ambiguous_peak'),
+                                         ((.60, .60), 'peak_below_gate')])
+def test_single_frame_peak_must_be_strong_and_unambiguous(peak, reason):
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    centre = ResultEvidence(1.0, *peak)
+    around = [ResultEvidence(.95, .1, .6), ResultEvidence(1.05, .1, .6)]
+    assert SingleFrameConfirmation().evaluate(centre, [centre, *around]) == (None, reason)
+
+
+def test_single_frame_rule_only_upgrades_one_pts_no_result():
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    strong = decide_results([ResultEvidence(1 + i / 60, .2, .95) for i in range(6)], POLICY)[0]
+    assert SingleFrameConfirmation().confirm(strong, []) is strong
+
+
+def test_every_calibration_frame_as_isolated_peak_never_gives_a_false_result():
+    """Stress: treat EACH stored 74/86 frame as a lone candidate with its real 60 FPS neighbours.
+
+    Hard negatives must never confirm; result traces may confirm only their own class.
+    """
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    rule = SingleFrameConfirmation()
+    raw = json.loads(TRACES.read_text(encoding='utf-8'))
+    confirmed = {'NO_RESULT': 0, 'right': 0}
+    for item in raw['traces']:
+        frames = [ResultEvidence(t, v, d) for t, v, d in item['frames']]
+        for candidate in frames:
+            winner, _ = rule.evaluate(candidate, frames)
+            if winner is None:
+                continue
+            assert item['truth'] != 'NO_RESULT', item['group']
+            assert winner == item['truth'], (item['group'], candidate)
+            confirmed['right'] += 1
+    assert confirmed['right'] > 0
+
+
+def test_invalid_single_frame_rule_is_rejected():
+    from analysis.gameplay.hearthstone.result_decision import SingleFrameConfirmation
+    for change in ({'peak_score': .5, 'negative_ceiling': .6}, {'neighbourhood_s': 0}, {'peak_score': float('nan')}):
+        with pytest.raises(ValueError):
+            SingleFrameConfirmation(**change)

@@ -1,0 +1,1986 @@
+{
+  "source_name": "videoprova.mp4",
+  "source_start_s": 1250.0,
+  "requested_duration_s": 180.0,
+  "scope": "bounded clip; no full-VOD accuracy/speed claim",
+  "cache": "detector disabled, no ASR",
+  "runs": [
+    {
+      "backend": "traditional",
+      "coarse_step_s": null,
+      "wall_seconds": 4.6850501999997505,
+      "monitor_seconds": 4.21622170000046,
+      "events": [
+        {
+          "type": "VS_SCREEN",
+          "timestamp": 109.5
+        }
+      ],
+      "games": [
+        {
+          "start": 109.5,
+          "end": null,
+          "result": "UNKNOWN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 4.685019900000043,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.21622170000046,
+          "counters": {
+            "frames": 181,
+            "weak_result_candidate_frames": 0,
+            "board_below_low_frames": 65
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 0.40603179999925487,
+          "counters": {
+            "windows": 1,
+            "frames": 58,
+            "completed_windows": 1
+          }
+        },
+        "result_windows": {
+          "wall_seconds": 6.999998731771484e-07,
+          "counters": {}
+        },
+        "event_consolidation": {
+          "wall_seconds": 7.870000081311446e-05,
+          "counters": {
+            "input_candidates": 0,
+            "output_events": 1,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 0
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00011810000069090165,
+          "counters": {
+            "games": 1,
+            "complete_games": 0,
+            "wins": 0,
+            "losses": 0,
+            "unknown": 1
+          }
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.05954289999863249,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.05946909999875061,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 2.270194500008074,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.003923099999155966,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 2,
+            "seek_sessions": 1,
+            "requested_source_seconds": 190.10000000000002,
+            "frames": 239,
+            "raw_bytes": 371692800
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 2.189047899993966,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0015848999937588815,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0032504000009794254,
+          "counters": {}
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.06256019999273121,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.6486304000027303,
+          "counters": {
+            "comparisons": 1086,
+            "frames": 181
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.07795720000467554,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.5568338999910338,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.6275526999997965,
+          "counters": {
+            "comparisons": 4344,
+            "frames": 181
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.0006167999945319025,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.6216604000110237,
+          "counters": {}
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.5849517000060587,
+          "counters": {
+            "comparisons": 1086,
+            "frames": 181,
+            "candidates": 7
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.5671595000185334,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait": {
+          "wall_seconds": 0.15912590000516502,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.00436470000022382,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.0948952000017016,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.00024790000315988436,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0004526000029727584,
+          "counters": {}
+        },
+        "vs_refinement.vs": {
+          "wall_seconds": 0.24256370000512106,
+          "counters": {
+            "comparisons": 348,
+            "frames": 58,
+            "candidates": 32
+          }
+        },
+        "vs_refinement.vs.image_preparation": {
+          "wall_seconds": 0.014610199998060125,
+          "counters": {}
+        },
+        "vs_refinement.vs.template_matching": {
+          "wall_seconds": 0.21637660000124015,
+          "counters": {}
+        },
+        "window_planning": {
+          "wall_seconds": 0.000645500000246102,
+          "counters": {
+            "start_events": 1,
+            "result_windows": 0,
+            "board_reacquisitions": 1
+          }
+        }
+      },
+      "adaptive": null
+    },
+    {
+      "backend": "adaptive",
+      "coarse_step_s": 5,
+      "wall_seconds": 6.866285000000062,
+      "monitor_seconds": 4.039712600000712,
+      "events": [
+        {
+          "type": "DEFEAT",
+          "timestamp": 51.133
+        },
+        {
+          "type": "VS_SCREEN",
+          "timestamp": 109.5
+        }
+      ],
+      "games": [
+        {
+          "start": null,
+          "end": 51.133,
+          "result": "LOSS"
+        },
+        {
+          "start": 109.5,
+          "end": null,
+          "result": "UNKNOWN"
+        }
+      ],
+      "phases": {
+        "detection": {
+          "wall_seconds": 6.866244999999253,
+          "counters": {}
+        },
+        "monitor": {
+          "wall_seconds": 4.039712600000712,
+          "counters": {
+            "frames": 181,
+            "weak_result_candidate_frames": 0,
+            "board_below_low_frames": 32
+          }
+        },
+        "vs_refinement": {
+          "wall_seconds": 0.41112669999893114,
+          "counters": {
+            "windows": 1,
+            "frames": 58,
+            "completed_windows": 1
+          }
+        },
+        "result_windows": {
+          "wall_seconds": 2.3535976000002847,
+          "counters": {
+            "windows": 1,
+            "source_window_seconds": 12.0,
+            "frames": 720,
+            "candidates": 10,
+            "completed_windows": 1
+          }
+        },
+        "event_consolidation": {
+          "wall_seconds": 0.00013380000018514693,
+          "counters": {
+            "input_candidates": 10,
+            "output_events": 2,
+            "rejected_clusters": 0,
+            "accepted_result_clusters": 1
+          }
+        },
+        "game_assembly": {
+          "wall_seconds": 0.00022429999989981297,
+          "counters": {
+            "games": 2,
+            "complete_games": 0,
+            "wins": 0,
+            "losses": 1,
+            "unknown": 1
+          }
+        },
+        "adaptive.total": {
+          "wall_seconds": 6.866254999999001,
+          "counters": {}
+        },
+        "detection.identity_probe": {
+          "wall_seconds": 0.056067699999402976,
+          "counters": {}
+        },
+        "sampling.probe": {
+          "wall_seconds": 0.056253900000228896,
+          "counters": {
+            "cache_misses": 1,
+            "cache_hits": 3
+          }
+        },
+        "shared.frames": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "stream_requests": 2
+          }
+        },
+        "monitor.frame_delivery_wait": {
+          "wall_seconds": 2.6520920999955706,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.0025284000003011897,
+          "counters": {}
+        },
+        "sampling": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "streams": 3,
+            "seek_sessions": 2,
+            "requested_source_seconds": 202.10000000000002,
+            "frames": 959,
+            "raw_bytes": 398753280
+          }
+        },
+        "monitor.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 2.634957900003428,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.0014427000078285346,
+          "counters": {}
+        },
+        "monitor.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0029422999996313592,
+          "counters": {}
+        },
+        "adaptive.reconnaissance": {
+          "wall_seconds": 0.39941410000210453,
+          "counters": {
+            "frames": 37
+          }
+        },
+        "monitor.image_preparation": {
+          "wall_seconds": 0.026025899996966473,
+          "counters": {}
+        },
+        "monitor.board": {
+          "wall_seconds": 0.43591930001275614,
+          "counters": {
+            "comparisons": 798,
+            "frames": 133
+          }
+        },
+        "monitor.board.image_preparation": {
+          "wall_seconds": 0.04586660001768905,
+          "counters": {}
+        },
+        "monitor.board.template_matching": {
+          "wall_seconds": 0.3824957999968319,
+          "counters": {}
+        },
+        "monitor.result_matching": {
+          "wall_seconds": 0.4568203999988327,
+          "counters": {
+            "comparisons": 3192,
+            "frames": 133
+          }
+        },
+        "monitor.result_matching.image_preparation": {
+          "wall_seconds": 0.00032949999513220973,
+          "counters": {}
+        },
+        "monitor.result_matching.template_matching": {
+          "wall_seconds": 0.4533103000103438,
+          "counters": {}
+        },
+        "adaptive.routing": {
+          "wall_seconds": 0.0,
+          "counters": {
+            "scored_frames": 133,
+            "intervals_refined": 6,
+            "fallback_source_seconds": 119.10000000000002,
+            "fallback_percent": 66.12992781787896,
+            "delivered_frames": 181,
+            "unmatched_frames": 61,
+            "buffer_max_frames": 14,
+            "vs_calls_avoided": 48,
+            "board_calls_avoided": 48,
+            "result_calls_avoided": 48
+          }
+        },
+        "adaptive.fingerprint": {
+          "wall_seconds": 0.015834999994694954,
+          "counters": {
+            "frames": 37
+          }
+        },
+        "monitor.vs": {
+          "wall_seconds": 0.4093371999915689,
+          "counters": {
+            "comparisons": 798,
+            "frames": 133,
+            "candidates": 7
+          }
+        },
+        "monitor.vs.template_matching": {
+          "wall_seconds": 0.3984640000071522,
+          "counters": {}
+        },
+        "adaptive.planning": {
+          "wall_seconds": 0.005490400008056895,
+          "counters": {}
+        },
+        "adaptive.recovery": {
+          "wall_seconds": 0.9643271999830176,
+          "counters": {
+            "frames": 120,
+            "windows": 6,
+            "reused_frames": 120
+          }
+        },
+        "vs_refinement.frame_delivery_wait": {
+          "wall_seconds": 0.15778509998563095,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.00269779999871389,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.09668129999590747,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.00026449999859323725,
+          "counters": {}
+        },
+        "vs_refinement.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0005296999952406622,
+          "counters": {}
+        },
+        "vs_refinement.vs": {
+          "wall_seconds": 0.24863620000360243,
+          "counters": {
+            "comparisons": 348,
+            "frames": 58,
+            "candidates": 32
+          }
+        },
+        "vs_refinement.vs.image_preparation": {
+          "wall_seconds": 0.014206700003342121,
+          "counters": {}
+        },
+        "vs_refinement.vs.template_matching": {
+          "wall_seconds": 0.22270210000351653,
+          "counters": {}
+        },
+        "window_planning": {
+          "wall_seconds": 0.0005361999992601341,
+          "counters": {
+            "start_events": 1,
+            "result_windows": 1,
+            "board_reacquisitions": 1
+          }
+        },
+        "result_windows.frame_delivery_wait": {
+          "wall_seconds": 0.15737980000085372,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+          "wall_seconds": 0.004210099999909289,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.frame_queue_wait": {
+          "wall_seconds": 0.08469020002303296,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+          "wall_seconds": 0.00367109999024251,
+          "counters": {}
+        },
+        "result_windows.frame_delivery_wait.raw_frame_view": {
+          "wall_seconds": 0.0032110999873111723,
+          "counters": {}
+        },
+        "result_windows.result_matching": {
+          "wall_seconds": 2.181109800025297,
+          "counters": {
+            "comparisons": 17280,
+            "frames": 720
+          }
+        },
+        "result_windows.result_matching.image_preparation": {
+          "wall_seconds": 0.028854700016381685,
+          "counters": {}
+        },
+        "result_windows.result_matching.template_matching": {
+          "wall_seconds": 2.1407281000301737,
+          "counters": {}
+        },
+        "adaptive.diagnostics": {
+          "wall_seconds": 0.0011101000000053318,
+          "counters": {}
+        }
+      },
+      "adaptive": {
+        "coarse_step_s": 5,
+        "reconnaissance_frames": 37,
+        "states": [
+          {
+            "timestamp": 0.05,
+            "state": "IN_GAME",
+            "evidence_state": "IDENTITY_UNCERTAIN",
+            "board_present": true,
+            "board_score": 0.5627225637435913,
+            "continuity": 0.0,
+            "similarities": {},
+            "stable_regions": [],
+            "changed_regions": [],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 5.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.581701934337616,
+            "continuity": 0.6253055930137634,
+            "similarities": {
+              "opponent_portrait": 0.6253055930137634,
+              "opponent_power": 0.9653773903846741,
+              "player_portrait": 0.7576791048049927,
+              "player_power": 0.9415286779403687,
+              "structure_end_turn": 0.9997973442077637,
+              "structure_hero_power": 0.8929107189178467
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_power",
+              "structure_end_turn"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "player_portrait",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_portrait",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 10.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.6464334726333618,
+            "continuity": 0.25439903140068054,
+            "similarities": {
+              "opponent_portrait": 0.25439903140068054,
+              "opponent_power": 0.49504417181015015,
+              "player_portrait": 0.8911764621734619,
+              "player_power": 0.8415024280548096,
+              "structure_end_turn": 0.28324514627456665,
+              "structure_hero_power": 0.8189131617546082
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_end_turn",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 15.05,
+            "state": "IN_GAME",
+            "evidence_state": "IDENTITY_UNCERTAIN",
+            "board_present": true,
+            "board_score": 0.5097736716270447,
+            "continuity": 0.24534927308559418,
+            "similarities": {
+              "opponent_portrait": 0.24534927308559418,
+              "opponent_power": 0.5366858243942261,
+              "player_portrait": 0.9749402403831482,
+              "player_power": 0.9561657905578613,
+              "structure_end_turn": 0.3118272125720978,
+              "structure_hero_power": 0.9912812113761902
+            },
+            "stable_regions": [
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "structure_end_turn"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_structure_end_turn",
+              "identity_uncertain"
+            ]
+          },
+          {
+            "timestamp": 20.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.6094580888748169,
+            "continuity": 0.14809700846672058,
+            "similarities": {
+              "opponent_portrait": 0.5853224396705627,
+              "opponent_power": 0.9744975566864014,
+              "player_portrait": 0.8709486722946167,
+              "player_power": 0.9158338308334351,
+              "structure_end_turn": 0.14809700846672058,
+              "structure_hero_power": 0.990799605846405
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "player_portrait",
+              "structure_end_turn"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_portrait",
+              "changed_structure_end_turn"
+            ]
+          },
+          {
+            "timestamp": 25.05,
+            "state": "IN_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": true,
+            "board_score": 0.6144661903381348,
+            "continuity": 0.5010800361633301,
+            "similarities": {
+              "opponent_portrait": 0.5010800361633301,
+              "opponent_power": 0.968389093875885,
+              "player_portrait": 0.9058115482330322,
+              "player_power": 0.9803518652915955,
+              "structure_end_turn": 0.9995128512382507,
+              "structure_hero_power": 0.9954530000686646
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 30.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.6100968718528748,
+            "continuity": 0.7487543225288391,
+            "similarities": {
+              "opponent_portrait": 0.7487543225288391,
+              "opponent_power": 0.9702533483505249,
+              "player_portrait": 0.8932092189788818,
+              "player_power": 0.9158445000648499,
+              "structure_end_turn": 0.999561071395874,
+              "structure_hero_power": 0.9946640133857727
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "player_portrait"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_portrait"
+            ]
+          },
+          {
+            "timestamp": 35.05,
+            "state": "IN_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": true,
+            "board_score": 0.6052402853965759,
+            "continuity": 0.6197742223739624,
+            "similarities": {
+              "opponent_portrait": 0.6197742223739624,
+              "opponent_power": 0.9822805523872375,
+              "player_portrait": 0.9648423194885254,
+              "player_power": 0.9936171770095825,
+              "structure_end_turn": 0.9995109438896179,
+              "structure_hero_power": 0.9982158541679382
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 40.05,
+            "state": "IN_GAME",
+            "evidence_state": "IDENTITY_UNCERTAIN",
+            "board_present": true,
+            "board_score": 0.5895715355873108,
+            "continuity": 0.6127490997314453,
+            "similarities": {
+              "opponent_portrait": 0.6127490997314453,
+              "opponent_power": 0.8588739633560181,
+              "player_portrait": 0.9627110958099365,
+              "player_power": 0.9142990112304688,
+              "structure_end_turn": 0.9923018217086792,
+              "structure_hero_power": 0.9337820410728455
+            },
+            "stable_regions": [
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "identity_uncertain"
+            ]
+          },
+          {
+            "timestamp": 45.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.38188403844833374,
+            "continuity": 0.4463188648223877,
+            "similarities": {
+              "opponent_portrait": 0.6013849973678589,
+              "opponent_power": 0.831782341003418,
+              "player_portrait": 0.4463188648223877,
+              "player_power": 0.7411397695541382,
+              "structure_end_turn": 0.9910683631896973,
+              "structure_hero_power": 0.7362474203109741
+            },
+            "stable_regions": [
+              "structure_end_turn"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 50.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.3148069977760315,
+            "continuity": 0.15071702003479004,
+            "similarities": {
+              "opponent_portrait": 0.6149016618728638,
+              "opponent_power": 0.9553664922714233,
+              "player_portrait": 0.7001778483390808,
+              "player_power": 0.15071702003479004,
+              "structure_end_turn": 0.9968152046203613,
+              "structure_hero_power": 0.32388484477996826
+            },
+            "stable_regions": [
+              "opponent_power",
+              "structure_end_turn"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 55.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": false,
+            "board_score": 0.0,
+            "continuity": 0.08130621165037155,
+            "similarities": {
+              "opponent_portrait": 0.4069257378578186,
+              "opponent_power": 0.7420252561569214,
+              "player_portrait": 0.12092626839876175,
+              "player_power": 0.08130621165037155,
+              "structure_hero_power": 0.14762435853481293
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": [
+              "board_transition"
+            ]
+          },
+          {
+            "timestamp": 60.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.24499857425689697,
+            "continuity": -0.34135591983795166,
+            "similarities": {
+              "opponent_portrait": -0.04980096593499184,
+              "opponent_power": -0.34135591983795166,
+              "player_portrait": 0.06637173891067505,
+              "player_power": -0.19635164737701416,
+              "structure_hero_power": -0.27349525690078735
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 65.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.24287821352481842,
+            "continuity": -0.2632439136505127,
+            "similarities": {
+              "opponent_portrait": -0.05886127054691315,
+              "opponent_power": -0.2632439136505127,
+              "player_portrait": -0.10864878445863724,
+              "player_power": 0.16461043059825897,
+              "structure_end_turn": 0.9613353610038757,
+              "structure_hero_power": 0.22353500127792358
+            },
+            "stable_regions": [
+              "structure_end_turn"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 70.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.0,
+            "continuity": -0.20231306552886963,
+            "similarities": {
+              "opponent_portrait": -0.20231306552886963,
+              "opponent_power": 0.5628198981285095,
+              "player_portrait": 0.017980366945266724,
+              "player_power": 0.33040356636047363,
+              "structure_hero_power": 0.3069079518318176
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 75.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.15406744182109833,
+            "continuity": -0.36221563816070557,
+            "similarities": {
+              "opponent_portrait": 0.14555171132087708,
+              "opponent_power": 0.16541185975074768,
+              "player_portrait": 0.3665715456008911,
+              "player_power": -0.29247692227363586,
+              "structure_hero_power": -0.36221563816070557
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 80.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.24777498841285706,
+            "continuity": -0.17322266101837158,
+            "similarities": {
+              "opponent_portrait": 0.09480275213718414,
+              "opponent_power": 0.1620675027370453,
+              "player_portrait": -0.07500885426998138,
+              "player_power": -0.16543953120708466,
+              "structure_end_turn": 0.6338179111480713,
+              "structure_hero_power": -0.17322266101837158
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 85.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.2015705704689026,
+            "continuity": 0.08017345517873764,
+            "similarities": {
+              "opponent_portrait": 0.30198073387145996,
+              "opponent_power": 0.08017345517873764,
+              "player_portrait": 0.15126244723796844,
+              "player_power": 0.10092555731534958,
+              "structure_end_turn": 0.3625001311302185,
+              "structure_hero_power": 0.15614348649978638
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 90.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.235623300075531,
+            "continuity": -0.4882153868675232,
+            "similarities": {
+              "opponent_portrait": -0.4882153868675232,
+              "opponent_power": -0.10150866210460663,
+              "player_portrait": -0.362894207239151,
+              "player_power": -0.04566826671361923,
+              "structure_end_turn": 0.5457895994186401,
+              "structure_hero_power": -0.125814288854599
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 95.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.23755468428134918,
+            "continuity": 0.9958053827285767,
+            "similarities": {
+              "opponent_portrait": 0.9999083280563354,
+              "opponent_power": 0.9998258352279663,
+              "player_portrait": 0.9997972249984741,
+              "player_power": 0.9986791610717773,
+              "structure_end_turn": 0.9958053827285767,
+              "structure_hero_power": 0.999735414981842
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 100.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.2370363175868988,
+            "continuity": 0.9965763688087463,
+            "similarities": {
+              "opponent_portrait": 0.9999133348464966,
+              "opponent_power": 0.9998810291290283,
+              "player_portrait": 0.9998464584350586,
+              "player_power": 0.9987736940383911,
+              "structure_end_turn": 0.9965763688087463,
+              "structure_hero_power": 0.9996784925460815
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 105.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.2533060908317566,
+            "continuity": 0.16803309321403503,
+            "similarities": {
+              "opponent_portrait": 0.9999138116836548,
+              "opponent_power": 0.9998992085456848,
+              "player_portrait": 0.16803309321403503,
+              "player_power": 0.9997032880783081,
+              "structure_end_turn": 0.9990949630737305,
+              "structure_hero_power": 0.999738872051239
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "player_portrait"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 110.05,
+            "state": "POSSIBLE_START",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": false,
+            "board_score": 0.27772995829582214,
+            "continuity": -0.18183991312980652,
+            "similarities": {
+              "opponent_power": -0.18183991312980652,
+              "player_power": 0.15507099032402039,
+              "structure_end_turn": 0.36699777841567993
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_power",
+              "player_power",
+              "structure_end_turn"
+            ],
+            "missing_regions": [
+              "opponent_portrait",
+              "player_portrait",
+              "structure_hero_power"
+            ],
+            "reasons": [
+              "weak_start"
+            ]
+          },
+          {
+            "timestamp": 115.05,
+            "state": "POSSIBLE_START",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": false,
+            "board_score": 0.05923489108681679,
+            "continuity": -0.11403343826532364,
+            "similarities": {
+              "opponent_power": -0.11403343826532364,
+              "player_power": 0.9646419882774353
+            },
+            "stable_regions": [
+              "player_power"
+            ],
+            "changed_regions": [
+              "opponent_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": [
+              "weak_start"
+            ]
+          },
+          {
+            "timestamp": 120.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.3685726523399353,
+            "continuity": -0.010423548519611359,
+            "similarities": {
+              "opponent_power": -0.010423548519611359,
+              "player_power": 0.851631760597229
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_power",
+              "player_power"
+            ],
+            "missing_regions": [
+              "opponent_portrait",
+              "player_portrait",
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 125.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.15568846464157104,
+            "continuity": -0.32992902398109436,
+            "similarities": {
+              "opponent_portrait": -0.13070175051689148,
+              "opponent_power": -0.1772085428237915,
+              "player_portrait": -0.32992902398109436,
+              "player_power": 0.7927840948104858,
+              "structure_hero_power": 0.7567541003227234
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 130.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.17884895205497742,
+            "continuity": 0.8450655937194824,
+            "similarities": {
+              "opponent_portrait": 0.9865757822990417,
+              "opponent_power": 0.9545959234237671,
+              "player_portrait": 0.9889813661575317,
+              "player_power": 0.8813996315002441,
+              "structure_hero_power": 0.8450655937194824
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait"
+            ],
+            "changed_regions": [
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 135.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.24142564833164215,
+            "continuity": 0.8169683218002319,
+            "similarities": {
+              "opponent_portrait": 0.990597128868103,
+              "opponent_power": 0.9720653295516968,
+              "player_portrait": 0.9838823080062866,
+              "player_power": 0.8564267754554749,
+              "structure_hero_power": 0.8169683218002319
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait"
+            ],
+            "changed_regions": [
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 140.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.24598655104637146,
+            "continuity": 0.8928396701812744,
+            "similarities": {
+              "opponent_portrait": 0.9811094999313354,
+              "opponent_power": 0.9722100496292114,
+              "player_portrait": 0.9873616099357605,
+              "player_power": 0.8928396701812744
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait"
+            ],
+            "changed_regions": [
+              "player_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 145.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.15398690104484558,
+            "continuity": 0.8675068020820618,
+            "similarities": {
+              "opponent_portrait": 0.9795030951499939,
+              "opponent_power": 0.9317033290863037,
+              "player_portrait": 0.9841082096099854,
+              "player_power": 0.8675068020820618
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait"
+            ],
+            "changed_regions": [
+              "player_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 150.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.1507447063922882,
+            "continuity": 0.9383447766304016,
+            "similarities": {
+              "opponent_portrait": 0.973651647567749,
+              "opponent_power": 0.9745172262191772,
+              "player_portrait": 0.9892903566360474,
+              "player_power": 0.9408740997314453,
+              "structure_hero_power": 0.9383447766304016
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "changed_regions": [],
+            "missing_regions": [],
+            "reasons": []
+          },
+          {
+            "timestamp": 155.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.21636636555194855,
+            "continuity": 0.7091392278671265,
+            "similarities": {
+              "opponent_portrait": 0.987755298614502,
+              "opponent_power": 0.948536217212677,
+              "player_portrait": 0.7091392278671265,
+              "player_power": 0.7291106581687927
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power"
+            ],
+            "changed_regions": [
+              "player_portrait",
+              "player_power"
+            ],
+            "missing_regions": [
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 160.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.18523640930652618,
+            "continuity": 0.7120014429092407,
+            "similarities": {
+              "opponent_portrait": 0.9796005487442017,
+              "opponent_power": 0.9143458008766174,
+              "player_portrait": 0.7120014429092407,
+              "player_power": 0.9054636359214783
+            },
+            "stable_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_power"
+            ],
+            "changed_regions": [
+              "player_portrait"
+            ],
+            "missing_regions": [
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 165.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.0,
+            "continuity": -0.38469988107681274,
+            "similarities": {
+              "opponent_portrait": 0.039889492094516754,
+              "opponent_power": -0.18634507060050964,
+              "player_portrait": -0.38469988107681274,
+              "player_power": 0.8682966232299805
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power"
+            ],
+            "missing_regions": [
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 170.05,
+            "state": "OUT_OF_GAME",
+            "evidence_state": "CONTINUITY_PLAUSIBLE",
+            "board_present": false,
+            "board_score": 0.30169162154197693,
+            "continuity": -0.0275297649204731,
+            "similarities": {
+              "opponent_portrait": 0.936697244644165,
+              "opponent_power": 0.5318937301635742,
+              "player_portrait": 0.15444491803646088,
+              "player_power": -0.0275297649204731
+            },
+            "stable_regions": [
+              "opponent_portrait"
+            ],
+            "changed_regions": [
+              "opponent_power",
+              "player_portrait",
+              "player_power"
+            ],
+            "missing_regions": [
+              "structure_hero_power"
+            ],
+            "reasons": []
+          },
+          {
+            "timestamp": 175.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.4024675786495209,
+            "continuity": -0.07905752211809158,
+            "similarities": {
+              "opponent_portrait": 0.5279220938682556,
+              "opponent_power": 0.4701676070690155,
+              "player_portrait": 0.19378596544265747,
+              "player_power": -0.07905752211809158,
+              "structure_hero_power": -0.06368134915828705
+            },
+            "stable_regions": [],
+            "changed_regions": [
+              "opponent_portrait",
+              "opponent_power",
+              "player_portrait",
+              "player_power",
+              "structure_hero_power"
+            ],
+            "missing_regions": [
+              "structure_end_turn"
+            ],
+            "reasons": [
+              "board_transition",
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_hero_power"
+            ]
+          },
+          {
+            "timestamp": 180.05,
+            "state": "IN_GAME",
+            "evidence_state": "TRANSITION_SUSPECTED",
+            "board_present": true,
+            "board_score": 0.4031934440135956,
+            "continuity": 0.6888739466667175,
+            "similarities": {
+              "opponent_portrait": 0.6888739466667175,
+              "opponent_power": 0.9792099595069885,
+              "player_portrait": 0.8184541463851929,
+              "player_power": 0.9779305458068848,
+              "structure_end_turn": 0.9993658065795898,
+              "structure_hero_power": 0.9837536811828613
+            },
+            "stable_regions": [
+              "opponent_power",
+              "player_power",
+              "structure_end_turn",
+              "structure_hero_power"
+            ],
+            "changed_regions": [
+              "opponent_portrait",
+              "player_portrait"
+            ],
+            "missing_regions": [],
+            "reasons": [
+              "changed_opponent_portrait",
+              "changed_player_portrait"
+            ]
+          }
+        ],
+        "diagnostics": {
+          "state_counts": {
+            "IDENTITY_UNCERTAIN": 3,
+            "TRANSITION_SUSPECTED": 11,
+            "CONTINUITY_PLAUSIBLE": 23
+          },
+          "reason_counts": {
+            "changed_opponent_portrait": 10,
+            "changed_player_portrait": 8,
+            "changed_structure_hero_power": 5,
+            "changed_opponent_power": 5,
+            "changed_player_power": 4,
+            "changed_structure_end_turn": 3,
+            "identity_uncertain": 2,
+            "board_transition": 2,
+            "weak_start": 2
+          },
+          "reason_source_seconds_overlapping": {
+            "board_transition": 20,
+            "changed_opponent_portrait": 65.10000000000002,
+            "changed_opponent_power": 40,
+            "changed_player_portrait": 60.10000000000002,
+            "changed_player_power": 35,
+            "changed_structure_end_turn": 20,
+            "changed_structure_hero_power": 38.0,
+            "identity_uncertain": 20,
+            "leading_recovery": 5.0,
+            "periodic_recovery": 51.10000000000002,
+            "trailing_recovery": 5.100000000000023,
+            "weak_start": 15
+          },
+          "requested_intervals": 24,
+          "merged_intervals": 6
+        },
+        "recovery_intervals": [
+          {
+            "start": 0.0,
+            "end": 63,
+            "reasons": [
+              "board_transition",
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_end_turn",
+              "changed_structure_hero_power",
+              "identity_uncertain",
+              "leading_recovery",
+              "periodic_recovery"
+            ]
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "reasons": [
+              "periodic_recovery"
+            ]
+          },
+          {
+            "start": 97,
+            "end": 123,
+            "reasons": [
+              "periodic_recovery",
+              "weak_start"
+            ]
+          },
+          {
+            "start": 137,
+            "end": 143,
+            "reasons": [
+              "periodic_recovery"
+            ]
+          },
+          {
+            "start": 157,
+            "end": 163,
+            "reasons": [
+              "periodic_recovery"
+            ]
+          },
+          {
+            "start": 168,
+            "end": 180.10000000000002,
+            "reasons": [
+              "board_transition",
+              "changed_opponent_portrait",
+              "changed_opponent_power",
+              "changed_player_portrait",
+              "changed_player_power",
+              "changed_structure_hero_power",
+              "periodic_recovery",
+              "trailing_recovery"
+            ]
+          }
+        ],
+        "fallback_source_seconds": 119.10000000000002,
+        "fallback_fraction": 0.6612992781787896,
+        "full_fallback": false,
+        "full_promotion": "not needed: local recovery uses buffered first-pass frames even above cost threshold",
+        "delivered_frames": 181,
+        "buffer_max_frames": 14,
+        "recovery_frames_reused": 120,
+        "unmatched_delivered_frames": 61,
+        "autonomous_vs_windows": [
+          [
+            108.05,
+            112.05
+          ],
+          [
+            113.05,
+            117.05
+          ]
+        ],
+        "invisible_transition_guarantee": false,
+        "mana_reader": "unavailable; no numeric mana inferred",
+        "scan_wall_seconds": 4.040003800000704,
+        "vs_candidate_windows": [
+          [
+            107.05,
+            117.05
+          ]
+        ],
+        "autonomous_result_windows": [
+          {
+            "start": 48.05,
+            "end": 60.05,
+            "triggers": [
+              [
+                55.05,
+                "coarse_board_disappeared"
+              ]
+            ]
+          }
+        ],
+        "autonomous": {
+          "available": true,
+          "scope": "coarse evidence + its shared local refinements; excludes periodic and uncertainty fallback",
+          "events": [
+            {
+              "timestamp": 51.133,
+              "type": "DEFEAT",
+              "confidence": 0.9564927220344543,
+              "source": "template_matching",
+              "metadata": {
+                "scope": "autonomous_diagnostic",
+                "template_id": "d74_6092",
+                "scale": 1.0,
+                "location": [
+                  27,
+                  38
+                ],
+                "raw_similarity": 0.9564927220344543,
+                "class_scores": {
+                  "VICTORY": 0.33893677592277527,
+                  "DEFEAT": 0.9564927220344543
+                },
+                "class_margin": 0.6175559461116791,
+                "observation_count": 10,
+                "first_seen": 51.133,
+                "last_seen": 51.316,
+                "peak_timestamp": 51.25,
+                "temporal_span_s": 0.18299999999999983,
+                "result_acceptance": "event_peak_argmax",
+                "opposite_support": 0,
+                "decision_policy": "result-decision-v1"
+              }
+            },
+            {
+              "timestamp": 109.5,
+              "type": "VS_SCREEN",
+              "confidence": 0.9913708567619324,
+              "source": "template_matching",
+              "metadata": {
+                "candidate_only": false,
+                "template_id": "templates/vs/calibration_cursor_free.png",
+                "similarity_method": "TM_CCOEFF_NORMED",
+                "raw_similarity": 0.9913708567619324,
+                "second_best_similarity": -1.0,
+                "class_margin": 1.9913708567619324,
+                "class_scores": {
+                  "VS_SCREEN": 0.9913708567619324
+                },
+                "threshold": 0.92,
+                "scale": 1.0,
+                "matched_rect_normalized": [
+                  0.44895833333333335,
+                  0.37777777777777777,
+                  0.128125,
+                  0.24814814814814815
+                ],
+                "detector_version": "hearthstone-template-v3",
+                "observation_count": 15,
+                "first_seen": 109.5,
+                "last_seen": 111.95,
+                "peak_timestamp": 111.95,
+                "temporal_span_s": 2.450000000000003
+              }
+            },
+            {
+              "timestamp": 113.183,
+              "type": "VS_SCREEN",
+              "confidence": 0.9913585186004639,
+              "source": "template_matching",
+              "metadata": {
+                "candidate_only": false,
+                "template_id": "templates/vs/calibration_cursor_free.png",
+                "similarity_method": "TM_CCOEFF_NORMED",
+                "raw_similarity": 0.9913585186004639,
+                "second_best_similarity": -1.0,
+                "class_margin": 1.9913585186004639,
+                "class_scores": {
+                  "VS_SCREEN": 0.9913585186004639
+                },
+                "threshold": 0.92,
+                "scale": 1.0,
+                "matched_rect_normalized": [
+                  0.44895833333333335,
+                  0.37777777777777777,
+                  0.128125,
+                  0.24814814814814815
+                ],
+                "detector_version": "hearthstone-template-v3",
+                "observation_count": 11,
+                "first_seen": 113.183,
+                "last_seen": 114.933,
+                "peak_timestamp": 113.7,
+                "temporal_span_s": 1.75
+              }
+            }
+          ],
+          "games": [
+            {
+              "id": "game-08deb325bfa8ff2d3d19",
+              "index": 1,
+              "start": null,
+              "end": 51.133,
+              "result": "LOSS",
+              "start_confidence": 0.0,
+              "end_confidence": 0.9564927220344543,
+              "result_confidence": 0.9564927220344543,
+              "start_source": null,
+              "end_source": "template_matching",
+              "result_source": "template_matching",
+              "markers": [
+                {
+                  "timestamp": 51.133,
+                  "type": "DEFEAT",
+                  "confidence": 0.9564927220344543,
+                  "source": "template_matching",
+                  "metadata": {
+                    "scope": "autonomous_diagnostic",
+                    "template_id": "d74_6092",
+                    "scale": 1.0,
+                    "location": [
+                      27,
+                      38
+                    ],
+                    "raw_similarity": 0.9564927220344543,
+                    "class_scores": {
+                      "VICTORY": 0.33893677592277527,
+                      "DEFEAT": 0.9564927220344543
+                    },
+                    "class_margin": 0.6175559461116791,
+                    "observation_count": 10,
+                    "first_seen": 51.133,
+                    "last_seen": 51.316,
+                    "peak_timestamp": 51.25,
+                    "temporal_span_s": 0.18299999999999983,
+                    "result_acceptance": "event_peak_argmax",
+                    "opposite_support": 0,
+                    "decision_policy": "result-decision-v1"
+                  }
+                }
+              ],
+              "user_override": false,
+              "metadata": {
+                "issues": [
+                  "missing_start"
+                ],
+                "boundary_kind": "visual_anchor"
+              }
+            },
+            {
+              "id": "game-0bab9c0cf1178be0b056",
+              "index": 2,
+              "start": 109.5,
+              "end": null,
+              "result": "UNKNOWN",
+              "start_confidence": 0.9913708567619324,
+              "end_confidence": 0.0,
+              "result_confidence": 0.0,
+              "start_source": "template_matching",
+              "end_source": null,
+              "result_source": null,
+              "markers": [
+                {
+                  "timestamp": 109.5,
+                  "type": "VS_SCREEN",
+                  "confidence": 0.9913708567619324,
+                  "source": "template_matching",
+                  "metadata": {
+                    "candidate_only": false,
+                    "template_id": "templates/vs/calibration_cursor_free.png",
+                    "similarity_method": "TM_CCOEFF_NORMED",
+                    "raw_similarity": 0.9913708567619324,
+                    "second_best_similarity": -1.0,
+                    "class_margin": 1.9913708567619324,
+                    "class_scores": {
+                      "VS_SCREEN": 0.9913708567619324
+                    },
+                    "threshold": 0.92,
+                    "scale": 1.0,
+                    "matched_rect_normalized": [
+                      0.44895833333333335,
+                      0.37777777777777777,
+                      0.128125,
+                      0.24814814814814815
+                    ],
+                    "detector_version": "hearthstone-template-v3",
+                    "observation_count": 26,
+                    "first_seen": 109.5,
+                    "last_seen": 114.933,
+                    "peak_timestamp": 111.95,
+                    "temporal_span_s": 5.433000000000007
+                  }
+                }
+              ],
+              "user_override": false,
+              "metadata": {
+                "issues": [
+                  "missing_end"
+                ],
+                "boundary_kind": "visual_anchor"
+              }
+            }
+          ],
+          "result_evidence_frames": 10,
+          "separate_runtime": null,
+          "runtime_note": "derived from shared refinements, not a separate timed run"
+        }
+      },
+      "comparison": {
+        "tolerance_s": 1.0,
+        "reference_events": 1,
+        "candidate_events": 2,
+        "matched_events": 1,
+        "missing_events": 0,
+        "extra_events": 1,
+        "event_recall": 1.0,
+        "event_precision": 0.5,
+        "mean_timestamp_error_s": 0.0,
+        "max_timestamp_error_s": 0.0,
+        "events": [
+          {
+            "type": "VS_SCREEN",
+            "reference_timestamp": 109.5,
+            "candidate_timestamp": 109.5,
+            "error_s": 0.0,
+            "status": "matched"
+          }
+        ],
+        "extras": [
+          {
+            "type": "DEFEAT",
+            "timestamp": 51.133
+          }
+        ],
+        "games": [
+          {
+            "reference_index": 1,
+            "start": 109.5,
+            "end": null,
+            "result": "UNKNOWN",
+            "candidate_index": 2,
+            "candidate_result": "UNKNOWN",
+            "status": "matched"
+          }
+        ],
+        "extra_games": [
+          {
+            "id": "game-08deb325bfa8ff2d3d19",
+            "index": 1,
+            "start": null,
+            "end": 51.133,
+            "result": "LOSS",
+            "start_confidence": 0.0,
+            "end_confidence": 0.9564927220344543,
+            "result_confidence": 0.9564927220344543,
+            "start_source": null,
+            "end_source": "template_matching",
+            "result_source": "template_matching",
+            "markers": [
+              {
+                "timestamp": 51.133,
+                "type": "DEFEAT",
+                "confidence": 0.9564927220344543,
+                "source": "template_matching",
+                "metadata": {
+                  "threshold": 0.65,
+                  "representation": "gray",
+                  "roi": [
+                    0.425,
+                    0.5,
+                    0.15,
+                    0.16111111111111112
+                  ],
+                  "similarity_method": "TM_CCOEFF_NORMED",
+                  "detector_version": "hearthstone-result-text-v1",
+                  "template_id": "d74_6092",
+                  "scale": 1.0,
+                  "location": [
+                    27,
+                    38
+                  ],
+                  "raw_similarity": 0.9564927220344543,
+                  "class_scores": {
+                    "VICTORY": 0.33893677592277527,
+                    "DEFEAT": 0.9564927220344543
+                  },
+                  "class_margin": 0.6175559461116791,
+                  "observation_count": 10,
+                  "first_seen": 51.133,
+                  "last_seen": 51.316,
+                  "peak_timestamp": 51.25,
+                  "temporal_span_s": 0.18299999999999983,
+                  "result_acceptance": "event_peak_argmax",
+                  "opposite_support": 0,
+                  "decision_policy": "result-decision-v1"
+                }
+              }
+            ],
+            "user_override": false,
+            "metadata": {
+              "issues": [
+                "missing_start"
+              ],
+              "boundary_kind": "visual_anchor"
+            }
+          }
+        ],
+        "pairing_errors": 0,
+        "reference_complete": 0,
+        "candidate_complete": 0,
+        "result_window_candidate_recall": null,
+        "vs_window_candidate_recall": 1.0,
+        "equivalent": false,
+        "exact_event_timestamps": false
+      },
+      "scan_change_percent": -4.186428337004411
+    }
+  ]
+}

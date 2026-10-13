@@ -1,0 +1,54 @@
+{
+  "algorithm": "denominator-only near-exact local glyph matching",
+  "source": "videoprova.mp4",
+  "source_roi": [
+    0.6604166666666667,
+    0.9185185185185185,
+    0.00625,
+    0.016666666666666666
+  ],
+  "reference_size": [
+    960,
+    540
+  ],
+  "samples": [
+    {
+      "timestamp": 700,
+      "total_mana": 1
+    },
+    {
+      "timestamp": 1500,
+      "total_mana": 2
+    },
+    {
+      "timestamp": 1540,
+      "total_mana": 3
+    },
+    {
+      "timestamp": 1700,
+      "total_mana": 4
+    },
+    {
+      "timestamp": 900,
+      "total_mana": 5
+    },
+    {
+      "timestamp": 1000,
+      "total_mana": 6
+    },
+    {
+      "timestamp": 1100,
+      "total_mana": 8
+    },
+    {
+      "timestamp": 1200,
+      "total_mana": 9
+    }
+  ],
+  "unsupported_totals": [
+    0,
+    7,
+    10
+  ],
+  "role": "local routing calibration; not independent validation"
+}

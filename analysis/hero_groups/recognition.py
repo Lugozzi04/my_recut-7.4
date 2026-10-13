@@ -330,9 +330,25 @@ def refresh_groups(result: dict[str, Any]) -> None:
         result["selected"] = sorted(groups)
 
 
-def sample_times(game: dict[str, Any], duration: float, settings: PortraitSettings) -> list[float]:
+def sample_times(game: dict[str, Any], duration: float, settings: PortraitSettings,
+                 *, after: float | None = None) -> list[float]:
+    """Portrait sample times inside the game's gameplay.
+
+    Without an observed START (stream joined mid-game, VS not broadcast), the
+    portrait is still visible before the END: when the caller gives the
+    previous boundary ``after``, sample the same span (horizon_s - delay_s)
+    ending just before the result, never before ``after``. Board validation
+    rejects any frame that is not gameplay.
+    """
     if game.get("start") is None:
-        return []
+        if after is None or game.get("end") is None:
+            return []
+        end = min(float(game["end"]), duration)
+        lo = max(float(after), end - (settings.horizon_s - settings.delay_s))
+        hi = end - 2.0
+        if hi - lo < 8:
+            return []
+        return [round(float(t), 3) for t in np.linspace(lo, hi, settings.samples)]
     start = float(game["start"])
     end = float(game.get("end") or duration)
     length = min(end, duration) - start
@@ -341,6 +357,20 @@ def sample_times(game: dict[str, Any], duration: float, settings: PortraitSettin
     lo = start + min(settings.delay_s, length * 0.25)
     hi = min(start + settings.horizon_s, end - max(2.0, length * 0.05))
     return [round(float(t), 3) for t in np.linspace(lo, hi, settings.samples)] if hi > lo else []
+
+
+def previous_boundaries(games: list[dict[str, Any]]) -> list[float]:
+    """Latest observed START/END of any other game before each game's first anchor.
+
+    Chronological, independent of list order (games without START may be listed last).
+    """
+    anchors = [[float(g[k]) for k in ("start", "end") if g.get(k) is not None] for g in games]
+    out = []
+    for index, own in enumerate(anchors):
+        first = min(own) if own else float("inf")
+        earlier = [t for other, values in enumerate(anchors) if other != index for t in values if t < first]
+        out.append(max(earlier, default=0.0))
+    return out
 
 
 class HeroGroupingService:
@@ -496,7 +526,8 @@ class HeroGroupingService:
                 ).hexdigest(),
                 "refs": {k: hashlib.sha256(v.tobytes()).hexdigest() for k, v in refs.items()},
                 "games": [{k: g.get(k) for k in ("id", "index", "start", "end", "result")} for g in games],
-                "samples": [(game_key(g), sample_times(g, duration, self.settings)) for g in games],
+                "samples": [(game_key(g), sample_times(g, duration, self.settings, after=after))
+                            for g, after in zip(games, previous_boundaries(games))],
             }
         key = digest(identity)
         cache = self.cache_dir / (key + ".json")
@@ -550,11 +581,12 @@ class HeroGroupingService:
         if profile:
             profile.cache("hero_groups", "miss")
         records = []
+        boundaries = previous_boundaries(games)
         for index, game in enumerate(games):
             token.raise_if_cancelled()
             images, powers, samples = [], [], []
             record("hero_groups", games_started=1)
-            times = sample_times(game, duration, self.settings)
+            times = sample_times(game, duration, self.settings, after=boundaries[index])
             batched = None
             if callable(getattr(self.sampler, "get_many", None)):
                 with measure("hero_groups.sampling"):

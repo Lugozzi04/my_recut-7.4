@@ -460,6 +460,19 @@ def build_analysis_page(window) -> None:
     gp.add(PropertyRow("End of games", window.gameplay_end_policy_combo,
                        tooltip="With Claude/Codex: how much talk after each win is kept. Chat, unrelated talk "
                                "and the move to the next game are always cut."))
+    # TEMPORARY test switch: sets AUTO_CUTTER_GAMEPLAY_BACKEND, read when detection starts.
+    import os
+    window.gameplay_detector_combo = QComboBox()
+    for key, label in (("traditional", "Traditional (default)"), ("adaptive-v2", "Adaptive V2 (new scheduler)"),
+                       ("adaptive-v2-shadow", "Shadow: both, keeps traditional")):
+        window.gameplay_detector_combo.addItem(label, key)
+    current = os.environ.get("AUTO_CUTTER_GAMEPLAY_BACKEND", "traditional").strip().lower()
+    window.gameplay_detector_combo.setCurrentIndex(max(0, window.gameplay_detector_combo.findData(current)))
+    window.gameplay_detector_combo.currentIndexChanged.connect(
+        lambda _i: os.environ.__setitem__("AUTO_CUTTER_GAMEPLAY_BACKEND",
+                                          str(window.gameplay_detector_combo.currentData())))
+    gp.add(PropertyRow("Detector (test)", window.gameplay_detector_combo,
+                       tooltip="Temporary: game detection backend for the next Detect games"))
     window.lbl_gameplay_boundary_hint = Hint("")
     gp.add(window.lbl_gameplay_boundary_hint)
     window.btn_gameplay_run = QPushButton("Detect games")

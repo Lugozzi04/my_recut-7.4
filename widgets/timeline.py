@@ -270,10 +270,42 @@ class TimelineWidget(QWidget):
         self._static_cache: Optional[QPixmap] = None
         self._static_cache_key: tuple = ()
         self.static_renders = 0  # diagnostics: how often the static layer was rebuilt
+        # Temporary, view-only highlight of one detected game (track state index, start, end
+        # in the same domain as the gameplay islands); never part of the project or the cuts.
+        self._game_highlight: Optional[tuple[int, float, float]] = None
 
     # -----------------------------
     # Appearance / modes
     # -----------------------------
+    def setGameHighlight(self, track_state_idx: Optional[int], start: float = 0.0, end: float = 0.0) -> None:
+        """Yellow band over [start, end] of a track's games (gameplay-island domain); None clears it."""
+        self._game_highlight = (int(track_state_idx), float(start), float(end))             if track_state_idx is not None and end > start else None
+        self.update()  # dynamic layer only: no static rebuild
+
+    def gameHighlight(self) -> Optional[tuple[int, float, float]]:
+        return self._game_highlight
+
+    def _paint_game_highlight(self, p: QPainter, lanes: list[_Lane]) -> None:
+        if self._game_highlight is None or not lanes:
+            return
+        ts, a, b = self._game_highlight
+        top, bottom = lanes[0].top, lanes[-1].bottom
+        yellow = QColor(255, 214, 10)
+        for clip in self._audio_clips():
+            if clip.get("track_state_idx") != ts:
+                continue
+            c0 = float(clip.get("start", 0.0))
+            c1 = float(clip.get("end", c0))
+            t0, t1 = max(c0, c0 + a), min(c1, c0 + b)  # same mapping as _gameplay_islands
+            if t1 <= t0:
+                continue
+            x1, x2 = self._t_to_xf(t0), self._t_to_xf(t1)
+            rect = QRectF(x1, top, max(2.0, x2 - x1), bottom - top)
+            p.fillRect(rect, _alpha(yellow, 48))
+            p.setPen(QPen(yellow, 2))
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.drawRect(rect.adjusted(1, 1, -1, -1))
+
     def setPalette_tokens(self, pal: Any) -> None:
         self._colors = _Colors(pal)
         self._changed()
@@ -945,6 +977,7 @@ class TimelineWidget(QWidget):
                 lanes = self._lanes()
                 p.save()
                 p.setClipRect(QRectF(HEADER_W, 0, self.width() - HEADER_W, self.height()))
+                self._paint_game_highlight(p, lanes)
                 self._paint_hover_cut(p, lanes)
                 self._paint_marquee(p, lanes)
                 self._paint_hover_line(p, lanes)

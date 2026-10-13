@@ -347,7 +347,7 @@ class FFmpegFrameSampler:
         with submeasure("ffmpeg_process_startup"):
             process = popen_no_window(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE, bufsize=0)
-        record("sampling", streams=1, requested_source_seconds=finish - start_s)
+        record("sampling", streams=1, seek_sessions=int(start_s > 0), requested_source_seconds=finish - start_s)
         frames: queue.Queue[object] = queue.Queue(maxsize=2)
         timestamps: queue.Queue[object] = queue.Queue(maxsize=8)
         stop = threading.Event()
