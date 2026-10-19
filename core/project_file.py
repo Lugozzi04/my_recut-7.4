@@ -163,3 +163,8 @@ def relink_items_in_directory(
         else:
             unresolved.append(item)
     return resolved, unresolved
+
+
+def source_identity(item: dict[str, Any]) -> str:
+    """Stable project source ID; legacy files use a path identity without hashing media."""
+    return str(item.get("source_id") or hashlib.sha256(os.path.normcase(str(Path(item.get("path", "")).resolve())).encode("utf-8")).hexdigest()[:24])

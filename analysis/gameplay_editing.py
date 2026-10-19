@@ -65,8 +65,12 @@ class GameplayEditSettings:
     state_profile: str | None = None
     template_pack: str | None = None
     use_detector_cache: bool = True
+    target_class: str | None = None
 
     def __post_init__(self) -> None:
+        from analysis.hero_groups.labels import class_id
+        if self.target_class is not None and class_id(self.target_class) is None:
+            raise ValueError("Unknown target Hearthstone class")
         if self.game not in GAMES:
             raise ValueError(f"Unsupported gameplay '{self.game}' (choices: {', '.join(GAMES)})")
         if self.keep_games not in KEEP_MODES:
@@ -86,7 +90,7 @@ class GameplayEditSettings:
         resolver = {k: (str(v) if isinstance(v, Path) else v) for k, v in asdict(self.resolver).items()}
         return {"game": self.game, "keep_games": self.keep_games, "boundary_mode": self.boundary_mode,
                 "resolver": resolver, "state_profile": self.state_profile, "template_pack": self.template_pack,
-                "windows": asdict(self.boundary.windows)}
+                "windows": asdict(self.boundary.windows), "target_class": self.target_class}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> GameplayEditSettings:
@@ -96,7 +100,7 @@ class GameplayEditSettings:
                                     keep_policy="wins")
         return cls(str(raw.get("game", "hearthstone")), str(raw.get("keep_games", "wins")),
                    str(raw.get("boundary_mode", "exact")), resolver, boundary,
-                   raw.get("state_profile"), raw.get("template_pack"))
+                   raw.get("state_profile"), raw.get("template_pack"), target_class=raw.get("target_class"))
 
 
 @dataclass
@@ -129,6 +133,10 @@ class GameplayEditResult:
             item: dict[str, Any] = {**info.to_mapping(), "complete": game.start is not None and game.end is not None,
                                     "publishable": publishable,
                                     "raw_anchors": {"start": game.start, "end": game.end}}
+            if self.settings.target_class and game.id not in self.analysis.metadata.get("target_game_ids", []):
+                publishable = False
+                item["publishable"] = False
+                item["excluded_by_class_search"] = True
             if publishable:
                 keep = by_game.get(game.index)
                 item["smart"] = {"start": keep.segment.start if keep else None, "end": keep.segment.end if keep else None,
@@ -144,6 +152,7 @@ class GameplayEditResult:
                 "detector": {"version": self.analysis.detector_version,
                              "fingerprint": self.analysis.metadata.get("video_fingerprint")},
                 "duration": self.analysis.duration, "games": games,
+                "analysis_scope": self.analysis.metadata.get("class_focus"),
                 "keep_islands": [keep.to_mapping() for keep in self.keeps],
                 "gameplay_keeps": [{"start": k.start, "end": k.end} for k in keeps],
                 "gameplay_cuts": [{"start": c.start, "end": c.end} for c in self.gameplay_cuts],
@@ -169,7 +178,7 @@ Detector = Callable[[Path, AnalysisCancellation, Callable[[int], None] | None], 
 
 
 @profiled("detection.setup")
-def hearthstone_detector(settings: GameplayEditSettings) -> Detector:
+def hearthstone_detector(settings: GameplayEditSettings, *, previous_grouping: dict[str, Any] | None = None) -> Detector:
     from analysis.gameplay.hearthstone.state_aware import StateAwareHearthstoneAnalyzer
 
     assets = default_detector_assets("hearthstone")
@@ -178,6 +187,11 @@ def hearthstone_detector(settings: GameplayEditSettings) -> Detector:
     for path in (profile, pack):
         if not path.is_file():
             raise FileNotFoundError(f"Gameplay detector asset not found: {path}")
+    if settings.target_class:
+        from analysis.gameplay.hearthstone.class_focus import ClassFocusedAnalyzer
+        focused = ClassFocusedAnalyzer(settings.target_class, state_profile=profile, template_pack=pack,
+            use_cache=settings.use_detector_cache, previous_grouping=previous_grouping)
+        return lambda video, token, on_progress: focused.analyze(video, cancellation=token, on_progress=on_progress)
     import os
 
     backend = os.environ.get("AUTO_CUTTER_GAMEPLAY_BACKEND", "traditional").strip().lower()
@@ -288,6 +302,9 @@ class GameplayEditingService:
         timeline = GameplayTimeline(analysis, boundary.eof, policy=boundary.keep_policy)
         policy = GameKeepPolicy(timeline)
         kept = policy.publishable()
+        if self.settings.target_class:
+            target_ids = set(analysis.metadata.get("target_game_ids", []))
+            kept = [game for game in kept if game.id in target_ids]
         lo, hi = 0.0, float(timeline.duration)
         if source_range is not None:
             lo = max(0.0, float(source_range[0] or 0.0))
@@ -390,6 +407,9 @@ class GameplayEditingService:
                 profile.skip_unexecuted("boundaries." + stage, "no_publishable_wins")
         with measure("keep_policy"):
             keeps = policy.keeps(decisions)
+            if self.settings.target_class:
+                wanted = {g.index for g in kept}
+                keeps = [keep for keep in keeps if keep.game.index in wanted]
         if source_range is not None:  # only the games of the range, clipped to it
             wanted = {g.index for g in kept}
             clipped = []

@@ -1,0 +1,62 @@
+PROMPT_VERSION: thumbnail_generation_v4
+Create 4 separate thumbnails, one image_gen call per variant. Request native landscape 16:9; output 1920x1080 or best native landscape resolution. Do not return a contact sheet. No extra variants.
+
+VARIANT C1
+Mission: Design a finished 16:9 Hearthstone Competitive Gaming thumbnail. Request native landscape 1920x1080 or the best available native 16:9 size. Keep essential content inside 5% safe margins.
+Story: angolo 1 | evidence level: interpretation. No additional factual promises.
+Asset Roles: use the indexed real references for identity/gameplay; creative references carry only their declared style/layout/element role, never evidence of gameplay.
+Composition: reaction_impact; dominant=W001; secondary=; hierarchy=['W001', 'F001']; relative boxes [x,y,w,h]={'main': [0.56, 0.36, 0.38, 0.6], 'secondary': [0.05, 0.36, 0.48, 0.58]}; Keep subjects below text safe area. One dominant idea, 2–3 strong elements. Reaction face width approximately 30–45% only when pertinent; not every variant needs a face.
+Identity: SAME real person; preserve glasses, hair, face and natural expression. Integrate lighting, clean cut-out, shadow and depth; no rectangular webcam.
+Authenticity: never invent/alter cards, names, numbers, heroes, class or result. Screenshots are evidence, not rectangular stickers to paste. Uncertain details cannot be promoted to facts.
+Visual Style: palette={'primary': ['#FFD436', '#FFFFFF', '#111420'], 'accent': ['#FF514A', '#27C9FF'], 'max_dominant_saturated': 2, 'concept_preset': 'yellow_dark'}; lighting=rim light; effects={'rim_lighting': 4, 'depth_shadows': 4, 'selective_glow': 3, 'particles_light_rays': 2, 'chromatic_aberration': 0, 'concept_intensity': 3}. At most two dominant saturated colours; selective effects around the protagonist.
+Typography: NO TEXT, LETTERS OR PLACEHOLDERS. Reserve box [0.06, 0.06, 0.88, 0.28] for local exact typography; keep faces/cards outside it.
+Visual Quality: clear separation, controlled contrast, clean edges, meaningful negative space, mobile readability.
+Negative Constraints: ['rectangular webcam', 'random collage', 'unnecessary HUD', 'invented cards', 'indiscriminate glow', 'four recolours of one screenshot']; no raw screenshot, random collage, duplicated subjects, invented game objects, excessive glow, tiny text, useless HUD or clipped important elements.
+Visual References:
+- image 1: W001, face_main; no face detected
+- image 5: F001, board; 
+
+VARIANT C2
+Mission: Design a finished 16:9 Hearthstone Competitive Gaming thumbnail. Request native landscape 1920x1080 or the best available native 16:9 size. Keep essential content inside 5% safe margins.
+Story: angolo 2 | evidence level: interpretation. No additional factual promises.
+Asset Roles: use the indexed real references for identity/gameplay; creative references carry only their declared style/layout/element role, never evidence of gameplay.
+Composition: card_power; dominant=F002; secondary=; hierarchy=['F002', 'F001']; relative boxes [x,y,w,h]={'main': [0.56, 0.36, 0.38, 0.6], 'secondary': [0.05, 0.36, 0.48, 0.58]}; Keep subjects below text safe area. One dominant idea, 2–3 strong elements. Reaction face width approximately 30–45% only when pertinent; not every variant needs a face.
+Identity: SAME real person; preserve glasses, hair, face and natural expression. Integrate lighting, clean cut-out, shadow and depth; no rectangular webcam.
+Authenticity: never invent/alter cards, names, numbers, heroes, class or result. Screenshots are evidence, not rectangular stickers to paste. Uncertain details cannot be promoted to facts.
+Visual Style: palette={'primary': ['#FFD436', '#FFFFFF', '#111420'], 'accent': ['#FF514A', '#27C9FF'], 'max_dominant_saturated': 2, 'concept_preset': 'yellow_dark'}; lighting=rim light; effects={'rim_lighting': 4, 'depth_shadows': 4, 'selective_glow': 3, 'particles_light_rays': 2, 'chromatic_aberration': 0, 'concept_intensity': 3}. At most two dominant saturated colours; selective effects around the protagonist.
+Typography: NO TEXT, LETTERS OR PLACEHOLDERS. Reserve box [0.06, 0.06, 0.88, 0.28] for local exact typography; keep faces/cards outside it.
+Visual Quality: clear separation, controlled contrast, clean edges, meaningful negative space, mobile readability.
+Negative Constraints: ['rectangular webcam', 'random collage', 'unnecessary HUD', 'invented cards', 'indiscriminate glow', 'four recolours of one screenshot']; no raw screenshot, random collage, duplicated subjects, invented game objects, excessive glow, tiny text, useless HUD or clipped important elements.
+Visual References:
+- image 2: F002, board; 
+- image 6: K01, detail; card 'Minion'; small crop: keep it small
+
+VARIANT C3
+Mission: Design a finished 16:9 Hearthstone Competitive Gaming thumbnail. Request native landscape 1920x1080 or the best available native 16:9 size. Keep essential content inside 5% safe margins.
+Story: angolo 3 | evidence level: interpretation. No additional factual promises.
+Asset Roles: use the indexed real references for identity/gameplay; creative references carry only their declared style/layout/element role, never evidence of gameplay.
+Composition: card_power; dominant=B003; secondary=; hierarchy=['B003']; relative boxes [x,y,w,h]={'main': [0.56, 0.36, 0.38, 0.6], 'secondary': [0.05, 0.36, 0.48, 0.58]}; Keep subjects below text safe area. One dominant idea, 2–3 strong elements. Reaction face width approximately 30–45% only when pertinent; not every variant needs a face.
+Identity: SAME real person; preserve glasses, hair, face and natural expression. Integrate lighting, clean cut-out, shadow and depth; no rectangular webcam.
+Authenticity: never invent/alter cards, names, numbers, heroes, class or result. Screenshots are evidence, not rectangular stickers to paste. Uncertain details cannot be promoted to facts.
+Visual Style: palette={'primary': ['#FFD436', '#FFFFFF', '#111420'], 'accent': ['#FF514A', '#27C9FF'], 'max_dominant_saturated': 2, 'concept_preset': 'yellow_dark'}; lighting=rim light; effects={'rim_lighting': 4, 'depth_shadows': 4, 'selective_glow': 3, 'particles_light_rays': 2, 'chromatic_aberration': 0, 'concept_intensity': 3}. At most two dominant saturated colours; selective effects around the protagonist.
+Typography: NO TEXT, LETTERS OR PLACEHOLDERS. Reserve box [0.06, 0.06, 0.88, 0.28] for local exact typography; keep faces/cards outside it.
+Visual Quality: clear separation, controlled contrast, clean edges, meaningful negative space, mobile readability.
+Negative Constraints: ['rectangular webcam', 'random collage', 'unnecessary HUD', 'invented cards', 'indiscriminate glow', 'four recolours of one screenshot']; no raw screenshot, random collage, duplicated subjects, invented game objects, excessive glow, tiny text, useless HUD or clipped important elements.
+Visual References:
+- image 3: B003, board; small source region: soft when enlarged
+
+VARIANT C4
+Mission: Design a finished 16:9 Hearthstone Competitive Gaming thumbnail. Request native landscape 1920x1080 or the best available native 16:9 size. Keep essential content inside 5% safe margins.
+Story: angolo 4 | evidence level: interpretation. No additional factual promises.
+Asset Roles: use the indexed real references for identity/gameplay; creative references carry only their declared style/layout/element role, never evidence of gameplay.
+Composition: card_power; dominant=F004; secondary=; hierarchy=['F004', 'F005']; relative boxes [x,y,w,h]={'main': [0.56, 0.36, 0.38, 0.6], 'secondary': [0.05, 0.36, 0.48, 0.58]}; Keep subjects below text safe area. One dominant idea, 2–3 strong elements. Reaction face width approximately 30–45% only when pertinent; not every variant needs a face.
+Identity: SAME real person; preserve glasses, hair, face and natural expression. Integrate lighting, clean cut-out, shadow and depth; no rectangular webcam.
+Authenticity: never invent/alter cards, names, numbers, heroes, class or result. Screenshots are evidence, not rectangular stickers to paste. Uncertain details cannot be promoted to facts.
+Visual Style: palette={'primary': ['#FFD436', '#FFFFFF', '#111420'], 'accent': ['#FF514A', '#27C9FF'], 'max_dominant_saturated': 2, 'concept_preset': 'yellow_dark'}; lighting=rim light; effects={'rim_lighting': 4, 'depth_shadows': 4, 'selective_glow': 3, 'particles_light_rays': 2, 'chromatic_aberration': 0, 'concept_intensity': 3}. At most two dominant saturated colours; selective effects around the protagonist.
+Typography: NO TEXT, LETTERS OR PLACEHOLDERS. Reserve box [0.06, 0.06, 0.88, 0.28] for local exact typography; keep faces/cards outside it.
+Visual Quality: clear separation, controlled contrast, clean edges, meaningful negative space, mobile readability.
+Negative Constraints: ['rectangular webcam', 'random collage', 'unnecessary HUD', 'invented cards', 'indiscriminate glow', 'four recolours of one screenshot']; no raw screenshot, random collage, duplicated subjects, invented game objects, excessive glow, tiny text, useless HUD or clipped important elements.
+Visual References:
+- image 4: F004, board; 
+- image 7: F005, board; 
+Return JSON variants with concept_id and generated file path, in the requested order.

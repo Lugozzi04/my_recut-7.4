@@ -119,15 +119,16 @@ def _processing_options(parser: argparse.ArgumentParser) -> None:
     _json_option(parser)
 
 
-COMMANDS = {"groups", "presets", "jobs", "process", "vod", "resume", "auth", "packaging", "packaging-style", "packaging-feedback",
-            "packaging-edit"}
+COMMANDS = {"concat", "groups", "presets", "jobs", "process", "vod", "resume", "auth", "packaging", "packaging-style", "packaging-feedback",
+            "packaging-edit", "clips", "short"}
 
 
 VIDEO_SUFFIXES = (".mp4", ".mkv", ".mov", ".flv", ".ts", ".webm", ".m4v", ".avi")
 
 
 def _implicit_command(arguments: list[str]) -> list[str]:
-    """`AutoCutter VIDEO ...` means `process VIDEO ...`; a Twitch VOD URL means `vod URL ...`.
+    """`AutoCutter VIDEO ...` means `process VIDEO ...`; a Twitch VOD URL means `vod URL ...`; a Twitch clip
+    URL means `short URL ...`.
 
     Only an existing file, a video file name or a Twitch URL is promoted, so
     unknown words keep producing the usual argument error.
@@ -137,6 +138,9 @@ def _implicit_command(arguments: list[str]) -> list[str]:
     first = arguments[0]
     if first.lower().startswith(("https://www.twitch.tv/videos/", "https://twitch.tv/videos/")):
         return ["vod", *arguments]
+    from analysis.clips.short import is_clip_url
+    if is_clip_url(first):
+        return ["short", *arguments]
     if os.path.isfile(first) or first.lower().endswith(VIDEO_SUFFIXES):
         return ["process", *arguments]
     return arguments
@@ -147,6 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
     _json_option(parser)
     parser.add_argument("--version", action="store_true", help="Show application version.")
     sub = parser.add_subparsers(dest="command")
+    concat = sub.add_parser("concat", help="Join two videos in order; copy compatible inputs and normalize others.")
+    concat.add_argument("first", help="First local video.")
+    concat.add_argument("second", help="Second local video.")
+    concat.add_argument("-o", "--output", required=True, help="New .mp4/.mov/.mkv output; existing files are never replaced.")
+    _json_option(concat)
     presets = sub.add_parser("presets", help="List the actual GUI presets.")
     _json_option(presets)
     jobs = sub.add_parser("jobs", help="List persisted jobs, or inspect one.")
@@ -182,6 +191,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_packaging_parsers(sub, _json_option)
     from automation.hero_groups_cli import add_parser as add_groups_parser
     add_groups_parser(sub, _json_option)
+    from automation.clips_cli import add_parser as add_clips_parser
+    add_clips_parser(sub, _json_option)
+    from automation.short_cli import add_parser as add_short_parser
+    add_short_parser(sub, _json_option)
     return parser
 
 
@@ -386,9 +399,22 @@ def run_cli(argv: Sequence[str] | None = None, *, runtime_factory: Callable[...,
 
 def _execute(args: argparse.Namespace, progress: TextIO, runtime_factory: Callable[..., Any] | None) -> dict[str, Any]:
     command = args.command
+    if command == "concat":
+        from export.concat import concat_videos
+        joined = concat_videos(args.first, args.second, args.output,
+                               on_status=lambda message: print(message, file=progress, flush=True))
+        return {"output": str(joined.path), "duration_s": joined.duration_s,
+                "video_mode": "reencoded" if joined.video_reencoded else "copy",
+                "audio_mode": "reencoded" if joined.audio_reencoded else "copy"}
     if command == "groups":
         from automation.hero_groups_cli import execute as execute_groups
         return execute_groups(args, progress)
+    if command == "clips":
+        from automation.clips_cli import execute as execute_clips
+        return execute_clips(args, progress)
+    if command == "short":
+        from automation.short_cli import execute as execute_short
+        return execute_short(args, progress)
     if command == "presets":
         from core.presets import PresetRepository
         return {"presets": PresetRepository().load()}
@@ -543,6 +569,12 @@ def _human_result(command: str, result: dict[str, Any], stream: TextIO) -> None:
     if command == "groups":
         from automation.hero_groups_cli import human as human_groups
         human_groups(result, stream)
+    elif command == "clips":
+        from automation.clips_cli import human as human_clips
+        human_clips(result, stream)
+    elif command == "short":
+        from automation.short_cli import human as human_short
+        human_short(result, stream)
     elif command.startswith("packaging"):
         from automation.packaging_cli import human
         human(command, result, stream)

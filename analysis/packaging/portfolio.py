@@ -101,12 +101,25 @@ def evaluate_portfolio(concepts: Sequence[Mapping[str, Any]], assets: Mapping[st
     narratives = [(str(c.get("story_type")), frozenset(c.get("highlight_ids") or [])) for c in concepts]
     treatments = [str(c.get("treatment")) for c in concepts]
     primaries = []
+    signatures: list[tuple[Any, ...]] = []
     for c in concepts:
+        pack = c.get("design_pack") or {}
+        comp = pack.get("composition") or {}
+        if comp.get("background") and not comp.get("layers"):
+            primaries.append(family(str(comp["background"]["asset_id"]), assets))
+            signatures.append((pack["thumbnail_archetype"], "full_canvas_gameplay", pack["typography"]["position"]))
+            continue
+        if comp.get("layers"):
+            main = comp["layers"][0]
+            primaries.append(family(str(main["original_asset_id"]), assets))
+            signatures.append((comp["family"], round(main["x"], 2), round(main["height"], 2),
+                               pack["typography"]["position"]))
+            continue
         scene = c.get("scene") or {}
         layer = primary_layer(scene)
         asset = (layer or {}).get("asset_id") or (scene.get("background") or {}).get("asset_id")
         primaries.append(family(str(c.get("primary_subject") or asset), assets) or str(asset))
-    signatures = [composition_signature(c.get("scene") or {}) for c in concepts]
+        signatures.append(composition_signature(scene))
     texts = [content_words(str(c.get("thumbnail_text") or "")) for c in concepts]
     messages = [content_words(str(c.get("thumbnail_text") or "") + " " + str(c.get("narrative_angle") or ""))
                 for c in concepts]
@@ -145,7 +158,7 @@ def evaluate_portfolio(concepts: Sequence[Mapping[str, Any]], assets: Mapping[st
                     add("warning", "shared_primary_source", pair, f"both built on {primaries[i]}")
             text_overlap = _jaccard(texts[i], texts[j])
             message_overlap = _jaccard(messages[i], messages[j])
-            if texts[i] and texts[j] and text_overlap >= 0.5:
+            if texts[i] and texts[j] and text_overlap >= 0.5 and not (concepts[i].get("hook_locked") and concepts[j].get("hook_locked")):
                 add("blocking", "same_message", pair, f"thumbnail texts share {text_overlap:.0%} of their content words")
             elif message_overlap >= 0.6:
                 add("warning", "similar_message", pair, f"angle + text overlap {message_overlap:.0%}")

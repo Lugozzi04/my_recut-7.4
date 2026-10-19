@@ -66,3 +66,10 @@ class TrackState:
     gameplay_islands: list[dict] = field(default_factory=list)
     gameplay_report: dict = field(default_factory=dict)  # all detected games, separate from cuts
     gameplay_grouping: dict = field(default_factory=dict)  # automatic + persistent manual overrides
+
+    source_id: str = ""
+    source_role: str = "gameplay"
+    intro_targets: list[str] = field(default_factory=list)
+
+    automatic_cuts_enabled: bool = True
+    gameplay_target_class: str | None = None

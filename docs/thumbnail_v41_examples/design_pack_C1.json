@@ -1,0 +1,320 @@
+{
+  "format": "thumbnail_design_v4",
+  "version": 4,
+  "concept_id": "C1",
+  "generation_strategy": "reference_preserving",
+  "direction": {
+    "mode": "automatic",
+    "youtube_title": "",
+    "title_locked": false,
+    "thumbnail_hook": "",
+    "hook_locked": false,
+    "creative_focus": "",
+    "reference_images": [],
+    "style_profile_id": "lugozzi",
+    "typography_mode": "auto",
+    "generation_strategy": "reference_preserving"
+  },
+  "style_profile": {
+    "design_system": {
+      "name": "Lugozzi — Competitive Gaming",
+      "mood": "Competitive gaming; dynamic but ordered; immediate hierarchy and controlled contrast",
+      "palette": {
+        "primary": [
+          "#FFD436",
+          "#FFFFFF",
+          "#111420"
+        ],
+        "accent": [
+          "#FF514A",
+          "#27C9FF"
+        ],
+        "max_dominant_saturated": 2
+      },
+      "fonts": [
+        "Anton",
+        "Archivo Black",
+        "Barlow Condensed Black",
+        "Impact",
+        "Arial Black",
+        "DejaVu Sans"
+      ],
+      "text": {
+        "color": "#FFD436",
+        "outline": "#111420",
+        "outline_px": 12,
+        "shadow_px": 8,
+        "max_lines": 2,
+        "uppercase_preferred": true,
+        "safe_margin": 0.05
+      },
+      "layout_archetypes": [
+        "reaction_impact",
+        "card_power",
+        "clutch_moment",
+        "big_statement"
+      ],
+      "webcam": {
+        "positions": [
+          "left",
+          "right"
+        ],
+        "reaction_width": [
+          0.3,
+          0.45
+        ],
+        "required": false
+      },
+      "effects": {
+        "rim_lighting": 4,
+        "depth_shadows": 4,
+        "selective_glow": 3,
+        "particles_light_rays": 2,
+        "chromatic_aberration": 0
+      },
+      "avoid": [
+        "rectangular webcam",
+        "random collage",
+        "unnecessary HUD",
+        "invented cards",
+        "indiscriminate glow",
+        "four recolours of one screenshot"
+      ],
+      "typography": "auto",
+      "output_size": [
+        1920,
+        1080
+      ],
+      "font_licenses": {
+        "Anton": "https://github.com/googlefonts/AntonFont/blob/main/OFL.txt",
+        "Archivo Black": "https://github.com/google/fonts/blob/main/ofl/archivoblack/OFL.txt",
+        "Barlow Condensed Black": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt"
+      }
+    }
+  },
+  "story_angle": "supported example",
+  "story_confidence": "supported",
+  "evidence": [],
+  "evidence_ids": [],
+  "main_subject": "K01",
+  "secondary_subject": "",
+  "must_use_assets": [
+    "K01",
+    "F001"
+  ],
+  "optional_assets": [],
+  "must_not_use_assets": [],
+  "visual_hierarchy": [
+    "K01",
+    "F001"
+  ],
+  "layout": "card_power",
+  "composition_notes": "",
+  "lighting": "integrated rim light; deep controlled shadows",
+  "effects": {
+    "rim_lighting": 4,
+    "depth_shadows": 4,
+    "selective_glow": 3,
+    "particles_light_rays": 2,
+    "chromatic_aberration": 0,
+    "concept_intensity": 3
+  },
+  "tone": "",
+  "why_clickable": "",
+  "palette": {
+    "primary": [
+      "#FFD436",
+      "#FFFFFF",
+      "#111420"
+    ],
+    "accent": [
+      "#FF514A",
+      "#27C9FF"
+    ],
+    "max_dominant_saturated": 2,
+    "concept_preset": "Bianco su blu"
+  },
+  "geometry": {
+    "main": [
+      0.55,
+      0.1,
+      0.4,
+      0.8
+    ],
+    "secondary": [
+      0.56,
+      0.55,
+      0.35,
+      0.35
+    ]
+  },
+  "typography": {
+    "color": "#FFFFFF",
+    "outline": "#111420",
+    "outline_px": 12,
+    "shadow_px": 8,
+    "max_lines": 2,
+    "uppercase_preferred": true,
+    "safe_margin": 0.05,
+    "text": "È ROTTO?!",
+    "locked": false,
+    "mode": "precision",
+    "fonts": [
+      "Archivo Black",
+      "Anton",
+      "Barlow Condensed Black",
+      "Impact",
+      "Arial Black",
+      "DejaVu Sans"
+    ],
+    "box": [
+      0.05,
+      0.12,
+      0.42,
+      0.62
+    ],
+    "position": "left",
+    "gradient": [
+      "#FFFFFF",
+      "#B5C1D1"
+    ],
+    "outer_outline": "#394052",
+    "depth_px": 5,
+    "shadow_dx": 9,
+    "shadow_dy": 12,
+    "tilt": -2,
+    "preset": "white_impact",
+    "font_variant": 0
+  },
+  "references": [
+    {
+      "asset_id": "K01",
+      "path": "K01.png",
+      "type": "card_crop",
+      "source_index": 1,
+      "source_id": "hunter-source",
+      "source_name": "hunter.mp4",
+      "source_time": 60.0,
+      "edited_time": null,
+      "game_id": "hunter-1",
+      "provenance": {
+        "status": "verified",
+        "thumbnail_use": "primary"
+      },
+      "limitations": []
+    },
+    {
+      "asset_id": "F001",
+      "path": "F001.png",
+      "type": "gameplay_frame",
+      "source_index": 1,
+      "source_id": "hunter-source",
+      "source_name": "hunter.mp4",
+      "source_time": 60.0,
+      "edited_time": null,
+      "game_id": "hunter-1",
+      "provenance": {
+        "status": "verified",
+        "thumbnail_use": "primary"
+      },
+      "limitations": []
+    }
+  ],
+  "creative_references": [],
+  "output_size": [
+    1920,
+    1080
+  ],
+  "safe_margin": 0.05,
+  "preserve": [
+    "creator identity",
+    "real card details",
+    "player class",
+    "verified result"
+  ],
+  "avoid": [
+    "rectangular webcam",
+    "random collage",
+    "unnecessary HUD",
+    "invented cards",
+    "indiscriminate glow",
+    "four recolours of one screenshot"
+  ],
+  "semantic_check": "not certified; creator must review identity, cards and story",
+  "composition": {
+    "version": "protected_composite_v41",
+    "strategy": "reference_preserving",
+    "family": "card_dominance",
+    "environment_protection": "creative",
+    "environment_recipe": "dark directional spotlight and warm edge light",
+    "layers": [
+      {
+        "id": "protected_0",
+        "asset_id": "K01",
+        "original_asset_id": "K01",
+        "path": "K01.png",
+        "sha256": "52c30d6df595a690d7ff1ae6f904a16a6ef7081c74db9594d4082a91feee92db",
+        "protection": "locked",
+        "type": "image",
+        "mask": null,
+        "source_index": 1,
+        "source_time": 60.0,
+        "source_id": "hunter-source",
+        "game_id": "hunter-1",
+        "source_size": [
+          400,
+          600
+        ],
+        "z": 10,
+        "fallback": null,
+        "x": 0.74,
+        "y": 0.5,
+        "height": 0.7895999999999999,
+        "rotation": 0.0,
+        "opacity": 1.0,
+        "shadow": 0.45,
+        "rim_light": 0.0,
+        "brightness": 0.0,
+        "contrast": 1.0,
+        "saturation": 1.0,
+        "clip": "none",
+        "upscale": 1.421,
+        "reserved_box": [
+          0.53,
+          0.08,
+          0.42,
+          0.84
+        ],
+        "fitted_size": [
+          0.2960999999999999,
+          0.7895999999999999
+        ]
+      }
+    ],
+    "warnings": [
+      "Clutter limit: only the dominant subject and one optional support are composited.",
+      "Required package references omitted from final layout by quality/clutter checks: F001",
+      "K01: original source window retained; surrounding gameplay may remain in the crop."
+    ],
+    "reserved_boxes": [
+      [
+        0.53,
+        0.08,
+        0.42,
+        0.84
+      ]
+    ],
+    "preflight": {
+      "dominant_subject": "K01",
+      "visual_elements": 1,
+      "authentic_subjects": true,
+      "protected_pixels_generated": false,
+      "hook_words": 2,
+      "warnings": [
+        "Clutter limit: only the dominant subject and one optional support are composited.",
+        "Required package references omitted from final layout by quality/clutter checks: F001",
+        "K01: original source window retained; surrounding gameplay may remain in the crop."
+      ]
+    }
+  }
+}

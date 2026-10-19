@@ -192,7 +192,7 @@ def test_thumbnail_selector_isolates_results_and_registry_survives_project_round
     for output in outputs:
         controller.register_output(output)
     assert owner.thumb_output_combo.count() == 2
-    assert owner.thumb_source_combo.currentData() == "export"
+    assert owner.thumb_source_combo.currentData() == "video"
     for i in range(2):
         owner.thumb_output_combo.setCurrentIndex(i)
         settings = controller._settings()

@@ -59,7 +59,7 @@ def build_export_page(window) -> None:
     output.add_row("Resolution", window.resolution_combo)
     output.add_row("Frame rate", window.fps_combo)
     output.add_row("Quality", window.video_quality_combo)
-    output.add_row("Output", window.output_mode_combo, tooltip="Single file, one file per clip, audio/video only "
+    output.add_row("Delivery", window.output_mode_combo, tooltip="Single file, one file per clip, audio/video only "
                                                                "or the selected range")
     folder = QWidget()
     folder_l = QHBoxLayout(folder)
@@ -82,10 +82,12 @@ def build_export_page(window) -> None:
     # ---- one existing renderer, optional outputs from the current WIN islands -----------------
     from ui.hero_groups import HeroGroupsPanel
 
-    gameplay = Section("Videos by class", subtitle="One video per selected class")
+    gameplay = Section("Gameplay export selection", subtitle="Selected classes · one combined video or separate class videos")
     window.section_gameplay_exports = gameplay
     window.hero_groups_panel = HeroGroupsPanel(window)
     gameplay.add(window.hero_groups_panel.outputs)
+    # One render action in the footer; the top-bar action invokes the same route.
+    window.hero_groups_panel.export.hide()
 
     # ---- export action: sticky footer, always visible under the scrolling settings -------------
     action = QFrame()

@@ -265,14 +265,15 @@ class ExportProcessMixin:
                         if (now - last_heartbeat) >= heartbeat_sec:
                             self._log(
                                 f"ffmpeg_progress_wait elapsed={now - started_at:.1f}s "
-                                f"out_time={out_time:.1f}s target={output_hint}"
+                                f"out_time={out_time:.1f}s no_output_progress_for={now-last_progress:.1f}s target={output_hint}"
                             )
                             last_heartbeat = now
                     now = time.monotonic()
                     idle_for = max(0.0, now - max(last_activity, last_progress))
-                    if stall_warn_s > 0.0 and not stall_warned and idle_for >= stall_warn_s:
+                    no_output_for = max(0.0, now - last_progress)
+                    if stall_warn_s > 0.0 and not stall_warned and no_output_for >= stall_warn_s:
                         self._log(
-                            f"ffmpeg_stall_warning idle={idle_for:.1f}s "
+                            f"ffmpeg_stall_warning no_output_progress_for={no_output_for:.1f}s idle={idle_for:.1f}s "
                             f"out_time={out_time:.1f}s target={output_hint}"
                         )
                         stall_warned = True

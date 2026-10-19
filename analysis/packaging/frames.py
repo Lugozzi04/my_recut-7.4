@@ -81,6 +81,7 @@ class FrameExtractor:
         self.images: dict[str, np.ndarray] = {}  # full-resolution BGR images kept in memory for crops
         self._counters: dict[str, int] = {}
         self.decode_calls = 0
+        self.allowed_intervals: list[tuple[int, float, float]] | None = None
 
     def _next_id(self, prefix: str = "F") -> str:
         self._counters[prefix] = self._counters.get(prefix, 0) + 1
@@ -88,6 +89,16 @@ class FrameExtractor:
 
     def burst(self, source_index: int, start: float, end: float, *, fps: float) -> list[tuple[float, np.ndarray]]:
         """Kept frames in [start, end); the shared cache stores the unfiltered source bundle."""
+        if self.cancellation is not None:
+            self.cancellation.raise_if_cancelled()
+        # An Intro, excluded game or removed span cannot supply usable evidence.
+        # Skip FFmpeg and bundle loading when there is no overlap with BOTH filters.
+        allowed = self.allowed_intervals
+        if not any(p.source_index == source_index and max(start, p.source_start) < min(end, p.source_end)
+                   and (allowed is None or any(i == source_index and
+                        max(start, p.source_start, a) < min(end, p.source_end, b) for i, a, b in allowed))
+                   for p in self.edit_map.pieces):
+            return []
         identity = self.edit_map.identities[source_index] if self.edit_map.identities else self.edit_map.sources[source_index]
         key = stable_key("burst", identity, round(start, 3), round(end, 3), fps, MAX_WIDTH)
         bundle = self.cache.file_path("frames", key, ".npz")
@@ -124,6 +135,9 @@ class FrameExtractor:
         return [(t, image) for t, image in frames if self._contains(source_index, t)]
 
     def _contains(self, source_index: int, t: float) -> bool:
+        if self.allowed_intervals is not None and not any(i == source_index and a <= t < b
+                for i, a, b in self.allowed_intervals):
+            return False
         # Frame timestamps are half-open: an exact cut-out frame belongs to the removed material.
         return any(p.source_index == source_index and p.source_start <= t < p.source_end
                    for p in self.edit_map.pieces)

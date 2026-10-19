@@ -369,6 +369,10 @@ def build_analysis_page(window) -> None:
     window.btn_mode_classic.clicked.connect(lambda: window.analysis_mode_toggle.setChecked(False))
     window.btn_mode_ai.clicked.connect(lambda: window.analysis_mode_toggle.setChecked(True))
     mode.add(window.mode_segment)
+    window.chk_automatic_cuts = ToggleRow("Automatic speech cuts", "Default on. Turn off to keep speech/silence intact; manual cuts and game selection still apply.")
+    window.chk_automatic_cuts.setChecked(True)
+    window.chk_automatic_cuts.toggled.connect(window._on_automatic_cuts_toggled)
+    mode.add(window.chk_automatic_cuts)
     window.lbl_mode_desc = Hint("")
     mode.add(window.lbl_mode_desc)
     window.lbl_analysis_status = QLabel("")
@@ -473,6 +477,14 @@ def build_analysis_page(window) -> None:
                                           str(window.gameplay_detector_combo.currentData())))
     gp.add(PropertyRow("Detector (test)", window.gameplay_detector_combo,
                        tooltip="Temporary: game detection backend for the next Detect games"))
+    from analysis.hero_groups.labels import CLASS_COLORS, class_label
+    window.gameplay_class_combo = QComboBox()
+    window.gameplay_class_combo.addItem("All classes — full detection (default)", None)
+    for name in CLASS_COLORS:
+        window.gameplay_class_combo.addItem(class_label(name) + " — fast search (experimental)", name)
+    window.gameplay_class_combo.setToolTip("Current Gameplay source: 60-second scout with 30-second recovery, then local full detection. Very short hidden games can be missed; use All classes for exhaustive detection.")
+    window.gameplay_class_combo.currentIndexChanged.connect(window._on_gameplay_class_changed)
+    gp.add(PropertyRow("Find class", window.gameplay_class_combo))
     window.lbl_gameplay_boundary_hint = Hint("")
     gp.add(window.lbl_gameplay_boundary_hint)
     window.btn_gameplay_run = QPushButton("Detect games")
@@ -497,6 +509,10 @@ def build_analysis_page(window) -> None:
     gp.add(window.btn_gameplay_reset_all)
     gp.add(window.hero_groups_panel)
 
-    window.analysis_scroll = _scroll_page(window.page_analysis, [mode, ai, stats, gp], name="InspectorScroll")
+    from ui.project_sources import SourcesPanel
+    source_section = Section("Sources", subtitle="Gameplay / Intro · project order")
+    window.sources_panel = SourcesPanel(window)
+    source_section.add(window.sources_panel)
+    window.analysis_scroll = _scroll_page(window.page_analysis, [mode, source_section, ai, stats, gp], name="InspectorScroll")
 
 

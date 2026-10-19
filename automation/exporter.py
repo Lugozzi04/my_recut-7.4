@@ -128,6 +128,7 @@ class ExportPlan:
     expected_duration_s: float
     source_has_audio: bool
     source_signature: str
+    selection_intervals: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -174,7 +175,17 @@ class ProjectExportPlanner:
         input_indexes: dict[str, int] = {}
         segments: list[dict[str, Any]] = []
         timeline_cursor = 0.0
+        output_cursor = 0.0
+        source_audio: dict[str, bool] = {}
         first_config: Mapping[str, Any] = {}
+        if payload.get("export_selection"):
+            # Input 0 defines source-resolution output settings; prefer gameplay over a small intro.
+            for item in sorted(available, key=lambda t: t.get("source_role") == "intro"):
+                source = str(Path(str(item.get("path", ""))).resolve())
+                source_key = os.path.normcase(source)
+                if source_key not in input_indexes:
+                    input_indexes[source_key] = len(input_paths)
+                    input_paths.append(source)
 
         for item in available:
             source = str(Path(str(item.get("path", ""))).resolve())
@@ -197,7 +208,23 @@ class ProjectExportPlanner:
             if not first_config and isinstance(item.get("cfg"), Mapping):
                 first_config = item["cfg"]
             keeps = self._item_keeps(item, duration)
-            for keep in keeps:
+            raw_intervals = item.get("export_intervals")
+            annotated = isinstance(raw_intervals, list)
+            slices: list[tuple[Segment, dict[str, Any]]] = [(k, {}) for k in keeps]
+            if isinstance(raw_intervals, list):
+                slices = []
+                for record in raw_intervals:
+                    for keep in keeps:
+                        left = max(keep.start, float(record["start"])-source_in)
+                        right = min(keep.end, float(record["end"])-source_in)
+                        if right > left:
+                            slices.append((Segment(left, right), record))
+                if source not in source_audio:
+                    try:
+                        source_audio[source] = bool(self._audio_probe(source))
+                    except Exception as exc:
+                        raise PipelineExportError("source_probe_failed", f"Could not inspect source audio: {exc}") from exc
+            for keep, record in slices:
                 local_start = max(0.0, min(duration, float(keep.start)))
                 local_end = max(local_start, min(duration, float(keep.end)))
                 if local_end - local_start <= 1e-6:
@@ -206,17 +233,19 @@ class ProjectExportPlanner:
                 source_end = source_in + local_end
                 segments.append(
                     {
-                        "start": timeline_cursor + local_start,
-                        "end": timeline_cursor + local_end,
+                        **({k: record.get(k) for k in ("source_id", "group", "output_group", "game_id", "result", "included", "role")} if annotated else {}),
+                        "start": output_cursor if annotated else timeline_cursor + local_start,
+                        "end": output_cursor + local_end-local_start if annotated else timeline_cursor + local_end,
                         "duration": local_end - local_start,
                         "v_idx": source_index,
                         "v_in": source_start,
                         "v_out": source_end,
-                        "a_idx": source_index,
+                        "a_idx": source_index if source_audio.get(source, True) else None,
                         "a_in": source_start,
                         "a_out": source_end,
                     }
                 )
+                output_cursor += local_end-local_start
             timeline_cursor += duration
 
         if not segments:
@@ -229,7 +258,7 @@ class ProjectExportPlanner:
         expected_duration = sum(float(item["duration"]) for item in segments)
         source_signature = self._source_signature(project_path, input_paths)
         try:
-            source_has_audio = any(self._audio_probe(path) for path in input_paths)
+            source_has_audio = any(source_audio.values()) if source_audio else any(self._audio_probe(path) for path in input_paths)
         except Exception as exc:
             raise PipelineExportError("source_probe_failed", f"Could not inspect source audio: {exc}") from exc
 
@@ -248,6 +277,7 @@ class ProjectExportPlanner:
             expected_duration_s=expected_duration,
             source_has_audio=source_has_audio,
             source_signature=source_signature,
+            selection_intervals=tuple(payload.get("export_selection", {}).get("intervals", [])),
         )
 
     @staticmethod
@@ -313,8 +343,8 @@ class ProjectExportPlanner:
         for item in segments:
             start = float(item["v_in"])
             end = float(item["v_out"])
-            is_single_source = int(item["v_idx"]) == 0 and int(item["a_idx"]) == 0
-            aligned_av = abs(start - float(item["a_in"])) <= 1e-6 and abs(end - float(item["a_out"])) <= 1e-6
+            is_single_source = int(item["v_idx"]) == 0 and item["a_idx"] in (0, None)
+            aligned_av = item["a_idx"] is None or (abs(start - float(item["a_in"])) <= 1e-6 and abs(end - float(item["a_out"])) <= 1e-6)
             if len(input_paths) != 1 or not is_single_source or not aligned_av or start < previous_end - 1e-6:
                 return [], [dict(value) for value in segments]
             keeps.append(Segment(start, end))
@@ -518,6 +548,10 @@ class PipelineProjectExporter:
                 export_settings=effective,
                 requested_export_settings=plan.requested_settings,
             )
+            timings_path = plan.project_path.parent / "timestamps.txt"
+            if timings_path.is_file() and hasattr(worker, "timeline_report"):
+                from analysis.hero_groups.projects import read_project
+                worker.timeline_report = (read_project(plan.project_path), timings_path)
             worker.debug = False
             worker.progress.connect(report)
             worker.detail.connect(lambda message: self._emit_detail(on_detail, str(message)))

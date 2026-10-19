@@ -1,0 +1,280 @@
+{
+  "format": "thumbnail_design_v4",
+  "version": 4,
+  "concept_id": "C1",
+  "direction": {
+    "mode": "guided",
+    "youtube_title": "",
+    "title_locked": false,
+    "thumbnail_hook": "\u00c8 ROTTO?!",
+    "hook_locked": true,
+    "creative_focus": "minion attacco",
+    "reference_images": [],
+    "style_profile_id": "lugozzi",
+    "typography_mode": "auto"
+  },
+  "style_profile": {
+    "format": "recut_creator_style",
+    "schema": 1,
+    "revision": 2,
+    "created": "2026-10-15T18:47:52",
+    "updated": "2026-10-15T18:47:52",
+    "creator_id": "lugozzi",
+    "display_name": "lugozzi",
+    "channel_name": "Lugozzi",
+    "language": "it",
+    "enabled": true,
+    "brand": {
+      "colors": [],
+      "fonts": [],
+      "webcam_roi": null,
+      "webcam_size": null,
+      "cards": null,
+      "text": null,
+      "typography": null,
+      "layouts": []
+    },
+    "title_style": {
+      "observed": {},
+      "notes": []
+    },
+    "thumbnail_style": {
+      "observed": {},
+      "notes": []
+    },
+    "references": [],
+    "approved": [],
+    "rejected": [],
+    "feedback": [],
+    "design_system": {
+      "name": "Lugozzi \u2014 Competitive Gaming",
+      "mood": "Competitive gaming; dynamic but ordered; immediate hierarchy and controlled contrast",
+      "palette": {
+        "primary": [
+          "#FFD436",
+          "#FFFFFF",
+          "#111420"
+        ],
+        "accent": [
+          "#FF514A",
+          "#27C9FF"
+        ],
+        "max_dominant_saturated": 2
+      },
+      "fonts": [
+        "Anton",
+        "Archivo Black",
+        "Barlow Condensed Black",
+        "Impact",
+        "Arial Black",
+        "DejaVu Sans"
+      ],
+      "text": {
+        "color": "#FFD436",
+        "outline": "#111420",
+        "outline_px": 12,
+        "shadow_px": 8,
+        "max_lines": 2,
+        "uppercase_preferred": true,
+        "safe_margin": 0.05
+      },
+      "layout_archetypes": [
+        "reaction_impact",
+        "card_power",
+        "clutch_moment",
+        "big_statement"
+      ],
+      "webcam": {
+        "positions": [
+          "left",
+          "right"
+        ],
+        "reaction_width": [
+          0.3,
+          0.45
+        ],
+        "required": false
+      },
+      "effects": {
+        "rim_lighting": 4,
+        "depth_shadows": 4,
+        "selective_glow": 3,
+        "particles_light_rays": 2,
+        "chromatic_aberration": 0
+      },
+      "avoid": [
+        "rectangular webcam",
+        "random collage",
+        "unnecessary HUD",
+        "invented cards",
+        "indiscriminate glow",
+        "four recolours of one screenshot"
+      ],
+      "typography": "auto",
+      "output_size": [
+        1920,
+        1080
+      ],
+      "font_licenses": {
+        "Anton": "https://github.com/googlefonts/AntonFont/blob/main/OFL.txt",
+        "Archivo Black": "https://github.com/google/fonts/blob/main/ofl/archivoblack/OFL.txt",
+        "Barlow Condensed Black": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt"
+      }
+    }
+  },
+  "story_angle": "angolo 1",
+  "story_confidence": "interpretation",
+  "evidence": [
+    {
+      "claim": "momento",
+      "highlight_id": "H01",
+      "transcript_ids": [
+        "T0001"
+      ],
+      "asset_ids": [
+        "F001"
+      ]
+    }
+  ],
+  "evidence_ids": [
+    "H01"
+  ],
+  "main_subject": "W001",
+  "secondary_subject": "",
+  "must_use_assets": [
+    "W001",
+    "F001"
+  ],
+  "optional_assets": [],
+  "must_not_use_assets": [],
+  "visual_hierarchy": [
+    "W001",
+    "F001"
+  ],
+  "layout": "reaction_impact",
+  "composition_notes": "Keep subjects below text safe area",
+  "lighting": "rim light",
+  "effects": {
+    "rim_lighting": 4,
+    "depth_shadows": 4,
+    "selective_glow": 3,
+    "particles_light_rays": 2,
+    "chromatic_aberration": 0,
+    "concept_intensity": 3
+  },
+  "tone": "competitive",
+  "why_clickable": "One supported decisive moment",
+  "palette": {
+    "primary": [
+      "#FFD436",
+      "#FFFFFF",
+      "#111420"
+    ],
+    "accent": [
+      "#FF514A",
+      "#27C9FF"
+    ],
+    "max_dominant_saturated": 2,
+    "concept_preset": "yellow_dark"
+  },
+  "geometry": {
+    "main": [
+      0.56,
+      0.36,
+      0.38,
+      0.6
+    ],
+    "secondary": [
+      0.05,
+      0.36,
+      0.48,
+      0.58
+    ]
+  },
+  "typography": {
+    "color": "#FFD436",
+    "outline": "#111420",
+    "outline_px": 12,
+    "shadow_px": 8,
+    "max_lines": 2,
+    "uppercase_preferred": true,
+    "safe_margin": 0.05,
+    "text": "\u00c8 ROTTO?!",
+    "locked": true,
+    "mode": "precision",
+    "fonts": [
+      "Anton",
+      "Archivo Black",
+      "Barlow Condensed Black",
+      "Impact",
+      "Arial Black",
+      "DejaVu Sans"
+    ],
+    "box": [
+      0.06,
+      0.06,
+      0.88,
+      0.28
+    ],
+    "position": "top"
+  },
+  "references": [
+    {
+      "asset_id": "W001",
+      "path": "webcam/W001_000000.00s.jpg",
+      "type": "webcam_original",
+      "source_index": 0,
+      "source_id": "source-0",
+      "source_name": "video.mp4",
+      "source_time": 0.0,
+      "edited_time": 0.0,
+      "game_id": "video",
+      "provenance": {
+        "method": "webcam_roi_crop",
+        "role": "webcam_primary"
+      },
+      "limitations": [
+        "no face detected"
+      ]
+    },
+    {
+      "asset_id": "F001",
+      "path": "frames/F001_000001.50s.jpg",
+      "type": "gameplay_frame",
+      "source_index": 0,
+      "source_id": "source-0",
+      "source_name": "video.mp4",
+      "source_time": 1.5,
+      "edited_time": 1.5,
+      "game_id": "video",
+      "provenance": {
+        "method": "ffmpeg_frame",
+        "role": "peak",
+        "selection": 0.8002410159012506
+      },
+      "limitations": []
+    }
+  ],
+  "creative_references": [],
+  "output_size": [
+    1920,
+    1080
+  ],
+  "safe_margin": 0.05,
+  "preserve": [
+    "creator identity",
+    "real card details",
+    "player class",
+    "verified result"
+  ],
+  "avoid": [
+    "rectangular webcam",
+    "random collage",
+    "unnecessary HUD",
+    "invented cards",
+    "indiscriminate glow",
+    "four recolours of one screenshot"
+  ],
+  "semantic_check": "not certified; creator must review identity, cards and story",
+  "generation_prompt": "Mission: Design a finished 16:9 Hearthstone Competitive Gaming thumbnail. Request native landscape 1920x1080 or the best available native 16:9 size. Keep essential content inside 5% safe margins.\nStory: angolo 1 | evidence level: interpretation. No additional factual promises.\nAsset Roles: use the indexed real references for identity/gameplay; creative references carry only their declared style/layout/element role, never evidence of gameplay.\nComposition: reaction_impact; dominant=W001; secondary=; hierarchy=['W001', 'F001']; relative boxes [x,y,w,h]={'main': [0.56, 0.36, 0.38, 0.6], 'secondary': [0.05, 0.36, 0.48, 0.58]}; Keep subjects below text safe area. One dominant idea, 2\u20133 strong elements. Reaction face width approximately 30\u201345% only when pertinent; not every variant needs a face.\nIdentity: SAME real person; preserve glasses, hair, face and natural expression. Integrate lighting, clean cut-out, shadow and depth; no rectangular webcam.\nAuthenticity: never invent/alter cards, names, numbers, heroes, class or result. Screenshots are evidence, not rectangular stickers to paste. Uncertain details cannot be promoted to facts.\nVisual Style: palette={'primary': ['#FFD436', '#FFFFFF', '#111420'], 'accent': ['#FF514A', '#27C9FF'], 'max_dominant_saturated': 2, 'concept_preset': 'yellow_dark'}; lighting=rim light; effects={'rim_lighting': 4, 'depth_shadows': 4, 'selective_glow': 3, 'particles_light_rays': 2, 'chromatic_aberration': 0, 'concept_intensity': 3}. At most two dominant saturated colours; selective effects around the protagonist.\nTypography: NO TEXT, LETTERS OR PLACEHOLDERS. Reserve box [0.06, 0.06, 0.88, 0.28] for local exact typography; keep faces/cards outside it.\nVisual Quality: clear separation, controlled contrast, clean edges, meaningful negative space, mobile readability.\nNegative Constraints: ['rectangular webcam', 'random collage', 'unnecessary HUD', 'invented cards', 'indiscriminate glow', 'four recolours of one screenshot']; no raw screenshot, random collage, duplicated subjects, invented game objects, excessive glow, tiny text, useless HUD or clipped important elements."
+}

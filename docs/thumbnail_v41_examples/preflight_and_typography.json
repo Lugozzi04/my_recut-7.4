@@ -1,0 +1,211 @@
+{
+  "preflight": {
+    "version": "protected_composite_v41",
+    "concepts": [
+      {
+        "concept_id": "C1",
+        "family": "card_dominance",
+        "dominant": "K01",
+        "face_presence": false,
+        "face_size": [],
+        "elements": 1,
+        "hook": "È ROTTO?!",
+        "hook_type": "question",
+        "text_position": "left",
+        "typography": "white_impact",
+        "accent": "#FFFFFF"
+      },
+      {
+        "concept_id": "C2",
+        "family": "reaction_impact",
+        "dominant": "S001",
+        "face_presence": true,
+        "face_size": [
+          [
+            0.28099285714285716,
+            0.5828
+          ]
+        ],
+        "elements": 2,
+        "hook": "È ROTTO?!",
+        "hook_type": "question",
+        "text_position": "right",
+        "typography": "gold_impact",
+        "accent": "#FFD436"
+      },
+      {
+        "concept_id": "C3",
+        "family": "gameplay_clutch",
+        "dominant": "F001",
+        "face_presence": false,
+        "face_size": [],
+        "elements": 1,
+        "hook": "È ROTTO?!",
+        "hook_type": "question",
+        "text_position": "top",
+        "typography": "danger_red",
+        "accent": "#FF514A"
+      },
+      {
+        "concept_id": "C4",
+        "family": "big_statement",
+        "dominant": "F001",
+        "face_presence": false,
+        "face_size": [],
+        "elements": 1,
+        "hook": "È ROTTO?!",
+        "hook_type": "question",
+        "text_position": "bottom",
+        "typography": "energy_cyan",
+        "accent": "#27C9FF"
+      }
+    ],
+    "local_changes": [
+      "C2: typography diversified to gold_impact",
+      "C2: reserved layout diversified to text right",
+      "C3: typography diversified to danger_red",
+      "C3: reserved layout diversified to text top",
+      "C4: typography diversified to energy_cyan",
+      "C4: reserved layout diversified to text bottom"
+    ],
+    "distinct_positions": 4,
+    "distinct_type_presets": 4,
+    "warnings": [
+      "Repeated hook; may be an explicit user lock. Story diversity still requires review."
+    ],
+    "aesthetic_quality_certified": false
+  },
+  "typography": [
+    {
+      "mode": "precision",
+      "text": "È ROTTO?!",
+      "text_applied": true,
+      "font": "Impact",
+      "requested_font": "Archivo Black",
+      "font_px": 185.9993896484375,
+      "lines": [
+        "È ROTTO?!"
+      ],
+      "bounds": [
+        134.0,
+        376.22822160785137,
+        720.714535602291,
+        176.34355678429716
+      ],
+      "preset": "white_impact",
+      "gradient": [
+        "#FFFFFF",
+        "#B5C1D1"
+      ],
+      "tilt": -2.0,
+      "depth_px": 5.0,
+      "safe_margins": true,
+      "contrast_proxy": 5.49,
+      "exact_text": true,
+      "warnings": [
+        "Gameplay/card fidelity and creator identity require visual review.",
+        "Font Archivo Black unavailable: using Impact"
+      ],
+      "cache_hit": false
+    },
+    {
+      "mode": "precision",
+      "text": "È ROTTO?!",
+      "text_applied": true,
+      "font": "Arial",
+      "requested_font": "Archivo Black",
+      "font_px": 124.99957275390625,
+      "lines": [
+        "È ROTTO?!"
+      ],
+      "bounds": [
+        1059.6,
+        401.6602536257489,
+        706.6665932118624,
+        125.4794927485022
+      ],
+      "preset": "gold_impact",
+      "gradient": [
+        "#FFF5B5",
+        "#FFD436",
+        "#E19414"
+      ],
+      "tilt": -3.0,
+      "depth_px": 7.0,
+      "safe_margins": true,
+      "contrast_proxy": 3.76,
+      "exact_text": true,
+      "warnings": [
+        "Gameplay/card fidelity and creator identity require visual review.",
+        "Font Archivo Black unavailable: using Arial"
+      ],
+      "cache_hit": false
+    },
+    {
+      "mode": "precision",
+      "text": "È ROTTO?!",
+      "text_applied": true,
+      "font": "DejaVu Sans",
+      "requested_font": "Archivo Black",
+      "font_px": 229.9991912841797,
+      "lines": [
+        "È ROTTO?!"
+      ],
+      "bounds": [
+        154.2,
+        103.79999999999998,
+        1052.8455589591724,
+        224.40000000000006
+      ],
+      "preset": "danger_red",
+      "gradient": [
+        "#FFCA70",
+        "#FF514A",
+        "#C72135"
+      ],
+      "tilt": 3.0,
+      "depth_px": 6.0,
+      "safe_margins": true,
+      "contrast_proxy": 3.15,
+      "exact_text": true,
+      "warnings": [
+        "Gameplay/card fidelity and creator identity require visual review.",
+        "Font Archivo Black unavailable: using DejaVu Sans"
+      ],
+      "cache_hit": false
+    },
+    {
+      "mode": "precision",
+      "text": "È ROTTO?!",
+      "text_applied": true,
+      "font": "Impact",
+      "requested_font": "Archivo Black",
+      "font_px": 229.9991912841797,
+      "lines": [
+        "È ROTTO?!"
+      ],
+      "bounds": [
+        150.2,
+        695.7534904896524,
+        888.8054923353541,
+        217.69301902069492
+      ],
+      "preset": "energy_cyan",
+      "gradient": [
+        "#FFFFFF",
+        "#63E8FF",
+        "#1593DC"
+      ],
+      "tilt": -1.0,
+      "depth_px": 4.0,
+      "safe_margins": true,
+      "contrast_proxy": 4.1,
+      "exact_text": true,
+      "warnings": [
+        "Gameplay/card fidelity and creator identity require visual review.",
+        "Font Archivo Black unavailable: using Impact"
+      ],
+      "cache_hit": false
+    }
+  ]
+}

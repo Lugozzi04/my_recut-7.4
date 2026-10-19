@@ -5,11 +5,13 @@ The planning call (FAST: the single agent call) chooses, per concept, a ROLE and
 moment description, hook and art direction. ReCut then:
 
   asset_package()       resolves the ids to real files (original webcam crops, not cut-outs; the stream's
-                        webcam overlay inpainted out of board frames) and writes them to thumbnails/packages/
-  generation_prompt()   ONE prompt for all variants, images referenced by index
+                        webcam overlay cropped away from board frames, or inpainted when it is not on an
+                        edge) and writes them to thumbnails/packages/
+  generation_prompt()   ONE prompt for all variants, images referenced by index; optional approved creator
+                        thumbnails are attached as STYLE references (finish only, never content)
   CodexImageGenerator   ONE `codex exec` call with the built-in image_gen tool (ChatGPT login, no API key);
                         the generated files are collected from $CODEX_HOME/generated_images
-  normalize_generated() centre-crop to 16:9, 1280x720
+  normalize_generated() centre-crop to 16:9, 1920x1080
 
 draft_scene() keeps a small local scene per concept: it is used for validation, for diversity checks and
 as the local fallback render when generation is unavailable or fails. It is never sent to the image model.
@@ -31,7 +33,8 @@ from typing import Any, Mapping, Protocol, Sequence
 
 import numpy as np
 
-GENERATOR_VERSION = "thumbnail_gen_v2"  # v2: per-variant composition recipes, punchier rules
+GENERATOR_VERSION = "thumbnail_gen_v2.2"  # v2 + clean frames, card fidelity, style refs, big-face/element rules
+GENERATOR_BASE = "thumbnail_gen_v2"  # the 14 Oct 2026 prompt these rules extend
 ROLES = ("reaction-led", "card-led", "board-led", "narrative-led")
 ROLE_TREATMENT = {"reaction-led": "reaction_cutout", "card-led": "card_hero", "board-led": "board_zoom",
                   "narrative-led": "cinematic_moment"}
@@ -39,7 +42,8 @@ FACE_TYPES = ("webcam_original", "webcam_subject")
 BOARD_TYPES = ("gameplay_frame", "board_region", "background")
 DETAIL_TYPES = ("card_crop", "card_artwork", "board_region", "gameplay_frame")
 MAX_GENERATION_IMAGES = 12
-OUTPUT_SIZE = (1280, 720)
+OUTPUT_SIZE = (1920, 1080)
+MAX_STYLE_REFERENCES = 2
 
 
 # ---- planning schema (the concept fields that replace the scene graph) ---------------------------------
@@ -70,7 +74,9 @@ def planning_section(n_concepts: int) -> str:
             "background treatment, mood and the punch (zoom, light, effects). Do NOT forbid text or effects and do "
             "NOT fix exact positions: placement, text style and colour are assigned per variant later. Every concept "
             "needs a hook text except at most one; at most 2 hooks may be questions; 2-3 strong elements, never a "
-            "collage.")
+            "collage: the face, each card and each hero portrait count as one element. When the face is used it is "
+            "BIG (at least a third of the frame height), never small in a corner; otherwise leave it out. A VS / "
+            "mulligan intro screen alone is not a moment: pair it with a result, a decisive card or a reaction.")
 
 
 def manifest_lines(manifest: Any, *, limit: int = 90) -> list[str]:
@@ -90,6 +96,12 @@ def manifest_lines(manifest: Any, *, limit: int = 90) -> list[str]:
             extra.append(f"sharp={a.quality['sharpness']:.0f}")
         if a.type == "board_region" and a.parent_id:
             extra.append(f"of {a.parent_id}")
+        for metric in ("reference_quality", "thumbnail_quality", "face_size", "activity_proxy"):
+            if metric in a.quality:
+                extra.append(f"{metric}={a.quality[metric]:.2f}")
+        use = a.provenance.get("thumbnail_use")
+        if use:
+            extra.append(f"thumbnail_use={use}")
         if a.limitations:
             extra.append("LIMITS: " + "; ".join(a.limitations))
         lines.append(f"- {a.id} {labels.get(a.type, a.type)} {a.highlight_id or '-'} {t} {' '.join(extra)}".rstrip())
@@ -221,7 +233,8 @@ def attach_drafts(raw: dict[str, Any], assets: Mapping[str, Mapping[str, Any]]) 
         concept["scene"] = scene
         concept["treatment"] = ROLE_TREATMENT[concept["role"]]
         concept["primary_subject"] = primary
-    problems += check_roles(raw.get("concepts") or [])
+    if not raw.get("_v4"):
+        problems += check_roles(raw.get("concepts") or [])
     return problems
 
 
@@ -268,12 +281,54 @@ def _concept_assets(concept: Mapping[str, Any]) -> list[tuple[str, str]]:
     return items
 
 
+def clean_frame(image: np.ndarray, boxes: Sequence[Sequence[float]], *, max_strip: float = 0.3) -> np.ndarray:
+    """Removes the stream's webcam overlay from a gameplay frame without leaving a patch to copy.
+
+    A box touching a frame edge is cropped away as a full strip (the cheapest side, at most max_strip of the
+    frame); anything else falls back to inpainting. The board in the middle is never cut.
+    """
+    from .render import mask_regions
+
+    rest = []
+    h, w = image.shape[:2]
+    x0, y0, x1, y1 = 0, 0, w, h
+    for x, y, bw, bh in boxes:
+        options = []
+        if x <= 0.02 and x + bw <= max_strip:
+            options.append((x + bw, "left"))
+        if x + bw >= 0.98 and 1 - x <= max_strip:
+            options.append((1 - x, "right"))
+        if y <= 0.02 and y + bh <= max_strip:
+            options.append((y + bh, "top"))
+        if y + bh >= 0.98 and 1 - y <= max_strip:
+            options.append((1 - y, "bottom"))
+        if not options:
+            rest.append((x, y, bw, bh))
+            continue
+        _, side = min(options)
+        if side == "left":
+            x0 = max(x0, int(round((x + bw) * w)))
+        elif side == "right":
+            x1 = min(x1, int(round(x * w)))
+        elif side == "top":
+            y0 = max(y0, int(round((y + bh) * h)))
+        else:
+            y1 = min(y1, int(round(y * h)))
+    if x1 - x0 < w * (1 - max_strip) or y1 - y0 < h * (1 - max_strip):
+        return mask_regions(image, boxes)
+    cropped = np.ascontiguousarray(image[y0:y1, x0:x1])
+    if rest:
+        cw, ch = x1 - x0, y1 - y0
+        cropped = mask_regions(cropped, [((x * w - x0) / cw, (y * h - y0) / ch, bw * w / cw, bh * h / ch)
+                                         for x, y, bw, bh in rest])
+    return cropped
+
+
 def asset_package(concepts: Sequence[Mapping[str, Any]], assets: Mapping[str, Mapping[str, Any]],
                   images: Mapping[str, np.ndarray], folder: Path, *,
                   mask_boxes: Sequence[Sequence[float]] = ()) -> list[AssetPackage]:
     """Writes each needed asset once (JPEG, <= 1280 px) and returns one package per concept."""
     from .frames import write_image
-    from .render import mask_regions
 
     folder.mkdir(parents=True, exist_ok=True)
     written: dict[str, Path] = {}
@@ -293,7 +348,7 @@ def asset_package(concepts: Sequence[Mapping[str, Any]], assets: Mapping[str, Ma
                     image = np.ascontiguousarray(image[..., :3])
                 info = assets.get(source_id) or {}
                 if info.get("type") == "gameplay_frame" and mask_boxes:
-                    image = mask_regions(image, mask_boxes)  # the stream's own webcam overlay is not a subject
+                    image = clean_frame(image, mask_boxes)  # the stream's own webcam overlay is not a subject
                 h, w = image.shape[:2]
                 if max(h, w) > 1280:
                     import cv2
@@ -318,7 +373,8 @@ GENERATION_RULES = (
     "You are a senior YouTube thumbnail designer. Create finished, professional, clickable YouTube thumbnails for a "
     "Hearthstone (Standard/Ranked ladder) video, built from the REAL reference images attached.",
     "Each thumbnail: landscape 16:9 (1280x720 or larger), ONE clear idea readable in one second at phone size, a "
-    "strong visual hierarchy with at most 2-3 strong elements, clean depth (subject in front, simplified background), "
+    "strong visual hierarchy with at most 2-3 strong elements (the face, each card and each hero portrait count as "
+    "one; the hook text comes on top), clean depth (subject in front, simplified background), "
     "high contrast, saturated but natural colour, crisp edges. No chaos, no collage, no 'screenshot with stickers' "
     "look, no picture-in-picture boxes, no emoji, logos, watermarks or fake game UI.",
     "Give every thumbnail PUNCH: never just upscale a screenshot. Re-stage the moment: zoom into the key area, add "
@@ -326,14 +382,22 @@ GENERATION_RULES = (
     "circle or arrow is allowed when it makes the key element obvious.",
     "The creator's webcam crop is a SUBJECT, not a live-stream box: cut the person out, enhance sharpness, lighting "
     "and skin tones, upscale as needed, enlarge the face so it reads at small size, and blend it into the scene "
-    "with matching light, rim light and shadow. Keep the SAME real person: same face, glasses, hair, beard and "
+    "with matching light, rim light and shadow. When the creator appears he is a main subject - at least about a "
+    "third of the frame height, never a small face in a corner or a tiny inset; when the variant's composition "
+    "has no creator, leave him out. Keep the SAME real person: same face, glasses, hair, beard and "
     "clothing, natural expression of the reference (you may intensify it slightly, never change identity, age or "
     "features). Use the alternative webcam crops only to pick the best expression or to reconstruct detail.",
     "Board and cards come from the real game: keep them recognisable and readable. Never invent or alter card names, "
     "card text, mana/attack/health numbers, hero portraits or the game result. You may crop, zoom, relight, sharpen, "
     "blur or darken the background and isolate the key card/board area. In gameplay frames the stream's own webcam "
-    "overlay was removed and may leave a smeared patch: never reproduce that patch or the stream overlays (score "
-    "boxes, deck trackers, player names).",
+    "overlay was cropped away or removed and may leave a smeared patch: never reproduce that patch or the stream "
+    "overlays (score boxes, deck trackers, player names, chat).",
+    "The key card must stay THE SAME card, instantly recognisable: take it from its card crop as one clean, solid "
+    "card - same frame, artwork, name, rules text and mana/attack/health - large, sharp and readable. Animate it, "
+    "do not change it: you may enlarge it, tilt it slightly, light it, and add glow, aura, light rays, sparks or "
+    "energy BEHIND and AROUND its edges, but never repaint, warp, melt, fragment or blend its artwork, never let "
+    "effects cross its name or text box, and no tangled tentacles, strings or swirls over it (no 'spaghetti' "
+    "effects). At most two cards per thumbnail; a dimmed second copy or the real board behind it is fine.",
     "Text: use EXACTLY the given hook text (same words, same language, correct spelling), 1-4 words, huge and "
     "readable at phone size, at most two lines, in the given text style, placed where the variant's composition "
     "says, away from the face and the key card, never in the bottom-right corner (YouTube duration badge). If the "
@@ -343,17 +407,39 @@ GENERATION_RULES = (
 )
 
 
+STYLE_REFERENCE_RULE = (
+    "STYLE REFERENCES (images {ids}): finished thumbnails previously approved by this creator. Match their finish "
+    "and energy - huge bold hook lettering with a thick outline, a big sharp face cut-out with rim light, one hero "
+    "card with glow, a saturated dramatic background, clean depth. They are NOT content: never copy their cards, "
+    "text, hero portraits, expressions or exact layout, and never treat them as evidence of this video. The "
+    "creator's face and expression always come from this video's webcam crops.")
+
+
 def generation_prompt(packages: Sequence[AssetPackage], *, language: str, style_note: str = "",
-                      compositions: Mapping[str, Mapping[str, str]] | None = None) -> tuple[str, list[Path]]:
+                      compositions: Mapping[str, Mapping[str, str]] | None = None,
+                      design_packs: Mapping[str, Mapping[str, Any]] | None = None,
+                      creative_refs: Sequence[tuple[Path, str]] = (),
+                      style_refs: Sequence[Path] = ()) -> tuple[str, list[Path]]:
     """One prompt for all variants; returns (prompt, ordered image list referenced by index)."""
+    if design_packs:
+        return generation_prompt_v4(packages, design_packs, creative_refs)
     order: list[Path] = []
     index: dict[Path, int] = {}
+    styles = list(style_refs)[:MAX_STYLE_REFERENCES]
     for package in packages:
         for image in package.images:
-            if image.path not in index and len(order) < MAX_GENERATION_IMAGES:
+            if image.path not in index and len(order) < MAX_GENERATION_IMAGES - len(styles):
                 index[image.path] = len(order) + 1
                 order.append(image.path)
+    style_ids = []
+    for path in styles:
+        if path not in index:
+            index[path] = len(order) + 1
+            order.append(path)
+        style_ids.append(str(index[path]))
     out = [f"PROMPT_VERSION: {GENERATOR_VERSION}", *GENERATION_RULES]
+    if style_ids:
+        out.append(STYLE_REFERENCE_RULE.format(ids=", ".join(style_ids)))
     if style_note:
         out.append(f"Creator style: {style_note}")
     out += ["", f"Generate {len(packages)} thumbnails, one image_gen call per variant, in this order: "
@@ -374,6 +460,8 @@ def generation_prompt(packages: Sequence[AssetPackage], *, language: str, style_
             out.append(f"- composition: {recipe['layout']}")
             out.append(f"- text style: {recipe['text_style']}")
             out.append(f"- colour grade: {recipe['grade']}")
+        if not any(i.kind.startswith("face") for i in package.images):
+            out.append("- creator: not in this thumbnail (no webcam crop attached)")
         for image in package.images:
             if image.path in index:
                 note = f" ({image.note})" if image.note else ""
@@ -516,8 +604,11 @@ def map_generated(answer: Mapping[str, Any], new_files: Sequence[Path], concept_
     return mapping
 
 
-def normalize_generated(path: Path, target: Path) -> tuple[int, int] | None:
-    """Centre-crop to 16:9 and resize to 1280x720; returns the source size (None if unreadable)."""
+def normalize_generated(path: Path, target: Path, *, size: tuple[int, int] | None = None,
+                        contain: bool = True) -> tuple[int, int] | None:
+    """Centre-crop to 16:9 and resize to OUTPUT_SIZE (1920x1080); returns the source size (None if unreadable).
+
+    With size and contain (protected V4 compositing) the image is letterboxed instead of cropped."""
     import cv2
 
     from .frames import read_image, write_image
@@ -526,6 +617,10 @@ def normalize_generated(path: Path, target: Path) -> tuple[int, int] | None:
     if image is None:
         return None
     h, w = image.shape[:2]
+    if size is not None and contain:
+        from .typography import normalize_canvas
+        write_image(target, normalize_canvas(image, size), quality=95)
+        return w, h
     want = 16 / 9
     if w / h > want:
         cw = int(h * want)
@@ -533,8 +628,9 @@ def normalize_generated(path: Path, target: Path) -> tuple[int, int] | None:
     else:
         ch = int(w / want)
         image = image[(h - ch) // 2:(h - ch) // 2 + ch]
-    interpolation = cv2.INTER_AREA if image.shape[1] >= OUTPUT_SIZE[0] else cv2.INTER_CUBIC
-    write_image(target, cv2.resize(image, OUTPUT_SIZE, interpolation=interpolation), quality=95)
+    out_size = size or OUTPUT_SIZE
+    interpolation = cv2.INTER_AREA if image.shape[1] >= out_size[0] else cv2.INTER_LANCZOS4
+    write_image(target, cv2.resize(image, out_size, interpolation=interpolation), quality=95)
     return w, h
 
 
@@ -572,20 +668,20 @@ RECIPES: dict[str, list[dict[str, str]]] = {
         {"id": "C1", "face": "none", "layout": "the card huge and slightly rotated on the LEFT, hook on the right"},
         {"id": "C2", "face": "none", "layout": "the card huge on the RIGHT with a light burst behind it, hook on the "
                                                "left"},
-        {"id": "C3", "face": "small-left", "layout": "the card centred and tilted toward the viewer, the creator small "
-                                                     "in the lower left reacting to it; hook across the top"},
+        {"id": "C3", "face": "left", "layout": "the card centred-right and tilted toward the viewer, the creator as a "
+                                               "large cut-out in the lower left reacting to it; hook across the top"},
         {"id": "C4", "face": "none", "layout": "the card in the centre at extreme size, its art spilling out of the "
                                                "frame; hook split above and below"},
-        {"id": "C5", "face": "small-right", "layout": "the card on the left, the creator small on the right looking "
-                                                      "at it; hook at the bottom"},
+        {"id": "C5", "face": "right", "layout": "the card on the left, the creator large on the right looking at it; "
+                                                "hook at the bottom"},
     ],
     "board-led": [
         {"id": "B1", "face": "none", "layout": "a low dramatic zoom on the key board area with depth of field; hook "
                                                "across the top"},
         {"id": "B2", "face": "none", "layout": "the decisive minions or hero pushed to the foreground with motion and "
                                                "light streaks, the rest of the board darkened; hook at the bottom"},
-        {"id": "B3", "face": "small-corner", "layout": "the key board area tilted in perspective, the creator small "
-                                                       "in a corner; hook on the opposite side"},
+        {"id": "B3", "face": "corner", "layout": "the key board area tilted in perspective, the creator as a large "
+                                                 "cut-out rising from a lower corner; hook on the opposite side"},
         {"id": "B4", "face": "none", "layout": "split light: the key area lit, everything else in shadow, a "
                                                "spotlight on the decisive element; hook on the left"},
     ],
@@ -596,8 +692,8 @@ RECIPES: dict[str, list[dict[str, str]]] = {
                                                "right; hook at the bottom"},
         {"id": "N3", "face": "none", "layout": "one cinematic frame of the key moment with strong colour grading and "
                                                "vignette; hook big in the centre-left"},
-        {"id": "N4", "face": "center", "layout": "the creator centred and small in the middle ground, the moment huge "
-                                                 "behind like a poster; hook across the top"},
+        {"id": "N4", "face": "center", "layout": "the creator large in the lower centre, the moment huge behind like a "
+                                                 "poster; hook across the top"},
     ],
 }
 TEXT_STYLES = [
@@ -612,6 +708,7 @@ GRADES = ["warm orange / teal", "purple / gold", "cold blue with a red accent", 
           "dark cinematic with rim light", "bright clean daylight"]
 HISTORY_FILE = "composition_history.json"
 HISTORY_KEEP = 6  # videos remembered
+CHOICE_VERSION = 2  # 2: distinct text styles/grades inside a run; older saved choices are not reused
 
 
 def _load_history(path: Path) -> dict[str, Any]:
@@ -624,22 +721,20 @@ def _load_history(path: Path) -> dict[str, Any]:
 
 def choose_compositions(packages: Sequence[AssetPackage], *, video_key: str,
                         history_path: Path | None) -> dict[str, dict[str, str]]:
-    """concept_id -> {recipe, layout, face, text_style, grade}. Same video -> same choice (reruns stay cached);
-    a new video avoids the recipes, text styles and grades of the previous videos where it can."""
+    """concept_id -> {recipe, layout, face, text_style, grade}. Same video -> same choice (reruns stay cached).
+    Inside a run every variant gets a different text style and colour grade; across videos the least recently used
+    recipes, styles and grades come first (never excluded: exclusion once left a single style for all four)."""
     import random
 
     history = _load_history(history_path) if history_path else {"runs": []}
     for run in history["runs"]:
-        if run.get("video") == video_key and isinstance(run.get("choice"), dict):
+        if (run.get("video") == video_key and run.get("version") == CHOICE_VERSION
+                and isinstance(run.get("choice"), dict)):
             return dict(run["choice"])
     used_recipes = {r for run in history["runs"] for r in (run.get("recipes") or [])}
-    used_styles = {s for run in history["runs"][-2:] for s in (run.get("styles") or [])}
-    used_grades = {g for run in history["runs"][-2:] for g in (run.get("grades") or [])}
     rng = random.Random(int(hashlib.sha256(video_key.encode("utf-8")).hexdigest()[:12], 16))
-    styles = [s for s in TEXT_STYLES if s not in used_styles] or list(TEXT_STYLES)
-    grades = [g for g in GRADES if g not in used_grades] or list(GRADES)
-    rng.shuffle(styles)
-    rng.shuffle(grades)
+    styles = _least_recent(TEXT_STYLES, "styles", history["runs"], rng)
+    grades = _least_recent(GRADES, "grades", history["runs"], rng)
     choice: dict[str, dict[str, str]] = {}
     faces: set[str] = set()
     for n, package in enumerate(packages):
@@ -647,15 +742,12 @@ def choose_compositions(packages: Sequence[AssetPackage], *, video_key: str,
         rng.shuffle(pool)
         has_face = any(i.kind.startswith("face") for i in package.images)
 
-        def rank(recipe: dict[str, str], has_face: bool = has_face, role: str = package.role
-                 ) -> tuple[int, int, int, int]:
+        def rank(recipe: dict[str, str], has_face: bool = has_face) -> tuple[int, int, int, int]:
             side = recipe["face"]
             needs_missing_face = int(not has_face and side != "none")  # no webcam in this package
+            drops_face = int(has_face and side == "none")  # a selected face is big, not a leftover in a corner
             same_side = int(has_face and side != "none" and side in faces)  # face on the same side twice
-            # the face already leads another variant: other roles prefer a faceless or small-face layout
-            face_again = int(role != "reaction-led" and bool(faces) and side not in ("none",)
-                             and not side.startswith("small"))
-            return (needs_missing_face, same_side, face_again, int(recipe["id"] in used_recipes))
+            return (needs_missing_face, drops_face, same_side, int(recipe["id"] in used_recipes))
 
         recipe = min(pool, key=rank)
         if has_face and recipe["face"] != "none":
@@ -665,10 +757,19 @@ def choose_compositions(packages: Sequence[AssetPackage], *, video_key: str,
     return choice
 
 
+def _least_recent(options: Sequence[str], key: str, runs: Sequence[Mapping[str, Any]], rng: Any) -> list[str]:
+    """All options, never used / least recently used first (random but stable tie-break per video)."""
+    last = {value: index for index, run in enumerate(runs) for value in (run.get(key) or [])}
+    order = list(options)
+    rng.shuffle(order)
+    return sorted(order, key=lambda value: last.get(value, -1))
+
+
 def remember_compositions(history_path: Path, video_key: str, choice: dict[str, dict[str, str]]) -> None:
     history = _load_history(history_path)
     runs = [r for r in history["runs"] if r.get("video") != video_key]
-    runs.append({"video": video_key, "time": time.strftime("%Y-%m-%dT%H:%M:%S"), "choice": choice,
+    runs.append({"video": video_key, "version": CHOICE_VERSION, "time": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                 "choice": choice,
                  "recipes": sorted({c["recipe"] for c in choice.values()}),
                  "styles": sorted({c["text_style"] for c in choice.values()}),
                  "grades": sorted({c["grade"] for c in choice.values()})})
@@ -679,3 +780,51 @@ def remember_compositions(history_path: Path, video_key: str, choice: dict[str, 
         os.replace(tmp, history_path)
     except OSError:
         pass
+
+
+def generation_prompt_v4(packages: Sequence[AssetPackage], packs: Mapping[str, Mapping[str, Any]],
+                         creative_refs: Sequence[tuple[Path, str]]) -> tuple[str, list[Path]]:
+    from .design import pack_prompt
+    order: list[Path] = []
+    refs = list(creative_refs)[:3]
+    budget = MAX_GENERATION_IMAGES - len(refs)
+    selected: dict[str, list[PackageImage]] = {}
+    for step in range(6):
+        for p in packages:
+            preserving = packs[p.concept_id].get("composition", {}).get("strategy") == "reference_preserving"
+            candidates = [i for i in p.images if i.kind == "gameplay_backdrop"] if preserving else p.images
+            if step >= len(candidates):
+                continue
+            image = candidates[step]  # only real backdrop guides AI; foreground cards/faces stay local
+            if image.path in order or len(order) < budget:
+                if image.path not in order:
+                    order.append(image.path)
+                selected.setdefault(p.concept_id, []).append(image)
+    out = ["PROMPT_VERSION: thumbnail_generation_gameplay_v1",
+           f"Create {len(packages)} separate thumbnails, one image_gen call per variant. "
+           "Request native landscape 16:9; output 1920x1080 or best native landscape resolution. "
+           "Do not return a contact sheet. No extra variants."]
+    for p in packages:
+        out += ["", f"VARIANT {p.concept_id}", pack_prompt(packs[p.concept_id]), "Visual References:"]
+        sent = selected.get(p.concept_id, [])
+        for i in sent:
+            out.append(f"- image {order.index(i.path)+1}: {i.asset_id}, {i.kind}; {i.note}")
+        preserving = packs[p.concept_id].get("composition", {}).get("strategy") == "reference_preserving"
+        missing = [i.asset_id for i in p.images if i not in sent]
+        if preserving:
+            out.append("The authentic subject images are intentionally NOT attached: they are local protected layers. "
+                       "When a gameplay backdrop is attached, enhance THAT full-frame Hearthstone context, "
+                       "not an abstract environment. Only smooth lighting accents will be used locally. "
+                       "Never create replacement foreground subjects.")
+        elif missing:
+            out.append("References omitted by attachment budget: " + ", ".join(missing) +
+                       ". Do not invent their details; prioritise the supplied evidence.")
+    for ref_path, role in refs:
+        if ref_path not in order:
+            order.append(ref_path)
+        out.append(f"- image {order.index(ref_path)+1}: " +
+                   ("CREATOR IDENTITY PHOTO; preserve this person's traits; not a reaction/gameplay event. "
+                    if role == "identity" else f"USER CREATIVE REFERENCE role={role}; ") +
+                   "NOT proof of a card, class, event or result. Do not replace real gameplay with it.")
+    out.append('Return JSON variants with concept_id and generated file path, in the requested order.')
+    return "\n".join(out), order

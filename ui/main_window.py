@@ -85,6 +85,8 @@ from .main_window_components import (
     WheelOnlyIfFocusedFilter,
 )
 from .twitch_integration import TwitchIntegration, normalize_twitch_client_id
+from analysis.gameplay import selection as gameplay_selection
+from .gameplay_timeline import GameplayTimelineController
 from .gameplay_editing_ui import (
     BOUNDARY_CHOICES,
     GameplayEditWorker,
@@ -95,6 +97,7 @@ from .gameplay_editing_ui import (
     to_segment_domain,
 )
 from core import Project, ProjectSession, Track, TrackState, Clip, Media
+from core.project_file import source_identity
 from core.project_file import (
     PROJECT_FORMAT,
     PROJECT_VERSION,
@@ -525,10 +528,12 @@ class MainWindow(QMainWindow):
         # and overrides the themed buttons/segmented controls. Pages simply inherit the panel colour.
         self.page_analysis = QWidget()
         self.page_thumbnails = QWidget()
+        self.page_clips = QWidget()
         self.pages.addWidget(self.page_main)
         self.pages.addWidget(self.page_export)
         self.pages.addWidget(self.page_analysis)
         self.pages.addWidget(self.page_thumbnails)
+        self.pages.addWidget(self.page_clips)
 
         self.seg_main = QToolButton()
         self.seg_main.setText("Edit")
@@ -543,8 +548,12 @@ class MainWindow(QMainWindow):
         self.seg_analysis.setCheckable(True)
 
         self.seg_thumbnails = QToolButton()
-        self.seg_thumbnails.setText("Thumbnails")
+        self.seg_thumbnails.setText("Covers")  # short: five inspector tabs
         self.seg_thumbnails.setCheckable(True)
+
+        self.seg_clips = QToolButton()
+        self.seg_clips.setText("Clips")
+        self.seg_clips.setCheckable(True)
 
         # -----------------------------
         # Main page widgets (required by layout_main_page)
@@ -1054,9 +1063,11 @@ class MainWindow(QMainWindow):
         self.seg_export.clicked.connect(lambda: self._switch_page(1))
         self.seg_analysis.clicked.connect(lambda: self._switch_page(2))
         self.seg_thumbnails.clicked.connect(lambda: self._switch_page(3))
+        self.seg_clips.clicked.connect(lambda: self._switch_page(4))
         self.timeline.selectionChanged.connect(self._on_timeline_selection_changed)
         self.timeline.cutResizeRequested.connect(self._on_cut_resize_requested)
         self.timeline.viewChanged.connect(lambda _i: self._push_zoom_to_web())
+        self.gameplay_actions = GameplayTimelineController(self)
         self.timeline.islandSelected.connect(self._on_island_selected)
         self.timeline.islandResizeRequested.connect(self._on_island_resize_requested)
         self.btn_gameplay_run.clicked.connect(self._on_gameplay_run_clicked)
@@ -2878,6 +2889,7 @@ class MainWindow(QMainWindow):
             track.segment_source_in = 0.0
             track.segment_source_out = float(track.duration or 0.0)
         self._assign_video_color(track)
+        track.source_id = track.source_id or source_identity({"path": path})
         self._project_session.add_media_for_state(path, track)
 
     def _rebuild_sequential_timeline(self) -> None:
@@ -3141,6 +3153,8 @@ class MainWindow(QMainWindow):
         self.seek.setRange(0, int(total * 1000))
         self._update_time_label(self.seek.value() / 1000.0)
         self._update_active_track_label()
+        self._refresh_gameplay_panel()
+        self._mark_project_dirty()
         # Keep playback in sync with the current playhead after reordering.
         try:
             t = float(getattr(self.timeline, "playhead", 0.0) or getattr(self, "_last_pos", 0.0) or 0.0)
@@ -3158,6 +3172,7 @@ class MainWindow(QMainWindow):
             return
         if idx_a >= len(self._tracks) or idx_b >= len(self._tracks):
             return
+        self._push_undo_state(kind="timeline")
         self._tracks[idx_a], self._tracks[idx_b] = self._tracks[idx_b], self._tracks[idx_a]
         if self._active_track_index == idx_a:
             self._active_track_index = idx_b
@@ -3277,6 +3292,7 @@ class MainWindow(QMainWindow):
         t.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
         t.ai_speaker_ids = list(src_speakers) if isinstance(src_speakers, list) else None
+        t.intro_targets = list(src.intro_targets)
         t.cfg = dict(getattr(src, "cfg", {}) or {})
         t.undo_stack = []
         t.redo_stack = []
@@ -3529,6 +3545,8 @@ class MainWindow(QMainWindow):
         dup.duration = float(dur)
         dup.rms = src.rms
         dup.hop_s = float(getattr(src, "hop_s", 0.03) or 0.03)
+        dup.automatic_cuts_enabled = src.automatic_cuts_enabled
+        dup.gameplay_target_class = src.gameplay_target_class
         dup.cuts_enabled = bool(getattr(src, "cuts_enabled", False))
         dup.cuts = self._clone_segments_list(getattr(src, "cuts", []))
         dup.keeps = self._clone_segments_list(getattr(src, "keeps", []))
@@ -3537,6 +3555,9 @@ class MainWindow(QMainWindow):
         dup.rms_min = float(getattr(src, "rms_min", 0.0) or 0.0)
         dup.rms_max = float(getattr(src, "rms_max", 0.0) or 0.0)
         dup.rms_eps = float(getattr(src, "rms_eps", 1e-9) or 1e-9)
+        dup.source_id = src.source_id
+        dup.source_role = src.source_role
+        dup.intro_targets = list(src.intro_targets)
         dup.cfg = dict(getattr(src, "cfg", {}) or {})
         dup.filters_restored = bool(getattr(src, "filters_restored", False))
         dup.cuts_restored = bool(getattr(src, "cuts_restored", False))
@@ -3774,6 +3795,8 @@ class MainWindow(QMainWindow):
             self.project = Project.create_default("Untitled")
             if hasattr(self, "thumbnails"):
                 self.thumbnails.restore_outputs()
+            if hasattr(self, "clips"):
+                self.clips.restore_videos()
             self._project_file_path = None
             self._mark_project_dirty(False)
             self._offline_project_items = []
@@ -3976,6 +3999,7 @@ class MainWindow(QMainWindow):
                                 "cuts": t.cuts,
                                 # provenance for the timeline (display only; same segment-local domain)
                                 "manual_cuts": list(getattr(t, "manual_cuts", None) or []),
+                                "gameplay_boxes": self.hero_groups_panel.timeline_boxes(t) if t.source_role != "intro" and (t.gameplay_report.get("games") or t.gameplay_grouping.get("editor")) else None,
                                 "gameplay_cuts": self._enabled_gameplay_cuts(t),
                                 "gameplay_keeps": list(getattr(t, "gameplay_keeps", None) or [])
                                 if getattr(t, "gameplay_cuts_enabled", False) else [],
@@ -4318,6 +4342,8 @@ class MainWindow(QMainWindow):
         ts_right.rms_eps = ts.rms_eps
         ts_right.segment_source_in = float(split_src)
         ts_right.segment_source_out = float(src_out)
+        ts_right.automatic_cuts_enabled = ts.automatic_cuts_enabled
+        ts_right.gameplay_target_class = ts.gameplay_target_class
         ts_right.cuts_enabled = ts.cuts_enabled
         ts_right.cuts = right_cuts
         ts_right.keeps = right_keeps
@@ -5059,6 +5085,11 @@ class MainWindow(QMainWindow):
             return
         thumbnails = getattr(self, "thumbnails", None)
         if thumbnails is not None and thumbnails.cancel_for_close():
+            event.ignore()
+            QTimer.singleShot(250, self.close)
+            return
+        clips = getattr(self, "clips", None)
+        if clips is not None and clips.cancel_for_close():
             event.ignore()
             QTimer.singleShot(250, self.close)
             return
@@ -5823,6 +5854,8 @@ class MainWindow(QMainWindow):
             settings.setValue("automation/twitch/watcher_enabled", 0)
         elif self._twitch_watcher_enabled and not smoke_test:
             QTimer.singleShot(0, self._restore_twitch_watcher)
+        from utils.opencv_runtime import warm_up_opencv
+        QTimer.singleShot(0, warm_up_opencv)  # main thread first, else the app hangs at exit after an analysis
 
         self._app_log(
             "twitch_automation_init",
@@ -6752,6 +6785,9 @@ class MainWindow(QMainWindow):
             "project_id": str(self.project.id),
             "hero_group_output": copy.deepcopy(getattr(self.project, "hero_group_output", {}) or {}),
             "packaging_outputs": copy.deepcopy(getattr(self.project, "packaging_outputs", []) or []),
+            "clips": copy.deepcopy(getattr(self.project, "clips", {}) or {}),
+            "creative_direction": copy.deepcopy(getattr(self.project, "creative_direction", {}) or {}),
+            "gameplay_export": copy.deepcopy(getattr(self.project, "gameplay_export", {}) or {}),
             "global": {
                 "analysis_mode": str(getattr(self, "analysis_mode", "classic") or "classic"),
                 "active_track_index": int(getattr(self, "_active_track_index", 0) or 0),
@@ -7036,8 +7072,16 @@ class MainWindow(QMainWindow):
         self.project.id = str(raw.get("project_id") or self.project.id)
         self.project.hero_group_output = copy.deepcopy(raw.get("hero_group_output") or {})
         self.project.packaging_outputs = copy.deepcopy(raw.get("packaging_outputs") or [])
+        self.project.creative_direction = copy.deepcopy(raw.get("creative_direction") or {})
+        if hasattr(self, "thumb_direction"):
+            self.thumb_direction.restore(self.project.creative_direction)
+        self.project.gameplay_export = copy.deepcopy(raw.get("gameplay_export") or {})
+        self._refresh_gameplay_panel()
+        self.project.clips = copy.deepcopy(raw.get("clips") or {})
         if hasattr(self, "thumbnails"):
             self.thumbnails.restore_outputs()
+        if hasattr(self, "clips"):
+            self.clips.restore_videos()
         self._apply_project_global_state(raw.get("global", {}))
         self._mark_project_dirty(False)
         self._web_push_full_state()
@@ -7123,7 +7167,11 @@ class MainWindow(QMainWindow):
     def _apply_restore_state(self, track: TrackState, restore_state: Optional[dict]) -> bool:
         if not isinstance(restore_state, dict):
             return False
+        track.source_id = source_identity({**restore_state, "path": track.path or restore_state.get("path", "")})
+        track.source_role = "intro" if restore_state.get("source_role") == "intro" else "gameplay"
+        track.intro_targets = [str(x) for x in restore_state.get("intro_targets", [])] if isinstance(restore_state.get("intro_targets", []), list) else []
         keys = (
+            "source_role", "source_id", "intro_targets",
             "cuts",
             "keeps",
             "manual_cuts",
@@ -7160,6 +7208,9 @@ class MainWindow(QMainWindow):
             "ai_speaker_ids",
             "cuts_enabled",
         )
+        track.automatic_cuts_enabled = bool(restore_state.get("automatic_cuts_enabled", True))
+        from analysis.hero_groups.labels import class_id
+        track.gameplay_target_class = class_id(restore_state.get("gameplay_target_class"))
         has_payload = any(k in restore_state for k in keys)
         if not has_payload:
             return False
@@ -7325,13 +7376,21 @@ class MainWindow(QMainWindow):
             track.classic_suppressed_cuts = list(track.suppressed_cuts or [])
             track.classic_cuts_enabled = bool(getattr(track, "cuts_enabled", False))
 
+        if track.source_role == "intro" and not track.cuts_enabled and (track.cuts or manual):
+            # Recover old Intro projects that displayed cuts but exported the full clip.
+            track.cuts = merge_overlaps(list(track.cuts or []) + list(manual))
+            track.keeps = invert_to_keeps(float(track.duration), track.cuts, min_keep=0.0)
+            track.cuts_enabled = True
+            track.classic_cuts = list(track.cuts)
+            track.classic_keeps = list(track.keeps)
+            track.classic_cuts_enabled = True
         track.cuts_restored = bool(track.cuts or track.keeps or manual or suppressed)
         return True
 
     @staticmethod
     def _enabled_gameplay_cuts(track: TrackState) -> list[Segment]:
         """Gameplay removals take part in recomputation like other automatic cuts (suppressed/manual still win)."""
-        if not bool(getattr(track, "gameplay_cuts_enabled", False)):
+        if track.source_role == "intro" or not bool(getattr(track, "gameplay_cuts_enabled", False)):
             return []
         return list(getattr(track, "gameplay_cuts", None) or [])
 
@@ -7433,7 +7492,7 @@ class MainWindow(QMainWindow):
 
         min_keep = 0.0
         try:
-            if str(getattr(self, "analysis_mode", "classic")) != "ai":
+            if track.source_role != "intro" and track.automatic_cuts_enabled and str(getattr(self, "analysis_mode", "classic")) != "ai":
                 cfg = getattr(track, "cfg", None)
                 if isinstance(cfg, dict) and cfg:
                     try:
@@ -7453,6 +7512,10 @@ class MainWindow(QMainWindow):
         except Exception:
             track.keeps = []
 
+        if track.source_role == "intro":
+            # Intro skips auto analysis; manual edits must still enable the edit.
+            track.cuts_enabled = True
+        gameplay_selection.enforce_selection(track)
         self._save_workspace_for_mode(track)
         self._refresh_analysis_workspace_ui(track)
         self._apply_track_cuts_ui(track)
@@ -7488,12 +7551,16 @@ class MainWindow(QMainWindow):
             path = getattr(t, "path", None)
             if not path:
                 continue
-            item: dict = {"path": str(path)}
+            item: dict = {"path": str(path), "source_id": t.source_id or source_identity({"path": str(path)}),
+                          "source_role": t.source_role, "intro_targets": list(t.intro_targets),
+                           "automatic_cuts_enabled": t.automatic_cuts_enabled,
+                           "gameplay_target_class": t.gameplay_target_class}
             if include_cfg:
                 cfg = getattr(t, "cfg", None)
                 if isinstance(cfg, dict) and cfg:
                     item["cfg"] = self._normalize_preset_cfg(dict(cfg))
             if include_cuts:
+                gameplay_selection.enforce_selection(t)
                 item["gameplay_report"] = copy.deepcopy(getattr(t, "gameplay_report", {}) or {})
                 item["gameplay_grouping"] = copy.deepcopy(getattr(t, "gameplay_grouping", {}) or {})
                 if t is self._get_active_track():
@@ -7501,6 +7568,7 @@ class MainWindow(QMainWindow):
                         self._save_workspace_for_mode(t)
                     except Exception:
                         pass
+                gameplay_selection.enforce_selection(t)
                 item["cuts_enabled"] = bool(getattr(t, "cuts_enabled", False))
                 item["cuts"] = self._segments_to_payload(getattr(t, "cuts", None))
                 item["keeps"] = self._segments_to_payload(getattr(t, "keeps", None))
@@ -7879,6 +7947,8 @@ class MainWindow(QMainWindow):
             self.seg_analysis.setChecked(idx == 2)
         if getattr(self, "seg_thumbnails", None) is not None:
             self.seg_thumbnails.setChecked(idx == 3)
+        if getattr(self, "seg_clips", None) is not None:
+            self.seg_clips.setChecked(idx == 4)
         if idx == 1:
             try:
                 self._refresh_export_summary()
@@ -8054,6 +8124,8 @@ class MainWindow(QMainWindow):
 
         self.input_path = path
         track = self._get_active_track()
+        track.automatic_cuts_enabled = bool(getattr(self, "_automatic_cuts_default", True))
+        track.gameplay_target_class = getattr(self, "_gameplay_target_class_default", None)
         # Preload duration so clips have visible length even before analysis completes
         if ffmpeg_ok:
             try:
@@ -8141,7 +8213,19 @@ class MainWindow(QMainWindow):
             track.filters_restored = True
             self._pending_restore_filters = None
 
-        if ffmpeg_ok:
+        if track.source_role == "intro":
+            if not isinstance(restore_state, dict) or ("keeps" not in restore_state and not track.cuts):
+                track.cuts_enabled = False
+                track.keeps = [Segment(0, track.duration)] if track.duration > 0 else []
+            self.statusBar().showMessage("Intro ready · no gameplay/audio analysis required")
+            self._refresh_gameplay_panel()
+        elif ffmpeg_ok and not track.automatic_cuts_enabled:
+            self._compute_cuts_for_track(self._active_track_index)
+            track.cuts_enabled = True
+            self._apply_track_cuts_ui(track)
+            self._refresh_analysis_panel()
+            self.statusBar().showMessage("Automatic speech cuts off · manual editing ready")
+        elif ffmpeg_ok:
             self.statusBar().showMessage("Analyzing audio...")
             self._media_dbg("open_path start_analysis_thread")
             self._start_analysis_thread(path, self._active_track_index)
@@ -8641,7 +8725,11 @@ class MainWindow(QMainWindow):
 
         analyzed = bool(track.rms is not None and float(track.duration or 0.0) > 0.0)
         slot = self._analysis_slot_for_track(track)
-        if analyzed:
+        if not track.automatic_cuts_enabled:
+            state = "Ready · automatic cuts off"
+            progress = 0
+            self._set_ready_dot_state("ready")
+        elif analyzed:
             state = "Ready"
             progress = 0
             self._set_ready_dot_state("ready")
@@ -9142,6 +9230,8 @@ class MainWindow(QMainWindow):
         return cuts
 
     def _start_ai_analysis(self, track_idx: int) -> None:
+        if 0 <= track_idx < len(self._tracks) and self._tracks[track_idx].source_role == "intro":
+            return
         if not (0 <= track_idx < len(self._tracks)):
             return
         track = self._tracks[track_idx]
@@ -9166,6 +9256,9 @@ class MainWindow(QMainWindow):
                 pass
             self._update_ai_options_panel(None)
             self._update_ai_stats_panel(None)
+            return
+        if not track.automatic_cuts_enabled:
+            self.statusBar().showMessage("Enable Automatic speech cuts before running AI cut analysis.", 3500)
             return
         if track_idx in self._ai_threads:
             return
@@ -9456,8 +9549,24 @@ class MainWindow(QMainWindow):
         self._preset_source_name = None
         self._update_preset_ui_state()
 
+    def _remember_last_preset(self, name: Optional[str]) -> None:
+        """The cut preset proposed for the next video: the last one chosen or used for an export."""
+        if not name or name == "Manual":
+            return
+        try:
+            app_settings().setValue("last_preset_name", str(name))
+        except Exception:
+            pass
+
     def _pick_default_preset(self):
         if self.presets:
+            try:
+                last = str(app_settings().value("last_preset_name", "") or "")
+            except Exception:
+                last = ""
+            if last in self.presets:
+                self._default_preset_name = last
+                return
             # Prefer an explicit default if present
             for prefer in ("Balanced (Default)", "Gameplay (Default)", "Default"):
                 for k in self.presets.keys():
@@ -9532,6 +9641,8 @@ class MainWindow(QMainWindow):
             self._apply_preset(name)
             self._preset_dirty = False
             self._preset_source_name = name
+            self._remember_last_preset(name)
+            self._default_preset_name = name
 
         # Update stats preset name
         if self.stats_preset:
@@ -9874,6 +9985,8 @@ class MainWindow(QMainWindow):
         if not (0 <= int(track_idx) < len(self._tracks)):
             return
         target_track = self._tracks[int(track_idx)]
+        if target_track.source_role == "intro" or not target_track.automatic_cuts_enabled:
+            return
         old_t = self._analysis_threads.get(track_idx)
         if old_t is not None:
             old_w = self._analysis_workers.get(track_idx)
@@ -10263,7 +10376,9 @@ class MainWindow(QMainWindow):
         if track_idx < 0 or track_idx >= len(self._tracks):
             return
         track = self._tracks[track_idx]
-        if track.path is None or track.rms is None or track.duration <= 0:
+        if track.source_role == "intro":
+            return
+        if track.path is None or track.duration <= 0 or (track.rms is None and track.automatic_cuts_enabled):
             return
 
         cfg = {}
@@ -10277,6 +10392,8 @@ class MainWindow(QMainWindow):
         else:
             cfg = self._normalize_preset_cfg(self._current_preset_cfg())
 
+        if not track.automatic_cuts_enabled:
+            cfg["intensity"] = 0  # existing cut engine: no silence cuts, manual/game cuts unchanged
         seg_rms = self._segment_rms(track)
         if int(cfg["intensity"]) >= 10 and (seg_rms is None or getattr(seg_rms, "size", 0) == 0):
             return
@@ -10288,6 +10405,7 @@ class MainWindow(QMainWindow):
             rms_min=float(track.rms_min or 0.0), rms_max=float(track.rms_max or 0.0),
             rms_eps=track.rms_eps or None,
         )
+        gameplay_selection.enforce_selection(track)
         self._save_classic_cuts(track)
 
     # -----------------------------
@@ -10359,6 +10477,15 @@ class MainWindow(QMainWindow):
         return merge_overlaps(out)
 
     def _recompute(self):
+        current = self._get_active_track()
+        if not current.automatic_cuts_enabled and current.path and current.duration > 0:
+            self._compute_cuts_for_track(self._active_track_index)
+            current.cuts_enabled = True
+            self._apply_track_cuts_ui(current)
+            self._refresh_timeline_tracks(reset_view=False)
+            return
+        if self._get_active_track().source_role == "intro":
+            return
         if self.input_path is None:
             return
 
@@ -10379,6 +10506,7 @@ class MainWindow(QMainWindow):
             threshold_amp=self._threshold_pct_to_amp(float(self.threshold_pct.value())),
         )
 
+        gameplay_selection.enforce_selection(track)
         out_dur = sum(k.dur for k in track.keeps) if track.keeps else 0.0
         cuts_n = len(track.cuts)
 
@@ -10833,7 +10961,7 @@ class MainWindow(QMainWindow):
         ("Project", "Ctrl+S", "Save project"),
         ("Project", "Ctrl+Shift+S", "Save project as"),
         ("Project", "Ctrl+E", "Export video"),
-        ("Project", "Alt+1 / Alt+2 / Alt+3 / Alt+4", "Inspector: Edit / Analysis / Export / Thumbnails"),
+        ("Project", "Alt+1 … Alt+5", "Inspector: Edit / Analysis / Export / Thumbnails / Clips"),
         ("Help", "F1", "This list"),
     ]
 
@@ -10879,6 +11007,7 @@ class MainWindow(QMainWindow):
         sc("Alt+2", lambda: self._switch_page(2))
         sc("Alt+3", lambda: self._switch_page(1))
         sc("Alt+4", lambda: self._switch_page(3))
+        sc("Alt+5", lambda: self._switch_page(4))
         sc("F1", self._show_shortcuts)
         # Arrow nudges only while the timeline or the viewer has focus, so they never fight with
         # sliders/spin boxes in the inspector.
@@ -11114,15 +11243,20 @@ class MainWindow(QMainWindow):
             game = meta.get("game_index")
             inside = sum(1 for c in (track.cuts or [])
                          if float(c.start) >= float(k.start) - 1e-6 and float(c.end) <= float(k.end) + 1e-6)
-            title.setText("WIN island" + (f"  ·  game {game}" if game is not None else f"  ·  {i + 1} of "
+            title.setText(str(meta.get("result", "WIN")) + " interval" + (f"  ·  game {game}" if game is not None else f"  ·  {i + 1} of "
                                           f"{len(track.gameplay_keeps)}"))
             lines = [f"{fmt_hms(base + float(k.start))} → {fmt_hms(base + float(k.end))}   ·   "
                      f"{fmt_hms(float(k.end) - float(k.start))} kept   ·   {inside} audio cut{'s' if inside != 1 else ''} inside"]
             detected = list(track.gameplay_detected_keeps or [])
-            if i < len(detected) and (abs(float(detected[i].start) - float(k.start)) > 1e-3
-                                      or abs(float(detected[i].end) - float(k.end)) > 1e-3):
-                lines.append(f"Edited · detected {fmt_hms(base + float(detected[i].start))} → "
-                             f"{fmt_hms(base + float(detected[i].end))}")
+            original = detected[i] if i < len(detected) else None
+            if track.gameplay_report.get("games"):
+                source_island = next((item for item in track.gameplay_report.get("keep_islands", [])
+                                      if gameplay_selection.game_key(item["game"]) == str(meta.get("game_id"))), None)
+                offset, limit = gameplay_selection.segment_bounds(track)
+                original = Segment(max(offset, source_island["start"])-offset,
+                                   min(limit, source_island["end"])-offset) if source_island else None
+            if original and (abs(original.start-k.start) > 1e-3 or abs(original.end-k.end) > 1e-3):
+                lines.append(f"Edited · detected {fmt_hms(base + original.start)} → {fmt_hms(base + original.end)}")
             resolvers = meta.get("resolvers") or {}
             if resolvers:
                 lines.append("Boundaries: " + " · ".join(f"{kind.lower()} {r}" for kind, r in resolvers.items() if r))
@@ -11162,7 +11296,48 @@ class MainWindow(QMainWindow):
         if actions is not None:
             actions.setVisible(True)
 
+    def _on_automatic_cuts_toggled(self, checked: bool) -> None:
+        self._automatic_cuts_default = bool(checked)
+        track = self._get_active_track()
+        track.automatic_cuts_enabled = bool(checked)
+        if not track.path:
+            return
+        if not checked:
+            for slot, target in getattr(self, "_analysis_targets", {}).items():
+                if target is track:
+                    worker = self._analysis_workers.get(slot)
+                    if worker is not None:
+                        worker.cancel()
+            self._compute_cuts_for_track(self._active_track_index)
+            track.cuts_enabled = True
+            self._apply_track_cuts_ui(track)
+            self._refresh_timeline_tracks()
+        elif track.rms is None and track.source_role != "intro":
+            self._start_analysis_thread(track.path, self._active_track_index)
+        else:
+            self._compute_cuts_for_track(self._active_track_index)
+            self._apply_track_cuts_ui(track)
+            self._refresh_timeline_tracks()
+        self._mark_project_dirty()
+        self._refresh_analysis_panel()
+
+    def _on_gameplay_class_changed(self, index: int) -> None:
+        target = self.gameplay_class_combo.itemData(index)
+        self._gameplay_target_class_default = target
+        track = self._get_active_track()
+        if track.path:
+            for item in self._tracks:
+                if self._same_local_path(item.path, track.path):
+                    item.gameplay_target_class = target
+            self._mark_project_dirty()
+
     def _refresh_analysis_panel(self) -> None:
+        track = self._get_active_track()
+        checkbox = getattr(self, "chk_automatic_cuts", None)
+        if checkbox is not None:
+            checkbox.blockSignals(True)
+            checkbox.setChecked(track.automatic_cuts_enabled)
+            checkbox.blockSignals(False)
         ai = str(getattr(self, "analysis_mode", "classic")) == "ai"
         seg = getattr(self, "mode_segment", None)
         if seg is not None:
@@ -11188,6 +11363,8 @@ class MainWindow(QMainWindow):
                         text = "AI analysis running…"
                     elif ai and not (track.ai_speech or track.ai_speech_raw):
                         text = "AI analysis hasn't run on this video yet."
+                    elif not track.automatic_cuts_enabled:
+                        text = "Automatic speech cuts off · manual cuts and game selection remain active."
                     elif track.rms is not None:
                         n = len(track.cuts or [])
                         text = f"✓ Analysis complete · {n} cut{'s' if n != 1 else ''} on this video"
@@ -11215,6 +11392,15 @@ class MainWindow(QMainWindow):
             fmt = str(self.container_combo.currentText() or "MP4")
             meta.setText(f"from {self._fmt_time(st['total_s'])} · {int(st['cuts_n'])} cuts · "
                          f"{float(st['saved_pct']):.0f}% removed\n{fmt} · {codec}")
+        panel = getattr(self, "hero_groups_panel", None)
+        if panel is not None and panel.filter_enabled():
+            selected = getattr(panel, "preview_summary", None)
+            if selected is not None:
+                out_lbl.setText(self._fmt_time(selected["seconds"]))
+                meta.setText(f'{selected["outputs"]} output(s) · {selected["games"]} games · {selected["wins"]} WIN\nSelected classes and final keeps only')
+            else:
+                out_lbl.setText("0:00")
+                meta.setText(panel.plan_summary.text())
         folder = getattr(self, "lbl_export_folder", None)
         if folder is not None:
             raw = self._export_output_dir_pref()
@@ -11378,7 +11564,7 @@ class MainWindow(QMainWindow):
         sources: list[str] = []
         for t in self._tracks:
             path = str(getattr(t, "path", "") or "")
-            if path and not any(self._same_local_path(path, s) for s in sources):
+            if t.source_role != "intro" and path and not any(self._same_local_path(path, s) for s in sources):
                 sources.append(path)
         self._gameplay_queue = sources
         self._gameplay_mode = mode
@@ -11397,7 +11583,9 @@ class MainWindow(QMainWindow):
                                   if self._same_local_path(getattr(t, "path", None), video)), {})
         worker = GameplayEditWorker(video, self._gameplay_mode,
                                     str(self.gameplay_end_policy_combo.currentData() or "balanced"),
-                                    previous_grouping=previous_grouping)
+                                    previous_grouping=previous_grouping,
+                                     target_class=next((t.gameplay_target_class for t in self._tracks
+                                         if self._same_local_path(t.path, video)), None))
         thread = QThread(self)
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
@@ -11455,20 +11643,35 @@ class MainWindow(QMainWindow):
             self.lbl_gameplay_status.setText("Cancelled. Nothing was changed.")
             self._ui_set_state("Cancelled")
             return
+        if results and not self.project.gameplay_export.get("mode"):
+            self.project.gameplay_export = {"mode": "selected_single", "wins_only": True}
         # Keep all detected games (also LOSS/partial) for local portrait grouping.
         for result in results:
             for track in self._tracks:
-                if self._same_local_path(getattr(track, "path", None), result.get("video")):
+                if track.source_role != "intro" and self._same_local_path(getattr(track, "path", None), result.get("video")):
                     track.gameplay_report = copy.deepcopy(result.get("report") or {})
                     if "grouping" in result:
-                        track.gameplay_grouping = copy.deepcopy(result["grouping"])
+                        track.gameplay_grouping = gameplay_selection.preserve_editor(track.gameplay_grouping, result["grouping"])
         if results:
             self._mark_project_dirty()
             panel = getattr(self, "hero_groups_panel", None)
             if panel is not None:
                 panel.refresh()
+        for result in results:
+            if not result.get("keeps") and (result.get("report") or {}).get("settings", {}).get("target_class"):
+                for idx, track in enumerate(self._tracks):
+                    if track.source_role != "intro" and self._same_local_path(track.path, result.get("video")):
+                        track.gameplay_mode = "keep"
+                        track.gameplay_keeps = []
+                        track.gameplay_detected_keeps = []
+                        track.gameplay_islands = []
+                        track.gameplay_cuts = gameplay_complement([], float(track.duration))
+                        track.gameplay_cuts_enabled = True
+                        self._compute_cuts_for_track(idx)
+                self._refresh_timeline_tracks(reset_view=False)
         usable = [r for r in results if r.get("keeps")]
-        if not usable:
+        if not usable and not any(t.gameplay_grouping.get("editor") for t in self._tracks
+                                  if any(self._same_local_path(t.path, r.get("video")) for r in results)):
             reason = "; ".join(errors) if errors else "no complete WIN was found, so nothing would be kept"
             self.lbl_gameplay_status.setText(f"Not applied: {reason}.")
             self._ui_set_state("Ready")
@@ -11479,7 +11682,7 @@ class MainWindow(QMainWindow):
             keeps_src = [Segment(float(a), float(b)) for a, b in result["keeps"]]
             report = result.get("report") or {}
             for idx, track in enumerate(self._tracks):
-                if not self._same_local_path(getattr(track, "path", None), result.get("video")):
+                if track.source_role == "intro" or not self._same_local_path(getattr(track, "path", None), result.get("video")):
                     continue
                 seg_in, seg_out, seg_len = self._segment_bounds(track)
                 keeps = to_segment_domain(keeps_src, seg_in, seg_out)
@@ -11490,12 +11693,18 @@ class MainWindow(QMainWindow):
                 track.gameplay_cuts_enabled = True
                 track.gameplay_islands = island_metadata(report, seg_in, seg_out)
                 affected.append(idx)
+        for result in results:
+            matching = [t for t in self._tracks if t.source_role != "intro" and self._same_local_path(t.path, result.get("video"))]
+            if matching and "editor" in matching[0].gameplay_grouping:
+                gameplay_selection.apply(matching, matching[0].gameplay_grouping)
+                affected.extend(i for i, t in enumerate(self._tracks) if any(t is m for m in matching))
         self._recompute_gameplay_tracks(affected)
-        kept = sum(len(self._tracks[i].gameplay_keeps) for i in affected)
+        self._refresh_gameplay_panel()
+        kept = sum(len(self._tracks[i].gameplay_keeps) for i in set(affected))
         note = f" ({'; '.join(errors)})" if errors else ""
-        self.lbl_gameplay_status.setText(f"✓ {kept} complete WIN{'s' if kept != 1 else ''} kept{note}. "
-                                         "Select a WIN island on the VIDEO lane to inspect or adjust it.")
-        self.statusBar().showMessage(f"Gameplay edit applied: {kept} WIN island{'s' if kept != 1 else ''} kept "
+        self.lbl_gameplay_status.setText(f"✓ {kept} game interval{'s' if kept != 1 else ''} kept{note}. "
+                                         "Click a game box on the VIDEO lane to include/exclude it; drag edges to adjust.")
+        self.statusBar().showMessage(f"Gameplay edit applied: {kept} game interval{'s' if kept != 1 else ''} kept "
                                      "· Ctrl+Z to undo", 5000)
         self._app_log("gameplay_edit_applied", islands=kept, tracks=len(affected))
 
@@ -11512,7 +11721,8 @@ class MainWindow(QMainWindow):
     def _on_gameplay_apply_toggled(self, checked: bool) -> None:
         if getattr(self, "_syncing_gameplay_ui", False):
             return
-        affected = [i for i, t in enumerate(self._tracks) if getattr(t, "gameplay_keeps", None)]
+        affected = [i for i, t in enumerate(self._tracks) if t.gameplay_keeps or t.gameplay_grouping.get("editor")
+                    or (t.gameplay_mode == "keep" and t.gameplay_report)]
         if not affected:
             return
         self._push_undo_state(kind="timeline")
@@ -11533,6 +11743,12 @@ class MainWindow(QMainWindow):
         if not (0 <= ts < len(self._tracks)):
             return None
         track = self._tracks[ts]
+        if track.gameplay_report.get("games") or track.gameplay_grouping.get("editor"):
+            boxes = gameplay_selection.timeline_boxes(track)
+            if not 0 <= i < len(boxes):
+                return None
+            key = boxes[i]["game_id"]
+            i = next((j for j, m in enumerate(track.gameplay_islands) if str(m.get("game_id")) == key), -1)
         if not (0 <= i < len(track.gameplay_keeps or [])):
             return None
         return ts, i, track
@@ -11541,6 +11757,11 @@ class MainWindow(QMainWindow):
         if not (0 <= ts < len(self._tracks)):
             return
         track = self._tracks[ts]
+        if track.gameplay_report.get("games") and index < len(track.gameplay_islands):
+            key = str(track.gameplay_islands[index].get("game_id") or "")
+            if key:
+                self.gameplay_actions.resize(ts, key, start, end)
+                return
         _seg_in, _seg_out, seg_len = self._segment_bounds(track)
         self._push_undo_state(kind="timeline")
         track.gameplay_keeps = resize_island(track.gameplay_keeps, index, start, end, seg_len)
@@ -11575,6 +11796,9 @@ class MainWindow(QMainWindow):
         if state is None:
             return
         ts, i, track = state
+        if "editor" in track.gameplay_grouping:
+            self.gameplay_actions.reset(ts, str(track.gameplay_islands[i]["game_id"]))
+            return
         detected = list(track.gameplay_detected_keeps or [])
         if len(detected) != len(track.gameplay_keeps):
             self._reset_all_islands()
@@ -11588,7 +11812,12 @@ class MainWindow(QMainWindow):
         self._recompute_gameplay_tracks([ts])
 
     def _reset_all_islands(self) -> None:
-        affected = [i for i, t in enumerate(self._tracks) if getattr(t, "gameplay_detected_keeps", None)]
+        edited_sources: set[str] = set()
+        for i, track in enumerate(self._tracks):
+            if "editor" in track.gameplay_grouping and str(track.path) not in edited_sources:
+                self.gameplay_actions.reset(i)
+                edited_sources.add(str(track.path))
+        affected = [i for i, t in enumerate(self._tracks) if t.gameplay_detected_keeps and "editor" not in t.gameplay_grouping]
         if not affected:
             return
         self._push_undo_state(kind="timeline")
@@ -11608,20 +11837,27 @@ class MainWindow(QMainWindow):
             self._seek_to(self._clip_timeline_in(ts) + float(track.gameplay_keeps[i].start))
 
     def _refresh_gameplay_panel(self) -> None:
+        if hasattr(self, "sources_panel"):
+            self.sources_panel.refresh()
         if hasattr(self, "hero_groups_panel"):
             self.hero_groups_panel.refresh()
         if not hasattr(self, "chk_gameplay_apply"):
             return
-        has_keeps = any(getattr(t, "gameplay_keeps", None) for t in self._tracks)
-        enabled = any(getattr(t, "gameplay_cuts_enabled", False) and getattr(t, "gameplay_keeps", None)
+        has_keeps = any(t.gameplay_keeps or t.gameplay_grouping.get("editor") for t in self._tracks)
+        enabled = any(getattr(t, "gameplay_cuts_enabled", False) and (t.gameplay_mode == "keep" or t.gameplay_keeps or t.gameplay_grouping.get("editor"))
                       for t in self._tracks)
         self._syncing_gameplay_ui = True
         try:
             self.chk_gameplay_apply.setChecked(enabled)
         finally:
             self._syncing_gameplay_ui = False
-        self.chk_gameplay_apply.setEnabled(has_keeps)
+        self.chk_gameplay_apply.setEnabled(has_keeps or any(t.gameplay_mode == "keep" and t.gameplay_report for t in self._tracks))
         running = self._gameplay_running()
+        if hasattr(self, "gameplay_class_combo"):
+            self.gameplay_class_combo.blockSignals(True)
+            self.gameplay_class_combo.setCurrentIndex(max(0, self.gameplay_class_combo.findData(self._get_active_track().gameplay_target_class)))
+            self.gameplay_class_combo.blockSignals(False)
+            self.gameplay_class_combo.setEnabled(not running)
         self.btn_gameplay_run.setEnabled(bool(self.input_path) and (running or str(self.analysis_mode) != "ai"))
         if not running:
             self.btn_gameplay_run.setText("Detect games again" if has_keeps else "Detect games")
@@ -11639,7 +11875,7 @@ class MainWindow(QMainWindow):
             kept = sum(len(t.gameplay_keeps or []) for t in self._tracks)
             total = sum(float(k.end) - float(k.start) for t in self._tracks for k in (t.gameplay_keeps or []))
             state = "" if enabled else " (edit turned off)"
-            self.lbl_gameplay_status.setText(f"{kept} WIN island{'s' if kept != 1 else ''} · {fmt_hms(total)} of "
+            self.lbl_gameplay_status.setText(f"{kept} game interval{'s' if kept != 1 else ''} · {fmt_hms(total)} of "
                                              f"gameplay kept{state}.")
         elif str(self.analysis_mode) == "ai":
             self.lbl_gameplay_status.setText("Available with Classic analysis (it composes with the classic cuts, "
@@ -11821,10 +12057,14 @@ class MainWindow(QMainWindow):
             return act
 
         island = cut_meta.get("island") if isinstance(cut_meta, dict) else None
-        if isinstance(island, dict) and island.get("track_state_idx") is not None:
+        if isinstance(island, dict) and island.get("game_key") and island.get("track_state_idx") is not None:
+            self.gameplay_actions.add_menu(menu, actions, int(island["track_state_idx"]), str(island["game_key"]), edit_t)
+        elif isinstance(island, dict) and island.get("track_state_idx") is not None:
             add("Remove this WIN from the edit", lambda ts=int(island["track_state_idx"]), i=int(island["index"]):
                 self._remove_gameplay_island(ts, i))
             menu.addSeparator()
+        elif track_state_idx is not None and 0 <= int(track_state_idx) < len(self._tracks) and hasattr(self, "gameplay_actions"):
+            self.gameplay_actions.add_menu(menu, actions, int(track_state_idx), None, edit_t)
 
         if can_edit_cuts:
             if cut_idx is None and isinstance(self.cuts, list):
@@ -12310,6 +12550,8 @@ class MainWindow(QMainWindow):
 
         # Apply global keeps from the whole timeline (all tracks/segments/duplicates).
         keeps = self._collect_global_keeps()
+        if not keeps:
+            return [], []
         if keeps:
             keeps = sorted(keeps, key=lambda s: s.start)
             filtered: list[dict] = []
@@ -12568,11 +12810,20 @@ class MainWindow(QMainWindow):
         )
         self.export_compatibility_label.style().unpolish(self.export_compatibility_label)
         self.export_compatibility_label.style().polish(self.export_compatibility_label)
+        panel = getattr(self, "hero_groups_panel", None)
+        selected = panel is not None and panel.filter_enabled()
+        busy = panel is not None and panel.running() and panel.worker is not None and panel.worker.output_dir
         self.btn_export.setText(
+            "Cancel export" if busy else
+            "Export videos by class…" if selected and panel.mode.currentData() == "by_class" else
+            "Export selected classes…" if selected else
             "Export audio" if value.output_mode == "audio_only" else
             "Export clips" if value.output_mode == "per_clip" else
             "Export video"
         )
+        self.btn_export.setToolTip("Uses the gameplay selection above. Each selected class gets its own video."
+            if selected and panel.mode.currentData() == "by_class" else
+            "Export one video using the selection and delivery settings shown above.")
         try:
             self._push_topbar_status_chips()
         except Exception:
@@ -12763,6 +13014,13 @@ class MainWindow(QMainWindow):
         self.export_advisor_worker = None
 
     def export_mp4(self):
+        panel = getattr(self, "hero_groups_panel", None)
+        if panel is not None and getattr(panel, "running", lambda: False)() and panel.worker is not None and panel.worker.output_dir:
+            panel.cancel_work()
+            return
+        if panel is not None and panel.filter_enabled():
+            panel.start_export()
+            return
         self._app_log("export_request_begin", has_input=bool(self.input_path), has_ffmpeg=bool(self.ffmpeg_path))
         if not self.input_path or not self.ffmpeg_path:
             QMessageBox.warning(self, "Export", "No input video loaded.")
@@ -12878,6 +13136,7 @@ class MainWindow(QMainWindow):
                 )
             settings = replace(settings, output_mode="single").normalized()
 
+        artifact_segments = [dict(segment) for segment in flat_segments]
         # Fast-path: if flattened segments map linearly to a single input,
         # convert to legacy keeps (faster, uses preseek).
         if flat_segments:
@@ -12954,6 +13213,23 @@ class MainWindow(QMainWindow):
             )
         except Exception:
             pass
+        try:
+            from uuid import uuid4
+            from export.artifacts import save_snapshot, write_timings
+            artifact_dir = (Path(out_path) if requested_settings.output_mode == "per_clip" else Path(out_path).parent) / (Path(out_path).stem + "_recut_" + uuid4().hex[:12])
+            payload = self._build_project_file_payload()
+            save_snapshot(payload, artifact_dir / "project_before_export.autocutter")
+            if requested_settings.output_mode != "per_clip":
+                # The exact edit of this single video: Covers/Clips recognise the export and use its sources.
+                save_snapshot(payload, artifact_dir / "export_edit.autocutter")
+            write_timings(payload, artifact_dir / "timestamps.txt",
+                          segments=artifact_segments if artifact_segments else ([{
+                              "v_idx": 0, "v_in": k.start, "v_out": k.end} for k in keeps_for_export]
+                              if len(input_paths) == 1 else None), input_paths=input_paths)
+            self._on_export_detail(f"Project and timestamps saved: {artifact_dir}")
+        except Exception as exc:
+            QMessageBox.critical(self, "Export project backup", f"Cannot save project/timestamps before export: {exc}")
+            return
         self._export_start_monotonic = time.monotonic()
         self._export_last_detail_ts = float(self._export_start_monotonic)
 
@@ -12977,6 +13253,8 @@ class MainWindow(QMainWindow):
         try:
             self.ex_thread = QThread(self)
             self._thumb_export_target = str(out_path)  # titles/thumbnails page: last exported video
+            used = self.preset_combo.currentText()
+            self._remember_last_preset(used if used != "Manual" else getattr(self, "_preset_source_name", None))
             self.ex_worker = ExportWorker(
                 ffmpeg_path=self.ffmpeg_path,
                 input_path=self.input_path,
@@ -12998,6 +13276,7 @@ class MainWindow(QMainWindow):
                 export_settings=settings,
                 requested_export_settings=requested_settings,
             )
+            self.ex_worker.timeline_report = (payload, artifact_dir / "timestamps.txt")
             self.ex_worker.moveToThread(self.ex_thread)
 
             self.ex_thread.started.connect(self.ex_worker.run)
@@ -13475,6 +13754,11 @@ class MainWindow(QMainWindow):
         if target and getattr(self, "thumbnails", None) is not None:
             try:
                 self.thumbnails.set_last_export(str(target))
+            except Exception:
+                pass
+        if target and getattr(self, "clips", None) is not None:
+            try:
+                self.clips.set_last_export(str(target))
             except Exception:
                 pass
         self.export_progress.setValue(100)

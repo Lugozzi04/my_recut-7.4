@@ -1,0 +1,1421 @@
+{
+  "format": "recut_gameplay_performance",
+  "profiler_version": "gameplay-profiler-v1",
+  "run_id": "8878ce8a0c2846ceb556e145d16f8fec",
+  "started_at_utc": "2026-10-14T23:38:25.324123+00:00",
+  "finished_at_utc": "2026-10-14T23:43:07.716958+00:00",
+  "status": "completed",
+  "total_wall_seconds": 282.3932013999947,
+  "active_phase": null,
+  "interruption_phase": null,
+  "error": null,
+  "video": {
+    "name": "lock.mp4",
+    "duration_s": 11192.873,
+    "width": 1920,
+    "height": 1080,
+    "fps": 59.859896723686816,
+    "codec": "h264",
+    "size_bytes": 8623204688
+  },
+  "modes": {
+    "boundary_mode": "exact",
+    "end_policy": "extended",
+    "keep_policy": "complete_wins_only",
+    "game": "hearthstone",
+    "frontend": "GUI",
+    "monitor_fps": 1.0,
+    "result_window_fps": 60.0,
+    "detector_version": "hearthstone-adaptive-sparse-v2.3",
+    "state_profile_fingerprint": "4aaeed45c036d569d5db00d6d2ae84775be5e21300b341b6819fcf0bc5031bdb",
+    "vs_pack_fingerprint": "4a481ff015e8e0bbe500fc098b1abee0d975f9af733c90b4adfcf6beb08e99fc",
+    "opencv_version": "4.12.0",
+    "monitor_settings": {
+      "fps": 1.0,
+      "board_high": 0.38,
+      "board_low": 0.2,
+      "board_observations": 2,
+      "weak_score": 0.65,
+      "weak_margin": 0.04,
+      "before_s": 2.0,
+      "after_s": 5.0,
+      "high_fps": 60.0
+    },
+    "result_policy": {
+      "version": "result-decision-v1",
+      "evidence_score": 0.65,
+      "minimum_observations": 2,
+      "minimum_span_s": 0.008333333333333333,
+      "cluster_gap_s": 0.5,
+      "minimum_peak_margin": 0.04
+    },
+    "detector_backend": "adaptive-v2",
+    "sparse_settings": {
+      "step_s": 30.0,
+      "leaf_s": 3.75,
+      "overlap_s": 4.0,
+      "continuity_floor": 0.9,
+      "recovery_period_s": 60.0,
+      "recovery_width_s": 8.0,
+      "force_full_fallback": false,
+      "exclusions": [
+        [
+          0.0,
+          0.5,
+          0.218,
+          0.4
+        ],
+        [
+          0.8,
+          0.0,
+          0.2,
+          0.2
+        ],
+        [
+          0.9,
+          0.2,
+          0.1,
+          0.8
+        ]
+      ],
+      "scheduler": "lattice",
+      "lattice_s": 2.0,
+      "workers": 4,
+      "recovery_lookback_s": 10.0
+    },
+    "transcript_enabled": true,
+    "transcript_engine": "FasterWhisperEngine",
+    "transcript_model": "small",
+    "transcript_device": "cpu",
+    "visual_evidence_enabled": true,
+    "visual_evidence_fps": 2.0
+  },
+  "system": {
+    "logical_cpu_cores": 32,
+    "physical_memory_bytes": 66094202880
+  },
+  "decoder": {
+    "backend": "FFmpeg",
+    "hardware_acceleration_requested": false,
+    "decoder_implementation": "FFmpeg default; not independently observed"
+  },
+  "classic_audio": {
+    "status": "observed_separate_run",
+    "included_in_total": false,
+    "measurement": {
+      "format": "recut_gameplay_performance",
+      "profiler_version": "gameplay-profiler-v1",
+      "run_id": "d84ace2b3b924911a4dffa7fa23fd9b0",
+      "started_at_utc": "2026-10-14T23:37:32.645108+00:00",
+      "finished_at_utc": "2026-10-14T23:38:01.244746+00:00",
+      "status": "completed",
+      "total_wall_seconds": 28.59972170000401,
+      "active_phase": null,
+      "interruption_phase": null,
+      "error": null,
+      "video": {
+        "name": "lock.mp4",
+        "duration_s": 11192.879333,
+        "width": null,
+        "height": null,
+        "fps": null,
+        "codec": null,
+        "size_bytes": 8623204688
+      },
+      "modes": {
+        "frontend": "GUI_classic"
+      },
+      "system": {
+        "logical_cpu_cores": 32,
+        "physical_memory_bytes": 66094202880
+      },
+      "decoder": {
+        "backend": "FFmpeg",
+        "hardware_acceleration_requested": false,
+        "decoder_implementation": "FFmpeg default; not independently observed"
+      },
+      "classic_audio": {
+        "status": "not_observed",
+        "included_in_total": false,
+        "reason": "Classic runs separately; it may predate this session or have been restored."
+      },
+      "phases": {
+        "detection.setup": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "detection": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "monitor": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "vs_refinement": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "result_windows": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "event_consolidation": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "game_assembly": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "boundaries": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "hero_groups": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "boundaries.transcript.inference": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "boundaries.transcript.audio_extraction": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "boundaries.selection.exact": {
+          "status": "skipped",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {},
+          "reason": "not_reached",
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "classic": {
+          "status": "completed",
+          "wall_seconds": 28.599205300000904,
+          "calls": 1,
+          "counters": {
+            "rms_blocks": 373097,
+            "media_seconds": 11192.879333
+          },
+          "other_wall_seconds": 28.596020100005262,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": 391.3702921318463
+        },
+        "shared.audio": {
+          "status": "completed",
+          "wall_seconds": 0.0,
+          "calls": 0,
+          "counters": {
+            "misses": 1
+          },
+          "cache": "miss",
+          "cache_observations": {
+            "miss": 1
+          },
+          "other_wall_seconds": 0.0,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "audio_extraction": {
+          "status": "completed",
+          "wall_seconds": 28.349754900002154,
+          "calls": 1,
+          "counters": {
+            "chunks": 5466,
+            "pcm_samples": 179086677,
+            "rms_blocks": 373097
+          },
+          "other_wall_seconds": 0.5294559000685695,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "audio_extraction.audio_pipe_read_wait": {
+          "status": "completed",
+          "wall_seconds": 27.820298999933584,
+          "calls": 5467,
+          "counters": {},
+          "other_wall_seconds": 27.820298999933584,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        },
+        "classic.threshold_selection": {
+          "status": "completed",
+          "wall_seconds": 0.0031851999956415966,
+          "calls": 1,
+          "counters": {},
+          "other_wall_seconds": 0.0031851999956415966,
+          "throughput_frames_per_second": null,
+          "mean_seconds_per_window": null,
+          "throughput_media_seconds_per_second": null
+        }
+      },
+      "report_write_error": null,
+      "prior_checkpoint_write_seconds": 0.0,
+      "timing_notes": [
+        "Phase/subphase wall times are inclusive; do not sum overlapping parents and children.",
+        "frame_delivery_wait includes producer/pipe/queue/PTS wait; it is not isolated decoder CPU time.",
+        "FFmpeg decoding overlaps matching; sampled frames are not all internally decoded source frames.",
+        "Cache-hit reports contain current lookup time only, never historical processing timings.",
+        "Periodic running snapshots are best effort; forced termination can leave the latest snapshot.",
+        "Total covers Detect Games worker including prior checkpoints; excludes earlier Classic, final report write and Qt delivery."
+      ]
+    }
+  },
+  "phases": {
+    "detection.setup": {
+      "status": "completed",
+      "wall_seconds": 0.1374045999982627,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.1374045999982627,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "detection": {
+      "status": "completed",
+      "wall_seconds": 132.53022000000055,
+      "calls": 1,
+      "counters": {},
+      "cache": "miss",
+      "cache_observations": {
+        "miss": 1
+      },
+      "other_wall_seconds": 132.0422361000019,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor": {
+      "status": "completed",
+      "wall_seconds": 73.36315670000477,
+      "calls": 1,
+      "counters": {
+        "frames": 5391
+      },
+      "other_wall_seconds": 6.818601100341766,
+      "throughput_frames_per_second": 73.4837518244311,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement": {
+      "status": "completed",
+      "wall_seconds": 4.932179700001143,
+      "calls": 1,
+      "counters": {
+        "windows": 12,
+        "frames": 589,
+        "completed_windows": 12
+      },
+      "other_wall_seconds": 0.0596552000642987,
+      "throughput_frames_per_second": 119.4198175706906,
+      "mean_seconds_per_window": 0.41101497500009526,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows": {
+      "status": "completed",
+      "wall_seconds": 53.791172299999744,
+      "calls": 1,
+      "counters": {
+        "windows": 24,
+        "source_window_seconds": 251.0,
+        "frames": 14897,
+        "completed_windows": 24,
+        "candidates": 2265
+      },
+      "other_wall_seconds": 0.36623610030073905,
+      "throughput_frames_per_second": 276.9413523266916,
+      "mean_seconds_per_window": 2.2412988458333225,
+      "throughput_media_seconds_per_second": null
+    },
+    "event_consolidation": {
+      "status": "completed",
+      "wall_seconds": 0.004018600004201289,
+      "calls": 1,
+      "counters": {
+        "input_candidates": 2265,
+        "output_events": 23,
+        "rejected_clusters": 0,
+        "accepted_result_clusters": 12
+      },
+      "other_wall_seconds": 0.004018600004201289,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "game_assembly": {
+      "status": "completed",
+      "wall_seconds": 0.0014453999974648468,
+      "calls": 1,
+      "counters": {
+        "games": 12,
+        "complete_games": 11,
+        "wins": 9,
+        "losses": 2,
+        "unknown": 1
+      },
+      "other_wall_seconds": 0.0014453999974648468,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries": {
+      "status": "completed",
+      "wall_seconds": 124.48582950000127,
+      "calls": 1,
+      "counters": {
+        "games_started": 9,
+        "games_selected": 9,
+        "decisions": 18,
+        "agent_calls": 0,
+        "agent_cache_hits": 0,
+        "fallbacks": 0
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups": {
+      "status": "completed",
+      "wall_seconds": 25.077146299998276,
+      "calls": 1,
+      "counters": {
+        "games_requested": 12,
+        "references": 11,
+        "games_started": 12,
+        "samples_requested": 120,
+        "frames": 120,
+        "accepted_board_samples": 101,
+        "rejected_board_samples": 19,
+        "games_processed": 12,
+        "games_classified": 11,
+        "groups": 2
+      },
+      "cache": "miss",
+      "cache_observations": {
+        "miss": 1
+      },
+      "other_wall_seconds": 0.2473442999908002,
+      "throughput_frames_per_second": 4.785233477702694,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.transcript.inference": {
+      "status": "completed",
+      "wall_seconds": 95.48787029999949,
+      "calls": 1,
+      "counters": {
+        "windows": 12,
+        "helper_invocations": 1
+      },
+      "other_wall_seconds": 95.48787029999949,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": 7.957322524999957,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.transcript.audio_extraction": {
+      "status": "completed",
+      "wall_seconds": 1.51969839999947,
+      "calls": 1,
+      "counters": {
+        "windows": 12
+      },
+      "other_wall_seconds": 1.51969839999947,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": 0.12664153333328917,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.selection.exact": {
+      "status": "completed",
+      "wall_seconds": 0.00022599999647354707,
+      "calls": 18,
+      "counters": {},
+      "other_wall_seconds": 0.00022599999647354707,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "gameplay_editing": {
+      "status": "completed",
+      "wall_seconds": 257.2466357999947,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 257.2466357999947,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "detection.identity_probe": {
+      "status": "completed",
+      "wall_seconds": 0.09462130000611069,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.09462130000611069,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "sampling.probe": {
+      "status": "completed",
+      "wall_seconds": 1.9234524000348756,
+      "calls": 182,
+      "counters": {
+        "cache_misses": 20,
+        "cache_hits": 162
+      },
+      "other_wall_seconds": 1.9234524000348756,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "detection.cache_lookup": {
+      "status": "completed",
+      "wall_seconds": 0.0007508999988203868,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.0007508999988203868,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.visual": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "gameplay_hits": 0,
+        "gameplay_misses": 1,
+        "window_misses": 18
+      },
+      "cache": "miss",
+      "cache_observations": {
+        "miss": 18
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.reconnaissance": {
+      "status": "completed",
+      "wall_seconds": 13.810105299999123,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 13.810105299999123,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.frame_requests": {
+      "status": "completed",
+      "wall_seconds": 1.06881210028223,
+      "calls": 5398,
+      "counters": {},
+      "other_wall_seconds": 1.06881210028223,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "requested_frames": 5511,
+        "in_process_batches": 7,
+        "decoded_frames": 5511,
+        "stream_requests": 30,
+        "single_sessions": 120
+      },
+      "cache": "miss",
+      "cache_observations": {
+        "miss": 12
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 1.310003800150298,
+      "calls": 5391,
+      "counters": {},
+      "other_wall_seconds": 1.310003800150298,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.board": {
+      "status": "completed",
+      "wall_seconds": 21.798841899755644,
+      "calls": 5391,
+      "counters": {
+        "comparisons": 32346,
+        "frames": 5391
+      },
+      "other_wall_seconds": 0.38179239966120804,
+      "throughput_frames_per_second": 247.30671587009542,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.board.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 2.3879779998896993,
+      "calls": 16173,
+      "counters": {},
+      "other_wall_seconds": 2.3879779998896993,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.board.template_matching": {
+      "status": "completed",
+      "wall_seconds": 19.029071500204736,
+      "calls": 10782,
+      "counters": {},
+      "other_wall_seconds": 19.029071500204736,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.result_matching": {
+      "status": "completed",
+      "wall_seconds": 22.946008999613696,
+      "calls": 5391,
+      "counters": {
+        "comparisons": 129384,
+        "frames": 5391
+      },
+      "other_wall_seconds": 0.16775499959476292,
+      "throughput_frames_per_second": 234.94281729300985,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.result_matching.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 0.017232200058060698,
+      "calls": 5391,
+      "counters": {},
+      "other_wall_seconds": 0.017232200058060698,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.result_matching.template_matching": {
+      "status": "completed",
+      "wall_seconds": 22.761021799960872,
+      "calls": 5391,
+      "counters": {},
+      "other_wall_seconds": 22.761021799960872,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.vs": {
+      "status": "completed",
+      "wall_seconds": 20.48970090014336,
+      "calls": 5391,
+      "counters": {
+        "comparisons": 32346,
+        "frames": 5391,
+        "candidates": 51
+      },
+      "other_wall_seconds": 0.6050696002785116,
+      "throughput_frames_per_second": 263.10779382642335,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "monitor.vs.template_matching": {
+      "status": "completed",
+      "wall_seconds": 19.88463129986485,
+      "calls": 5391,
+      "counters": {},
+      "other_wall_seconds": 19.88463129986485,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.fingerprint": {
+      "status": "completed",
+      "wall_seconds": 4.079128099940135,
+      "calls": 4618,
+      "counters": {
+        "frames": 4618
+      },
+      "other_wall_seconds": 4.079128099940135,
+      "throughput_frames_per_second": 1132.1046769940306,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.hierarchy": {
+      "status": "completed",
+      "wall_seconds": 43.86956849999842,
+      "calls": 4,
+      "counters": {},
+      "other_wall_seconds": 43.86956849999842,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.refill": {
+      "status": "completed",
+      "wall_seconds": 15.527086300004157,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 15.527086300004157,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "adaptive_v2.routing": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "guard_samples": 750,
+        "seek_requests": 5391,
+        "lattice_samples": 4618,
+        "OUT_OF_GAME": 1917,
+        "mana_readings": 98,
+        "UNKNOWN": 1494,
+        "IN_GAME": 1207,
+        "intervals_examined": 3718,
+        "plausible_intervals": 225,
+        "agreeing_leaves": 3854,
+        "refill_leaves": 538,
+        "refill_rows": 773,
+        "present_refill_rows": 235,
+        "planner_rows": 11193,
+        "imputed_rows": 5802,
+        "monitor_frames_delivered": 5391,
+        "vs_calls": 5391
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.frame_delivery_wait": {
+      "status": "completed",
+      "wall_seconds": 2.3006522999494337,
+      "calls": 601,
+      "counters": {},
+      "other_wall_seconds": 0.7199623999404139,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.frame_delivery_wait.ffmpeg_process_startup": {
+      "status": "completed",
+      "wall_seconds": 0.055275800012168474,
+      "calls": 12,
+      "counters": {},
+      "other_wall_seconds": 0.055275800012168474,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "sampling": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "streams": 174,
+        "seek_sessions": 174,
+        "requested_source_seconds": 1256.7530000000352,
+        "frames": 17394,
+        "raw_bytes": 1739767248
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.frame_delivery_wait.frame_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 1.515586900008202,
+      "calls": 601,
+      "counters": {},
+      "other_wall_seconds": 1.515586900008202,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.frame_delivery_wait.timestamp_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 0.003125000082945917,
+      "calls": 589,
+      "counters": {},
+      "other_wall_seconds": 0.003125000082945917,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.frame_delivery_wait.raw_frame_view": {
+      "status": "completed",
+      "wall_seconds": 0.00670219990570331,
+      "calls": 589,
+      "counters": {},
+      "other_wall_seconds": 0.00670219990570331,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.vs": {
+      "status": "completed",
+      "wall_seconds": 2.5718721999874106,
+      "calls": 589,
+      "counters": {
+        "comparisons": 3534,
+        "frames": 589,
+        "candidates": 368
+      },
+      "other_wall_seconds": 0.08639359985681949,
+      "throughput_frames_per_second": 229.01604519963442,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.vs.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 0.1375691000939696,
+      "calls": 589,
+      "counters": {},
+      "other_wall_seconds": 0.1375691000939696,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "vs_refinement.vs.template_matching": {
+      "status": "completed",
+      "wall_seconds": 2.3479095000366215,
+      "calls": 589,
+      "counters": {},
+      "other_wall_seconds": 2.3479095000366215,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "window_planning": {
+      "status": "completed",
+      "wall_seconds": 0.021545099996728823,
+      "calls": 1,
+      "counters": {
+        "start_events": 12,
+        "result_windows": 24,
+        "board_reacquisitions": 19
+      },
+      "other_wall_seconds": 0.021545099996728823,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.frame_delivery_wait": {
+      "status": "completed",
+      "wall_seconds": 4.937818199825415,
+      "calls": 14921,
+      "counters": {},
+      "other_wall_seconds": 1.6702925002828124,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.frame_delivery_wait.ffmpeg_process_startup": {
+      "status": "completed",
+      "wall_seconds": 0.11137980000785319,
+      "calls": 24,
+      "counters": {},
+      "other_wall_seconds": 0.11137980000785319,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.frame_delivery_wait.frame_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 2.9760918001338723,
+      "calls": 14921,
+      "counters": {},
+      "other_wall_seconds": 2.9760918001338723,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.frame_delivery_wait.timestamp_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 0.10148069959541317,
+      "calls": 14897,
+      "counters": {},
+      "other_wall_seconds": 0.10148069959541317,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.frame_delivery_wait.raw_frame_view": {
+      "status": "completed",
+      "wall_seconds": 0.07857339980546385,
+      "calls": 14897,
+      "counters": {},
+      "other_wall_seconds": 0.07857339980546385,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.result_matching": {
+      "status": "completed",
+      "wall_seconds": 48.48711799987359,
+      "calls": 14897,
+      "counters": {
+        "comparisons": 357528,
+        "frames": 14897
+      },
+      "other_wall_seconds": 0.24638950021471828,
+      "throughput_frames_per_second": 307.2362436562808,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.result_matching.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 0.6640537000712357,
+      "calls": 14897,
+      "counters": {},
+      "other_wall_seconds": 0.6640537000712357,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "result_windows.result_matching.template_matching": {
+      "status": "completed",
+      "wall_seconds": 47.576674799587636,
+      "calls": 14897,
+      "counters": {},
+      "other_wall_seconds": 47.576674799587636,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "detection.cache_write": {
+      "status": "completed",
+      "wall_seconds": 0.25520709999545943,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.25520709999545943,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.transcript": {
+      "status": "completed",
+      "wall_seconds": 97.52509309999732,
+      "calls": 10,
+      "counters": {
+        "windows_requested": 30,
+        "cached_windows": 18,
+        "uncached_windows": 12,
+        "prefetched_windows": 18,
+        "prefetch_batches": 1
+      },
+      "cache": "partial",
+      "cache_observations": {
+        "miss": 1,
+        "hit": 9
+      },
+      "evidence_status": "cached",
+      "evidence_status_counts": {
+        "cached": 9
+      },
+      "other_wall_seconds": 0.2340524000028381,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.transcript": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "windows_requested": 34,
+        "missing_intervals": 12,
+        "covered_seconds": 792.0360000000001,
+        "requested_seconds": 1683.7890000000007,
+        "exact_window_hits": 2
+      },
+      "cache": "partial",
+      "cache_observations": {
+        "miss": 1,
+        "hit": 9
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.transcript.cache_lookup": {
+      "status": "completed",
+      "wall_seconds": 0.0018247999978484586,
+      "calls": 2,
+      "counters": {},
+      "other_wall_seconds": 0.0018247999978484586,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.transcript.runtime_discovery": {
+      "status": "completed",
+      "wall_seconds": 0.2816471999976784,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.2816471999976784,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.evidence": {
+      "status": "completed",
+      "wall_seconds": 27.110922100000607,
+      "calls": 9,
+      "counters": {
+        "windows": 18,
+        "source_window_seconds": 891.7530000000006
+      },
+      "other_wall_seconds": 27.110922100000607,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": 1.5061623388889227,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.audio_evidence": {
+      "status": "completed",
+      "wall_seconds": 4.379131000030611,
+      "calls": 18,
+      "counters": {
+        "windows": 18
+      },
+      "other_wall_seconds": 4.379131000030611,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": 0.24328505555725619,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.audio": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "misses": 18
+      },
+      "cache": "miss",
+      "cache_observations": {
+        "miss": 18
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "audio_extraction": {
+      "status": "completed",
+      "wall_seconds": 4.300243800018507,
+      "calls": 18,
+      "counters": {
+        "chunks": 461,
+        "pcm_samples": 14844048,
+        "rms_blocks": 30921
+      },
+      "other_wall_seconds": 0.16191920000710525,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "audio_extraction.audio_pipe_read_wait": {
+      "status": "completed",
+      "wall_seconds": 4.138324600011401,
+      "calls": 479,
+      "counters": {},
+      "other_wall_seconds": 4.138324600011401,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence": {
+      "status": "completed",
+      "wall_seconds": 22.51525540001603,
+      "calls": 18,
+      "counters": {
+        "frames": 1788,
+        "windows": 18
+      },
+      "other_wall_seconds": 0.12097289990924764,
+      "throughput_frames_per_second": 79.41282336058808,
+      "mean_seconds_per_window": 1.2508475222231128,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_extraction": {
+      "status": "completed",
+      "wall_seconds": 20.980160900093324,
+      "calls": 1806,
+      "counters": {},
+      "other_wall_seconds": 2.889274100169132,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_extraction.ffmpeg_process_startup": {
+      "status": "completed",
+      "wall_seconds": 0.0754232000108459,
+      "calls": 18,
+      "counters": {},
+      "other_wall_seconds": 0.0754232000108459,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_extraction.frame_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 17.810341600132233,
+      "calls": 1806,
+      "counters": {},
+      "other_wall_seconds": 17.810341600132233,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_extraction.timestamp_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 0.1802636999709648,
+      "calls": 1788,
+      "counters": {},
+      "other_wall_seconds": 0.1802636999709648,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_extraction.raw_frame_view": {
+      "status": "completed",
+      "wall_seconds": 0.02485829981014831,
+      "calls": 1788,
+      "counters": {},
+      "other_wall_seconds": 0.02485829981014831,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.visual_evidence.frame_change": {
+      "status": "completed",
+      "wall_seconds": 1.414121600013459,
+      "calls": 1770,
+      "counters": {},
+      "other_wall_seconds": 1.414121600013459,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "boundaries.candidate_generation": {
+      "status": "completed",
+      "wall_seconds": 0.05142669998895144,
+      "calls": 18,
+      "counters": {
+        "candidates": 826,
+        "windows": 18
+      },
+      "other_wall_seconds": 0.05142669998895144,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": 0.00285703888827508,
+      "throughput_media_seconds_per_second": null
+    },
+    "keep_policy": {
+      "status": "completed",
+      "wall_seconds": 0.06784139999945182,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.06784139999945182,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.references": {
+      "status": "completed",
+      "wall_seconds": 0.11614140000165207,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.11614140000165207,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.identity": {
+      "status": "completed",
+      "wall_seconds": 0.001663100003497675,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.001663100003497675,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.cache_lookup": {
+      "status": "failed",
+      "wall_seconds": 0.00024259999918285757,
+      "calls": 1,
+      "counters": {
+        "failures": 1
+      },
+      "error_type": "FileNotFoundError",
+      "other_wall_seconds": 0.00024259999918285757,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.sampling": {
+      "status": "completed",
+      "wall_seconds": 20.686062500004482,
+      "calls": 12,
+      "counters": {},
+      "other_wall_seconds": 20.686062500004482,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames.extraction": {
+      "status": "completed",
+      "wall_seconds": 17.638939299999038,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 1.4784844999885536,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames.extraction.ffmpeg_process_startup": {
+      "status": "completed",
+      "wall_seconds": 0.47841369998059236,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 0.47841369998059236,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames.extraction.frame_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 15.678320700011682,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 15.678320700011682,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames.extraction.timestamp_queue_wait": {
+      "status": "completed",
+      "wall_seconds": 0.0011691999752656557,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 0.0011691999752656557,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "shared.frames.extraction.raw_frame_view": {
+      "status": "completed",
+      "wall_seconds": 0.0025512000429444015,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 0.0025512000429444015,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.board_gate": {
+      "status": "completed",
+      "wall_seconds": 0.35884039998200024,
+      "calls": 120,
+      "counters": {},
+      "other_wall_seconds": 0.050772499926097225,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.board_gate.image_preparation": {
+      "status": "completed",
+      "wall_seconds": 0.03616600004170323,
+      "calls": 360,
+      "counters": {},
+      "other_wall_seconds": 0.03616600004170323,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.board_gate.template_matching": {
+      "status": "completed",
+      "wall_seconds": 0.2719019000141998,
+      "calls": 240,
+      "counters": {},
+      "other_wall_seconds": 0.2719019000141998,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.signature": {
+      "status": "completed",
+      "wall_seconds": 0.6129864000031375,
+      "calls": 12,
+      "counters": {
+        "games": 12,
+        "consistent_samples": 58
+      },
+      "other_wall_seconds": 0.6129864000031375,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.comparisons": {
+      "status": "completed",
+      "wall_seconds": 0.0,
+      "calls": 0,
+      "counters": {
+        "similarity_pairs": 3246,
+        "template_comparisons": 18713
+      },
+      "other_wall_seconds": 0.0,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.hero_power": {
+      "status": "completed",
+      "wall_seconds": 2.7553188000019873,
+      "calls": 12,
+      "counters": {},
+      "other_wall_seconds": 2.7553188000019873,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.classification": {
+      "status": "completed",
+      "wall_seconds": 0.28885060000175145,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.28885060000175145,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.grouping": {
+      "status": "completed",
+      "wall_seconds": 0.00019950000569224358,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.00019950000569224358,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    },
+    "hero_groups.cache_write": {
+      "status": "completed",
+      "wall_seconds": 0.009496700004092418,
+      "calls": 1,
+      "counters": {},
+      "other_wall_seconds": 0.009496700004092418,
+      "throughput_frames_per_second": null,
+      "mean_seconds_per_window": null,
+      "throughput_media_seconds_per_second": null
+    }
+  },
+  "report_write_error": null,
+  "prior_checkpoint_write_seconds": 0.020241600017470773,
+  "timing_notes": [
+    "Phase/subphase wall times are inclusive; do not sum overlapping parents and children.",
+    "frame_delivery_wait includes producer/pipe/queue/PTS wait; it is not isolated decoder CPU time.",
+    "FFmpeg decoding overlaps matching; sampled frames are not all internally decoded source frames.",
+    "Cache-hit reports contain current lookup time only, never historical processing timings.",
+    "Periodic running snapshots are best effort; forced termination can leave the latest snapshot.",
+    "Total covers Detect Games worker including prior checkpoints; excludes earlier Classic, final report write and Qt delivery."
+  ]
+}

@@ -46,11 +46,11 @@ EFFORTS = ("low", "medium", "high")  # exposed levels; xhigh is deliberately not
 REPORT_FORMAT = "recut_packaging_report"
 REPORT_VERSION = 1
 ANALYSIS_FILES = ("content_analysis.json", "transcript.json", "game_contexts.json", "highlights.json",
-                  "visual_assets.json", "opportunities.json")
+                  "visual_assets.json", "opportunities.json", "creative_direction.json")
 AGENT_FILES = ("video_story.json", "title_candidates.json", "thumbnail_concepts.json", "packaging_report.json",
-               "generation_request.json",
+               "generation_request.json", "planning_request.json", "card_fallbacks.json", "design_repairs.json", "portfolio_preflight.json",
                "portfolio_strategy.json", "portfolio_quality_report.json")
-OUTPUT_DIRS = ("frames", "webcam", "cards", "contact_sheets", "thumbnails", "subjects", "regions")
+OUTPUT_DIRS = ("frames", "webcam", "cards", "contact_sheets", "thumbnails", "subjects", "regions", "design_packs", "creative_references")
 Progress = Callable[[str, str], None]
 
 
@@ -87,6 +87,7 @@ class PackagingSettings:
     agent_budget_usd: float | None = None  # claude --max-budget-usd per call; codex has no cost cap
     cache_dir: str | None = None
     style_dir: str | None = None
+    creative_direction: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
         if bool(self.project) == bool(self.video) and self.only is None:
@@ -151,6 +152,8 @@ class PackagingPipeline(V3Stages):
                  frame_sampler: Any = None, game_detector: Any = None, duration_probe: Any = None,
                  planner: Any = None, generator: Any = None) -> None:
         settings.validate()
+        from .direction import CreativeDirection
+        self.direction = CreativeDirection.from_mapping(settings.creative_direction)
         self.settings = settings
         self.out = Path(settings.output).expanduser().resolve()
         self.progress = progress or (lambda stage, message: None)
@@ -322,6 +325,16 @@ class PackagingPipeline(V3Stages):
     def _analyze(self) -> Evidence:
         s = self.settings
         edit_map, payload = self._timed("timeline", self._load_edit)
+        from .direction import CreativeDirection
+        if not self.settings.creative_direction and payload:
+            self.direction = CreativeDirection.from_mapping(payload.get("creative_direction"))
+        self.direction = self.direction.snapshot(self.out)
+        self.settings.creative_direction = self.direction.to_mapping()
+        self._write("creative_direction.json", self.direction.to_mapping())
+        games = self._timed("games", lambda: self._games(edit_map, payload))
+        if payload and payload.get("export_selection"):
+            games = [g for g in games if g.origin == "export_selection"]
+        analysis_map = self._analysis_map(edit_map, games, payload)
         self.progress("timeline", f"{len(edit_map.pieces)} kept pieces, {edit_map.duration:.0f} s edited")
         from analysis.boundaries.transcript import TranscriptSettings
 
@@ -329,24 +342,39 @@ class PackagingPipeline(V3Stages):
         settings = TranscriptSettings(model=s.asr_model, language=None if asr_language == "auto" else asr_language,
                                       use_cache=s.use_cache)
         status, lines = self._timed("transcription", lambda: build_transcript(
-            edit_map, settings, cache=self.cache, engine=self._engine, cancellation=self.cancellation))
+            analysis_map, settings, cache=self.cache, engine=self._engine, cancellation=self.cancellation))
         if status["status"] in ("failed", "unavailable"):
             self.warnings.append(f"transcript {status['status']}: {status.get('detail')}")
         audio = self._timed("audio_analysis", lambda: analyze_kept_audio(
-            edit_map, cache=self.cache, extractor=self._rms, cancellation=self.cancellation))
+            analysis_map, cache=self.cache, extractor=self._rms, cancellation=self.cancellation))
         if not audio.available:
             self.warnings.append(f"audio evidence {audio.status}: {audio.detail}")
         visual = self._timed("visual_analysis", lambda: analyze_kept_visual(
-            edit_map, cache=self.cache, scanner=self._scanner, cancellation=self.cancellation))
+            analysis_map, cache=self.cache, scanner=self._scanner, cancellation=self.cancellation))
         if visual.status != "ok":
             self.warnings.append(f"visual evidence {visual.status}: {visual.detail}")
-        games = self._timed("games", lambda: self._games(edit_map, payload))
+        if payload and payload.get("export_selection"):
+            # Intro / uncovered parent segments cannot define the class video's creative brief.
+            games = [g for g in games if g.origin == "export_selection"]
+            lines = [line for line in lines if any(g.source_index == line.source_index
+                     and g.edited_start is not None and g.edited_end is not None
+                     and line.edited_end > g.edited_start and line.edited_start < g.edited_end for g in games)]
         attach_transcript(games, lines)
-        signals = collect_signals(edit_map, lines, audio, visual, games)
+        focus = self.direction.active().creative_focus
+        signals = collect_signals(edit_map, lines, audio, visual, games, creative_focus=focus)
+        if focus and not any(signal.kind == "guided_focus" for signal in signals):
+            self.warnings.append("Creative Focus has no sufficient transcript match; automatic ranking retained.")
         highlights = self._timed("highlight_discovery", lambda: build_candidates(
             edit_map, signals, lines, audio, visual, games, max_candidates=s.max_highlights))
+        if payload and payload.get("export_selection"):
+            highlights = [h for h in highlights if h.game_id in {g.game_id for g in games}]
         self.frames = FrameExtractor(edit_map, self.out, self.cache, sampler=self._sampler,
                                      cancellation=self.cancellation)
+        if payload and payload.get("export_selection"):
+            # Keep output timestamps intact, but never use Intro/menu frames as
+            # gameplay/card evidence for a class-specific thumbnail.
+            self.frames.allowed_intervals = [(g.source_index, g.source_start, g.source_end)
+                                             for g in games if g.origin == "export_selection"]
         evidence = Evidence(edit_map, payload, lines, status, audio, visual, games, highlights,
                             RoiCheck("absent", None, "", ""))
         self._timed("frame_extraction", lambda: self._extract_frames(evidence))
@@ -355,6 +383,25 @@ class PackagingPipeline(V3Stages):
             self._timed("asset_preparation", lambda: self._prepare_assets(evidence))
         self._write_analysis(evidence)
         return evidence
+
+    @staticmethod
+    def _analysis_map(edit_map: EditMap, games: list[GameContext], payload: dict[str, Any] | None) -> EditMap:
+        """Restrict expensive evidence work while retaining output positions/source indexes."""
+        if not payload or not payload.get("export_selection"):
+            return edit_map
+        from .timeline import KeepPiece
+        pieces = []
+        for p in edit_map.pieces:
+            spans = sorted((max(p.source_start, g.source_start), min(p.source_end, g.source_end))
+                           for g in games if g.source_index == p.source_index)
+            end = p.source_start
+            for a, b in spans:
+                a = max(a, end)
+                if b > a:
+                    pieces.append(KeepPiece(p.source_index, a, b, p.edited_start + a - p.source_start))
+                    end = b
+        return EditMap(edit_map.sources, pieces, origin="packaging_gameplay_evidence",
+                       identities=edit_map.identities, project_path=edit_map.project_path)
 
     def _games(self, edit_map: EditMap, payload: dict[str, Any] | None) -> list[GameContext]:
         mode = self.settings.games
@@ -409,6 +456,8 @@ class PackagingPipeline(V3Stages):
                 record = frames.save(image, source_index=h.source_index, source_time=t, highlight_id=h.id,
                                      role="peak" if n == 0 else "alt")
                 record.quality["selection"] = score
+                record.quality["reference_quality"] = score
+                record.quality["thumbnail_quality"] = max(0., score - .1 * h.visual.get("keyframe_change_max", 0))
                 h.frame_ids.append(record.id)
             peak_edited = edit_map.to_edited(h.peak_source, h.source_index) or 0.0
             for role, edited in (("before", h.edited_start + 1.0), ("after", h.edited_end - 1.0)):
@@ -464,12 +513,12 @@ class PackagingPipeline(V3Stages):
             picked = 0
             for quality, t, crop in scored:
                 visual = dhash(crop)
-                if picked >= 2 or any(hamming(visual, other) < 10 for other in taken_cam):
+                if picked >= 3 or any(hamming(visual, other) < 10 for other in taken_cam):
                     continue  # skip near-identical expressions
                 taken_cam.append(visual)
                 picked += 1
                 record = frames.save(crop, source_index=h.source_index, source_time=t, kind="webcam",
-                                     highlight_id=h.id, role="reaction", prefix="W", folder="webcam",
+                                     highlight_id=h.id, role=("webcam_primary", "webcam_alt_1", "webcam_alt_2")[picked - 1], prefix="W", folder="webcam",
                                      notes="face visible" if quality["face"] else "no face detected")
                 record.quality = quality
                 h.webcam_frame_ids.append(record.id)
@@ -741,10 +790,12 @@ class PackagingPipeline(V3Stages):
         return images
 
     def _style_profile(self) -> dict[str, Any] | None:
-        if not self.settings.creator or not self.settings.use_style:
+        if not self.settings.use_style:
             return None
+        from .style import competitive_profile
         try:
-            return CreatorStyleStore(self.settings.style_dir).load(self.settings.creator)
+            return competitive_profile(CreatorStyleStore(self.settings.style_dir),
+                                       self.settings.creator or self.direction.style_profile_id)
         except KeyError as exc:
             raise PackagingError("creator_not_found", str(exc)) from exc
 
@@ -834,6 +885,9 @@ class PackagingPipeline(V3Stages):
             scenes = self._render_scenes(proposals, evidence)
             if self.settings.thumbnail_engine == "gen":
                 scenes = self._generate_finals(proposals, scenes, evidence)
+            else:
+                self._finalize_v4(proposals, scenes)
+                self._finish_generated(proposals, scenes)
             return scenes
 
         frames = self._frames()
@@ -956,6 +1010,10 @@ class PackagingPipeline(V3Stages):
         input_ = analysis.get("input", {})
         if not self.settings.project and not self.settings.video:
             self.settings.project, self.settings.video = input_.get("project"), input_.get("video")
+        from .direction import CreativeDirection
+        direction_file = self.out / "creative_direction.json"
+        if direction_file.is_file() and not self.settings.creative_direction:
+            self.direction = CreativeDirection.from_mapping(json.loads(direction_file.read_text(encoding="utf-8")))
         timeline = analysis["timeline"]
         from .timeline import KeepPiece
 
@@ -1001,7 +1059,12 @@ class PackagingPipeline(V3Stages):
                 image = read_image(self.out / card["path"])
                 if image is not None:
                     self.frames.images[card["id"]] = image
-        evidence = Evidence(edit_map, None, lines, analysis["evidence"]["transcript"],
+        saved_payload = None
+        project = analysis.get("input", {}).get("project")
+        if project and Path(project).is_file():
+            from core.project_file import normalize_project_payload
+            saved_payload = normalize_project_payload(json.loads(Path(project).read_text(encoding="utf-8")))
+        evidence = Evidence(edit_map, saved_payload, lines, analysis["evidence"]["transcript"],
                             AudioProfile(analysis["evidence"]["audio"]["status"]),
                             VisualProfile(analysis["evidence"]["visual"]["status"]), games, highlights, roi,
                             sheets=analysis.get("contact_sheets", []))
@@ -1017,7 +1080,7 @@ class PackagingPipeline(V3Stages):
         only = self.settings.only
         evidence, video_story, concepts, titles = self._timed("load_previous", self._load_previous)
         cards = titles.pop("cards", [])
-        self._archive(AGENT_FILES, ("thumbnails",))
+        self._archive(AGENT_FILES, ("thumbnails", "design_packs", "creative_references"))
         if only == "render":
             if not concepts.get("concepts"):
                 raise PackagingError("no_previous_run", "--only render needs thumbnail_concepts.json")
@@ -1102,7 +1165,8 @@ class PackagingPipeline(V3Stages):
             "titles": [{"title_id": t["title_id"], "title": t["title"], "concept_id": t["concept_id"],
                         "highlight_ids": t["highlight_ids"]} for t in (proposals or {}).get("titles", [])],
             "thumbnails": renders or [],
-            "mode": s.mode, "brief": getattr(self, "brief_stats", None), "thumbnail_engine": s.thumbnail_engine,
+            "mode": s.mode, "creative_direction": self.direction.to_mapping(),
+            "pipeline_version": 4, "pipeline_revision": "4.2", "brief": getattr(self, "brief_stats", None), "thumbnail_engine": s.thumbnail_engine,
             "visual_assets": self.manifest.to_mapping()["counts"] if self.manifest is not None else None,
             "generation": getattr(self, "generation_report", None),
             "opportunities": len(self.opportunities),
@@ -1112,6 +1176,7 @@ class PackagingPipeline(V3Stages):
                           if self.portfolio_report else None),
             "agent": {"provider": s.provider, "effort": s.effective_effort, "calls_made": len(
                           [c for c in calls if not c.get("cache_hit")]),
+                      "cli_invocations": sum(int(c.get("attempts", 1)) for c in calls if not c.get("cache_hit")),
                       "cache_hits": len([c for c in calls if c.get("cache_hit")]), "calls": calls,
                       "cost_usd_total": round(sum(costs), 4) if costs else None,
                       "tokens_used_total": sum(c.get("tokens_used") or 0 for c in calls) or None},

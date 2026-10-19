@@ -58,6 +58,8 @@ DANGLING = {"A", "AD", "AL", "ALLA", "ALLE", "AI", "DA", "DAL", "DALLA", "DI", "
 FONT_FILES: dict[str, Sequence[str]] = {
     "Impact": ("impact.ttf",), "Bahnschrift": ("bahnschrift.ttf",), "Arial Black": ("ariblk.ttf",),
     "Segoe UI Black": ("seguibl.ttf",), "Arial": ("arialbd.ttf", "arial.ttf"),
+    "Archivo Black": ("ArchivoBlack-Regular.ttf",),
+    "Barlow Condensed Black": ("BarlowCondensed-Black.ttf",),
     "Anton": ("Anton-Regular.ttf",), "Bebas Neue": ("BebasNeue-Regular.ttf",), "Oswald": ("Oswald-Bold.ttf",),
     "DejaVu Sans": ("DejaVuSans-Bold.ttf",), "Liberation Sans": ("LiberationSans-Bold.ttf",),
 }

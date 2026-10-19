@@ -93,9 +93,10 @@ def build_opportunities(highlights: Sequence[HighlightCandidate], games: Sequenc
         context = [by_line[i] for i in h.transcript_ids if i in by_line]
         words = _words(context)
         assets = manifest.for_highlight(h.id)
-        subjects = [a for a in assets if a.type == "webcam_subject"]
+        subjects = [a for a in assets if a.type in ("webcam_subject", "webcam_original")]
+        originals = [a.id for a in subjects if a.type == "webcam_original" and a.quality.get("face")]
         isolated = [a.id for a in sorted(subjects, key=lambda a: -a.quality.get("face_score", 0.0))
-                    if a.quality.get("isolated")]
+                    if a.quality.get("isolated")] or originals
         frames = [a.id for a in assets if a.type == "gameplay_frame"]
         regions = [a.id for a in sorted((a for a in assets if a.type == "board_region"),
                                         key=lambda a: -a.quality.get("salience", 0.0))]

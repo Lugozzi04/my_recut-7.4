@@ -189,6 +189,8 @@ class TimelineWidget(QWidget):
     viewChanged = Signal(int)
     # gameplay WIN islands: selection ((track_state_idx, island_index) or None) and boundary edit
     islandSelected = Signal(object)
+    gameToggleRequested = Signal(int, str)
+    gameResizeRequested = Signal(int, str, float, float)
     islandResizeRequested = Signal(int, int, float, float)  # track_state_idx, island, start, end (local)
 
     # scrubbing lifecycle (for MainWindow sync)
@@ -616,6 +618,18 @@ class TimelineWidget(QWidget):
         """Kept WIN islands of every audio clip with gameplay editing active (global time)."""
         out: list[dict] = []
         for clip in self._audio_clips():
+            boxes = clip.get("gameplay_boxes")
+            if boxes is not None:
+                c0 = float(clip.get("start", 0.0))
+                c1 = float(clip.get("end", c0))
+                for i, info in enumerate(boxes):
+                    a, b = float(info["start"]), float(info["end"])
+                    drag = self._island_drag
+                    if drag is not None and drag.get("clip") is clip and drag.get("index") == i:
+                        a, b = float(drag["start"]), float(drag["end"])
+                    out.append({"clip": clip, "index": i, "ts": clip.get("track_state_idx"),
+                                "start": a, "end": b, "t0": c0+a, "t1": min(c1, c0+b), "meta": info})
+                continue
             keeps = clip.get("gameplay_keeps") or []
             if not keeps:
                 continue
@@ -729,7 +743,7 @@ class TimelineWidget(QWidget):
 
     # ---- lanes --------------------------------------------------------------------------------
     def _has_gameplay(self) -> bool:
-        return any(c.get("gameplay_keeps") for c in self._audio_clips())
+        return any(c.get("gameplay_boxes") or c.get("gameplay_keeps") for c in self._audio_clips())
 
     def _lanes(self) -> list[_Lane]:
         lanes: list[_Lane] = []
@@ -1357,6 +1371,8 @@ class TimelineWidget(QWidget):
         p.setRenderHint(QPainter.Antialiasing, False)
 
     def _island_color(self, island: dict) -> QColor:
+        if island.get("meta", {}).get("included") is False or island.get("meta", {}).get("export_filtered"):
+            return QColor("#81858E")
         hero_class = class_id(island.get("meta", {}).get("hero_class"))
         return QColor(CLASS_COLORS[hero_class]) if hero_class else self._colors.keep_island
 
@@ -1375,7 +1391,7 @@ class TimelineWidget(QWidget):
         video = next((ln for ln in lanes if ln.kind == "video"), lanes[0])
         # dim everything that gameplay editing removes (outside the islands)
         for clip in self._audio_clips():
-            if not clip.get("gameplay_keeps"):
+            if not clip.get("gameplay_keeps") and not clip.get("gameplay_boxes"):
                 continue
             c0 = float(clip.get("start", 0.0))
             for g in clip.get("gameplay_cuts") or []:
@@ -1403,9 +1419,17 @@ class TimelineWidget(QWidget):
             # label tab at the top of the VIDEO lane
             game = isl["meta"].get("game_index")
             hero_class = class_id(isl["meta"].get("hero_class"))
-            label = "WIN" + (" · " + class_label(hero_class) if hero_class else "") + (f" · game {game}" if game is not None else f" {n}")
+            result = str(isl["meta"].get("result", "WIN"))
+            label = ("MANUAL " if isl["meta"].get("manual") else "") + result + (" · " + class_label(hero_class) if hero_class else "") + (f" · game {game}" if game is not None else f" {n}")
             dur = isl["t1"] - isl["t0"]
-            long_label = f"{label}   {fmt_hms(dur)} kept"
+            included = isl["meta"].get("included", True)
+            status = "included" if included else "excluded"
+            if isl["meta"].get("export_filtered"):
+                status += " · " + isl["meta"]["export_filtered"]
+            if not included or isl["meta"].get("export_filtered"):
+                p.setPen(QPen(color, 1.5, Qt.PenStyle.DashLine))
+                p.drawRect(rect.adjusted(2, 2, -2, -2))
+            long_label = f"{label}   {fmt_hms(dur)} {status}"
             text = long_label if fm.horizontalAdvance(long_label) + 20 < rect.width() else label
             if fm.horizontalAdvance(text) + 16 < rect.width():
                 tab_x = max(rect.left(), float(HEADER_W)) + 6
@@ -1627,6 +1651,8 @@ class TimelineWidget(QWidget):
             meta["lane"] = lane.kind if lane is not None else None
             island = self._island_at_x(x) if lane is not None and lane.kind in ("video", "audio", "cuts") else None
             meta["island"] = {"track_state_idx": island["ts"], "index": island["index"]} if island else None
+            if island and island["clip"].get("gameplay_boxes") is not None:
+                meta["island"]["game_key"] = island["meta"].get("game_id")
             self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
             return
 
@@ -1680,10 +1706,14 @@ class TimelineWidget(QWidget):
                 isl, which = edge
                 keeps = sorted(isl["clip"].get("gameplay_keeps") or [], key=lambda k: float(k.start))
                 i = isl["index"]
+                boxes = isl["clip"].get("gameplay_boxes")
+                if boxes is not None:
+                    keeps = [Segment(float(b["start"]), float(b["end"])) for b in boxes]
                 c0 = float(isl["clip"].get("start", 0.0))
                 clip_len = float(isl["clip"].get("end", c0)) - c0
                 self._island_drag = {
                     "clip": isl["clip"], "index": i, "ts": isl["ts"], "edge": which, "c0": c0,
+                    "game_key": isl["meta"].get("game_id") if boxes is not None else None,
                     "start": isl["start"], "end": isl["end"], "orig": (isl["start"], isl["end"]),
                     "lo": float(keeps[i - 1].end) if i > 0 else 0.0,
                     "hi": float(keeps[i + 1].start) if i + 1 < len(keeps) else clip_len,
@@ -1694,6 +1724,8 @@ class TimelineWidget(QWidget):
             isl = self._island_at_x(x)
             if isl is not None and isl["ts"] is not None:
                 self.setSelectedIsland((int(isl["ts"]), isl["index"]), emit=True)
+                if isl["clip"].get("gameplay_boxes") is not None and isl["meta"].get("game_id"):
+                    self.gameToggleRequested.emit(int(isl["ts"]), str(isl["meta"]["game_id"]))
                 return
 
         # clip drag on the video lane (sequential mode: swap)
@@ -1800,13 +1832,13 @@ class TimelineWidget(QWidget):
             island_edge = self._island_edge_at_x(x)
             if island_edge is not None:
                 isl, which = island_edge
-                tip = (f"WIN island {which}: {fmt_hms(isl['t0'] if which == 'start' else isl['t1'])}\n"
+                tip = (f"Game interval {which}: {fmt_hms(isl['t0'] if which == 'start' else isl['t1'])}\n"
                        "Drag to adjust this boundary")
             else:
                 isl = self._island_at_x(x)
                 if isl is not None:
-                    tip = (f"WIN island  {fmt_hms(isl['t0'])} – {fmt_hms(isl['t1'])}  "
-                           f"({fmt_hms(isl['t1'] - isl['t0'])} kept)\nClick to select · drag its edges to adjust")
+                    tip = (f"Game interval  {fmt_hms(isl['t0'])} – {fmt_hms(isl['t1'])}  "
+                           f"({fmt_hms(isl['t1'] - isl['t0'])})\nClick to include/exclude · right-click for game actions · drag edges to adjust")
         if self._tool_mode == "select":
             if self._hover_edge is not None or island_edge is not None:
                 self.setCursor(Qt.SizeHorCursor)
@@ -1912,7 +1944,10 @@ class TimelineWidget(QWidget):
             d = self._island_drag
             self._island_drag = None
             if d["ts"] is not None and (abs(d["start"] - d["orig"][0]) > 1e-3 or abs(d["end"] - d["orig"][1]) > 1e-3):
-                self.islandResizeRequested.emit(int(d["ts"]), int(d["index"]), float(d["start"]), float(d["end"]))
+                if d.get("game_key"):
+                    self.gameResizeRequested.emit(int(d["ts"]), str(d["game_key"]), float(d["start"]), float(d["end"]))
+                else:
+                    self.islandResizeRequested.emit(int(d["ts"]), int(d["index"]), float(d["start"]), float(d["end"]))
             self._changed()
             return
 

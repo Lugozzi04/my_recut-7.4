@@ -36,7 +36,7 @@ REACTION_WORDS = {
 }
 STRONG_REACTIONS = {"incredibile", "assurdo", "assurda", "pazzesco", "pazzesca", "madonna", "oddio", "boom", "wow",
                     "letale", "lethal", "clamoroso", "clamorosa", "impossibile", "insane", "omg", "evvai", "finalmente"}
-WEIGHTS = {"audio_peak": 1.0, "reaction": 0.9, "near_result": 0.9, "speech_burst": 0.6, "explanation": 0.55,
+WEIGHTS = {"guided_focus": 1.1, "audio_peak": 1.0, "reaction": 0.9, "near_result": 0.9, "speech_burst": 0.6, "explanation": 0.55,
            "pause_break": 0.4, "visual_change": 0.4, "game_intro": 0.35, "coverage": 0.2}
 _TOKEN = re.compile(r"[\wàèéìòóù']+", re.UNICODE)
 
@@ -64,7 +64,7 @@ def reaction_strength(text: str) -> tuple[float, list[str]]:
 
 
 def collect_signals(edit_map: EditMap, lines: Sequence[TranscriptLine], audio: AudioProfile, visual: VisualProfile,
-                    games: Sequence[GameContext]) -> list[Signal]:
+                    games: Sequence[GameContext], *, creative_focus: str = "") -> list[Signal]:
     signals: list[Signal] = []
     for source_index, t, rel in audio.peaks():
         edited = edit_map.to_edited(t, source_index)
@@ -75,6 +75,14 @@ def collect_signals(edit_map: EditMap, lines: Sequence[TranscriptLine], audio: A
         if value >= 0.2:
             signals.append(Signal((line.edited_start + line.edited_end) / 2, "reaction", value,
                                   "reaction words: " + ", ".join(words) if words else "exclamation/laughter"))
+    if creative_focus:
+        from .direction import relevance, tokens
+        for line in lines:
+            score = relevance(creative_focus, line.text)
+            matches = tokens(creative_focus) & tokens(line.text)
+            if score >= .20 and (len(matches) >= 2 or len(tokens(creative_focus)) == 1):
+                signals.append(Signal((line.edited_start + line.edited_end) / 2, "guided_focus", score,
+                                      "lexical focus match (not combo verification): " + ", ".join(sorted(matches))))
     signals += _speech_signals(lines, edit_map.duration)
     for game in games:
         if game.edited_start is None or game.edited_end is None:
@@ -166,7 +174,9 @@ def build_candidates(edit_map: EditMap, signals: Sequence[Signal], lines: Sequen
     by_score = sorted(scored, key=lambda item: item[0], reverse=True)
     for game in games:  # coverage first: every kept game gets candidates
         mine = [item for item in by_score if game_for(games, item[1][0].edited) is game]
-        for item in mine[:per_game]:
+        automatic = sorted(mine, key=lambda item: item[0] - 1.1 * item[2].get("guided_focus", Signal(0, "", 0, "")).strength, reverse=True)
+        priority = mine[:max(1, per_game - 1)] + automatic[:1] if any("guided_focus" in item[2] for item in mine) else mine[:per_game]
+        for item in priority:
             if not overlaps(item[1]):
                 chosen.append((*item, False))
         if not mine and game.edited_start is not None and game.edited_end is not None:
@@ -202,7 +212,8 @@ def build_candidates(edit_map: EditMap, signals: Sequence[Signal], lines: Sequen
             transcript_ids=[line.id for line in context_lines], transcript_context=transcript[:1600],
             reason="; ".join(best[k].detail for k in sorted(best, key=lambda k: -WEIGHTS.get(k, 0.3))),
             local_score=float(score),
-            visual={"keyframe_change_max": round(visual.change_near(source_index, source_start, source_end), 3)},
+            visual={"keyframe_change_max": round(visual.change_near(source_index, source_start, source_end), 3),
+                    "guided_relevance": best.get("guided_focus", Signal(0, "", 0, "")).strength},
             coverage=coverage))
     for game in games:
         game.highlight_ids = [h.id for h in out if h.game_id == game.game_id]

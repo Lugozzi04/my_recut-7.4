@@ -109,12 +109,29 @@ class CreatorStyleStore:
                 continue
             if key in ("colors", "fonts", "webcam_roi", "webcam_size", "cards", "text", "typography", "layouts"):
                 profile["brand"][key] = value
-            elif key in ("channel_name", "language", "display_name", "enabled"):
+            elif key in ("channel_name", "language", "display_name", "enabled", "design_system"):
                 profile[key] = value
             elif key in ("title_note", "thumbnail_note"):
                 profile["title_style" if key == "title_note" else "thumbnail_style"]["notes"].append(str(value))
             else:
                 raise KeyError(f"unknown profile field {key}")
+        return self.save(profile)
+
+    def set_identity_references(self, name: str, images: Sequence[Path]) -> dict[str, Any]:
+        """Explicit identity photos, distinct from style examples; never gameplay evidence."""
+        import hashlib
+        from .frames import read_image_unchanged, write_image
+        profile = self.load(name)
+        owned = []
+        for source in list(images)[:3]:
+            image = read_image_unchanged(Path(source))
+            if image is None:
+                raise ValueError("Cannot read identity reference")
+            digest = hashlib.sha256(image.tobytes()).hexdigest()[:20]
+            target = self.path(name).parent / "identity" / f"{digest}.png"
+            write_image(target, image)
+            owned.append({"path": str(target), "digest": digest, "role": "identity"})
+        profile["identity_references"] = owned
         return self.save(profile)
 
     def import_examples(self, name: str, *, titles: Sequence[str] = (), thumbnails: Sequence[Path] = (),
@@ -296,3 +313,46 @@ def style_sections(profile: dict[str, Any] | None) -> dict[str, Any]:
                                       if r.get("kind") == "thumbnail" and r.get("polarity", "positive") == "positive"]),
             "negative_examples": len([r for r in profile.get("references", []) if r.get("polarity") == "negative"]),
             "recent_feedback": [f.get("note") or f.get("value") for f in profile.get("feedback", [])[-5:]]}
+
+
+# Explicit creator preferences, not inferred viewing/CTR performance.
+COMPETITIVE_DESIGN = {
+    "name": "Lugozzi — Competitive Gaming",
+    "mood": "Competitive gaming; dynamic but ordered; immediate hierarchy and controlled contrast",
+    "palette": {"primary": ["#FFD436", "#FFFFFF", "#111420"], "accent": ["#FF514A", "#27C9FF"],
+                "max_dominant_saturated": 2},
+    "fonts": ["Anton", "Archivo Black", "Barlow Condensed Black", "Impact", "Arial Black", "DejaVu Sans"],
+    "text": {"color": "#FFD436", "outline": "#111420", "outline_px": 12, "shadow_px": 8,
+             "max_lines": 2, "uppercase_preferred": True, "safe_margin": .05},
+    "layout_archetypes": ["reaction_impact", "card_power", "clutch_moment", "big_statement"],
+    "webcam": {"positions": ["left", "right"], "reaction_width": [.30, .45], "required": False},
+    "effects": {"rim_lighting": 4, "depth_shadows": 4, "selective_glow": 3,
+                "particles_light_rays": 2, "chromatic_aberration": 0},
+    "avoid": ["rectangular webcam", "random collage", "unnecessary HUD", "invented cards",
+              "indiscriminate glow", "four recolours of one screenshot"],
+    "typography": "auto",
+    "output_size": [1920, 1080],
+    "font_licenses": {
+        "Anton": "https://github.com/googlefonts/AntonFont/blob/main/OFL.txt",
+        "Archivo Black": "https://github.com/google/fonts/blob/main/ofl/archivoblack/OFL.txt",
+        "Barlow Condensed Black": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt"},
+}
+
+
+def competitive_profile(store: CreatorStyleStore, name: str = "lugozzi") -> dict[str, Any]:
+    """Reuse the existing versioned store; never replace a creator's custom profile."""
+    from copy import deepcopy
+    created = False
+    try:
+        profile = store.load(name)
+    except KeyError:
+        if name != "lugozzi":
+            raise
+        profile = store.create("lugozzi", channel="Lugozzi", language="it")
+        created = True
+    if "design_system" not in profile:
+        profile["design_system"] = deepcopy(COMPETITIVE_DESIGN)
+        # Older explicit creator profiles are enriched in memory only until edited.
+        if created:
+            profile = store.save(profile)
+    return profile

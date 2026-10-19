@@ -33,6 +33,7 @@ AutoCutter [--json] [--version] COMMAND
 
 presets [--json]
 jobs [--job JOB_ID] [--json]
+concat VIDEO_A VIDEO_B -o OUTPUT [--json]
 process LOCAL_FILE [OPTIONS]
 vod TWITCH_URL [OPTIONS]
 resume JOB_ID [--dry-run | --youtube-video-id VIDEO_ID] [--json]
@@ -180,3 +181,32 @@ Con `--json`, il successo contiene `ok`, `command` e il risultato; una failure c
 ## Gruppi per ritratto del giocatore
 
 Il comando `groups PROJECT.autocutter` mostra le classi salvate. `--analyze` confronta localmente ritratti e poteri eroe delle partite già rilevate usando automaticamente `class_refs` incluso nel progetto/app. `--class-refs DIR` resta un override CLI opzionale. `--export hunter` oppure `--export selected`, con `--output-dir DIR`, crea progetti e video indipendenti usando i keep/boundary esistenti. Nessuna detection/ASR aggiuntiva. Supporta `--json` e `--help`. Vedi [HERO_GROUPS.md](HERO_GROUPS.md) per workflow, cache, correzioni manuali, colori e limiti.
+
+## Unire due video
+
+~~~powershell
+python main.py concat "C:\Videos\video1.mp4" "C:\Videos\video2.mp4" -o "D:\Videos\video_unito.mp4"
+python main.py concat --help
+~~~
+
+L'ordine è sempre **primo file → secondo file**. Output: `.mp4`, `.mov` o `.mkv`. Nessuna GUI, analisi, job o Packaging.
+
+Il comando sceglie automaticamente il percorso:
+- **Copia senza ricodifica** quando codec, configurazioni, risoluzione, FPS, timebase e timestamp sono compatibili.
+- Metadati colore mancanti, SAR non dichiarato rispetto a pixel quadrati e arrotondamenti trascurabili degli FPS non sono più trattati automaticamente come incompatibilità.
+- **Solo audio normalizzato** quando sono le configurazioni audio o il priming AAC a impedire una giunzione sicura; il video rimane copiato.
+- **Normalizzazione video/audio** per timebase o configurazioni video diverse, risoluzioni/FPS diversi o offset tra gli stream. Il terminale lo annuncia **prima** di avviare FFmpeg: può richiedere tempo perché ricodifica l'intero risultato.
+
+La normalizzazione produce H.264 `libx264 -preset fast -crf 18`, pixel `yuv420p`, risoluzione/display aspect ratio e FPS del primo video; il secondo viene adattato senza deformazioni, con bande quando necessarie. L'audio viene normalizzato in AAC a 192 kbps con sample rate e canali del primo file. La ricodifica è lossy; non viene dichiarata una conservazione bit per bit in questo percorso.
+
+Gli offset audio/video originali vengono preservati. Se il video comincia dopo l'audio, il primo frame copre quel ritardo, evitando un nero aggiunto; allo stesso modo l'ultimo frame può coprire una coda audio. I segmenti normalizzati vengono allineati alla griglia del frame rate di uscita. Non viene semplicemente azzerato ogni stream separatamente, cosa che sposterebbe il sincronismo.
+
+Supporta un video e facoltativamente un audio per file; entrambi devono avere audio oppure esserne entrambi privi. Tracce accessorie timecode/data e sottotitoli vengono ignorati; più tracce video o audio restano un errore esplicito per evitare selezioni ambigue. La normalizzazione completa supporta mono/stereo SDR progressivo senza rotazioni. HDR, conflitti espliciti nei parametri colore, interlacciamento o rotazioni che richiedono conversioni non previste producono un errore esplicativo.
+
+L'output viene validato tramite FFprobe e pubblicato solo al termine. Un file già esistente non viene mai sovrascritto, nemmeno in caso di creazione concorrente. I temporanei risiedono sul filesystem di destinazione e vengono rimossi anche in caso di errore.
+
+A completamento stampa `DONE` e il percorso generato. `--json` restituisce anche durata, `video_mode` e `audio_mode` (`copy` oppure `reencoded`); i messaggi restano su stderr. Exit code: 0 successo, 2 input non supportati/argomenti, 30 errore FFmpeg/validazione, 60 filesystem, 70 Ctrl+C.
+
+Verifica del fix: 47 test mirati concat/CLI/quoting passati, incluse timebase diverse, differenze codec, metadata mancanti, offset di 33 ms e preservazione del sincronismo. Due estratti reali di circa 2 s da `in.mp4` e `mage.cutted.mp4` sono stati uniti e decodificati con successo; nessuna ricodifica completa dei video originali è stata eseguita.
+
+Verificato anche un intro AV1 con traccia timecode `tmcd`: due estratti reali brevi da `intro.mp4` e `mage.cutted.mp4` sono stati uniti e decodificati correttamente. Nessuna elaborazione integrale dei video originali.

@@ -1,0 +1,9 @@
+Mission V4.1: generate ONLY a 16:9 1920x1080 environment layer for a YouTube gaming composition.
+Story inspiration: supported example. Do not depict or claim additional events.
+Protected content: authentic Hearthstone cards, gameplay and creator photographs are composited locally AFTER this generation. Do not draw people, faces, cards, heroes, minions, card-shaped placeholders or HUD.
+Identity: SAME real person is retained through original local pixels, not reconstructed. Authenticity: factual content is supplied by the protected layers, never by invented environment details.
+Composition: card_dominance; reserved subject boxes [x,y,w,h]=[[0.53, 0.08, 0.42, 0.84]]. Keep these areas quiet and unobstructed, never fill them with substitute subjects. Build depth and directional light AROUND them; no visible reservation borders.
+Generated environment: dark directional spotlight and warm edge light; accent=#FFFFFF; one coherent subdued backdrop, controlled contrast and light, no decorative clutter.
+Typography: NO TEXT, LETTERS OR PLACEHOLDERS. Keep text box [0.05, 0.12, 0.42, 0.62] clear.
+Style: energetic Competitive Gaming, clean hierarchy; subtle external glow only when motivated. No automatic explosion/particle/ray stack. Creative reference images are inspiration, not gameplay proof.
+Negative Constraints: no duplicate subjects or busy small details behind the reserved areas.

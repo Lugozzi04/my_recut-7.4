@@ -6,6 +6,17 @@ from typing import Any
 
 
 def group_context(payload: dict[str, Any] | None) -> list[str]:
+    from .labels import class_id, class_label
+
+    selection = (payload or {}).get("export_selection") or {}
+    classes = sorted({name for r in selection.get("intervals", [])
+                      if r.get("role") == "gameplay" and r.get("included")
+                      and (name := class_id(r.get("output_group") or r.get("group"))) is not None})
+    if classes:
+        return ["EXPORTED PLAYER CLASSES: " + json.dumps([class_label(c) for c in classes]),
+                "These are the PLAYER's classes in this exact exported edit. Only its kept games may supply "
+                "thumbnail/story evidence. Never replace the player's class with an opponent's class or "
+                "a class mentioned in the Intro. A class does not identify a deck archetype."]
     group = (payload or {}).get("hero_group_output") or {}
     if not group:
         return []

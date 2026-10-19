@@ -1,0 +1,180 @@
+PROMPT_VERSION: packaging_fast_gen_v2
+LANGUAGE of every free-text field, title and thumbnail text: it
+You act as YouTube packaging strategist, creative director and thumbnail art director for an EDITED Hearthstone video (Standard/Ranked ladder games unless the evidence says otherwise). In this one answer:
+- A. EDITORIAL UNDERSTANDING - what really makes this video worth watching, and which evidence ids support each hook. Opportunities below are local hypotheses: confirm, merge, reframe or reject them.
+- B. PORTFOLIO PLANNING - design ONE coherent portfolio of exactly 4 strategies, not 4 independent thumbnails. First decide narrative diversity (different moments or different readings of a moment, different messages), then visual diversity. Concepts must differ in several of: moment/story, message, protagonist, treatment, composition, use of text, assets. Colour, font or one word is NOT a difference. With enough material: >= 3 different story angles, >= 3 treatments, no two concepts with the same story + protagonist + composition, no shared main frame without an editorial reason. With little material, give the same event genuinely different readings; never invent events. Explain choices in portfolio_strategy (plan + tradeoffs).
+- C. ART DIRECTION per concept - one immediately readable message; one protagonist (face, card, board situation or moment) and at most one or two supports; mood; foreground/background relation; text or no text; what to omit. Do NOT force a webcam, a card or text into every concept; do not make all concepts look like one template; no decorative frames, arrows, glows or badges.
+- D. ASSET PACKAGE per concept (the final thumbnail is COMPOSED BY AN IMAGE MODEL from these assets; do not design pixel layouts). role: one of reaction-led, card-led, board-led, narrative-led; use roles supported by evidence. Role guidance: board-led = the most spectacular board state (lethal, huge swing, full board, big effect), never an ordinary board; narrative-led = the story of the video in ONE image (decisive moment + the creator's emotion, or the result), never a before/after comparison of two ordinary boards. Each concept should show a DIFFERENT moment (another highlight or game) when the material allows. package.face: 0-3 webcam ids, the sharpest (highest sharp=, never motion-blurred) and most expressive first (required for reaction-led; otherwise optional, and at least one concept should work without the face). package.board: 1-2 ids of the most readable frames/regions of the moment. package.detail: 0-1 card observation (O..), card (K..) or region (B..) - required for card-led. moment: <= 160 characters, what happens on screen. art_direction: <= 300 characters for the image model: protagonist, how the face is used (if at all), background treatment, mood and the punch (zoom, light, effects). Do NOT forbid text or effects and do NOT fix exact positions: placement, text style and colour are assigned per variant later. Every concept needs a hook text except at most one; at most 2 hooks may be questions; 2-3 strong elements, never a collage.
+- TITLES: exactly 6 YouTube titles in it: descriptive, natural, specific, <= 70 characters preferred (never > 100), varied in style; each linked to a concept; titles and thumbnail text complement each other (never the same words). Thumbnail text: 2-4 words, or empty; spoken and natural, no generic slogans.
+- EVIDENCE RULES: no invented cards, results, numbers, combos or quotes; facial expressions are not proof of emotions; no CTR or view promises; clarity at small size first.
+- Also fill the understanding fields (main topic, themes, per-game summary, key moments, deck talk vs specific plays, strongest highlights, narrative angles, risky claims) and card_observations (only names legible in a listed frame; grid images have lines every 0.1; else name null).
+- deepen_requests: always empty.
+
+
+CREATOR STYLE MEMORY (profile 'lugozzi', revision 2). Use it as INSPIRATION only: never copy or paraphrase example titles; follow only preferences supported by the evidence below.
+- channel: Lugozzi
+
+GAMES:
+- video: index None, result n/a, edited 00:00-05:30, highlights H01, H02, H03, H04, H05, H06, H07, H08, H09, H10
+
+HIGHLIGHTS:
+- H01 game=video 00:00-00:16 signals=guided_focus | lexical focus match (not combo verification): attacco, minion | lines T0001,T0002,T0003,T0004,T0005
+- H02 game=video 00:26-00:50 signals=audio_peak+guided_focus+pause_break+reaction | lexical focus match (not combo verification): attacco, minion; +18.1 dB above baseline; reaction words: assurdo, incredibile; 4.1 s pause before speech | lines T0005,T0006,T0007,T0008,T0009,T0010
+- H03 game=video 00:56-01:16 signals=guided_focus | lexical focus match (not combo verification): attacco, minion | lines T0011,T0012,T0013,T0014,T0015,T0016
+- H04 game=video 01:26-01:49 signals=explanation+guided_focus | lexical focus match (not combo verification): attacco, minion; 119 s of continuous speech | lines T0017,T0018,T0019,T0020,T0021,T0022
+- H05 game=video 01:58-02:18 signals=guided_focus | lexical focus match (not combo verification): attacco, minion | lines T0024,T0025,T0026,T0027,T0028,T0029
+- H06 game=video 02:28-02:52 signals=guided_focus+pause_break+reaction | lexical focus match (not combo verification): attacco, minion; reaction words: no, pazzesco; 3.1 s pause before speech | lines T0030,T0031,T0032,T0033,T0034,T0035
+- H07 game=video 03:13-03:33 signals=guided_focus+visual_change | lexical focus match (not combo verification): attacco, minion; keyframe change 1.00 | lines T0039,T0040,T0041,T0042,T0043,T0044
+- H08 game=video 03:58-04:18 signals=explanation+guided_focus | lexical focus match (not combo verification): attacco, minion; 159 s of continuous speech | lines T0048,T0049,T0050,T0051,T0052,T0053
+- H09 game=video 04:43-05:05 signals=audio_peak+guided_focus | lexical focus match (not combo verification): attacco, minion; +15.6 dB above baseline | lines T0058,T0059,T0060,T0061,T0062,T0063
+- H10 game=video 05:13-05:28 signals=guided_focus | lexical focus match (not combo verification): attacco, minion | lines T0064,T0065,T0066,T0067
+
+CREATIVE OPPORTUNITIES (local hypotheses with evidence; ids are valid opportunity_id values):
+- O01 educational_explanation (alt: -) game=video highlights=H04 | hook: continuous explanation / deck & matchup words | primary candidates B007,F009 | secondary B008,F010,F011 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B007) | limits: no webcam for this moment; soft frames: F009, F010
+- O02 comeback (alt: -) game=video highlights=H02 | hook: reversal words: assurdo, incredibile | primary candidates B003,F003 | secondary B004,F004,F005 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B003) | limits: no webcam for this moment; soft frames: F005
+- O03 unusual_interaction (alt: -) game=video highlights=H07 | hook: strong on-screen change | primary candidates B013,F018 | secondary B014,F019,F020 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B013) | limits: no webcam for this moment; soft frames: F019
+- O04 impressive_board (alt: -) game=video highlights=H06 | hook: visual moment without a stronger signal | primary candidates B011,F015 | secondary B012,F016,F017 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B011) | limits: no webcam for this moment
+- O05 educational_explanation (alt: -) game=video highlights=H08 | hook: continuous explanation / deck & matchup words | primary candidates B015,F021 | secondary B016,F022,F023 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B015) | limits: no webcam for this moment; soft frames: F021, F022
+- O06 impressive_board (alt: -) game=video highlights=H09 | hook: visual moment without a stronger signal | primary candidates B017,F024 | secondary B018,F025,F026 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B017) | limits: no webcam for this moment; soft frames: F024
+- O07 impressive_board (alt: -) game=video highlights=H01 | hook: visual moment without a stronger signal | primary candidates B001,F001 | secondary B002,F002 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B001) | limits: webcam visible but not isolated: only small or omitted
+- O08 impressive_board (alt: -) game=video highlights=H03 | hook: visual moment without a stronger signal | primary candidates B005,F006 | secondary B006,F007,F008 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B005) | limits: no webcam for this moment
+- O09 impressive_board (alt: -) game=video highlights=H05 | hook: visual moment without a stronger signal | primary candidates B009,F012 | secondary B010,F013,F014 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B009) | limits: no webcam for this moment; soft frames: F014
+- O10 impressive_board (alt: -) game=video highlights=H10 | hook: visual moment without a stronger signal | primary candidates B019,F027 | secondary B020,F028,F029 | treatments board_zoom,split_moments,cinematic_moment,text_led | strengths: readable board region (B019) | limits: no webcam for this moment
+
+VISUAL ASSET MANIFEST (the only ids a package may use; frame = gameplay frame, webcam = original webcam crop, 'cutout' = a clean local cut-out exists, region = zoom of a frame):
+- F001 frame H01 00:01 sharp=926 reference_quality=0.80 thumbnail_quality=0.80
+- F002 frame H01 00:15 sharp=644
+- F003 frame H02 00:30 sharp=381 reference_quality=0.81 thumbnail_quality=0.81
+- F004 frame H02 00:27 sharp=405
+- F005 frame H02 00:49 sharp=196
+- F006 frame H03 01:01 sharp=716 reference_quality=0.80 thumbnail_quality=0.80
+- F007 frame H03 00:57 sharp=793
+- F008 frame H03 01:15 sharp=423
+- F009 frame H04 01:30 sharp=261 reference_quality=0.81 thumbnail_quality=0.81
+- F010 frame H04 01:27 sharp=296
+- F011 frame H04 01:48 sharp=793
+- F012 frame H05 02:03 sharp=485 reference_quality=0.80 thumbnail_quality=0.80
+- F013 frame H05 01:59 sharp=541
+- F014 frame H05 02:17 sharp=296
+- F015 frame H06 02:33 sharp=901 reference_quality=0.80 thumbnail_quality=0.80
+- F016 frame H06 02:30 sharp=931
+- F017 frame H06 02:50 sharp=545
+- F018 frame H07 03:20 sharp=963 reference_quality=1.02 thumbnail_quality=0.92
+- F019 frame H07 03:14 sharp=218
+- F020 frame H07 03:32 sharp=679
+- F021 frame H08 04:02 sharp=246 reference_quality=0.81 thumbnail_quality=0.81
+- F022 frame H08 03:59 sharp=261
+- F023 frame H08 04:17 sharp=793
+- F024 frame H09 04:47 sharp=296 reference_quality=0.81 thumbnail_quality=0.81
+- F025 frame H09 04:44 sharp=315
+- F026 frame H09 05:04 sharp=876
+- F027 frame H10 05:18 sharp=577 reference_quality=0.80 thumbnail_quality=0.80
+- F028 frame H10 05:14 sharp=644
+- F029 frame H10 05:27 sharp=405
+- F030 frame - 02:45 sharp=644
+- W001 webcam H01 00:00 160x162 sharp=34 face_size=0.00 activity_proxy=0.00 LIMITS: no face detected
+- B001 region H01 00:01 sharp=1034 of F001 LIMITS: small source region: soft when enlarged
+- B002 region H01 00:01 sharp=1261 of F001 LIMITS: small source region: soft when enlarged
+- B003 region H02 00:30 sharp=903 of F003 LIMITS: small source region: soft when enlarged
+- B004 region H02 00:30 sharp=630 of F003 LIMITS: small source region: soft when enlarged
+- B005 region H03 01:01 sharp=1303 of F006 LIMITS: small source region: soft when enlarged
+- B006 region H03 01:01 sharp=992 of F006 LIMITS: small source region: soft when enlarged
+- B007 region H04 01:30 sharp=781 of F009 LIMITS: small source region: soft when enlarged
+- B008 region H04 01:30 sharp=519 of F009 LIMITS: small source region: soft when enlarged
+- B009 region H05 02:03 sharp=1006 of F012 LIMITS: small source region: soft when enlarged
+- B010 region H05 02:03 sharp=754 of F012 LIMITS: small source region: soft when enlarged
+- B011 region H06 02:33 sharp=1318 of F015 LIMITS: small source region: soft when enlarged
+- B012 region H06 02:33 sharp=1138 of F015 LIMITS: small source region: soft when enlarged
+- B013 region H07 03:20 sharp=1428 of F018 LIMITS: small source region: soft when enlarged
+- B014 region H07 03:20 sharp=1244 of F018 LIMITS: small source region: soft when enlarged
+- B015 region H08 04:02 sharp=765 of F021 LIMITS: small source region: soft when enlarged
+- B016 region H08 04:02 sharp=503 of F021 LIMITS: small source region: soft when enlarged
+- B017 region H09 04:47 sharp=817 of F024 LIMITS: small source region: soft when enlarged
+- B018 region H09 04:47 sharp=540 of F024 LIMITS: small source region: soft when enlarged
+- B019 region H10 05:18 sharp=1076 of F027 LIMITS: small source region: soft when enlarged
+- B020 region H10 05:18 sharp=848 of F027 LIMITS: small source region: soft when enlarged
+
+TRANSCRIPT (67 of 67 lines; ASR may mis-hear names):
+[video]
+T0001 [00:00] allora qui gioco il minion e poi attacco
+T0002 [00:05] allora qui gioco il minion e poi attacco
+T0003 [00:10] allora qui gioco il minion e poi attacco
+T0004 [00:15] allora qui gioco il minion e poi attacco
+T0005 [00:20] allora qui gioco il minion e poi attacco
+T0006 [00:25] allora qui gioco il minion e poi attacco
+T0007 [00:30] allora qui gioco il minion e poi attacco
+T0008 [00:35] allora qui gioco il minion e poi attacco
+T0009 [00:40] incredibile! assurdo
+T0010 [00:45] allora qui gioco il minion e poi attacco
+T0011 [00:50] allora qui gioco il minion e poi attacco
+T0012 [00:55] allora qui gioco il minion e poi attacco
+T0013 [01:00] allora qui gioco il minion e poi attacco
+T0014 [01:05] allora qui gioco il minion e poi attacco
+T0015 [01:10] allora qui gioco il minion e poi attacco
+T0016 [01:15] allora qui gioco il minion e poi attacco
+T0017 [01:20] allora qui gioco il minion e poi attacco
+T0018 [01:25] allora qui gioco il minion e poi attacco
+T0019 [01:30] allora qui gioco il minion e poi attacco
+T0020 [01:35] allora qui gioco il minion e poi attacco
+T0021 [01:40] allora qui gioco il minion e poi attacco
+T0022 [01:45] allora qui gioco il minion e poi attacco
+T0023 [01:50] allora qui gioco il minion e poi attacco
+T0024 [01:55] allora qui gioco il minion e poi attacco
+T0025 [02:00] poi attacco
+T0026 [02:02] allora qui gioco il minion e poi attacco
+T0027 [02:07] allora qui gioco il minion e poi attacco
+T0028 [02:12] allora qui gioco il minion e poi attacco
+T0029 [02:17] allora qui gioco il minion e poi attacco
+T0030 [02:22] allora qui gioco il minion e poi attacco
+T0031 [02:27] allora qui gioco il minion e poi attacco
+T0032 [02:32] allora qui gioco il minion e poi attacco
+T0033 [02:37] allora qui gioco il minion e poi attacco
+T0034 [02:42] no no no pazzesco!
+T0035 [02:47] allora qui gioco il minion e poi attacco
+T0036 [02:52] allora qui gioco il minion e poi attacco
+T0037 [02:57] allora qui gioco il minion e poi attacco
+T0038 [03:02] allora qui gioco il minion e poi attacco
+T0039 [03:07] allora qui gioco il minion e poi attacco
+T0040 [03:12] allora qui gioco il minion e poi attacco
+T0041 [03:17] allora qui gioco il minion e poi attacco
+T0042 [03:22] allora qui gioco il minion e poi attacco
+T0043 [03:27] allora qui gioco il minion e poi attacco
+T0044 [03:32] allora qui gioco il minion e poi attacco
+T0045 [03:37] allora qui gioco il minion e poi attacco
+T0046 [03:42] allora qui gioco il minion e poi attacco
+T0047 [03:47] allora qui gioco il minion e poi attacco
+T0048 [03:52] allora qui gioco il minion e poi attacco
+T0049 [03:57] allora qui gioco il minion e
+T0050 [04:00] poi attacco
+T0051 [04:02] allora qui gioco il minion e poi attacco
+T0052 [04:07] allora qui gioco il minion e poi attacco
+T0053 [04:12] allora qui gioco il minion e poi attacco
+T0054 [04:17] allora qui gioco il minion e poi attacco
+T0055 [04:22] allora qui gioco il minion e poi attacco
+T0056 [04:27] allora qui gioco il minion e poi attacco
+T0057 [04:32] allora qui gioco il minion e poi attacco
+T0058 [04:37] allora qui gioco il minion e poi attacco
+T0059 [04:42] allora qui gioco il minion e poi attacco
+T0060 [04:47] allora qui gioco il minion e poi attacco
+T0061 [04:52] allora qui gioco il minion e poi attacco
+T0062 [04:57] allora qui gioco il minion e poi attacco
+T0063 [05:02] allora qui gioco il minion e poi attacco
+T0064 [05:07] allora qui gioco il minion e poi attacco
+T0065 [05:12] allora qui gioco il minion e poi attacco
+T0066 [05:17] allora qui gioco il minion e poi attacco
+T0067 [05:22] allora qui gioco il minion e poi attacco
+
+ATTACHED IMAGES (in order):
+- image 1: Summary of ranked real gameplay evidence: F003, F015, F024, F018, F009, F021, F001, F006, F012, F027
+- image 2: Creator webcam primary: W001; real exported source 0 at 0.0
+- image 3: Main gameplay reference; preserve player/opponent distinction: F003; real exported source 0 at 30.95
+- image 4: Real detail reference: B003; real exported source 0 at 30.95
+- image 5: Alternative gameplay moment: F015; real exported source 0 at 153.95
+
+Answer with the JSON object only.
+CREATIVE DIRECTION V4 (preferences are NOT evidence):
+{"mode": "guided", "youtube_title": "", "title_locked": false, "thumbnail_hook": "È ROTTO?!", "hook_locked": true, "creative_focus": "minion attacco", "reference_images": [], "style_profile_id": "lugozzi", "typography_mode": "auto"}
+DESIGN SYSTEM:
+{"name": "Lugozzi — Competitive Gaming", "mood": "Competitive gaming; dynamic but ordered; immediate hierarchy and controlled contrast", "palette": {"primary": ["#FFD436", "#FFFFFF", "#111420"], "accent": ["#FF514A", "#27C9FF"], "max_dominant_saturated": 2}, "fonts": ["Anton", "Archivo Black", "Barlow Condensed Black", "Impact", "Arial Black", "DejaVu Sans"], "text": {"color": "#FFD436", "outline": "#111420", "outline_px": 12, "shadow_px": 8, "max_lines": 2, "uppercase_preferred": true, "safe_margin": 0.05}, "layout_archetypes": ["reaction_impact", "card_power", "clutch_moment", "big_statement"], "webcam": {"positions": ["left", "right"], "reaction_width": [0.3, 0.45], "required": false}, "effects": {"rim_lighting": 4, "depth_shadows": 4, "selective_glow": 3, "particles_light_rays": 2, "chromatic_aberration": 0}, "avoid": ["rectangular webcam", "random collage", "unnecessary HUD", "invented cards", "indiscriminate glow", "four recolours of one screenshot"], "typography": "auto", "output_size": [1920, 1080], "font_licenses": {"Anton": "https://github.com/googlefonts/AntonFont/blob/main/OFL.txt", "Archivo Black": "https://github.com/google/fonts/blob/main/ofl/archivoblack/OFL.txt", "Barlow Condensed Black": "https://github.com/google/fonts/blob/main/ofl/barlowcondensed/OFL.txt"}}
+User references are creative inputs, never proof of a card, class, result or combo. When focus has no corroboration, explain the limitation and use supported alternatives. Locked title and hook must be copied literally, without translation or capitalization changes. Different concepts may share a locked hook; editorial angles and protagonists must still differ.
+V4 CREATIVE DIRECTOR: return a design object per concept following the schema. Design four editorially distinct approaches: change story angle, protagonist and visual hierarchy, not just colours or face position. Choose only roles supported by actual assets; you need not force one of every role. Keep the ASSET PACKAGE authoritative: main_subject and every must_use_asset must be in that package; optional assets may be available alternatives; forbidden assets must not be selected. Evidence IDs must come from the supplied highlights, transcript or assets. Use reaction_impact, card_power, clutch_moment or big_statement as starting layouts, adapt to the story. Do not enlarge cards marked secondary/avoid; use readable real context instead. Use precision for ordinary short lettering, ai only when the lettering is integral to the artwork. Reserve the selected text_position as negative space; place the person/card elsewhere. Do not infer a combo from keyword overlap, or identify the player's deck from an opponent. Record uncertainty. A style/layout reference is never gameplay evidence. Title and thumbnail text should complement each other unless a literal user lock requires otherwise.

@@ -16,6 +16,7 @@ import json
 import re
 import shutil
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Callable
 
@@ -65,6 +66,8 @@ class ThumbnailEditor:
             edits = [e for e in history["edits"] if e.get("concept_id") == cid]
             out.append({"number": n, "concept_id": cid, "title": concept.get("title", ""),
                         "hook": concept.get("thumbnail_text", ""), "role": concept.get("role"),
+                        "quality_warnings": (concept.get("render") or {}).get("quality", {}).get("warnings", []),
+                        "typography_mode": (concept.get("design_pack") or {}).get("typography", {}).get("mode"),
                         "path": str(path), "exists": path.is_file(),
                         "versions": [str(p) for p in self._versions(cid)],
                         "current_version": history["current"].get(cid, 0), "edits": edits,
@@ -137,6 +140,16 @@ class ThumbnailEditor:
 
     # ---- actions ---------------------------------------------------------------------------------------
     def edit_prompt(self, item: dict[str, Any], request: str, references: list[tuple[Path, str]]) -> str:
+        pack = self.design_pack(item["concept_id"])
+        if pack and pack.get("composition", {}).get("strategy") == "reference_preserving":
+            from .design import environment_prompt
+            return ("POLISH/EDIT ENVIRONMENT ONLY. Image 1 is the current environment, NOT a flattened thumbnail. "
+                    "Never draw a face, person, card or replacement for a protected subject. "
+                    "ReCut preserves the original crops and masks and composites them afterwards.\n"
+                    + environment_prompt(pack) + "\nUSER ENVIRONMENT REQUEST: " + request.strip()
+                    + "\nORIGINAL DESIGN PACK: " + json.dumps(pack, ensure_ascii=False)
+                    + "\nAdditional attachments: " + "; ".join(label for _, label in references)
+                    + '\nReturn JSON variants with concept_id "' + item["concept_id"] + '" and generated path.')
         lines = [f"EDIT_VERSION: {EDIT_VERSION}", *EDIT_RULES, "",
                  f'CREATOR REQUEST for thumbnail {item["concept_id"]}: "{request.strip()}"']
         if item.get("hook"):
@@ -145,9 +158,23 @@ class ThumbnailEditor:
         lines += [f"- image {n}: {label}" for n, (_, label) in enumerate(references, start=2)]
         lines += ["", 'Answer: {"variants": [{"concept_id": "' + item["concept_id"] + '", "path": "<generated file '
                   'path if known, else empty>"}]}']
+        lines += ["", "LOCAL TECHNICAL WARNINGS: " + "; ".join(item.get("quality_warnings") or [])]
+        pack = self.design_pack(item["concept_id"])
+        if pack:
+            lines += ["", "ORIGINAL DESIGN PACK (preserve its story, references and identity constraints):",
+                      json.dumps(pack, ensure_ascii=False)]
+            if pack["typography"]["mode"] == "precision":
+                lines += ["Remove all headline text from the returned image; preserve the reserved text area. "
+                          "ReCut reapplies exact local typography afterwards. Do not create letters/placeholders."]
         return "\n".join(lines)
 
-    def edit(self, ref: str | int, request: str) -> dict[str, Any]:
+    def design_pack(self, cid: str) -> dict[str, Any] | None:
+        file = self.out / "design_packs" / f"{cid}.json"
+        if not file.is_file():
+            return None
+        return json.loads(file.read_text(encoding="utf-8"))
+
+    def edit(self, ref: str | int, request: str, *, reference_image: str | Path | None = None, polish: bool = False) -> dict[str, Any]:
         from .generate import CodexImageGenerator, GenerationError, normalize_generated
 
         if not request.strip():
@@ -157,6 +184,23 @@ class ThumbnailEditor:
         current = Path(item["path"])
         if not current.is_file():
             raise EditError(f"{current} does not exist")
+        pack = self.design_pack(cid)
+        protected = bool(pack and pack.get("composition", {}).get("strategy") == "reference_preserving")
+        environment = self.thumbs / "environments" / f"{cid}.png"
+        if protected and not environment.is_file():
+            raise EditError("Protected environment is missing; cannot safely edit a flattened thumbnail")
+        # Validate the optional attachment before changing history or calling the provider.
+        attached = None
+        if reference_image is not None:
+            from .frames import read_image_unchanged, require_cv2
+
+            cv2 = require_cv2()
+            try:
+                attached = read_image_unchanged(Path(reference_image).expanduser().resolve())
+            except (OSError, ValueError, cv2.error) as exc:
+                raise EditError("Cannot read the attached reference image.") from exc
+            if attached is None:
+                raise EditError("Cannot read the attached reference image.")
         self.edits_dir.mkdir(parents=True, exist_ok=True)
         versions = self._versions(cid)
         if not versions:  # keep the original as v0 before the first edit
@@ -165,31 +209,179 @@ class ThumbnailEditor:
         generator = self._generator or CodexImageGenerator(timeout_s=self.timeout_s)
         if not generator.available():
             raise EditError("codex CLI not found: thumbnail edits need the image model")
-        references = self._references(cid)
+        references = [] if protected else self._references(cid)
+        attachment = None
+        if attached is not None:
+            from .frames import write_image
+
+            # Keep an independent, lossless copy (including transparency) inside this run.
+            attachment = self.edits_dir / "references" / f"{cid}_{uuid.uuid4().hex}.png"
+            write_image(attachment, attached)
+            references.insert(0, (attachment, "creator-attached reference: use it as directed in the edit request; "
+                                  "do not replace the current thumbnail with it"))
         prompt = self.edit_prompt(item, request, references)
+        if polish:
+            prompt = ("POLISH SELECTED: refine lighting, hierarchy and integration selectively; "
+                      "preserve the established concept unless explicitly instructed.\n" + prompt)
+        pack = self.design_pack(cid)
+        if not versions:
+            raise EditError("Original version not saved")
+        self._save_design_version(cid, 0, pack, preserve=True)
         self.progress(f"editing {cid}: 1 image-model call (the thumbnail and {len(references)} reference images are "
                       "sent to the codex CLI provider)")
         started = time.perf_counter()
+        from .cache import PackagingCache, stable_key
+        import hashlib
+        cache = PackagingCache()
+        inputs = [environment if protected else current] + [p for p, _ in references]
+        cache_key = stable_key("polish_v4" if polish else "edit_v4", prompt,
+                               [hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs])
+        reused = self.edits_dir / "raw" / f"{cid}_cached.png"
+        cache_hit = cache.load_file("generated", cache_key, ".png", reused)
         try:
-            raw = generator.generate(prompt, [current] + [p for p, _ in references], [cid], self.edits_dir / "raw")
+            raw = {cid: reused} if cache_hit else generator.generate(prompt, inputs, [cid], self.edits_dir / "raw")
         except GenerationError as error:
             raise EditError(f"image model failed ({error.code}): {error.detail}") from error
+        if not cache_hit and cid in raw:
+            cache.store_file("generated", cache_key, ".png", raw[cid])
         if cid not in raw:
             raise EditError("the image model returned no image")
         version = len(versions)
         target = self.edits_dir / f"{cid}_v{version}.png"
-        if normalize_generated(raw[cid], target) is None:
+        if normalize_generated(raw[cid], target, size=(1920, 1080) if pack else None) is None:
             raise EditError("the generated image cannot be read")
+        if pack:
+            if protected:
+                from .compositing import composite
+                shutil.copyfile(target, environment)
+                composite(environment, target, pack, self.out, cache=cache)
+            base = self.edits_dir / "bases" / f"{cid}_v{version}.png"
+            base.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(target, base)
+            if pack["typography"]["mode"] == "precision":
+                from .typography import compose
+                compose(base, target, pack["typography"])
+            saved_base = self.thumbs / "bases" / f"{cid}.png"
+            saved_base.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(base, saved_base)
+            self._save_design_version(cid, version, pack)
         shutil.copyfile(target, current)
         history = self._history()
         entry = {"concept_id": cid, "version": version, "request": request.strip(), "path": str(target.relative_to(self.out)),
                  "time": time.strftime("%Y-%m-%dT%H:%M:%S"), "runtime_s": round(time.perf_counter() - started, 1),
                  "tokens_used": (getattr(generator, "meta", None) or {}).get("tokens_used")}
+        if attachment is not None:
+            entry["reference_image"] = attachment.relative_to(self.out).as_posix()
+        entry["operation"] = "polish" if polish else "image_edit"
+        entry["cli_invocations"] = 0 if cache_hit else 1
+        entry["cache_hit"] = cache_hit
+        entry["image_generation_calls_observed"] = None
         history["edits"].append(entry)
         history["current"][cid] = version
         self._save_history(history)
         self.refresh_overview()
         return {**entry, "current": str(current)}
+
+    def _store_pack(self, cid: str, pack: dict[str, Any]) -> None:
+        from analysis.gameplay.cache import atomic_write_json
+        atomic_write_json(self.out / "design_packs" / f"{cid}.json", pack)
+        for c in self._concepts["concepts"]:
+            if c["concept_id"] == cid:
+                c["design_pack"] = pack
+                c["thumbnail_text"] = pack["typography"]["text"]
+        atomic_write_json(self.out / "thumbnail_concepts.json", self._concepts)
+
+    def _save_design_version(self, cid: str, version: int, pack: dict[str, Any] | None,
+                             *, preserve: bool = False) -> None:
+        if not pack:
+            return
+        from analysis.gameplay.cache import atomic_write_json
+        target = self.edits_dir / "designs" / f"{cid}_v{version}.json"
+        base = self.thumbs / "bases" / f"{cid}.png"
+        copy = self.edits_dir / "bases" / f"{cid}_v{version}.png"
+        if not preserve or not target.exists():
+            atomic_write_json(target, pack)
+        if base.is_file() and (not preserve or not copy.exists()):
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(base, copy)
+        environment = self.thumbs / "environments" / f"{cid}.png"
+        saved_env = self.edits_dir / "environments" / f"{cid}_v{version}.png"
+        if environment.is_file() and (not preserve or not saved_env.exists()):
+            saved_env.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(environment, saved_env)
+
+    def typography(self, ref: str | int, *, text: str, font: str | None = None,
+                   color: str | None = None, max_px: float | None = None,
+                   position: str | None = None, preset: str | None = None) -> dict[str, Any]:
+        """No agent or image model: recompose from this version's clean image base."""
+        import copy
+        from .typography import compose, preview_and_check
+        from .cache import PackagingCache
+        item = self.resolve(ref)
+        cid = item["concept_id"]
+        original = self.design_pack(cid)
+        if not original or original["typography"]["mode"] != "precision":
+            raise EditError("Local text editing requires a V4 Precision Typography base")
+        pack = copy.deepcopy(original)
+        pack["typography"]["text"] = text
+        if preset:
+            from .typography import apply_preset
+            pack["typography"] = apply_preset(pack["typography"], preset)
+        if pack["typography"].get("locked"):
+            pack["direction"]["thumbnail_hook"] = text
+        if font:
+            pack["typography"]["fonts"] = [font] + [f for f in pack["typography"]["fonts"] if f != font]
+        if color:
+            from PySide6.QtGui import QColor
+            if not QColor(color).isValid():
+                raise EditError("Invalid text colour")
+            if color != pack["typography"].get("color"):
+                pack["typography"].pop("gradient", None)  # explicit custom fill overrides the preset gradient
+            pack["typography"]["color"] = color
+        if max_px is not None:
+            if not 24 <= max_px <= 400:
+                raise EditError("Font size must be 24–400 pixels")
+            pack["typography"]["max_px"] = float(max_px)
+        if position is not None:
+            from .design import TEXT_BOXES
+            if position not in TEXT_BOXES:
+                raise EditError("Unknown text position")
+            pack["typography"].update(position=position, box=TEXT_BOXES[position])
+        base = self.thumbs / "bases" / f"{cid}.png"
+        if not base.is_file():
+            raise EditError("Text-free image base is missing")
+        self.edits_dir.mkdir(parents=True, exist_ok=True)
+        versions = self._versions(cid)
+        if not versions:
+            shutil.copyfile(item["path"], self.edits_dir / f"{cid}_v0.png")
+            versions = self._versions(cid)
+        self._save_design_version(cid, 0, original, preserve=True)
+        if position and pack.get("composition"):
+            from .compositing import layout_layers, composite
+            layout_layers(pack)
+            composite(self.thumbs / "environments" / f"{cid}.png", base, pack, self.out)
+        version = len(versions)
+        target = self.edits_dir / f"{cid}_v{version}.png"
+        started = time.perf_counter()
+        meta = compose(base, target, pack["typography"], cache=PackagingCache())
+        shutil.copyfile(target, item["path"])
+        self._save_design_version(cid, version, pack)
+        self._store_pack(cid, pack)
+        preview_and_check(Path(item["path"]), self.thumbs / "previews" / f"{cid}_160.png")
+        entry = {"concept_id": cid, "version": version, "request": "Local typography",
+                 "operation": "typography", "path": str(target.relative_to(self.out)),
+                 "time": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                 "runtime_s": round(time.perf_counter() - started, 3),
+                 "cli_invocations": 0, "image_generation_calls_observed": 0, "typography": meta}
+        history = self._history()
+        history["edits"].append(entry)
+        history["current"][cid] = version
+        self._save_history(history)
+        self.refresh_overview()
+        return {**entry, "current": item["path"]}
+
+    def polish(self, ref: str | int, request: str, *, reference_image: str | Path | None = None) -> dict[str, Any]:
+        return self.edit(ref, request, reference_image=reference_image, polish=True)
 
     def revert(self, ref: str | int, version: int) -> dict[str, Any]:
         item = self.resolve(ref)
@@ -198,6 +390,15 @@ class ThumbnailEditor:
         if not source.is_file():
             raise EditError(f"{cid} has no version {version}")
         shutil.copyfile(source, Path(item["path"]))
+        saved_pack = self.edits_dir / "designs" / f"{cid}_v{int(version)}.json"
+        saved_base = self.edits_dir / "bases" / f"{cid}_v{int(version)}.png"
+        if saved_pack.is_file():
+            self._store_pack(cid, json.loads(saved_pack.read_text(encoding="utf-8")))
+        if saved_base.is_file():
+            shutil.copyfile(saved_base, self.thumbs / "bases" / f"{cid}.png")
+        saved_env = self.edits_dir / "environments" / f"{cid}_v{int(version)}.png"
+        if saved_env.is_file():
+            shutil.copyfile(saved_env, self.thumbs / "environments" / f"{cid}.png")
         history = self._history()
         history["current"][cid] = int(version)
         self._save_history(history)

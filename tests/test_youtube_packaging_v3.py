@@ -355,7 +355,7 @@ def test_fast_v3_is_one_call_and_writes_the_whole_portfolio(tmp_path):
                  "portfolio_quality_report.json", "thumbnail_concepts.json"):
         assert (out / name).is_file(), name
     pngs = sorted((out / "thumbnails").glob("concept_*.png"))
-    assert len(pngs) == 4 and all(read_image(p).shape[:2] == (720, 1280) for p in pngs)  # type: ignore[union-attr]
+    assert len(pngs) == 4 and all(read_image(p).shape[:2] == (1080, 1920) for p in pngs)  # type: ignore[union-attr]
     concepts = json.loads((out / "thumbnail_concepts.json").read_text(encoding="utf-8"))["concepts"]
     assert all("scene" in c and c["render"]["layers"] for c in concepts)
     assert any(layer["type"] == "card" and layer["asset_id"].startswith("K")  # O1 resolved to a real crop

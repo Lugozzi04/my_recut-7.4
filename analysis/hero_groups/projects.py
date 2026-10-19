@@ -10,6 +10,7 @@ import uuid
 from typing import Any
 
 from analysis.cut_engine import Segment, invert_to_keeps, merge_overlaps
+from analysis.gameplay.selection import permitted as game_permitted, preserve_editor, catalog
 from core.project_file import make_payload_portable, normalize_project_payload, resolve_project_items
 from .recognition import HeroGroupingService, atomic_json, game_key, refresh_groups
 from .labels import class_id, class_label
@@ -40,6 +41,8 @@ def analyze_project(
     service = service or HeroGroupingService()
     seen: dict[str, dict[str, Any]] = {}
     for track in result["tracks"]:
+        if track.get("source_role") == "intro":
+            continue
         source = str(Path(track["path"]).resolve())
         report = report_for_track(result, track)
         if not report.get("games"):
@@ -54,6 +57,7 @@ def analyze_project(
                 cancellation=cancellation,
                 on_progress=on_progress,
             )
+        seen[source] = preserve_editor(track.get("gameplay_grouping") or {}, seen[source])
         track["gameplay_report"] = deepcopy(report)
         track["gameplay_grouping"] = deepcopy(seen[source])
     return result
@@ -121,7 +125,7 @@ def exportable_group_games(payload: dict[str, Any], *, source: str | None = None
         final = _segments(track.get("keeps", [])) if track.get("cuts_enabled") else [Segment(0, duration)]
         for key, island in _islands(payload, track):
             row = rows.get(key)
-            if row and row.get("group") and str(row["game"].get("result", "")).upper() == "WIN":
+            if row and row.get("group") and game_permitted(row, track.get("gameplay_grouping", {})):
                 if any(min(k.end, island.end) > max(k.start, island.start) for k in final):
                     available.setdefault(row["group"], set()).add(key)
     return available
@@ -145,9 +149,9 @@ def group_project(payload: dict[str, Any], group: str, *, source: str | None = N
         rows = [r for r in grouping.get("games", []) if r.get("group") == group]
         if not rows:
             continue
-        # The current editor keeps only complete WINs; no LOSS is ever resurrected.
-        permitted = {r["key"] for r in rows if str(r["game"].get("result", "")).upper() == "WIN"}
-        islands = [(key, island) for key, island in _islands(result, track) if key in permitted]
+        # Explicit user inclusion can keep a manual UNKNOWN without changing its result.
+        allowed = {r["key"] for r in rows if game_permitted(r, grouping)}
+        islands = [(key, island) for key, island in _islands(result, track) if key in allowed]
         duration = float(track.get("duration", 0))
         if duration <= 0:
             duration = float(track.get("segment_source_out", 0)) - float(track.get("segment_source_in", 0))
@@ -182,7 +186,7 @@ def group_project(payload: dict[str, Any], group: str, *, source: str | None = N
             in permitted
         ]
         report = deepcopy(report_for_track(result, track))
-        report["games"] = [g for g in report.get("games", []) if game_key(g) in permitted]
+        report["games"] = [deepcopy(r["game"]) for r in rows if r["key"] in permitted and not r["game"].get("manual")]
         original_islands = {game_key(i["game"]): i for i in report.get("keep_islands", [])}
         by_key = {game_key(r["game"]): r["game"] for r in rows}
         offset = float(track.get("segment_source_in", 0))
@@ -197,6 +201,11 @@ def group_project(payload: dict[str, Any], group: str, *, source: str | None = N
         ]
         track["gameplay_report"] = report
         track["gameplay_grouping"]["games"] = [r for r in grouping.get("games", []) if r["key"] in permitted]
+        state = track["gameplay_grouping"].get("editor")
+        if state is not None:
+            for name in ("included", "boundaries"):
+                state[name] = {key: value for key, value in state.get(name, {}).items() if key in permitted}
+            state["manual_games"] = [g for g in state.get("manual_games", []) if game_key(g) in permitted]
         track["gameplay_grouping"]["selected"] = [group]
         refresh_groups(track["gameplay_grouping"])
         for row in rows:
@@ -281,6 +290,9 @@ def prepare_outputs(
         extension = ProjectExportPlanner._settings_from_payload(child).output_extension()
         output = directory / ("group_" + group + extension)
         atomic_json(project, make_payload_portable(child, project))
+        from export.artifacts import save_snapshot, write_timings
+        save_snapshot(payload, directory / "project_before_export.autocutter")
+        write_timings(child, directory / "timestamps.txt")
         plans.append(
             {
                 "id": child["project_id"],
@@ -301,6 +313,7 @@ def export_outputs(
     cancellation: Any = None,
     on_progress: Any = None,
     on_completed: Any = None,
+    on_detail: Any = None,
 ) -> list[dict[str, Any]]:
     from automation.manager import PipelineManager
     from automation.models import PipelineJob, PipelineState
@@ -309,7 +322,7 @@ def export_outputs(
     manager = manager or PipelineManager()
     service = service or PipelineExportService(manager)
     results = []
-    for plan in plans:
+    for output_index, plan in enumerate(plans):
         if cancellation:
             cancellation.raise_if_cancelled()
         project = read_project(Path(plan["project"]))
@@ -325,7 +338,12 @@ def export_outputs(
         job.state = PipelineState.READY_EXPORT
         manager.store.upsert(job)
         try:
-            done = service.execute(job.id, cancellation=cancellation, on_progress=on_progress)
+            report_progress = (lambda value, index=output_index: on_progress(int((index + value / 100) * 100 / len(plans)))) if on_progress else None
+            details = {}
+            if on_detail:
+                on_detail(f"Video {output_index+1}/{len(plans)} · {plan['title']} · rendering")
+                details["on_detail"] = on_detail
+            done = service.execute(job.id, cancellation=cancellation, on_progress=report_progress, **details)
         except Exception:
             if cancellation is not None and cancellation.is_cancelled:
                 manager.cancel(job.id)
@@ -338,3 +356,194 @@ def export_outputs(
         if on_completed:
             on_completed(result)
     return results
+
+
+def output_key(track: dict[str, Any], group: str) -> str:
+    """Classes may cross VODs; anonymous portrait IDs are local to their source."""
+    from core.project_file import source_identity
+    info = track.get("gameplay_grouping", {}).get("groups", {}).get(group, {})
+    return class_id(group) or class_id(info.get("class_name")) or (source_identity(track) + ":" + group)
+
+
+def selected_project(payload: dict[str, Any], *, output: str | None = None,
+                     wins_only: bool = True) -> dict[str, Any]:
+    """Editorial projection only: selected groups ∩ current islands ∩ final keeps.
+
+    Tracks stay in project order. Source-local intervals never share a VOD clock.
+    The returned project is consumed by the existing ProjectExportPlanner/renderer.
+    """
+    from core.project_file import source_identity
+
+    child = deepcopy(payload)
+    gameplay = []
+    records = []
+    present_outputs: set[str] = set()
+    for index, track in enumerate(child.get("tracks", [])):
+        if track.get("source_role", "gameplay") == "intro":
+            continue
+        grouping = track.get("gameplay_grouping", {})
+        rows = {r["key"]: r for r in grouping.get("games", [])}
+        selected = set(grouping.get("selected", grouping.get("groups", {})))
+        report = report_for_track(child, track)
+        complete = {r["key"]: r["complete"] for r in catalog(report, grouping)}
+        if not rows and not report.get("games"):
+            raise ValueError(f"Gameplay source {Path(track['path']).name} has not been detected. Detect games first or use the unfiltered edit.")
+        duration = float(track.get("duration", 0))
+        offset = float(track.get("segment_source_in", 0))
+        if duration <= 0:
+            duration = float(track.get("segment_source_out", offset)) - offset
+        final = _segments(track.get("keeps", [])) if track.get("cuts_enabled") else [Segment(0, duration)]
+        chosen = []
+        for key, island in _islands(child, track):
+            row = rows.get(key)
+            if not row or row.get("group") not in selected or not game_permitted(row, grouping):
+                continue
+            game = row["game"]
+            if wins_only and (str(game.get("result")).upper() != "WIN" or not complete.get(key, False)):
+                continue
+            target = output_key(track, row["group"])
+            if output is not None and output != target:
+                continue
+            for keep in final:
+                a, b = max(keep.start, island.start), min(keep.end, island.end)
+                if b > a:
+                    chosen.append((key, a, b, row, target))
+        if not chosen:
+            continue
+        chosen.sort(key=lambda v: (v[1], v[2], v[0]))
+        track["cuts_enabled"] = True
+        track["keeps"] = [{"start": a, "end": b} for _, a, b, _, _ in chosen]
+        track["cuts"] = [{"start": c.start, "end": c.end}
+                        for c in invert_to_keeps(duration, _segments(track["keeps"]), min_keep=0)]
+        source_id = source_identity(track)
+        track["source_id"] = source_id
+        track["export_intervals"] = [
+            {"source_id": source_id, "start": offset+a, "end": offset+b, "group": row["group"],
+             "output_group": target, "game_id": key, "game_index": row["game"].get("index"), "result": row["game"].get("result", "UNKNOWN"),
+             "included": True, "role": "gameplay"}
+            for key, a, b, row, target in chosen]
+        records.extend(track["export_intervals"])
+        present_outputs.update(target for _, _, _, _, target in chosen)
+        gameplay.append(track)
+    if not gameplay:
+        raise ValueError("Nothing to export: no selected games/WINs survive the class selection and final keeps.")
+
+    # Intros precede gameplay once per source, not once per game/class in a combined output.
+    intros = []
+    seen_intros: set[str] = set()
+    for track in child.get("tracks", []):
+        if track.get("source_role") != "intro":
+            continue
+        targets = set(track.get("intro_targets", []))
+        if not targets.intersection(present_outputs) and "*" not in targets:
+            continue
+        source_id = source_identity(track)
+        if source_id in seen_intros:
+            continue
+        seen_intros.add(source_id)
+        duration = float(track.get("duration", 0))
+        offset = float(track.get("segment_source_in", 0))
+        intro_cuts = _segments(track.get("cuts", [])) + _segments(track.get("manual_cuts", []))
+        if not track.get("cuts_enabled") and intro_cuts:
+            # Backward-compatible recovery of the old visible-cuts/disabled-flag bug.
+            spans = invert_to_keeps(duration, merge_overlaps(intro_cuts), min_keep=0.0)
+        else:
+            spans = _segments(track.get("keeps", [])) if track.get("cuts_enabled") else [Segment(0, duration)]
+        if not spans:
+            continue
+        track["source_id"] = source_id
+        track["keeps"] = [{"start": k.start, "end": k.end} for k in spans]
+        track["cuts_enabled"] = True
+        track["export_intervals"] = [
+            {"source_id": source_id, "start": offset+k.start, "end": offset+k.end,
+             "group": None, "output_group": output, "game_id": None,
+             "result": "UNKNOWN", "included": True, "role": "intro"}
+            for k in spans]
+        intros.append(track)
+    source_order: dict[str, int] = {}
+    for track in gameplay:
+        source_order.setdefault(source_identity(track), len(source_order))
+    gameplay.sort(key=lambda t: (source_order[source_identity(t)], float(t.get("segment_source_in", 0))))
+    child["tracks"] = intros + gameplay
+    if len({str(Path(t["path"]).resolve()) for t in child["tracks"]}) > 1:
+        from automation.exporter import ProjectExportPlanner
+        settings = ProjectExportPlanner._settings_from_payload(child).to_mapping()
+        settings["method"] = "filter_concat"
+        child.setdefault("global", {})["export_settings"] = settings
+    child["export_selection"] = {"version": 1, "wins_only": wins_only, "output": output,
+                                "intervals": [r for t in child["tracks"] for r in t["export_intervals"]],
+                                "games": len({(r["source_id"], r["game_id"]) for r in records}),
+                                "wins": len({(r["source_id"], r["game_id"]) for r in records if r["result"] == "WIN"})}
+    child["gameplay_export"] = {"mode": "normal", "wins_only": wins_only}
+    identity = uuid.uuid4().hex
+    child["project_id"] = identity
+    child["automation"] = {"job_id": identity}
+    single_class = next(iter(present_outputs)) if len(present_outputs) == 1 else output
+    child["hero_group_output"] = {"id": identity, "group": single_class or "selected",
+                                  "name": class_label(single_class) if class_id(single_class) else None,
+                                  "parent_project_id": payload.get("project_id")}
+    child.pop("packaging_outputs", None)
+    return child
+
+
+def selected_outputs(payload: dict[str, Any], *, wins_only: bool = True) -> dict[str, dict[str, Any]]:
+    """Lightweight preview using the exact same selection projection as rendering."""
+    projected = selected_project(payload, wins_only=wins_only)
+    result: dict[str, dict[str, Any]] = {}
+    for record in projected["export_selection"]["intervals"]:
+        if record["role"] != "gameplay":
+            continue
+        key = record["output_group"]
+        entry = result.setdefault(key, {"games": set(), "wins": set(), "seconds": 0.0})
+        identity = (record["source_id"], record["game_id"])
+        entry["games"].add(identity)
+        if record["result"] == "WIN":
+            entry["wins"].add(identity)
+        entry["seconds"] += record["end"]-record["start"]
+    return result
+
+
+def prepare_selected_outputs(payload: dict[str, Any], output_dir: Path, *, separate: bool = True,
+                             output_path: Path | None = None, wins_only: bool = True,
+                             only: set[str] | None = None) -> tuple[list[dict[str, str]], list[str]]:
+    """Create isolated output projects; render through export_outputs, never concat a whole VOD.
+
+    only: with separate outputs, the output groups to prepare (e.g. covers for Mage but not Hunter)."""
+    from automation.exporter import ProjectExportPlanner
+    from export.artifacts import save_snapshot, write_timings
+
+    if output_path is not None and output_path.exists():
+        raise ValueError("Output already exists. Choose a new filename; no file was overwritten.")
+    preview = selected_outputs(payload, wins_only=wins_only)
+    keys: list[str | None] = []
+    if separate:
+        keys.extend(key for key in sorted(preview) if only is None or key in only)
+    else:
+        keys.append(None)
+    plans = []
+    for key in keys:
+        child = selected_project(payload, output=key, wins_only=wins_only)
+        name = child.get("hero_group_output", {}).get("name") or (class_label(key) if class_id(key) else ("Selected games" if key is None else "Portrait group " + key.split(":")[-1]))
+        child["project_name"] = str(payload.get("project_name") or "ReCut") + " — " + name
+        # Independent identity for each output, preserving the pipeline's atomic promotion/validation.
+        if separate:
+            directory = output_dir / child["project_id"]
+        else:
+            if output_path is None:
+                raise ValueError("A single-video output path is required.")
+            directory = output_path.parent / (output_path.stem + "_recut_" + child["project_id"][:12])
+        directory.mkdir(parents=True, exist_ok=False)
+        project = directory / "edit.autocutter"
+        extension = ProjectExportPlanner._settings_from_payload(child).output_extension()
+        filename = class_label(key).replace(" ", "_") if class_id(key) else "Portrait_group"
+        target = directory / (filename + extension) if separate else output_path
+        if target is None:
+            raise ValueError("A single-video output path is required.")
+        atomic_json(project, make_payload_portable(child, project))
+        save_snapshot(payload, directory / "project_before_export.autocutter")
+        write_timings(child, directory / "timestamps.txt")
+        plans.append({"id": child["project_id"], "group": key or "selected", "project": str(project),
+                      "output": str(target), "title": child["project_name"],
+                       "project_backup": str(directory / "project_before_export.autocutter"),
+                       "timestamps": str(directory / "timestamps.txt")})
+    return plans, []

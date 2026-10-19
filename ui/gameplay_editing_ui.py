@@ -144,11 +144,12 @@ class GameplayEditWorker(QObject):
     failed = Signal(str)
 
     def __init__(self, video: str, boundary_mode: str = "exact", end_policy: str = "balanced",
-                 *, previous_grouping: dict[str, Any] | None = None) -> None:
+                 *, previous_grouping: dict[str, Any] | None = None, target_class: str | None = None) -> None:
         super().__init__()
         self.video = str(video)
         self.boundary_mode = str(boundary_mode)
         self.end_policy = str(end_policy)
+        self.target_class = target_class
         self.previous_grouping = deepcopy(previous_grouping or {})
         self._token = AnalysisCancellation()
 
@@ -160,7 +161,7 @@ class GameplayEditWorker(QObject):
 
         profile = GameplayProfiler(self.video, {"boundary_mode": self.boundary_mode,
             "end_policy": self.end_policy, "keep_policy": "complete_wins_only",
-            "game": "hearthstone", "frontend": "GUI"})
+            "game": "hearthstone", "frontend": "GUI", "target_class": self.target_class})
 
         def report_progress(value: int) -> None:
             profile.checkpoint()
@@ -173,8 +174,12 @@ class GameplayEditWorker(QObject):
                 from analysis.boundaries.resolvers import ResolverOptions
 
                 settings = GameplayEditSettings(game="hearthstone", keep_games="wins", boundary_mode=self.boundary_mode,
-                                                resolver=ResolverOptions(end_policy=self.end_policy))
-                result = GameplayEditingService(settings).run(
+                                                resolver=ResolverOptions(end_policy=self.end_policy), target_class=self.target_class)
+                service_options: dict[str, Any] = {}
+                if self.target_class:
+                    from analysis.gameplay_editing import hearthstone_detector
+                    service_options["detector"] = hearthstone_detector(settings, previous_grouping=self.previous_grouping)
+                result = GameplayEditingService(settings, **service_options).run(
                     self.video, cancellation=self._token,
                     on_progress=lambda value: report_progress(int(value * .9)),
                 )
@@ -187,7 +192,8 @@ class GameplayEditWorker(QObject):
                     try:
                         from analysis.hero_groups.recognition import HeroGroupingService
 
-                        payload["grouping"] = HeroGroupingService().analyze(
+                        focused_grouping = getattr(getattr(result, "analysis", None), "metadata", {}).get("focused_grouping")
+                        payload["grouping"] = deepcopy(focused_grouping) if focused_grouping is not None else HeroGroupingService().analyze(
                             Path(self.video), report["games"], duration=float(report["duration"]),
                             previous=self.previous_grouping, cancellation=self._token,
                             on_progress=lambda value: report_progress(90 + int(value * .1)),

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -93,6 +93,9 @@ class Project:
     sample_rate: int = 48000
     hero_group_output: dict = field(default_factory=dict)
     packaging_outputs: list[dict] = field(default_factory=list)
+    gameplay_export: dict = field(default_factory=dict)
+    creative_direction: dict = field(default_factory=dict)
+    clips: dict = field(default_factory=dict)  # {"folder": ...} of the Clips page for an unsaved project
 
     @classmethod
     def create_default(cls, name: str = "Untitled") -> "Project":

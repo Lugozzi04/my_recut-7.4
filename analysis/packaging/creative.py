@@ -258,7 +258,7 @@ def validate_creative(raw: Any, *, n_titles: int, n_concepts: int, highlight_ids
             problems.append(f"{cid}: thumbnail_text must have 1-{THUMB_TEXT_MAX_WORDS} words and <= "
                             f"{THUMB_TEXT_MAX_CHARS} characters")
         words = _words(text)
-        if len(words) >= 2 and " ".join(words) in " ".join(_words(str(concept.get("title", "")))):
+        if not raw.get("_locked_hook") and len(words) >= 2 and " ".join(words) in " ".join(_words(str(concept.get("title", "")))):
             problems.append(f"{cid}: thumbnail_text repeats the title; it must add something")
         emphasis = plan.get("emphasis_word")
         if emphasis and emphasis.upper() not in {w.strip(".,!?:;\"'").upper() for w in text.split()}:
@@ -301,10 +301,10 @@ def validate_creative(raw: Any, *, n_titles: int, n_concepts: int, highlight_ids
     seen: set[str] = set()
     for t in titles:
         tid, text = t.get("title_id"), " ".join(str(t.get("title", "")).split())
-        if not TITLE_MIN_CHARS <= len(text) <= TITLE_MAX_CHARS:
+        if text != raw.get("_locked_title") and not TITLE_MIN_CHARS <= len(text) <= TITLE_MAX_CHARS:
             problems.append(f"{tid}: title length must be {TITLE_MIN_CHARS}-{TITLE_MAX_CHARS} characters")
         letters = [c for c in text if c.isalpha()]
-        if letters and sum(c.isupper() for c in letters) / len(letters) > 0.6:
+        if text != raw.get("_locked_title") and letters and sum(c.isupper() for c in letters) / len(letters) > 0.6:
             problems.append(f"{tid}: avoid ALL-CAPS titles")
         if text.lower() in seen:
             problems.append(f"{tid}: duplicate title")
@@ -430,6 +430,7 @@ def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highl
                           "provenance": {"status": "legible" if legible else "uncertain", "name": obs.get("name")}}
     uncertain = [str(o.get("name")) for o in observations.values()
                  if o.get("name") and not (o.get("legibility") == "clear")]
+    uncertain += [str(o["name"]) for o in raw.get("_card_fallbacks", []) if o.get("name")]
     concepts = raw.get("concepts") or []
     titles = raw.get("titles") or []
     if len(concepts) != n_concepts:
@@ -473,7 +474,7 @@ def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highl
                             layer.get("id") in (scene.get("visual_hierarchy") or [])[:1]:
                         problems.append(f"{cid}: an uncertain card reading cannot be the protagonist")
         text = " ".join(str(concept.get("thumbnail_text") or "").split())
-        if text and (len(text.split()) > THUMB_TEXT_MAX_WORDS or len(text) > THUMB_TEXT_MAX_CHARS):
+        if text and not raw.get("_locked_hook") and (len(text.split()) > THUMB_TEXT_MAX_WORDS or len(text) > THUMB_TEXT_MAX_CHARS):
             problems.append(f"{cid}: thumbnail_text must have at most {THUMB_TEXT_MAX_WORDS} words and "
                             f"{THUMB_TEXT_MAX_CHARS} characters (or be empty)")
         if isinstance(scene, Mapping):
@@ -484,7 +485,7 @@ def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highl
             if not text and layer_texts:
                 problems.append(f"{cid}: text layers present but thumbnail_text is empty")
         words = _words(text)
-        if len(words) >= 2 and " ".join(words) in " ".join(_words(str(concept.get("title", "")))):
+        if not raw.get("_locked_hook") and len(words) >= 2 and " ".join(words) in " ".join(_words(str(concept.get("title", "")))):
             problems.append(f"{cid}: thumbnail_text repeats the title; it must add something")
         cited: set[str] = set()
         for item in concept.get("evidence") or []:
@@ -508,10 +509,10 @@ def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highl
     seen: set[str] = set()
     for t in titles:
         tid, text = t.get("title_id"), " ".join(str(t.get("title", "")).split())
-        if not TITLE_MIN_CHARS <= len(text) <= TITLE_MAX_CHARS:
+        if text != raw.get("_locked_title") and not TITLE_MIN_CHARS <= len(text) <= TITLE_MAX_CHARS:
             problems.append(f"{tid}: title length must be {TITLE_MIN_CHARS}-{TITLE_MAX_CHARS} characters")
         letters = [c for c in text if c.isalpha()]
-        if letters and sum(c.isupper() for c in letters) / len(letters) > 0.6:
+        if text != raw.get("_locked_title") and letters and sum(c.isupper() for c in letters) / len(letters) > 0.6:
             problems.append(f"{tid}: avoid ALL-CAPS titles")
         if text.lower() in seen:
             problems.append(f"{tid}: duplicate title")

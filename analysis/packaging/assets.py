@@ -49,6 +49,14 @@ class VisualAsset:
     provenance: dict[str, Any] = field(default_factory=dict)
     limitations: list[str] = field(default_factory=list)
     uses: list[str] = field(default_factory=list)  # background | primary | secondary | foreground
+    protection: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.protection:
+            self.protection = ("locked" if self.type in ("card_crop", "card_artwork") else
+                               "identity_protected" if self.type.startswith("webcam_") else "guided")
+        if self.protection not in ("locked", "identity_protected", "guided", "creative"):
+            raise ValueError("Unknown asset protection")
 
     def to_mapping(self) -> dict[str, Any]:
         value = asdict(self)
@@ -214,7 +222,8 @@ def region_assets(frames: FrameExtractor, highlights: Sequence[HighlightCandidat
 
 
 def subject_assets(frames: FrameExtractor, plates: Mapping[str | None, np.ndarray | None], out_dir: Path,
-                   highlights: Sequence[HighlightCandidate], cache: Any = None) -> list[VisualAsset]:
+                   highlights: Sequence[HighlightCandidate], cache: Any = None,
+                   selected_ids: set[str] | None = None) -> list[VisualAsset]:
     """webcam_subject assets (S..) for every webcam crop: plate-assisted cut-out or a flagged fallback."""
     from .cache import stable_key
     from .subjects import SEGMENTER_VERSION, segment_person
@@ -222,6 +231,8 @@ def subject_assets(frames: FrameExtractor, plates: Mapping[str | None, np.ndarra
     cv2 = require_cv2()
     out = []
     for record in [r for r in frames.records.values() if r.kind == "webcam"]:
+        if selected_ids is not None and record.id not in selected_ids:
+            continue
         crop = frames.images.get(record.id)
         if crop is None:
             continue
@@ -290,14 +301,17 @@ def card_assets(cards: Iterable[Mapping[str, Any]], frames: FrameExtractor,
             limitations.append("identity uncertain: never name it")
         if image.shape[0] < 160:
             limitations.append("small crop: keep it small")
-        out.append(VisualAsset(card["id"], "card_crop", card["path"], parent.source_index, parent.source_time,
-                               parent.edited_time, parent.highlight_id, _game_of(parent.highlight_id, highlights),
+        sampled_time = float(card.get("source_time", parent.source_time))
+        out.append(VisualAsset(card["id"], "card_crop", card["path"], parent.source_index, sampled_time,
+                                frames.edit_map.to_edited(sampled_time, parent.source_index), parent.highlight_id, _game_of(parent.highlight_id, highlights),
                                int(image.shape[1]), int(image.shape[0]), list(card["box"]), parent.id,
                                frame_quality(image), False,
                                {"method": "agent_reading_crop", "status": card["status"],
                                 "name": card["name"] if card["status"] != "uncertain" else None,
+                                 "thumbnail_use": card.get("thumbnail_use", "avoid"),
+                                 "crop_policy": "authentic_source_window_may_include_context",
                                 "obs_id": (card.get("provenance") or {}).get("obs_id")},
-                               limitations, ["primary", "secondary"] if card["status"] != "uncertain" else ["secondary"]))
+                               limitations, ["primary", "secondary"] if card.get("thumbnail_use") == "primary" else ["secondary"] if card.get("thumbnail_use") != "avoid" else []))
     return out
 
 

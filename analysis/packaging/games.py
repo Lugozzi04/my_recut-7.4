@@ -8,6 +8,7 @@ Kept content outside any game (talk between games, intros) becomes its own
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
@@ -61,6 +62,25 @@ def games_from_project(payload: Mapping[str, Any], edit_map: EditMap) -> list[Ga
             candidates.append(str((Path(edit_map.project_path).parent / path).resolve()).lower())
         return next((source_of[c] for c in candidates if c in source_of), 0)
 
+    if payload.get("export_selection"):
+        # The immutable export plan is authoritative. Per-track detector reports
+        # still contain unselected games, and game IDs may repeat across VODs.
+        intervals: dict[tuple[int, str, str], list[Mapping[str, Any]]] = {}
+        for track in tracks:
+            for record in track.get("export_intervals", []):
+                if record.get("role") != "gameplay" or not record.get("included"):
+                    continue
+                key = (source_index(track), str(record["source_id"]), str(record["game_id"]))
+                intervals.setdefault(key, []).append(record)
+        for (source_idx, source_id, game_id), records in intervals.items():
+            identity = hashlib.sha256(f"{source_id}|{game_id}".encode("utf-8")).hexdigest()[:20]
+            context = _context(edit_map, game_id="game-" + identity,
+                index=None, result=records[0].get("result"), source_index=source_idx,
+                start=min(float(r["start"]) for r in records), end=max(float(r["end"]) for r in records),
+                origin="export_selection", markers={})
+            if context is not None:
+                contexts.append(context)
+        return sorted(contexts, key=lambda c: c.edited_start or 0.0)
     if isinstance(gameplay, Mapping) and isinstance(gameplay.get("games"), list):
         islands = {str((i.get("game") or {}).get("id")): i for i in gameplay.get("keep_islands", []) or []
                    if isinstance(i, Mapping)}

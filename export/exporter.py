@@ -40,6 +40,16 @@ from .process_mixin import ExportProcessMixin
 
 
 class ExportWorker(ExportProcessMixin, QObject):
+    timeline_report: tuple[dict, Path] | None = None
+
+    def _write_output_timings(self, segments: list[dict]) -> None:
+        if self.timeline_report is None:
+            return
+        from export.artifacts import write_timings
+        payload, target = self.timeline_report
+        write_timings(payload, target, segments=segments, input_paths=self.input_paths)
+        self._log(f"output_timestamps_saved={target}")
+
     progress = Signal(int, str)  # percent, text
     finished = Signal()
     error = Signal(str)
@@ -1085,6 +1095,9 @@ class ExportWorker(ExportProcessMixin, QObject):
         payload = {
             "v": 7,
             "kind": "segments_chunk",
+            "selected_join_version": 4 if any(s.get("source_id") for s in segs) else 0,
+            "normalization_source": self._source_signature(self.input_paths[0])
+                if len(self.input_paths) > 1 and any(s.get("source_id") for s in segs) else None,
             "segments": seg_rows,
             "codec": str(self.codec),
             "video_args": self._video_args(),
@@ -3939,6 +3952,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         input_preseek: dict[int, float] | None = None,
         force_fps: float = 0.0,
         container: str = "mp4",
+        lossless_audio: bool = False,
     ) -> tuple[list[str], float]:
         force_fps = self._effective_force_fps(force_fps)
         segs = []
@@ -3957,6 +3971,18 @@ class ExportWorker(ExportProcessMixin, QObject):
         total = max(1e-6, total)
 
         parts: list[str] = []
+        composition_filter = ""
+        selected_composition = len(self.input_paths) > 1 and any(s.get("source_id") for s in segs)
+        if selected_composition:
+            from export.concat import normalization_video_filter
+            signatures = [self._probe_smart_media_signature(p) for p in self.input_paths]
+            if any(s.get("color_transfer") in {"smpte2084", "arib-std-b67"} for s in signatures):
+                raise RuntimeError("Mixed-source gameplay export currently supports SDR video. Normalize HDR sources to SDR first.")
+            width, height = int(signatures[0].get("width", 0)), int(signatures[0].get("height", 0))
+            if width <= 0 or height <= 0:
+                raise RuntimeError("Cannot determine a safe common resolution for the selected sources.")
+            composition_filter = normalization_video_filter(width-width%2, height-height%2, self._output_pixel_format())
+            self._log(f"selected_composition_normalization size={width}x{height} fps={force_fps:.3f}")
         out_n = 0
         for seg in segs:
             try:
@@ -3991,8 +4017,12 @@ class ExportWorker(ExportProcessMixin, QObject):
             out_n += 1
 
             v_chain = f"[{v_idx}:v]trim=start={v_in_eff}:end={v_out_eff},setpts=PTS-STARTPTS"
+            if composition_filter:
+                v_chain += "," + composition_filter
             if force_fps and force_fps > 1.0:
                 v_chain += f",fps={force_fps:.3f}"
+            if selected_composition or lossless_audio:
+                v_chain += f",trim=duration={float(seg['duration']):.9f},settb=AVTB"
             parts.append(f"{v_chain}[v{lbl}];")
 
             if a_idx is not None:
@@ -4009,9 +4039,11 @@ class ExportWorker(ExportProcessMixin, QObject):
                         a_shift = 0.0
                 a_in_eff = max(0.0, float(a_in) - float(a_shift))
                 a_out_eff = max(a_in_eff, float(a_out) - float(a_shift))
-                parts.append(
-                    f"[{a_idx}:a]atrim=start={a_in_eff}:end={a_out_eff},asetpts=PTS-STARTPTS[a{lbl}];"
-                )
+                audio_chain = f"[{a_idx}:a]atrim=start={a_in_eff}:end={a_out_eff},asetpts=PTS-STARTPTS"
+                if selected_composition:
+                    audio_chain += (f",aresample=48000:async=1:first_pts=0,aformat=channel_layouts=stereo,"
+                                    f"apad,atrim=duration={float(seg['duration']):.9f},asetpts=PTS-STARTPTS")
+                parts.append(f"{audio_chain}[a{lbl}];")
             else:
                 dur = max(0.0, float(seg.get("duration", 0.0) or 0.0))
                 parts.append(
@@ -4086,6 +4118,14 @@ class ExportWorker(ExportProcessMixin, QObject):
         )
 
         filt = "".join(parts)
+        # Open only this chunk's inputs, remapping labels in one substitution.
+        active_inputs = sorted({int(s[k]) for s in segs for k in ("v_idx", "a_idx") if s.get(k) is not None})
+        if selected_composition:
+            import re
+            indexes = {old: new for new, old in enumerate(active_inputs)}
+            filt = re.sub(r"\[(\d+):([va])\]", lambda m: f"[{indexes[int(m[1])]}:{m[2]}]", filt)
+        else:
+            active_inputs = list(range(len(self.input_paths)))
         filt, video_label, final_audio_label = self._decorate_output_filtergraph(
             filt,
             "outv",
@@ -4153,7 +4193,8 @@ class ExportWorker(ExportProcessMixin, QObject):
                 except Exception:
                     pass
 
-        for idx, path in enumerate(self.input_paths):
+        for idx in active_inputs:
+            path = self.input_paths[idx]
             cmd += self._hwaccel_args_for_filtergraph()
             pre = 0.0
             if input_preseek:
@@ -4179,7 +4220,11 @@ class ExportWorker(ExportProcessMixin, QObject):
         else:
             cmd += ["-vn", *self._drop_chapters_args()]
         if final_audio_label:
-            cmd += ["-map", f"[{final_audio_label}]", *self._audio_output_args()]
+            # Lossless audio avoids AAC priming at each intermediate join.
+            audio_args = ["-c:a", "alac", "-sample_fmt", "s32p"] if lossless_audio else self._audio_output_args()
+            if lossless_audio and selected_composition:
+                audio_args += ["-ar", "48000", "-ac", "2"]
+            cmd += ["-map", f"[{final_audio_label}]", *audio_args]
         else:
             cmd += ["-an"]
         if video_label and force_fps and force_fps > 1.0:
@@ -4194,7 +4239,11 @@ class ExportWorker(ExportProcessMixin, QObject):
             cmd += self._output_mux_args(target, "ts")
         else:
             final_container = self.output_container if out_path is None else container
-            cmd += self._output_mux_args(target, final_container)
+            mux = self._output_mux_args(target, final_container)
+            if (selected_composition or lossless_audio) and final_container in {"mp4", "mov"} and "-use_editlist" in mux:
+                # Preserve encoder priming/reordering via MP4 edit lists, as the concat CLI does.
+                mux[mux.index("-use_editlist")+1] = "1"
+            cmd += mux
         self._log(f"ffmpeg_cmd_segments={self._fmt_cmd(cmd)}")
         return cmd, total
 
@@ -4239,12 +4288,13 @@ class ExportWorker(ExportProcessMixin, QObject):
         total_all = sum(float(s.get("duration", 0.0) or 0.0) for s in segments)
         total_all = max(1e-6, total_all)
         force_fps = self._segments_base_fps(segments)
-        hybrid_mode = bool(prefer_hybrid or self.export_method == "smart_hybrid")
+        bounded_edit = any(s.get("source_id") for s in segments)
+        hybrid_mode = bool(prefer_hybrid or self.export_method == "smart_hybrid") and not bounded_edit
         self._log(f"chunked_parallel_segments_hybrid={'on' if hybrid_mode else 'off'}")
         fps_cache: dict[int, float] = {}
         chunk_keyframes: list[float] = []
         split_idx = self._segments_single_input_idx(segments)
-        if split_idx is not None and 0 <= split_idx < len(self.input_paths):
+        if not bounded_edit and split_idx is not None and 0 <= split_idx < len(self.input_paths):
             try:
                 src_path = self.input_paths[split_idx]
                 keeps_for_split = self._segments_to_keeps_in_order(segments, fps=0.0)
@@ -4291,6 +4341,11 @@ class ExportWorker(ExportProcessMixin, QObject):
             label="segments",
         )
         chunk_source_span = self._chunk_source_span_limit(plan_max_chunk_seconds, label="segments")
+        if bounded_edit:
+            # Bound buffering of future trim branches, even in Accurate mode.
+            plan_max_segments = min(plan_max_segments, 40)
+            plan_max_chunk_seconds = min(plan_max_chunk_seconds, 120.0)
+            chunk_source_span = min(chunk_source_span, 120.0)
         self._log(f"chunk_source_span_limit segments={chunk_source_span:.1f}s")
         chunks = self._split_segment_dicts(
             segments,
@@ -4299,7 +4354,7 @@ class ExportWorker(ExportProcessMixin, QObject):
             chunk_count=plan_chunks,
             keyframes=chunk_keyframes if chunk_keyframes else None,
             max_source_span=chunk_source_span,
-            split_on_input_change=hybrid_mode,
+            split_on_input_change=hybrid_mode or bounded_edit,
         )
         if not chunks:
             raise RuntimeError("Chunking (segments) ha prodotto 0 chunk.")
@@ -4333,6 +4388,8 @@ class ExportWorker(ExportProcessMixin, QObject):
             use_ts = True
         elif len(chunks) > 120:
             use_ts = True
+        if bounded_edit:
+            use_ts = False
         chunk_ext = "ts" if use_ts else "mp4"
         chunk_files: list[str] = ["" for _ in range(len(chunks))]
 
@@ -4540,6 +4597,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 input_preseek=preseek,
                 force_fps=force_fps,
                 container=chunk_ext,
+                lossless_audio=bounded_edit,
             )
 
             def _on_progress(out_time: float) -> None:
@@ -4617,7 +4675,54 @@ class ExportWorker(ExportProcessMixin, QObject):
         # the top-level execution strategy reported in diagnostics.
         self._export_method_used = "chunked_parallel_segments"
         self.progress.emit(99, "Concatenazione finale...")
-        self._concat_chunks_copy(chunk_files, temp_files, use_ts=use_ts)
+        if bounded_edit:
+            self._concat_selected_chunks(chunk_files, chunk_durs, temp_files)
+        else:
+            self._concat_chunks_copy(chunk_files, temp_files, use_ts=use_ts)
+
+    def _run_bounded_accurate_keeps(self, keeps: list[Segment], temp_files: list[str]) -> None:
+        """Use the existing bounded renderer without losing the single-source fast plan.
+
+        Accurate trimming must seek past removed hours, not decode the entire
+        span between the first and last selected game in one filter graph.
+        """
+        audio = has_audio_stream(self.input_paths[0])
+        segments = [
+            {"source_id": "accurate-single-source", "v_idx": 0, "a_idx": 0 if audio else None,
+             "v_in": float(k.start), "v_out": float(k.end),
+             "a_in": float(k.start), "a_out": float(k.end), "duration": float(k.end-k.start)}
+            for k in keeps
+        ]
+        gaps = [max(0.0, b.start-a.end) for a, b in zip(keeps, keeps[1:])]
+        self._log(f"bounded_accurate_keeps keeps={len(keeps)} max_removed_gap={max(gaps, default=0.0):.3f}s")
+        self._run_chunked_parallel_segments(segments, temp_files, prefer_hybrid=False)
+        self._export_method_used = "bounded_accurate_keeps"
+
+    def _concat_selected_chunks(self, files: list[str], durations: list[float], temp_files: list[str]) -> None:
+        """Join bounded MP4/ALAC renders, with one delivery-audio encode."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ffconcat", delete=False,
+                                         encoding="utf-8", newline="\n") as handle:
+            handle.write("ffconcat version 1.0\n")
+            for filename, duration in zip(files, durations):
+                handle.write(f"file {quote_ffconcat_path(os.path.abspath(filename))}\n")
+                handle.write(f"duration {duration:.9f}\n")
+            manifest = handle.name
+        temp_files.append(manifest)
+        cmd = [self.ffmpeg_path, "-hide_banner", "-v", "error", "-y", "-nostdin",
+               "-f", "concat", "-safe", "0", "-i", manifest,
+               "-map", "0:v:0", "-map", "0:a:0", "-c:v", "copy", *self._audio_output_args(),
+               *self._drop_chapters_args()]
+        audio_filter = self._build_audio_filter_chain(include_legacy_gain_limiter=True)
+        audio_filter = (audio_filter + "," if audio_filter else "") + f"apad,atrim=duration={sum(durations):.9f}"
+        cmd += ["-af", audio_filter, "-t", f"{sum(durations):.9f}"]
+        mux = self._output_mux_args(self.output_path)
+        if "-use_editlist" in mux:
+            mux[mux.index("-use_editlist")+1] = "1"
+        cmd += mux
+        self._log(f"selected_composition_final_join chunks={len(files)} audio=encode_once")
+        rc, _out, error = self._run_ffmpeg(cmd)
+        if rc:
+            raise RuntimeError((error or "").strip() or "Selected video join failed")
 
     # -----------------------------
     # Main worker entry
@@ -5154,6 +5259,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                     f"segments_after_norm {self._summarize_segments_dicts(segments)} "
                     f"fps={float(force_fps or 0.0):.3f}"
                 )
+                self._write_output_timings(segments)
                 self._log_segments_timeline(segments)
                 self._log(
                     f"checklist context=segments inputs={len(self.input_paths)} "
@@ -5173,6 +5279,13 @@ class ExportWorker(ExportProcessMixin, QObject):
                     f"reason={mc_segments_reason} segments={len(segments)} "
                     f"total={total_seg:.3f}s input={float(self._summary_input_duration or 0.0):.1f}s"
                 )
+                if len(self.input_paths) > 1 and any(s.get("source_id") for s in segments):
+                    # Retain quality; bound hundreds of future trim branches.
+                    self._log("selected_composition path=bounded_mp4_chunks")
+                    self._run_chunked_parallel_segments(segments, temp_files, prefer_hybrid=False)
+                    self.progress.emit(100, "100%")
+                    _finalize()
+                    return
                 if max_conservative_segments:
                     self._export_method_used = "max_conservative_segments"
                     mono_blocks = self._split_segments_by_source_monotonic(segments)
@@ -5421,11 +5534,23 @@ class ExportWorker(ExportProcessMixin, QObject):
             )
 
             multi = len(self.input_paths) > 1
+            if not multi:
+                self._write_output_timings([{"v_idx": 0, "v_in": k.start, "v_out": k.end} for k in keeps_sorted])
             if multi:
                 self._export_method_used = "filter_concat_multi"
                 self._log("checklist decision method=filter_concat_multi reason=multi_input")
                 cmd, total = self._build_cmd_filter_concat_multi(keeps_sorted, temp_files, force_fps=force_fps)
                 _run_single(cmd, total, label="Export")
+                self.progress.emit(100, "100%")
+                _finalize()
+                return
+
+            large_removed_gap = any(b.start-a.end > 30.0 for a, b in zip(keeps_sorted, keeps_sorted[1:]))
+            if self.export_method == "filter_concat" and self.output_mode == "single" and (
+                len(keeps_sorted) > 40 or large_removed_gap
+            ):
+                self._log("checklist step=run_bounded_accurate_keeps reason=dense_cuts_or_sparse_source")
+                self._run_bounded_accurate_keeps(keeps_sorted, temp_files)
                 self.progress.emit(100, "100%")
                 _finalize()
                 return
@@ -6284,6 +6409,8 @@ class ExportWorker(ExportProcessMixin, QObject):
         Pick a stable FPS from the first video input referenced by segments.
         Falls back to input_paths[0] if needed.
         """
+        if len(self.input_paths) > 1 and any(s.get("source_id") for s in segments):
+            return float(self._probe_fps(self.input_paths[0]) or 0.0)
         try:
             for s in segments or []:
                 v_idx = s.get("v_idx", None)

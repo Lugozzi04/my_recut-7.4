@@ -40,6 +40,13 @@ def make(tmp_path: Path, *, agent: Any = None, generator: Any = None, **settings
                              frame_sampler=FakeSampler(), duration_probe=lambda path: 330.0, planner=planner())
 
 
+def make_v4(tmp_path: Path, **settings: Any) -> PackagingPipeline:
+    """The opt-in V4.1 protected-compositing strategy (AI environment + local layers/typography)."""
+    direction = {"generation_strategy": "reference_preserving", "strategy_version": 2,
+                 **settings.pop("creative_direction", {})}
+    return make(tmp_path, creative_direction=direction, **settings)
+
+
 def test_gen_is_the_default_engine():
     assert PackagingSettings(output="x", video="v.mp4").thumbnail_engine == "gen"
     assert PackagingSettings(output="x", video="v.mp4").mode == "fast"
@@ -59,7 +66,7 @@ def test_fast_gen_is_one_planning_call_and_one_generation_call(tmp_path):
     assert all(c["render"]["engine"] == "generated" for c in concepts)
     for n in range(1, 5):
         final = read_image(out / "thumbnails" / f"concept_{n:02d}.png")
-        assert final is not None and final.shape[:2] == (720, 1280)
+        assert final is not None and final.shape[:2] == (1080, 1920)
         assert (out / "thumbnails" / "local" / f"concept_{n:02d}.png").is_file()  # local draft kept
     request = json.loads((out / "generation_request.json").read_text(encoding="utf-8"))
     assert len(request["packages"]) == 4 and len(request["images"]) <= generate.MAX_GENERATION_IMAGES
@@ -68,9 +75,102 @@ def test_fast_gen_is_one_planning_call_and_one_generation_call(tmp_path):
     reaction = next(p for p in request["packages"] if p["role"] == "reaction-led")
     assert reaction["images"][0]["kind"] == "face_main" and reaction["images"][0]["asset_id"].startswith("W")
     gen_prompt = generator.calls[0]["prompt"]
+    assert f"PROMPT_VERSION: {generate.GENERATOR_VERSION}\n" in gen_prompt
     for phrase in ("not a live-stream box", "SAME real person", "Never invent or alter card", "2-3 strong elements",
-                   "screenshot with stickers", "duration badge"):
+                   "screenshot with stickers", "duration badge", "Animate it, do not change it", "spaghetti"):
         assert phrase in gen_prompt
+    assert "Do not draw people" not in gen_prompt and "NO TEXT" not in gen_prompt  # V4 protected prompt
+    assert report["generation"]["generation_strategy"] == "full_generative"
+    assert report["generation"]["generator_version"] == generate.GENERATOR_VERSION
+    assert report["generation"]["generator_base"] == "thumbnail_gen_v2"
+    planning = json.loads((out / "planning_request.json").read_text(encoding="utf-8"))
+    assert planning["schema_version"] == fast.PROMPT_VERSION_GEN
+    assert not (out / "design_packs").exists() and not (out / "thumbnails" / "bases").exists()
+    assert all("compositing" not in c["render"] and "typography" not in c["render"] for c in concepts)
+
+
+def test_saved_v4_default_strategy_migrates_to_full_generative():
+    from analysis.packaging.direction import CreativeDirection
+    assert CreativeDirection().generation_strategy == "full_generative"
+    legacy = CreativeDirection.from_mapping({"mode": "automatic", "generation_strategy": "reference_preserving"})
+    assert legacy.generation_strategy == "full_generative"
+    chosen = CreativeDirection.from_mapping(CreativeDirection(generation_strategy="reference_preserving").to_mapping())
+    assert chosen.generation_strategy == "reference_preserving" and chosen.active().generation_strategy == "reference_preserving"
+
+
+def test_clean_frame_crops_edge_webcam_instead_of_patching():
+    image = np.zeros((1080, 1920, 3), np.uint8)
+    image[:, :] = (40, 90, 160)
+    image[554:842, :394] = (255, 255, 255)  # stream webcam overlay on the left edge
+    cleaned = generate.clean_frame(image, [[0.001, 0.513, 0.2052, 0.2667]])
+    assert cleaned.shape[0] == 1080 and 1500 < cleaned.shape[1] < 1540
+    assert int(cleaned.max()) < 255  # no overlay pixels and no grey patch left
+    centre = generate.clean_frame(image, [[0.4, 0.4, 0.2, 0.2]])
+    assert centre.shape == image.shape  # not on an edge: inpainted in place
+
+
+def test_every_variant_gets_its_own_text_style_and_grade_across_many_videos(tmp_path):
+    from analysis.packaging.generate import (AssetPackage, PackageImage, choose_compositions,
+                                             remember_compositions)
+    history = tmp_path / "history.json"
+    face = PackageImage("W001", "face_main", tmp_path / "w.jpg")
+    packages = [AssetPackage("C1", "reaction-led", "", "", "", "", "", [face]),
+                AssetPackage("C2", "card-led", "", "", "", "", ""),
+                AssetPackage("C3", "board-led", "", "", "", "", ""),
+                AssetPackage("C4", "narrative-led", "", "", "", "", "", [face])]
+    previous: set[str] = set()
+    for video in range(8):  # the old exclusion left one style/grade for all four every other video
+        choice = choose_compositions(packages, video_key=f"video-{video}", history_path=history)
+        assert len({c["text_style"] for c in choice.values()}) == 4
+        assert len({c["grade"] for c in choice.values()}) == 4
+        assert choice["C4"]["face"] != "none"  # a selected face is laid out big, not dropped to a corner
+        assert all(not c["face"].startswith("small") for c in choice.values())
+        if previous:  # 6 grades: the next video leads with the 2 the previous one did not use
+            assert len({c["grade"] for c in choice.values()} - previous) >= 2
+        previous = {c["grade"] for c in choice.values()}
+        remember_compositions(history, f"video-{video}", choice)
+    assert choose_compositions(packages, video_key="video-7", history_path=history) == choice  # rerun: cached
+
+
+def test_stale_single_style_choice_is_not_reused(tmp_path):
+    from analysis.packaging.generate import AssetPackage, choose_compositions
+    history = tmp_path / "history.json"
+    stale = {f"C{n}": {"recipe": "B1", "layout": "x", "face": "none", "text_style": "same", "grade": "same"}
+             for n in range(1, 5)}
+    history.write_text(json.dumps({"runs": [{"video": "v", "choice": stale}]}), encoding="utf-8")
+    packages = [AssetPackage(f"C{n}", "board-led", "", "", "", "", "") for n in range(1, 5)]
+    choice = choose_compositions(packages, video_key="v", history_path=history)
+    assert len({c["grade"] for c in choice.values()}) == 4
+
+
+def test_hook_repeating_its_title_takes_another_planned_title():
+    from analysis.packaging.pipeline_v3 import untangle_hook_titles
+    raw = {"titles": [{"title_id": "P1", "concept_id": "C1", "title": "Neanche il power? Che partita"},
+                      {"title_id": "P2", "concept_id": "C2", "title": "Lo Stregone che non molla"}],
+           "concepts": [{"concept_id": "C1", "thumbnail_text": "NEANCHE IL POWER?",
+                         "title": "Neanche il power? Che partita"},
+                        {"concept_id": "C2", "thumbnail_text": "Lo vedo forte", "title": "Lo Stregone che non molla"}]}
+    notes = untangle_hook_titles(raw)
+    assert raw["concepts"][0]["title"] == "Lo Stregone che non molla" and raw["concepts"][0]["thumbnail_text"] == "NEANCHE IL POWER?"
+    assert raw["concepts"][1]["title"] == "Lo Stregone che non molla" and len(notes) == 1
+    assert untangle_hook_titles({**raw, "_locked_hook": "x"}) == []
+    raw["titles"].append({"title_id": "P3", "concept_id": "C2", "title": "Una partita da rivedere"})
+    raw["concepts"][0]["title"] = "Neanche il power? Che partita"
+    untangle_hook_titles(raw)  # a title already used by another concept is the last resort
+    assert raw["concepts"][0]["title"] == "Una partita da rivedere"
+
+
+def test_style_references_are_attached_as_finish_only(tmp_path):
+    from analysis.packaging.generate import AssetPackage, PackageImage
+    face, style = tmp_path / "W001.jpg", tmp_path / "style_01.jpg"
+    for path in (face, style):
+        write_image(path, np.zeros((64, 64, 3), np.uint8))
+    package = AssetPackage("C1", "reaction-led", "Lo vedo forte", "", "", "", "",
+                           [PackageImage("W001", "face_main", face)])
+    prompt, images = generation_prompt([package], language="it", style_refs=[style])
+    assert images == [face, style]
+    assert "STYLE REFERENCES (images 2)" in prompt and "NOT content" in prompt
+    assert "STYLE REFERENCES" not in generation_prompt([package], language="it")[0]
 
 
 def test_rerender_reuses_generated_images_without_any_call(tmp_path):
@@ -103,6 +203,14 @@ def test_gen_validation_requires_every_role(tmp_path):
         make(tmp_path, agent=FakeAgentGen(duplicate=True)).run()
     report = json.loads((tmp_path / "out" / "packaging_report.json").read_text(encoding="utf-8"))
     assert "roles" in report["error"]["detail"]
+
+
+def test_reference_preserving_rejects_nondiverse_portfolio(tmp_path):
+    direction = {"generation_strategy": "reference_preserving", "strategy_version": 2}
+    with pytest.raises(PackagingError):
+        make(tmp_path, agent=FakeAgentGen(duplicate=True), creative_direction=direction).run()
+    report = json.loads((tmp_path / "out" / "packaging_report.json").read_text(encoding="utf-8"))
+    assert "portfolio" in report["error"]["detail"]
 
 
 def test_v3_engine_makes_no_generation_call(tmp_path):
@@ -197,7 +305,7 @@ def test_normalize_generated_crops_to_16_9(tmp_path):
     write_image(source, np.zeros((1024, 1536, 3), np.uint8))
     assert normalize_generated(source, tmp_path / "n.png") == (1536, 1024)
     out = read_image(tmp_path / "n.png")
-    assert out is not None and out.shape[:2] == (720, 1280)
+    assert out is not None and out.shape[:2] == (1080, 1920)
 
 
 def test_codex_generator_command_and_collection(tmp_path, monkeypatch):
