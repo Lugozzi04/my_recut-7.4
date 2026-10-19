@@ -81,11 +81,11 @@ def execute(args: Any, progress: TextIO) -> dict[str, Any]:
             session.save(clips)
             chosen = [c for c in clips if c.selected]
 
-            def report(clip: Any, value: float) -> None:
+            def rendered(clip: Any, value: float) -> None:
                 print(f"[Clips:render] {clip.id} {int(value * 100)}%", file=progress, flush=True)
             formats = ("horizontal", "vertical") if args.clip_format == "both" else (args.clip_format,)
             result["rendered"] = session.render(chosen, codec=args.codec, loudnorm=not args.no_loudnorm,
-                                                formats=formats, subtitles=not args.no_subtitles, on_clip=report)
+                                                formats=formats, subtitles=not args.no_subtitles, on_clip=rendered)
         return result
 
 

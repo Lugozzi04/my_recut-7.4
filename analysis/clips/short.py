@@ -256,7 +256,7 @@ def play_focus(frames: np.ndarray, roi: tuple[float, float, float, float] | None
 
     def spread(weights: np.ndarray, size: int) -> tuple[float, float, float]:
         cumulative = np.cumsum(weights) / weights.sum()
-        lo, hi = np.searchsorted(cumulative, 0.1), np.searchsorted(cumulative, 0.9)
+        lo, hi = int(np.searchsorted(cumulative, 0.1)), int(np.searchsorted(cumulative, 0.9))
         return float((np.arange(size) * weights).sum() / weights.sum() + 0.5) / size, lo / size, (hi + 1) / size
     cx, lo_x, hi_x = spread(weights_x, w)
     cy, lo_y, hi_y = spread(weights_y, h)
@@ -297,12 +297,12 @@ def detect_clip_webcam(ffmpeg: str, video: str, duration: float, size: tuple[int
     done = run_no_window([ffmpeg, "-hide_banner", "-nostdin", "-loglevel", "error", "-i", video, "-an",
                           "-vf", f"fps={count / max(duration, 1.0):.4f}", "-pix_fmt", "bgr24", "-f", "rawvideo", "-"],
                          capture_output=True, timeout=180)
-    data, size = done.stdout or b"", w * h * 3
-    frames = [np.frombuffer(data[n * size:(n + 1) * size], dtype=np.uint8).reshape(h, w, 3)
-              for n in range(len(data) // size)]
+    data, frame_bytes = done.stdout or b"", w * h * 3
+    frames = [np.frombuffer(data[n * frame_bytes:(n + 1) * frame_bytes], dtype=np.uint8).reshape(h, w, 3)
+              for n in range(len(data) // frame_bytes)]
     if len(frames) < 4:
         return None, "too few frames"
-    cascades = [cv2.CascadeClassifier(cv2.data.haarcascades + name) for name in
+    cascades = [cv2.CascadeClassifier(cv2.data.haarcascades + name) for name in  # type: ignore[attr-defined]
                 ("haarcascade_frontalface_default.xml", "haarcascade_frontalface_alt2.xml",
                  "haarcascade_profileface.xml")]
     clusters: list[list[tuple[int, tuple[float, float, float, float]]]] = []
@@ -326,8 +326,8 @@ def detect_clip_webcam(ffmpeg: str, video: str, duration: float, size: tuple[int
         motion = float(np.mean([np.mean(np.abs(b[y0:y1, x0:x1] - a[y0:y1, x0:x1])) for a, b in zip(gray, gray[1:])]))
         if motion < 3.0:
             continue  # a face drawn in the game (hero portrait, card art): it does not move
-        box, _sides = overlay_borders([frames[i] for i in sorted({i for i, _ in cluster})], (fx, fy, fw, fh))
-        check = parse_roi(box, origin="auto")
+        found, _sides = overlay_borders([frames[i] for i in sorted({i for i, _ in cluster})], (fx, fy, fw, fh))
+        check = parse_roi(found, origin="auto")
         if check.rect is not None:
             r = check.rect
             return (r.x, r.y, r.w, r.h), f"face in {share:.0%} of the frames"
@@ -337,7 +337,8 @@ def detect_clip_webcam(ffmpeg: str, video: str, duration: float, size: tuple[int
 # ---- captions --------------------------------------------------------------------------------------------
 def short_words(analysis: Analysis, parts: Sequence[tuple[int, float, float]]) -> list[tuple[float, float, str]]:
     """Words of every part on the Short's own timeline (the cold open first, then the clip)."""
-    out, offset = [], 0.0
+    out: list[tuple[float, float, str]] = []
+    offset = 0.0
     words = _words(analysis)
     for _, a, b in parts:
         out.extend((max(0.0, s - a) + offset, min(b, e) - a + offset, t) for s, e, t in words
