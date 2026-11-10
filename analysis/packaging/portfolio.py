@@ -94,7 +94,10 @@ def _jaccard(a: set[Any], b: set[Any]) -> float:
 
 def evaluate_portfolio(concepts: Sequence[Mapping[str, Any]], assets: Mapping[str, Mapping[str, Any]], *,
                        available_story_types: int, available_treatments: int, available_opportunities: int,
-                       rendered: Sequence[Path] | None = None) -> PortfolioDiversity:
+                       rendered: Sequence[Path] | None = None,
+                       ideas: Mapping[str, str] | None = None) -> PortfolioDiversity:
+    """ideas (playbook): concept_id -> chosen idea. Concepts are then variants of a few strong ideas: the angle and
+    treatment counts do not apply, and two variants of the same idea may share message, text and story."""
     report = PortfolioDiversity()
     n = len(concepts)
     ids = [str(c.get("concept_id")) for c in concepts]
@@ -135,20 +138,26 @@ def evaluate_portfolio(concepts: Sequence[Mapping[str, Any]], assets: Mapping[st
     def add(severity: str, code: str, members: Sequence[str], detail: str) -> None:
         report.findings.append(DiversityFinding(severity, code, list(members), detail))
 
-    if distinct_narratives < want_angles:
+    if ideas:
+        report.metrics["distinct_ideas"] = len({ideas.get(i) for i in ids})
+    if not ideas and distinct_narratives < want_angles:
         limited = available_story_types < 3 or available_opportunities < 3
         add("compromise" if limited else "blocking", "too_few_angles", ids,
             f"{distinct_narratives} distinct story types for {n} concepts (wanted {want_angles}; "
             f"material offers {available_story_types} story types / {available_opportunities} opportunities)")
     want_treatments = min(3, n, max(1, available_treatments))
-    if len(set(treatments)) < want_treatments:
+    if not ideas and len(set(treatments)) < want_treatments:
         add("compromise" if available_treatments < 3 else "blocking", "too_few_treatments", ids,
             f"{len(set(treatments))} treatments for {n} concepts (wanted {want_treatments})")
     for i in range(n):
         for j in range(i + 1, n):
             pair = [ids[i], ids[j]]
+            if ideas and ideas.get(ids[i]) == ideas.get(ids[j]):
+                add("compromise", "idea_variant", pair, f"variants of idea {ideas.get(ids[i])}")
+                continue
+            cross = "warning" if ideas else "blocking"  # playbook: the critic judges near-duplicate ideas
             if narratives[i][0] == narratives[j][0] and primaries[i] == primaries[j] and signatures[i] == signatures[j]:
-                add("blocking", "duplicate_concept", pair,
+                add(cross, "duplicate_concept", pair,
                     f"same story ({narratives[i][0]}), same primary source ({primaries[i]}) and same composition")
             elif primaries[i] == primaries[j]:
                 if treatments[i] != treatments[j] and narratives[i] != narratives[j]:
@@ -159,7 +168,7 @@ def evaluate_portfolio(concepts: Sequence[Mapping[str, Any]], assets: Mapping[st
             text_overlap = _jaccard(texts[i], texts[j])
             message_overlap = _jaccard(messages[i], messages[j])
             if texts[i] and texts[j] and text_overlap >= 0.5 and not (concepts[i].get("hook_locked") and concepts[j].get("hook_locked")):
-                add("blocking", "same_message", pair, f"thumbnail texts share {text_overlap:.0%} of their content words")
+                add(cross, "same_message", pair, f"thumbnail texts share {text_overlap:.0%} of their content words")
             elif message_overlap >= 0.6:
                 add("warning", "similar_message", pair, f"angle + text overlap {message_overlap:.0%}")
             highlight_overlap = _jaccard(set(narratives[i][1]), set(narratives[j][1]))

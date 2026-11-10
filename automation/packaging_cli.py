@@ -66,6 +66,14 @@ def add_parsers(sub: Any, json_option: Any) -> None:
     pack.add_argument("--agent-budget-usd", type=float,
                       help="Claude only: --max-budget-usd per call. Codex has no cost cap; its tokens are logged.")
     pack.add_argument("--agent-timeout", type=float, default=900.0, help="Seconds per agent call (default 900).")
+    pack.add_argument("--idea", help="Your idea for the covers, in your own words (e.g. 'NON CRAFTARLA on Lama "
+                                     "dell'Impero Nero, my disgusted face, the tier list behind').")
+    pack.add_argument("--idea-image", action="append", default=[], metavar="FILE",
+                      help="An image to use in the covers (e.g. the card); up to 3.")
+    pack.add_argument("--no-critique", action="store_true",
+                      help="Skip the critic: no ranking of the covers and no revision of the best one.")
+    pack.add_argument("--no-official-cards", action="store_true",
+                      help="Do not download official card images (HearthstoneJSON); use the video crops only.")
     pack.add_argument("--no-interactive", action="store_true",
                       help="Do not open the thumbnails folder nor ask for edits at the end (default: ask when run "
                            "from a terminal).")
@@ -160,7 +168,9 @@ def _packaging(args: argparse.Namespace, progress: TextIO) -> dict[str, Any]:
         max_highlights=args.max_highlights, max_deepen=args.max_deepen, image_format=args.image_format,
         agent_model=args.agent_model, agent_effort=args.agent_effort, agent_timeout=args.agent_timeout,
         mode=args.mode, agent_max_input=args.agent_max_input, agent_budget_usd=args.agent_budget_usd,
-        thumbnail_engine=args.thumbnail_engine, generator_timeout=args.generator_timeout)
+        thumbnail_engine=args.thumbnail_engine, generator_timeout=args.generator_timeout,
+        critique=not args.no_critique, official_cards=not args.no_official_cards,
+        creative_direction=idea_direction(args.idea, args.idea_image))
 
     def report(stage: str, message: str) -> None:
         print(f"[Packaging:{stage}] {message}", file=progress, flush=True)
@@ -206,6 +216,22 @@ def run_after_process(*, project: str | None, video: str | None, output: str | N
     from automation.cli import _ctrl_c
     with _ctrl_c(_CtrlC(cancellation)):
         return PackagingPipeline(settings, progress=report, cancellation=cancellation).run()
+
+
+def idea_direction(idea: str | None, images: list[str] | None) -> dict[str, Any]:
+    """--idea / --idea-image as a Creative Direction (automatic mode: nothing else to fill)."""
+    from analysis.packaging.direction import MAX_BRIEF_IMAGES, CreativeDirection
+    from analysis.packaging.models import PackagingError
+
+    if not idea and not images:
+        return {}
+    files = [str(Path(i).expanduser().resolve()) for i in images or []]
+    missing = [f for f in files if not Path(f).is_file()]
+    if missing:
+        raise PackagingError("invalid_arguments", f"--idea-image not found: {', '.join(missing)}")
+    if len(files) > MAX_BRIEF_IMAGES:
+        raise PackagingError("invalid_arguments", f"--idea-image: at most {MAX_BRIEF_IMAGES} images")
+    return CreativeDirection(brief=idea or "", brief_images=[{"path": f} for f in files]).to_mapping()
 
 
 class ParallelPackaging:

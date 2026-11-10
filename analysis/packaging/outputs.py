@@ -114,8 +114,10 @@ def settings_for_output(output: Mapping[str, Any], options: Mapping[str, Any]) -
                              games="project", overwrite=True,
                              provider=str(options.get("provider", "codex")),
                              language=str(options.get("language", "it")),
-                                                           thumbnail_engine=str(options.get("thumbnail_engine", "gen")),
-                              creative_direction=deepcopy(dict(options.get("creative_direction") or output.get("creative_direction") or {})))
+                             thumbnail_engine=str(options.get("thumbnail_engine", "gen")),
+                             critique=bool(options.get("critique", True)),
+                             official_cards=bool(options.get("official_cards", True)),
+                             creative_direction=deepcopy(dict(options.get("creative_direction") or output.get("creative_direction") or {})))
 
 
 def record_status(output: Mapping[str, Any], settings: PackagingSettings, status: str) -> dict[str, Any]:

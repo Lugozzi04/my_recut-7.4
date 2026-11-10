@@ -33,7 +33,9 @@ from typing import Any, Mapping, Protocol, Sequence
 
 import numpy as np
 
-GENERATOR_VERSION = "thumbnail_gen_v2.2"  # v2 + clean frames, card fidelity, style refs, big-face/element rules
+from .playbook import TEXT_STYLES  # named font looks (Anton, Montserrat Black, Bebas Neue, ...)
+
+GENERATOR_VERSION = "thumbnail_gen_v2.3"  # v2.2 + playbook: meaningful cues, expression, named fonts, creator images
 GENERATOR_BASE = "thumbnail_gen_v2"  # the 14 Oct 2026 prompt these rules extend
 ROLES = ("reaction-led", "card-led", "board-led", "narrative-led")
 ROLE_TREATMENT = {"reaction-led": "reaction_cutout", "card-led": "card_hero", "board-led": "board_zoom",
@@ -55,23 +57,30 @@ def package_schema() -> dict[str, Any]:
                            "detail": {**ids, "description": "0-1 card (O.. observation, K..) or region id"}}}
 
 
-def planning_section(n_concepts: int) -> str:
+def planning_section(n_concepts: int, *, playbook: bool = False) -> str:
+    """playbook: concepts are variants of the chosen ideas, so roles follow the idea (no coverage rule)."""
     roles = ", ".join(ROLES)
-    return (f"D. ASSET PACKAGE per concept (the final thumbnail is COMPOSED BY AN IMAGE MODEL from these assets; do "
-            f"not design pixel layouts). role: one of {roles}"
-            + (f"; with {n_concepts} concepts use each role at least once" if n_concepts >= len(ROLES) else
-               "; every concept a different role") +
+    coverage = ("; the role follows the idea (card-led when the card is the point, reaction-led when the face is)"
+                if playbook else f"; with {n_concepts} concepts use each role at least once"
+                if n_concepts >= len(ROLES) else "; every concept a different role")
+    return (f"E. ASSET PACKAGE per concept (the final thumbnail is COMPOSED BY AN IMAGE MODEL from these assets; do "
+            f"not design pixel layouts). role: one of {roles}" + coverage +
             ". Role guidance: board-led = the most spectacular board state (lethal, huge swing, full board, big "
             "effect), never an ordinary board; narrative-led = the story of the video in ONE image (decisive moment + "
             "the creator's emotion, or the result), never a before/after comparison of two ordinary boards. "
-            "Each concept should show a DIFFERENT moment (another highlight or game) when the material allows. "
+            + ("" if playbook else "Each concept should show a DIFFERENT moment (another highlight or game) when "
+                                  "the material allows. ") +
             "package.face: 0-3 webcam ids, the sharpest (highest sharp=, never motion-blurred) and most expressive "
             "first (required for reaction-led; "
-            "otherwise optional, and at least one concept should work without the face). package.board: 1-2 ids "
+            + ("otherwise optional). " if playbook else
+               "otherwise optional, and at least one concept should work without the face). ") +
+            "package.board: 1-2 ids "
             "of the most readable frames/regions of the moment. package.detail: 0-1 card observation (O..), card "
-            "(K..) or region (B..) - required for card-led. moment: <= 160 characters, what happens on screen. "
+            "(K..) or region (B..) - required for card-led unless card_name or creator_images give the card. "
+            "moment: <= 160 characters, what happens on screen. "
             "art_direction: <= 300 characters for the image model: protagonist, how the face is used (if at all), "
-            "background treatment, mood and the punch (zoom, light, effects). Do NOT forbid text or effects and do "
+            "background treatment, mood and the punch (zoom, light, effects, meaningful cues such as arrows or a "
+            "red X). Do NOT forbid text or effects and do "
             "NOT fix exact positions: placement, text style and colour are assigned per variant later. Every concept "
             "needs a hook text except at most one; at most 2 hooks may be questions; 2-3 strong elements, never a "
             "collage: the face, each card and each hero portrait count as one element. When the face is used it is "
@@ -102,6 +111,8 @@ def manifest_lines(manifest: Any, *, limit: int = 90) -> list[str]:
         use = a.provenance.get("thumbnail_use")
         if use:
             extra.append(f"thumbnail_use={use}")
+        if a.provenance.get("role") == "closing":
+            extra.append("CLOSING SCREEN: the final state of what the video builds (e.g. the completed tier list)")
         if a.limitations:
             extra.append("LIMITS: " + "; ".join(a.limitations))
         lines.append(f"- {a.id} {labels.get(a.type, a.type)} {a.highlight_id or '-'} {t} {' '.join(extra)}".rstrip())
@@ -129,6 +140,7 @@ def _webcam_original(face_id: str, assets: Mapping[str, Mapping[str, Any]]) -> s
 
 def check_package(concept: Mapping[str, Any], assets: Mapping[str, Mapping[str, Any]],
                   observations: Mapping[str, Any]) -> list[str]:
+    """card-led needs a card: package.detail, or (playbook) a card_name / creator image resolved later."""
     cid = concept.get("concept_id")
     problems: list[str] = []
     role = concept.get("role")
@@ -153,15 +165,18 @@ def check_package(concept: Mapping[str, Any], assets: Mapping[str, Mapping[str, 
         problems.append(f"{cid}: package.face takes at most 3 ids")
     if role == "reaction-led" and not face:
         problems.append(f"{cid}: reaction-led needs package.face")
-    if role == "card-led" and not detail:
-        problems.append(f"{cid}: card-led needs a card in package.detail")
+    if role == "card-led" and not detail and not concept.get("card_name") and not concept.get("creator_images"):
+        problems.append(f"{cid}: card-led needs a card in package.detail (or a card_name)")
     return problems
 
 
-def check_roles(concepts: Sequence[Mapping[str, Any]]) -> list[str]:
+def check_roles(concepts: Sequence[Mapping[str, Any]], *, coverage: bool = True) -> list[str]:
+    """coverage: every role (4+ concepts) or all different roles; off for playbook variants of chosen ideas."""
     roles = [c.get("role") for c in concepts]
     problems = []
-    if len(concepts) >= len(ROLES):
+    if not coverage:
+        pass
+    elif len(concepts) >= len(ROLES):
         missing = [r for r in ROLES if r not in roles]
         if missing:
             problems.append(f"portfolio: roles {missing} are missing (each role at least once)")
@@ -201,7 +216,7 @@ def draft_scene(concept: Mapping[str, Any], assets: Mapping[str, Mapping[str, An
             return scene, subject
         scene = preset_story(background=background, text=text, bubble=bubble)
         return scene, str(bubble)
-    if role == "card-led":
+    if role == "card-led" and detail:
         if is_card:
             scene = preset_board(background=background, text=text, cards=detail[:1], subject=subject)
         else:
@@ -220,7 +235,8 @@ def draft_scene(concept: Mapping[str, Any], assets: Mapping[str, Mapping[str, An
     return scene, background
 
 
-def attach_drafts(raw: dict[str, Any], assets: Mapping[str, Mapping[str, Any]]) -> list[str]:
+def attach_drafts(raw: dict[str, Any], assets: Mapping[str, Mapping[str, Any]], *,
+                  playbook: bool = False) -> list[str]:
     """Adds scene, treatment and a consistent primary_subject to every concept; returns package problems."""
     observations = {str(o.get("obs_id")): o for o in raw.get("card_observations") or []}
     problems: list[str] = []
@@ -234,7 +250,7 @@ def attach_drafts(raw: dict[str, Any], assets: Mapping[str, Mapping[str, Any]]) 
         concept["treatment"] = ROLE_TREATMENT[concept["role"]]
         concept["primary_subject"] = primary
     if not raw.get("_v4"):
-        problems += check_roles(raw.get("concepts") or [])
+        problems += check_roles(raw.get("concepts") or [], coverage=not playbook)
     return problems
 
 
@@ -257,6 +273,9 @@ class AssetPackage:
     message: str
     title: str
     images: list[PackageImage] = field(default_factory=list)
+    expression: str = ""
+    idea: str = ""
+    card_name: str = ""
 
     def to_mapping(self, root: Path | None = None) -> dict[str, Any]:
         def rel(p: Path) -> str:
@@ -266,6 +285,7 @@ class AssetPackage:
                 return str(p)
         return {"concept_id": self.concept_id, "role": self.role, "hook": self.hook, "moment": self.moment,
                 "art_direction": self.art_direction, "message": self.message, "title": self.title,
+                "expression": self.expression, "idea": self.idea, "card_name": self.card_name,
                 "images": [{"asset_id": i.asset_id, "kind": i.kind, "path": rel(i.path), "note": i.note}
                            for i in self.images]}
 
@@ -337,7 +357,8 @@ def asset_package(concepts: Sequence[Mapping[str, Any]], assets: Mapping[str, Ma
         package = AssetPackage(str(concept.get("concept_id")), str(concept.get("role") or ""),
                                str(concept.get("thumbnail_text") or ""), str(concept.get("moment") or ""),
                                str(concept.get("art_direction") or ""), str(concept.get("message") or ""),
-                               str(concept.get("title") or ""))
+                               str(concept.get("title") or ""), expression=str(concept.get("expression") or ""),
+                               idea=str(concept.get("idea_id") or ""), card_name=str(concept.get("card_name") or ""))
         for aid, kind in _concept_assets(concept):
             source_id = _webcam_original(aid, assets) if kind.startswith("face") else aid
             image = images.get(source_id)
@@ -359,6 +380,10 @@ def asset_package(concepts: Sequence[Mapping[str, Any]], assets: Mapping[str, Ma
                 write_image(path, image, quality=92)
                 written[source_id] = path
             info = assets.get(source_id) or {}
+            if info.get("type") == "card_artwork":
+                kind = "card_official"  # the clean official card image, not a crop of a stream frame
+            elif (info.get("provenance") or {}).get("role") == "closing" and kind == "board":
+                kind = "closing"
             note = ", ".join(str(x) for x in info.get("limitations") or [])
             name = (info.get("provenance") or {}).get("name")
             if name:
@@ -378,8 +403,11 @@ GENERATION_RULES = (
     "high contrast, saturated but natural colour, crisp edges. No chaos, no collage, no 'screenshot with stickers' "
     "look, no picture-in-picture boxes, no emoji, logos, watermarks or fake game UI.",
     "Give every thumbnail PUNCH: never just upscale a screenshot. Re-stage the moment: zoom into the key area, add "
-    "depth, dramatic light, glow, light rays, energy or motion effects around the decisive element; one simple "
-    "circle or arrow is allowed when it makes the key element obvious.",
+    "depth, dramatic light, glow, light rays, energy or motion effects around the decisive element. Graphic cues "
+    "that carry the message are welcome: arrows pointing at the key card, a big red X on a card to avoid, a green "
+    "check on a card to take, a red/orange aura behind a 'bad' card; never decoration without meaning.",
+    "Hierarchy: face -> hook text -> key object (object -> text when there is no face); the context (tier list, "
+    "board, key screen) stays recognisable behind them, softly blurred and dimmed, never black.",
     "The creator's webcam crop is a SUBJECT, not a live-stream box: cut the person out, enhance sharpness, lighting "
     "and skin tones, upscale as needed, enlarge the face so it reads at small size, and blend it into the scene "
     "with matching light, rim light and shadow. When the creator appears he is a main subject - at least about a "
@@ -398,10 +426,16 @@ GENERATION_RULES = (
     "energy BEHIND and AROUND its edges, but never repaint, warp, melt, fragment or blend its artwork, never let "
     "effects cross its name or text box, and no tangled tentacles, strings or swirls over it (no 'spaghetti' "
     "effects). At most two cards per thumbnail; a dimmed second copy or the real board behind it is fine.",
-    "Text: use EXACTLY the given hook text (same words, same language, correct spelling), 1-4 words, huge and "
-    "readable at phone size, at most two lines, in the given text style, placed where the variant's composition "
-    "says, away from the face and the key card, never in the bottom-right corner (YouTube duration badge). If the "
-    "hook is empty, use no text.",
+    "Text: use EXACTLY the given hook text (same words, same language, correct spelling, keep its punctuation), "
+    "1-4 words, huge and readable at phone size, at most two lines, in the given text style (a named font look: "
+    "draw that letterform faithfully, clean and professional, never a generic or wobbly font), placed where the "
+    "variant's composition says, away from the face and the key card, never in the bottom-right corner (YouTube "
+    "duration badge). If the hook is empty, use no text.",
+    "When a variant asks for an expression or gesture, give the creator that expression (e.g. sceptical, disgusted, "
+    "shocked, a raised 'stop' hand) while keeping exactly the same person; use the webcam crops as identity and "
+    "lighting reference.",
+    "Creator images (marked 'creator image') are the creator's own inputs for this cover, e.g. the official card "
+    "to show: include them as asked, keeping a card image identical (same frame, art, name, text, numbers).",
     "Each variant has a COMPOSITION, a TEXT STYLE and a COLOUR GRADE: follow them exactly - they override any "
     "placement mentioned in the art direction. Variants must look like four different thumbnails.",
 )
@@ -445,7 +479,9 @@ def generation_prompt(packages: Sequence[AssetPackage], *, language: str, style_
     out += ["", f"Generate {len(packages)} thumbnails, one image_gen call per variant, in this order: "
             + ", ".join(p.concept_id for p in packages) + ". Do not generate extra images.", ""]
     labels = {"face_main": "main webcam crop (the creator)", "face_alt": "alternative webcam crop",
-              "board": "gameplay frame/board", "detail": "card/detail crop"}
+              "board": "gameplay frame/board", "detail": "card/detail crop", "card_official": "official card image",
+              "closing": "closing screen of the video (final state, e.g. the completed tier list)",
+              "creator": "creator image (the creator's own input for this cover)"}
     for package in packages:
         out.append(f"VARIANT {package.concept_id} - role {package.role}")
         out.append(f"- hook text ({language}): \"{package.hook}\"" if package.hook else "- hook text: none (no text)")
@@ -455,6 +491,10 @@ def generation_prompt(packages: Sequence[AssetPackage], *, language: str, style_
             out.append(f"- moment: {package.moment}")
         if package.art_direction:
             out.append(f"- art direction: {package.art_direction}")
+        if package.expression:
+            out.append(f"- creator expression / gesture: {package.expression}")
+        if package.card_name:
+            out.append(f"- key card: {package.card_name} (keep its name and text exactly as on the card image)")
         recipe = (compositions or {}).get(package.concept_id)
         if recipe:
             out.append(f"- composition: {recipe['layout']}")
@@ -469,6 +509,39 @@ def generation_prompt(packages: Sequence[AssetPackage], *, language: str, style_
         out.append("")
     out.append("After generating, answer with the JSON object only: for each variant its concept_id and the path of "
                "the generated file if you know it (else an empty string), in generation order.")
+    return "\n".join(out), order
+
+
+REVISION_VERSION = "thumbnail_revision_v1"
+
+
+def revision_prompt(package: AssetPackage, draft: Path, *, instructions: Sequence[str], hook: str, language: str,
+                    style_note: str = "") -> tuple[str, list[Path]]:
+    """One improved version of the critic's chosen draft: image 1 is the draft, then the same assets."""
+    order = [draft] + [i.path for i in package.images if i.path != draft][: MAX_GENERATION_IMAGES - 1]
+    labels = {"face_main": "main webcam crop (the creator)", "face_alt": "alternative webcam crop",
+              "board": "gameplay frame/board", "detail": "card/detail crop", "card_official": "official card image",
+              "closing": "closing screen of the video", "creator": "creator image (the creator's own input)"}
+    out = [f"PROMPT_VERSION: {REVISION_VERSION} ({GENERATOR_VERSION})", *GENERATION_RULES]
+    if style_note:
+        out.append(f"Creator style: {style_note}")
+    out += ["", f"REVISION: image 1 is a draft thumbnail chosen by a reviewer. Generate exactly ONE improved "
+                f"thumbnail ({package.concept_id}R): keep its idea, composition and everything that works, and apply "
+                "these edits:"]
+    out += [f"- {line}" for line in instructions]
+    text = hook or package.hook
+    out.append(f"- hook text ({language}): \"{text}\"" if text else "- hook text: none (no text)")
+    if package.expression:
+        out.append(f"- creator expression / gesture: {package.expression}")
+    if package.card_name:
+        out.append(f"- key card: {package.card_name} (keep its name and text exactly as on the card image)")
+    out.append("Reference images (for fidelity: same person, same card, same board):")
+    for image in package.images:
+        if image.path in order:
+            out.append(f"- image {order.index(image.path) + 1}: {labels.get(image.kind, image.kind)}"
+                       + (f" ({image.note})" if image.note else ""))
+    out.append("After generating, answer with the JSON object only: the variant's concept_id and the path of the "
+               "generated file if you know it (else an empty string).")
     return "\n".join(out), order
 
 
@@ -696,19 +769,11 @@ RECIPES: dict[str, list[dict[str, str]]] = {
                                                  "poster; hook across the top"},
     ],
 }
-TEXT_STYLES = [
-    "white extra-bold sans with a thick black outline",
-    "yellow bold with a dark outline and a slight 3D extrusion",
-    "white on a solid tilted colour banner",
-    "two-tone: the key word in the accent colour, the rest white",
-    "condensed all-caps with a soft glow",
-    "heavy rounded sans with a drop shadow and gradient fill",
-]
 GRADES = ["warm orange / teal", "purple / gold", "cold blue with a red accent", "vivid neon on dark",
           "dark cinematic with rim light", "bright clean daylight"]
 HISTORY_FILE = "composition_history.json"
 HISTORY_KEEP = 6  # videos remembered
-CHOICE_VERSION = 2  # 2: distinct text styles/grades inside a run; older saved choices are not reused
+CHOICE_VERSION = 3  # 3: playbook font looks; 2: distinct text styles/grades inside a run (older choices not reused)
 
 
 def _load_history(path: Path) -> dict[str, Any]:

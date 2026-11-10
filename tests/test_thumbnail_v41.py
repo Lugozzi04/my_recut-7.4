@@ -283,4 +283,6 @@ def test_same_evidence_two_strategies_cache_and_full_generative_rollback(tmp_pat
     assert second.cache.stats["frames"]["hit"] > 0
     assert all("compositing" not in t for t in generative["thumbnails"])
     assert generative["generation"]["generation_strategy"] == "full_generative"
-    assert len(preserving["thumbnails"]) == len(generative["thumbnails"]) == 4
+    assert len(preserving["thumbnails"]) == 4  # full generative adds the critic's revision of the best cover
+    assert [t["concept_id"] for t in generative["thumbnails"]][:4] == [t["concept_id"] for t in preserving["thumbnails"]]
+    assert len(generative["thumbnails"]) == 5 and generative["thumbnails"][4]["concept_id"].endswith("R")

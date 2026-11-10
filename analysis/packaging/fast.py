@@ -469,3 +469,88 @@ def validate_gen(raw: Any, *, max_deepen: int = 0, **context: Any) -> dict[str, 
     if problems:
         raise ValueError("; ".join(list(dict.fromkeys(problems))[:15]))
     return validate_v3(out, max_deepen=0, **context)
+
+
+# ---------------------------------------------------------------------------------------------------
+# PLAYBOOK (default gen path): ideation -> 2 chosen ideas -> concepts as their variants (playbook.py)
+
+PROMPT_VERSION_PLAYBOOK = "packaging_gen_playbook_v1"
+_REPLACED_SECTIONS = ("- A. EDITORIAL", "- B. PORTFOLIO", "- C. ART DIRECTION")
+
+
+def _concept_playbook_schema() -> dict[str, Any]:
+    properties = dict(_concept_gen_schema()["properties"])
+    properties.update({
+        "idea_id": {"type": "string", "description": "the chosen idea this concept is a variant of"},
+        "expression": {"type": "string", "description": "<= 120 characters: the creator's expression and gesture"},
+        "card_name": {"type": "string", "description": "exact name of the ONE card to show big, or empty"},
+        "creator_images": {"type": "array", "items": {"type": "string"},
+                           "description": "creator brief images (U1..) this cover must include"},
+    })
+    return _OBJ(properties)
+
+
+def _schema_playbook() -> dict[str, Any]:
+    from .playbook import ideation_schema
+
+    properties = {"ideation": ideation_schema(), **RESPONSE_SCHEMA_GEN["properties"]}
+    properties["concepts"] = {"type": "array", "items": _concept_playbook_schema()}
+    return _OBJ(properties)
+
+
+RESPONSE_SCHEMA_PLAYBOOK: dict[str, Any] = _schema_playbook()
+
+
+def build_prompt_playbook(*, brief_text: str = "", brief_images: Sequence[str] = (), **common: Any) -> str:
+    """The gen prompt (same evidence) with the playbook's ideation, variants and principles in place of the
+    forced-diversity portfolio and the 'no arrows, glows or badges' art direction."""
+    from .generate import planning_section
+    from .playbook import ideation_lines
+
+    lines = build_prompt_gen(**common).split("\n")
+    lines[0] = f"PROMPT_VERSION: {PROMPT_VERSION_PLAYBOOK}"
+    out: list[str] = []
+    inserted = False
+    for line in lines:
+        if line.startswith(_REPLACED_SECTIONS):
+            if not inserted:
+                out += [f"- {x}" if not x.startswith(("  ", "THUMBNAIL PLAYBOOK", "CREATOR BRIEF")) and x else x
+                        for x in ideation_lines(n_concepts=common["n_concepts"], brief=brief_text,
+                                                brief_images=brief_images)]
+                inserted = True
+            continue
+        if line.startswith("- E. ASSET PACKAGE"):
+            out.append(f"- {planning_section(common['n_concepts'], playbook=True)}")
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+def validate_playbook(raw: Any, *, n_brief_images: int = 0, creator_brief: bool = False,
+                      **context: Any) -> dict[str, Any]:
+    """Ideation used by the concepts, creator images in range, packages; then the V3 evidence/text validation with
+    an idea-aware diversity check (variants of one idea may share their message)."""
+    import copy
+
+    from .generate import attach_drafts
+    from .playbook import check_ideation
+
+    if not isinstance(raw, dict):
+        raise ValueError("answer must be a JSON object")
+    missing = [k for k in RESPONSE_SCHEMA_PLAYBOOK["required"] if k not in raw]
+    if missing:
+        raise ValueError(f"missing fields: {missing}")
+    out = copy.deepcopy(raw)
+    out["deepen_requests"] = []
+    problems = check_ideation(out, n_concepts=context["n_concepts"], creator_brief=creator_brief or n_brief_images > 0)
+    allowed = {f"U{n}" for n in range(1, n_brief_images + 1)}
+    for concept in out.get("concepts") or []:
+        bad = [u for u in concept.get("creator_images") or [] if u not in allowed]
+        if bad:
+            problems.append(f"{concept.get('concept_id')}: creator_images {bad} do not exist "
+                            f"({', '.join(sorted(allowed)) or 'no creator images'})")
+    problems += attach_drafts(out, context["assets"], playbook=True)
+    if problems:
+        raise ValueError("; ".join(list(dict.fromkeys(problems))[:15]))
+    out["_ideas"] = {str(c.get("concept_id")): str(c.get("idea_id")) for c in out.get("concepts") or []}
+    return validate_v3(out, max_deepen=0, **context)

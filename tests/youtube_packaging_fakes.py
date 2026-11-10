@@ -304,7 +304,7 @@ class FakeAgentV3(FakeAgent):
     def portfolio(self, prompt: str) -> dict[str, Any]:
         from analysis.packaging.scene import preset_board, preset_story
 
-        n_concepts = int(re.findall(r"exactly (\d+) strategies", prompt)[0])
+        n_concepts = int(re.findall(r"exactly (\d+) (?:strategies|concepts as VARIANTS)", prompt)[0])
         n_titles = int(re.findall(r"exactly (\d+) YouTube titles", prompt)[0])
         manifest = prompt.split("VISUAL ASSET MANIFEST")[1]
         frames = re.findall(r"^- (F\d{3}) (?:gameplay_frame|frame) ", manifest, re.M)
@@ -370,13 +370,18 @@ class FakeAgentGen(FakeAgentV3):
 
     def run(self, task: str, *, prompt: str, schema: dict[str, Any], system_prompt: str, prompt_version: str,
             images: Any = None, validate: Any = None, repair: Any = None):
-        if "_gen" not in task:
+        if "_gen" not in task and "_playbook" not in task and not task.startswith("thumbnail_critique"):
             return super().run(task, prompt=prompt, schema=schema, system_prompt=system_prompt,
                                prompt_version=prompt_version, images=images, validate=validate, repair=repair)
         self.calls.append({"task": task, "images": len(images or []), "prompt_chars": len(prompt), "prompt": prompt})
         if self.fail is not None:
             raise self.fail
-        answer = self.packages(prompt)
+        if task.startswith("thumbnail_critique"):
+            answer = self.critique(prompt)
+        elif "_playbook" in task:
+            answer = self.playbook(prompt)
+        else:
+            answer = self.packages(prompt)
         try:
             answer = validate(answer) if validate is not None else answer
         except ValueError as error:
@@ -409,6 +414,36 @@ class FakeAgentGen(FakeAgentV3):
             concept.update(role=role, package=package, moment=f"momento {i + 1}",
                            art_direction=f"direzione artistica {i + 1}")
         return answer
+
+
+    def playbook(self, prompt: str) -> dict[str, Any]:
+        """The gen answer + ideation: 8 candidates, 2 chosen ideas, concepts as their variants."""
+        answer = self.packages(prompt)
+        concepts = answer["concepts"]
+        ideas = ["I1", "I2"]
+        for n, concept in enumerate(concepts):
+            concept.update(idea_id=ideas[0] if n < (len(concepts) + 1) // 2 else ideas[1],
+                           expression="scettico, mano alzata" if concept["package"]["face"] else "",
+                           card_name=getattr(self, "card_name", "") if n == 0 else "",
+                           creator_images=list(getattr(self, "creator_images", [])) if n == 0 else [])
+        answer["ideation"] = {
+            "video_type": "gameplay_highlight", "promise": "come vincere la partita decisiva", "audience": "ladder",
+            "emotion": "tensione",
+            "candidates": [{"idea_id": f"I{k}", "family": "warning" if k % 2 else "verdict", "hook": f"Gancio {k}",
+                            "visual": "la carta grande", "why": "perché"} for k in range(1, 9)],
+            "chosen": [{"idea_id": i, "why_it_wins": "più forte"} for i in ideas],
+            "rejected_note": "gli altri sono generici"}
+        return answer
+
+    @staticmethod
+    def critique(prompt: str) -> dict[str, Any]:
+        ids = re.findall(r"^- image \d+ = (\S+?):", prompt, re.M)
+        return {"reviews": [{"concept_id": i, "scores": {k: 7 for k in ("idea", "text", "hierarchy", "object", "face",
+                                                                         "context", "finish", "title_fit")},
+                             "issues": ["testo piccolo"], "keep": ["volto"]} for i in ids],
+                "ranking": ids, "summary": "la prima è la più forte",
+                "revise": {"concept_id": ids[0], "instructions": ["testo più grande", "carta più grande"],
+                           "hook": ""}}
 
 
 class FakeGenerator:

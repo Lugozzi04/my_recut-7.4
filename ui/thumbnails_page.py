@@ -426,7 +426,7 @@ class ThumbnailsController(QObject):
         return {"provider": str(w.thumb_provider_combo.currentData() or "codex"),
                 "thumbnail_engine": str(w.thumb_engine_combo.currentData() or "gen"),
                 "language": str(w.thumb_language_edit.text().strip() or "it"),
-                "creative_direction": w.thumb_direction.value()}
+                "creative_direction": w.thumb_direction.value(), **w.thumb_direction.run_options()}
 
     def confirm_batch(self) -> dict[str, Any] | None:
         answer = QMessageBox.question(self.window, "Covers for each video", PRIVACY_NOTE
@@ -680,7 +680,7 @@ class ThumbnailsController(QObject):
             out = Path(video).with_name(f"{Path(video).stem}_packaging")
             return PackagingSettings(output=str(out), video=video, provider=provider, language=language,
                                      thumbnail_engine=engine, games="detect", overwrite=True,
-                                     creative_direction=w.thumb_direction.value())
+                                     creative_direction=w.thumb_direction.value(), **w.thumb_direction.run_options())
         stamp = time.strftime("%Y%m%d-%H%M%S")
         # current project
         payload = w._build_project_file_payload()
@@ -696,7 +696,7 @@ class ThumbnailsController(QObject):
                             encoding="utf-8")
         return PackagingSettings(output=str(out), project=str(snapshot), provider=provider, language=language,
                                  thumbnail_engine=engine, overwrite=True,
-                                 creative_direction=w.thumb_direction.value())
+                                 creative_direction=w.thumb_direction.value(), **w.thumb_direction.run_options())
 
     def generate(self) -> None:
         w = self.window

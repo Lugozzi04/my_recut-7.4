@@ -24,11 +24,31 @@ import numpy as np
 
 from .assets import (VisualAsset, VisualAssetManifest, card_assets, frame_assets, hash_image,
                      region_assets, subject_assets, summary_lines)
-from .frames import contact_sheet, read_image, require_cv2, write_image
+from .frames import contact_sheet, read_image, read_image_unchanged, require_cv2, write_image
 from .models import FrameRecord
 
 ENGINE_FILES = ("visual_assets.json", "opportunities.json", "portfolio_quality_report.json")
 _CODE_DIGEST: str | None = None
+
+
+def _fit(image: np.ndarray, size: int) -> np.ndarray:
+    """At most `size` px on the long side (copies for the agent and the image model)."""
+    h, w = image.shape[:2]
+    if max(h, w) <= size:
+        return image
+    cv2 = require_cv2()
+    scale = size / max(h, w)
+    return cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
+
+def _flatten(image: np.ndarray | None) -> np.ndarray | None:
+    """A transparent official card render on a dark neutral backdrop (JPEG packages have no alpha)."""
+    if image is None or image.ndim != 3 or image.shape[2] != 4:
+        return image
+    alpha = image[..., 3:4].astype(np.float32) / 255.0
+    backdrop = np.zeros(image.shape[:2] + (3,), np.float32)
+    backdrop[:] = (38, 30, 34)
+    return (image[..., :3].astype(np.float32) * alpha + backdrop * (1 - alpha)).astype(np.uint8)
 
 
 def renderer_code_digest() -> str:
@@ -277,10 +297,11 @@ class V3Stages:
             from .design import prepare_design_hierarchies, validate_design
             if not isinstance(raw, dict):
                 raise ValueError("Planning answer must be an object")
-            if classic:  # the 14 Oct planner contract: role packages, each role once with 4 concepts
+            if classic:  # playbook: ideation -> 2 chosen ideas -> concepts as their variants
                 raw = apply_locks(raw, self.direction)
                 self.warnings.extend(untangle_hook_titles(raw))
-                return fast.validate_gen(raw, **context)
+                return fast.validate_playbook(raw, n_brief_images=len(brief_images),
+                                              creator_brief=bool(self.direction.brief_text), **context)
             from .cards import prepare_card_fallbacks
             raw = prepare_card_fallbacks(raw, context["assets"])
             raw = apply_locks(raw, self.direction)
@@ -304,6 +325,11 @@ class V3Stages:
             self.brief_stats = brief.stats()
             story_types = [o.story_type for o in self.opportunities]
             images = self._v3_images(brief, Path(folder), story_types, evidence, cutouts=not gen)
+            brief_images = self._brief_images(Path(folder)) if classic else []
+            if classic:  # the creator's images and the closing screen first: the image budget truncates the tail
+                images = [{"path": p, "description": f"creator image U{n} ({d})"}
+                          for n, (p, d) in enumerate(brief_images, start=1)] + self._closing_image(Path(folder), evidence) \
+                    + images
             from analysis.hero_groups.packaging import group_context
             style_lines = prompt_summary(self._style_profile(), max_examples=6) + group_context(evidence.payload)
             from .generate import manifest_lines
@@ -314,10 +340,12 @@ class V3Stages:
                           n_concepts=s.thumbnails, style_lines=style_lines, images=images, story=story)
             if classic:
                 from .direction import planning_direction
-                prompt = fast.build_prompt_gen(**common)
+                prompt = fast.build_prompt_playbook(brief_text=self.direction.brief_text,
+                                                    brief_images=[d for _, d in brief_images], **common)
                 if self.direction.active().mode == "guided":
                     prompt += "\n" + planning_direction(self.direction, self._style_profile() or {})
-                schema, version, task = fast.RESPONSE_SCHEMA_GEN, fast.PROMPT_VERSION_GEN, task.replace("_v3", "_gen")
+                schema, version = fast.RESPONSE_SCHEMA_PLAYBOOK, fast.PROMPT_VERSION_PLAYBOOK
+                task = task.replace("_v3", "_playbook")
                 self._write("planning_request.json", {"prompt": prompt, "schema_version": version,
                             "images": [str(i["description"]) for i in images]})
             elif gen:
@@ -371,6 +399,11 @@ class V3Stages:
                                               "brief": self.brief_stats})
         proposals = {k: raw[k] for k in ("concepts", "titles", "preferred_title_id", "preferred_concept_id")}
         proposals["portfolio_strategy"] = raw.get("portfolio_strategy")
+        if raw.get("ideation"):
+            proposals["ideation"] = raw["ideation"]
+            self._write("thumbnail_ideation.json", {"format": "recut_thumbnail_ideation",
+                                                    "prompt_version": fast.PROMPT_VERSION_PLAYBOOK,
+                                                    "brief": self.direction.brief_text, **raw["ideation"]})
         self._write("title_candidates.json", {
             "format": "recut_title_candidates", "prompt_version": fast.PROMPT_VERSION_V3, "provider": s.provider,
             "language": s.language, "preferred_title_id": proposals["preferred_title_id"],
@@ -447,6 +480,7 @@ class V3Stages:
         self._write("cards.json", {"cards": [c.to_mapping() for c in cards]})
         for asset in card_assets([c.to_mapping() for c in cards], frames, evidence.highlights):
             self.manifest.add(asset)
+        official = self._official_cards(raw, cards, evidence) if self._classic_gen() else {}
         by_obs = {str(c.provenance.get("obs_id")): c for c in cards}
         obs = {str(o.get("obs_id")): o for o in observations}
         for concept in raw["concepts"]:
@@ -468,7 +502,14 @@ class V3Stages:
             if package.get("detail"):  # gen engine: the package follows the resolved card (or its frame)
                 package["detail"] = [by_obs[d].id if d in by_obs else obs[d]["frame_id"] if d in obs else d
                                      for d in package["detail"]]
-            weak_cards = {card.id: card.frame_id for card in cards if card.thumbnail_use != "primary"}
+            if concept["concept_id"] in official.get("concepts", {}):  # the named card's official image
+                package["detail"] = [official["concepts"][concept["concept_id"]]]
+            elif package.get("detail") and package["detail"][0] in official.get("cards", {}):
+                package["detail"] = [official["cards"][package["detail"][0]]]
+            if package.get("detail") and package["detail"][0] in official.get("names", {}):
+                concept["card_name"] = official["names"][package["detail"][0]]
+            weak_cards = {card.id: card.frame_id for card in cards if card.thumbnail_use != "primary"
+                          and card.id not in official.get("cards", {})}
             if package.get("detail") and package["detail"][0] in weak_cards:
                 old = package["detail"][0]
                 package["detail"] = [weak_cards[old]]
@@ -702,8 +743,216 @@ class V3Stages:
             "thumbnail_engine": self.settings.thumbnail_engine,
             "renderer": SCENE_RENDERER_VERSION, "provider": self.settings.provider,
             "preferred_concept_id": proposals.get("preferred_concept_id"),
-            "portfolio_strategy": proposals.get("portfolio_strategy"), "concepts": concepts})
+            "portfolio_strategy": proposals.get("portfolio_strategy"), "ideation": proposals.get("ideation"),
+            "concepts": concepts})
         return results
+
+    # ---- playbook inputs: creator images, closing screen, official cards ----------------------------------
+    def _brief_images(self, folder: Path) -> list[tuple[Path, str]]:
+        """The creator's idea images (snapshotted in creative_references/) as JPEG <= 1280 px for the planner."""
+        out: list[tuple[Path, str]] = []
+        for n, item in enumerate(self.direction.active().brief_images, start=1):
+            image = read_image(self.out / item["path"])
+            if image is None:
+                continue
+            target = folder / f"creator_U{n}.jpg"
+            write_image(target, _fit(image, 1280), quality=92)
+            out.append((target, str(item.get("name") or Path(item["path"]).name)))
+        return out
+
+    def _closing_image(self, folder: Path, evidence: Any) -> list[dict[str, Any]]:
+        frame_id = getattr(evidence, "closing_frame_id", None)
+        image = self._frames().images.get(frame_id) if frame_id else None
+        if image is None:
+            return []
+        target = folder / f"closing_{frame_id}.jpg"
+        write_image(target, _fit(image, 1280), quality=90)
+        return [{"path": target, "description": f"closing screen {frame_id}: the final state of what the video "
+                                                "builds on screen (e.g. the completed tier list)"}]
+
+    def _attach_creator_images(self, concepts: list[dict[str, Any]], packages: list[Any], folder: Path) -> None:
+        from .generate import PackageImage
+
+        images = self.direction.active().brief_images
+        by_id = {p.concept_id: p for p in packages}
+        for concept in concepts:
+            package = by_id.get(str(concept.get("concept_id")))
+            for ref in concept.get("creator_images") or []:
+                index = int(str(ref)[1:]) - 1 if str(ref)[1:].isdigit() else -1
+                if package is None or not 0 <= index < len(images):
+                    continue
+                image = read_image(self.out / images[index]["path"])
+                if image is None:
+                    continue
+                target = folder / f"creator_{ref}.jpg"
+                if not target.is_file():
+                    write_image(target, _fit(image, 1280), quality=92)
+                package.images.append(PackageImage(str(ref), "creator", target,
+                                                   str(images[index].get("name") or "")))
+
+    def _official_cards(self, raw: dict[str, Any], cards: list[Any], evidence: Any) -> dict[str, dict[str, str]]:
+        """Official card images (audience language) for the cards read in frames and for each concept's card_name.
+
+        A card_name is honoured only when that card was read in a frame, is said in the transcript or is written in
+        the creator's brief: the cover never shows a card the video does not talk about."""
+        from .card_art import HearthstoneJsonProvider, normalize
+        from .cards import transcript_mention
+        import difflib
+
+        out: dict[str, dict[str, str]] = {"cards": {}, "concepts": {}, "names": {}}
+        if not self.settings.official_cards:
+            return out
+        assert self.manifest is not None
+        manifest = self.manifest
+        provider = getattr(self, "_card_provider", None) or HearthstoneJsonProvider(
+            Path(getattr(self.cache, "root", self.out / ".cache")) / "official_cards", language=self.settings.language)
+        frames = self._frames()
+        by_card_id: dict[str, str] = {}
+        log: list[dict[str, Any]] = []
+
+        def add(name: str, parent: Any, reason: str) -> str | None:
+            found = provider.lookup(name)
+            if found is None:
+                log.append({"name": name, "reason": reason, "found": False})
+                return None
+            path, provenance = found
+            if provenance["card_id"] in by_card_id:
+                return by_card_id[provenance["card_id"]]
+            image = _flatten(read_image_unchanged(Path(path)))
+            if image is None:
+                return None
+            aid = f"A{len(manifest.of_type('card_artwork')) + 1:02d}"
+            relative = f"cards/{aid}_{provenance['card_id']}.png"
+            write_image(self.out / relative, image)
+            frames.images[aid] = image
+            manifest.add(VisualAsset(
+                aid, "card_artwork", relative, getattr(parent, "source_index", 0) if parent else 0,
+                float(getattr(parent, "source_time", 0.0)) if parent else 0.0, None, None, None,
+                int(image.shape[1]), int(image.shape[0]), None, getattr(parent, "id", None) if parent else None,
+                {}, False, {**provenance, "method": "official_card_image", "requested": reason, "status": "verified",
+                            "thumbnail_use": "primary"}, [], ["primary"]))
+            by_card_id[provenance["card_id"]] = aid
+            out["names"][aid] = provenance["name"]
+            log.append({"name": name, "reason": reason, "found": True, "asset_id": aid, **provenance})
+            return aid
+
+        for card in cards:
+            if card.name and card.status in ("verified", "legible"):
+                aid = add(card.name, card, f"read in frame {card.frame_id}")
+                if aid:
+                    out["cards"][card.id] = aid
+        texts = [line.text for line in evidence.lines]
+        brief = normalize(self.direction.brief_text)
+        read = [c.name for c in cards if c.name]
+        for concept in raw.get("concepts") or []:
+            name = " ".join(str(concept.get("card_name") or "").split())
+            if not name:
+                continue
+            seen = any(difflib.SequenceMatcher(None, normalize(name), normalize(r)).ratio() >= 0.85 for r in read)
+            asked = bool(normalize(name)) and normalize(name) in brief
+            said = transcript_mention(name, texts) is not None
+            if not (seen or asked or said):
+                self.warnings.append(f"{concept['concept_id']}: card '{name}' is not read, said or asked for: "
+                                     "official image not used")
+                continue
+            aid = add(name, None, "read in a frame" if seen else "in the creator brief" if asked else "said in the video")
+            if aid:
+                out["concepts"][str(concept["concept_id"])] = aid
+        for error in getattr(provider, "errors", []):
+            self.warnings.append(f"official card images: {error}")
+        self._write("official_cards.json", {"format": "recut_official_cards", "items": log})
+        return out
+
+    # ---- critique + one revision ---------------------------------------------------------------------
+    def _critique_and_revise(self, agent: Any, proposals: dict[str, Any], evidence: Any,
+                             prefetched: tuple[dict[str, Path], list[str], dict[str, Any]]
+                             ) -> tuple[dict[str, Path], list[str], dict[str, Any]]:
+        """The critic ranks the generated covers (full size + phone size) against the playbook checklist; the most
+        promising one is generated once more with its concrete edits, as concept <id>R (preferred)."""
+        from .agent import AgentCallError
+        from .generate import (CodexImageGenerator, GenerationError, asset_package, file_digest, generation_key,
+                               normalize_generated, revision_prompt)
+        from .playbook import CRITIQUE_SCHEMA, check_critique, critique_prompt
+
+        finals, ids, report = prefetched
+        concepts = [c for c in proposals["concepts"] if str(c["concept_id"]) in finals]
+        if len(concepts) < 2:
+            return prefetched
+        cv2 = require_cv2()
+        folder = self.out / "thumbnails" / "critique"
+        folder.mkdir(parents=True, exist_ok=True)
+        images, small = [], []
+        for concept in concepts:
+            image = read_image(finals[str(concept["concept_id"])])
+            if image is None:
+                return prefetched
+            path = folder / f"{concept['concept_id']}.jpg"
+            write_image(path, cv2.resize(image, (1280, 720), interpolation=cv2.INTER_AREA), quality=90)
+            images.append(path)
+            phone = cv2.resize(image, (168, 94), interpolation=cv2.INTER_AREA)
+            small.append(cv2.resize(phone, (336, 188), interpolation=cv2.INTER_LINEAR))
+        strip = folder / "phone_size.jpg"
+        write_image(strip, np.hstack(small), quality=90)
+        prompt = critique_prompt(concepts=concepts, language=self.settings.language,
+                                 ideation=proposals.get("ideation"), brief=self.direction.brief_text)
+        concept_ids = [str(c["concept_id"]) for c in concepts]
+        try:
+            answer = self._timed("agent_critique", lambda: agent.run(
+                "thumbnail_critique_v1", prompt=prompt, schema=CRITIQUE_SCHEMA,
+                system_prompt="You review YouTube thumbnails honestly and concretely. Answer with JSON only.",
+                prompt_version="thumbnail_critique_v1", images=images + [strip],
+                validate=lambda raw: check_critique(raw, concept_ids))).answer
+        except (AgentCallError, ValueError) as error:
+            self.warnings.append(f"thumbnail critique failed ({error}): covers kept as generated")
+            report["critique"] = {"status": "failed", "detail": str(error)[:300]}
+            return prefetched
+        self._write("thumbnail_critique.json", {"format": "recut_thumbnail_critique", "prompt": prompt, **answer})
+        revise = answer["revise"]
+        base_id = str(revise["concept_id"])
+        new_id = f"{base_id}R"
+        concept = next(c for c in proposals["concepts"] if str(c["concept_id"]) == base_id)
+        assert self.manifest is not None
+        mask = [evidence.roi.rect.to_list()] if evidence.roi.rect is not None else []
+        package = asset_package([concept], self.manifest.lookup(), self._frames().images,
+                                self.out / "thumbnails" / "packages", mask_boxes=mask)[0]
+        self._attach_creator_images([concept], [package], self.out / "thumbnails" / "packages")
+        hook = " ".join(str(revise.get("hook") or "").split())
+        prompt_r, refs = revision_prompt(package, finals[base_id], instructions=revise["instructions"], hook=hook,
+                                         language=self.settings.language, style_note=self._style_note())
+        from analysis.hero_groups.packaging import group_context
+        output_context = group_context(evidence.payload)  # the exported class, as for the first generation
+        if output_context:
+            prompt_r = "\n".join(output_context) + "\n\n" + prompt_r
+        report["critique"] = {"status": "reviewed", "ranking": answer["ranking"], "revised": base_id,
+                              "summary": answer["summary"]}
+        generated = self.out / "thumbnails" / "generated"
+        target = generated / f"{new_id}.png"
+        key = generation_key(prompt_r, [file_digest(p) for p in refs])
+        if not (self.settings.use_cache and self.cache.load_file("generated", f"{key}-{new_id}", ".png", target)):
+            generator = self._generator or CodexImageGenerator(timeout_s=self.settings.generator_timeout)
+            if not generator.available():
+                return finals, ids, report
+            self.progress("generation", f"revision of {base_id} after the critique (1 image)")
+            try:
+                raw = self._timed("thumbnail_revision", lambda: generator.generate(prompt_r, refs, [new_id],
+                                                                                   generated / "raw_revision"))
+            except GenerationError as error:
+                self.warnings.append(f"revision of {base_id} failed ({error.code}): covers kept as generated")
+                report["critique"]["revision"] = {"status": "failed", "error_code": error.code}
+                return finals, ids, report
+            if new_id not in raw or normalize_generated(raw[new_id], target, size=(1920, 1080), contain=False) is None:
+                report["critique"]["revision"] = {"status": "failed", "detail": "no image"}
+                return finals, ids, report
+            if self.settings.use_cache:
+                self.cache.store_file("generated", f"{key}-{new_id}", ".png", target)
+        revised = copy.deepcopy(concept)
+        revised.update(concept_id=new_id, revision_of=base_id, critique=revise["instructions"])
+        if hook:
+            revised["thumbnail_text"] = hook
+        proposals["concepts"].append(revised)
+        proposals["preferred_concept_id"] = new_id
+        report["critique"]["revision"] = {"status": "done", "concept_id": new_id}
+        return {**finals, new_id: target}, ids + [new_id], report
 
     # ---- final generation (thumbnail engine "gen") --------------------------------------------------------
     def _style_note(self) -> str:
@@ -796,6 +1045,7 @@ class V3Stages:
                 write_image(path, mask_regions(backdrop_image, background.get("mask_boxes", [])))
                 package.images.append(PackageImage(background["asset_id"], "gameplay_backdrop", path,
                                                    "REAL full-canvas Hearthstone backdrop; protected foreground inserted locally"))
+        self._attach_creator_images(concepts, packages, thumbs / "packages")
         refs = [(self.out / r["path"], r["role"]) for r in self.direction.active().reference_images]
         if not any(p.get("composition") for p in packs.values()):
             profile = self._style_profile() or {}
@@ -1000,16 +1250,17 @@ class V3Stages:
             if image is not None:
                 hashes.append((str(concept["concept_id"]), dhash(image)))
         notes = [f"{a} and {b} look nearly identical" for i, (a, ha) in enumerate(hashes)
-                 for b, hb in hashes[i + 1:] if hamming(ha, hb) <= 10]
+                 for b, hb in hashes[i + 1:] if hamming(ha, hb) <= 10 and b != f"{a}R" and a != f"{b}R"]
         self.warnings += notes
         if self.portfolio_report is not None:
             assert self.manifest is not None
             from .portfolio import evaluate_portfolio
             available = self.portfolio_report["diversity"]["metrics"]["available"]
             rendered = [self.out / r["path"] for r in results if "path" in r]
+            ideas = {str(c["concept_id"]): str(c["idea_id"]) for c in proposals["concepts"] if c.get("idea_id")}
             final_diversity = evaluate_portfolio(proposals["concepts"], self.manifest.lookup(),
                 available_story_types=available["story_types"], available_treatments=available["treatments"],
-                available_opportunities=available["opportunities"], rendered=rendered)
+                available_opportunities=available["opportunities"], rendered=rendered, ideas=ideas or None)
             self.portfolio_report["diversity"] = final_diversity.to_mapping()
             self.portfolio_report["regenerate_recommended"] = bool(final_diversity.blocking)
             self.portfolio_report["final_notes"] = notes

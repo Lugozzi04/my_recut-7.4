@@ -54,13 +54,14 @@ def test_gen_is_the_default_engine():
 
 def test_fast_gen_is_one_planning_call_and_one_generation_call(tmp_path):
     agent, generator = FakeAgentGen(), FakeGenerator()
-    report = make(tmp_path, agent=agent, generator=generator).run()
+    report = make(tmp_path, agent=agent, generator=generator, critique=False).run()
     out = tmp_path / "out"
-    assert [c["task"] for c in agent.calls] == ["packaging_fast_gen"] and len(generator.calls) == 1
+    assert [c["task"] for c in agent.calls] == ["packaging_fast_playbook"] and len(generator.calls) == 1
     assert report["thumbnail_engine"] == "gen" and report["generation"]["status"] == "done"
     assert report["generation"]["calls_made"] == 1
     prompt = agent.calls[0]["prompt"]
     assert "ASSET PACKAGE" in prompt and "VALID SCENE EXAMPLES" not in prompt and "D. PRODUCTION" not in prompt
+    assert "THUMBNAIL PLAYBOOK" in prompt and "IDEATION" in prompt and "no decorative frames, arrows" not in prompt
     concepts = json.loads((out / "thumbnail_concepts.json").read_text(encoding="utf-8"))["concepts"]
     assert {c["role"] for c in concepts} == set(generate.ROLES)
     assert all(c["render"]["engine"] == "generated" for c in concepts)
@@ -84,7 +85,7 @@ def test_fast_gen_is_one_planning_call_and_one_generation_call(tmp_path):
     assert report["generation"]["generator_version"] == generate.GENERATOR_VERSION
     assert report["generation"]["generator_base"] == "thumbnail_gen_v2"
     planning = json.loads((out / "planning_request.json").read_text(encoding="utf-8"))
-    assert planning["schema_version"] == fast.PROMPT_VERSION_GEN
+    assert planning["schema_version"] == fast.PROMPT_VERSION_PLAYBOOK
     assert not (out / "design_packs").exists() and not (out / "thumbnails" / "bases").exists()
     assert all("compositing" not in c["render"] and "typography" not in c["render"] for c in concepts)
 
@@ -198,11 +199,11 @@ def test_partial_generation_falls_back_per_concept(tmp_path):
     assert report["generation"]["status"] == "partial"
 
 
-def test_gen_validation_requires_every_role(tmp_path):
-    with pytest.raises(PackagingError):
-        make(tmp_path, agent=FakeAgentGen(duplicate=True)).run()
-    report = json.loads((tmp_path / "out" / "packaging_report.json").read_text(encoding="utf-8"))
-    assert "roles" in report["error"]["detail"]
+def test_gen_two_ideas_told_the_same_way_are_reported_not_fatal(tmp_path):
+    report = make(tmp_path, agent=FakeAgentGen(duplicate=True), critique=False).run()  # playbook: roles are free
+    portfolio = json.loads((tmp_path / "out" / "portfolio_quality_report.json").read_text(encoding="utf-8"))
+    codes = {f["code"] for f in portfolio["diversity"]["findings"]}
+    assert report["status"] == "done" and codes & {"duplicate_concept", "same_message"}
 
 
 def test_reference_preserving_rejects_nondiverse_portfolio(tmp_path):

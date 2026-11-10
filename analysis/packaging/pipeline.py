@@ -88,6 +88,8 @@ class PackagingSettings:
     cache_dir: str | None = None
     style_dir: str | None = None
     creative_direction: dict[str, Any] = field(default_factory=dict)
+    official_cards: bool = True  # gen: official card images (HearthstoneJSON, audience language) for named cards
+    critique: bool = True  # gen: the critic ranks the covers and the best one gets one revision pass
 
     def validate(self) -> None:
         if bool(self.project) == bool(self.video) and self.only is None:
@@ -143,6 +145,7 @@ class Evidence:
     roi: RoiCheck
     roi_evidence: dict[str, Any] = field(default_factory=dict)
     sheets: list[dict[str, Any]] = field(default_factory=list)
+    closing_frame_id: str | None = None  # the final state of what the video builds on screen (role 'closing')
 
 
 class PackagingPipeline(V3Stages):
@@ -267,6 +270,9 @@ class PackagingPipeline(V3Stages):
                 proposals = self._creative(agent, evidence, video_story, [c.to_mapping() for c in cards])
             if self.settings.thumbnail_engine == "gen":
                 self._prefetched_generation = self._generate_images(proposals, evidence)
+                if self.settings.critique and self._classic_gen():
+                    self._prefetched_generation = self._critique_and_revise(agent, proposals, evidence,
+                                                                            self._prefetched_generation)
             self._planned = (agent, video_story, proposals)
         except BaseException as exc:  # finish() reports it on the main thread
             self._planned = (agent, None, None)
@@ -300,7 +306,7 @@ class PackagingPipeline(V3Stages):
         budget = s.agent_max_input or (60000 if s.mode == "fast" else 120000)
         agent = PackagingAgent(AgentSettings(provider=s.provider, model=s.agent_model, effort=s.effective_effort,
                                              timeout_s=s.agent_timeout, use_cache=s.use_cache,
-                                             max_images=6 if s.mode == "fast" else 16, max_prompt_chars=budget,
+                                             max_images=10 if s.mode == "fast" else 16, max_prompt_chars=budget,
                                              max_budget_usd=s.agent_budget_usd,
                                              log_path=str(self.out / "agent_calls.jsonl")), self.cache)
         agent.require()  # explicit error before any expensive call when the CLI is missing
@@ -432,6 +438,29 @@ class PackagingPipeline(V3Stages):
             return detect_webcam_roi(sample)
         return parse_roi(value, origin="cli"), {}
 
+    def _closing_frame(self, evidence: Evidence, kept_frames: Any, taken: list[int]) -> str | None:
+        """The final state of what the video builds on screen (a completed tier list, the final board, the result):
+        the best frame of the last seconds of the edit, saved with role 'closing'."""
+        from .frames import pick_diverse, rank_gameplay
+
+        frames = self._frames()
+        duration = evidence.edit_map.duration
+        if duration < 30.0:
+            return None
+        best: tuple[float, int, float, np.ndarray] | None = None
+        for share in (0.985, 0.965, 0.94):
+            source_index, t = evidence.edit_map.to_source(duration * share)
+            context = frames.burst(source_index, max(0.0, t - 0.5), t + 0.5, fps=3.0)
+            chosen = pick_diverse(rank_gameplay(kept_frames(source_index, context), target=t), k=1, taken=taken)
+            if chosen and (best is None or chosen[0][0] > best[0]):
+                best = (chosen[0][0], source_index, chosen[0][1], chosen[0][2])
+        if best is None:
+            return None
+        record = frames.save(best[3], source_index=best[1], source_time=best[2], role="closing",
+                             notes="closing screen: final state of the video")
+        record.quality["selection"] = best[0]
+        return record.id
+
     def _extract_frames(self, evidence: Evidence) -> None:
         """Per highlight: the best settled frame + one visually different alternative from a 4 s burst, plus
         before/after context; webcam crops ranked by face size/sharpness and de-duplicated across the video."""
@@ -481,6 +510,9 @@ class PackagingPipeline(V3Stages):
                 record = frames.save(chosen[0][2], source_index=source_index, source_time=chosen[0][1],
                                      role="coverage", notes=f"middle of {game.game_id}")
                 game.frame_ids.append(record.id)
+        closing = self._closing_frame(evidence, kept_frames, taken)
+        if closing is not None:
+            evidence.closing_frame_id = closing
         for game in evidence.games:
             game.frame_ids = [f for h in evidence.highlights if h.game_id == game.game_id for f in h.frame_ids] + game.frame_ids
         gameplay = [frames.images[r.id] for r in frames.records.values() if r.kind == "gameplay"]

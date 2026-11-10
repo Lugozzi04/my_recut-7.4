@@ -383,10 +383,11 @@ def test_final_image_generator_receives_actual_output_class_not_only_planning_ag
                                                                    "output_group": "hunter"}]}}
     pipeline.plan()
     pipeline.finish()
-    assert app is not None and len(generator.calls) == 1
-    prompt = generator.calls[0]["prompt"]
-    assert "EXPORTED PLAYER CLASSES" in prompt and "Hunter" in prompt
-    assert "opponent" in prompt and "Intro" in prompt
+    assert app is not None and len(generator.calls) == 2  # the covers, then the critic's revision
+    for call in generator.calls:
+        prompt = call["prompt"]
+        assert "EXPORTED PLAYER CLASSES" in prompt and "Hunter" in prompt
+        assert "opponent" in prompt and "Intro" in prompt
 
 
 

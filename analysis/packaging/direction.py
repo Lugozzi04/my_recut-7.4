@@ -9,6 +9,7 @@ import re
 import unicodedata
 
 REFERENCE_ROLES = ("style", "layout", "element")
+MAX_BRIEF_IMAGES = 3
 STRATEGY_VERSION = 2  # 2: full_generative default; older saved strategies are V4 defaults, not choices
 
 
@@ -27,6 +28,10 @@ class CreativeDirection:
     # reference_preserving: AI environment + local protected compositing (V4.1), opt-in only.
     generation_strategy: str = "full_generative"
     strategy_version: int = STRATEGY_VERSION
+    # The quick way in, active in every mode: a free-text idea ("NON CRAFTARLA on this card, my disgusted face")
+    # and up to 3 images to use in the cover (e.g. the card). Nothing else has to be filled.
+    brief: str = ""
+    brief_images: list[dict[str, str]] = field(default_factory=list)
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any] | None) -> CreativeDirection:
@@ -42,9 +47,16 @@ class CreativeDirection:
             raise ValueError("Typography must be auto, precision or ai")
         if value.generation_strategy not in ("reference_preserving", "full_generative"):
             raise ValueError("Unknown thumbnail generation strategy")
-        for name in ("youtube_title", "thumbnail_hook", "creative_focus", "style_profile_id"):
+        for name in ("youtube_title", "thumbnail_hook", "creative_focus", "style_profile_id", "brief"):
             if not isinstance(getattr(value, name), str) or len(getattr(value, name)) > 3000:
                 raise ValueError(f"Invalid Creative Direction {name}")
+        if len(value.brief) > 1500:
+            raise ValueError("Idea: max 1500 characters")
+        if not isinstance(value.brief_images, list) or len(value.brief_images) > MAX_BRIEF_IMAGES:
+            raise ValueError(f"At most {MAX_BRIEF_IMAGES} images can go with the idea")
+        for image in value.brief_images:
+            if not isinstance(image, dict) or not image.get("path"):
+                raise ValueError("An idea image needs a path")
         if len(value.youtube_title) > 100 or len(value.thumbnail_hook) > 180:
             raise ValueError("Title: max 100 characters; thumbnail text: max 180 characters")
         if not isinstance(value.title_locked, bool) or not isinstance(value.hook_locked, bool):
@@ -60,10 +72,19 @@ class CreativeDirection:
         return asdict(self)
 
     def active(self) -> CreativeDirection:
+        """Guided: everything. Automatic: the advanced fields are ignored, the idea and its images still count."""
         if self.mode == "guided":
             return self
         return CreativeDirection(style_profile_id=self.style_profile_id, typography_mode=self.typography_mode,
-                                 generation_strategy=self.generation_strategy)
+                                 generation_strategy=self.generation_strategy, brief=self.brief,
+                                 brief_images=list(self.brief_images))
+
+    @property
+    def brief_text(self) -> str:
+        """The idea plus, in guided mode, the old free-text focus (both are the creator's words)."""
+        active = self.active()
+        parts = [active.brief.strip(), active.creative_focus.strip() if active.mode == "guided" else ""]
+        return " / ".join(p for p in parts if p)
 
     def snapshot(self, output: Path) -> CreativeDirection:
         """Own the original references, independently of the user's external files."""
@@ -82,6 +103,20 @@ class CreativeDirection:
             write_image(target, image)
             refs.append({"path": str(target.relative_to(output)), "role": ref["role"], "digest": digest})
         raw["reference_images"] = refs
+        images = []
+        for item in self.brief_images:
+            source = Path(item["path"]).expanduser()
+            if not source.is_absolute() and (output / source).is_file():
+                source = output / source
+            image = read_image_unchanged(source)
+            if image is None:
+                raise ValueError(f"Cannot read the idea image {item['path']}")
+            digest = hashlib.sha256(image.tobytes()).hexdigest()[:20]
+            target = output / "creative_references" / f"brief_{digest}.png"
+            write_image(target, image)
+            images.append({"path": str(target.relative_to(output)), "digest": digest,
+                           "name": item.get("name") or Path(item["path"]).name})
+        raw["brief_images"] = images
         return CreativeDirection.from_mapping(raw)
 
 

@@ -259,7 +259,7 @@ def test_codex_defaults_to_medium_effort_and_input_budget(tmp_path):
     with patch("analysis.packaging.agent.PackagingAgent.locate", return_value=str(cli)):
         agent = PackagingPipeline(settings)._make_agent()
     assert agent.settings.effort == "medium" and agent.settings.max_prompt_chars == 60000
-    assert agent.settings.max_images == 6
+    assert agent.settings.max_images == 10  # creator images + closing screen + frames
 
 
 def test_input_budget_refuses_oversized_prompts(tmp_path):

@@ -529,7 +529,7 @@ def validate_portfolio_answer(raw: Any, *, n_titles: int, n_concepts: int, highl
     if not problems:
         diversity = evaluate_portfolio(concepts, lookup, available_story_types=available_story_types,
                                        available_treatments=available_treatments,
-                                       available_opportunities=len(opportunities))
+                                       available_opportunities=len(opportunities), ideas=raw.get("_ideas"))
         for finding in diversity.blocking:
             problems.append(f"portfolio {finding.code} ({', '.join(finding.concepts)}): {finding.detail}")
     if problems:
