@@ -37,7 +37,12 @@ def timing_text(payload: Mapping[str, Any], *, segments: Sequence[Mapping[str, A
         for segment in segments:
             index = int(segment["v_idx"])
             a, b = float(segment["v_in"]), float(segment["v_out"])
-            track = next((t for t in tracks if str(Path(t["path"]).resolve()) == str(Path(sources[index]).resolve())), {})
+            teaser = str(segment.get("teaser_id") or "")
+            same_source = [t for t in tracks if str(Path(t["path"]).resolve()) == str(Path(sources[index]).resolve())
+                           and str(t.get("teaser_id") or "") == teaser]
+            track = next((t for t in same_source if float(t.get("segment_source_in", 0)) - 1e-3 <= a
+                          and (not t.get("segment_source_out") or a < float(t["segment_source_out"]) + 1e-3)),
+                         same_source[0] if same_source else {})
             fragments.append((index, a, b, track))
     else:
         for track in tracks:
@@ -55,7 +60,10 @@ def timing_text(payload: Mapping[str, Any], *, segments: Sequence[Mapping[str, A
     chapters: list[dict[str, Any]] = []
     for piece, (_, a, b, track) in zip(mapping.pieces, fragments):
         records = list(track.get("export_intervals", []))
-        if not records:
+        if track.get("teaser_id"):
+            # A teaser is one chapter of its own, whatever games its footage shows.
+            records = [{"role": "teaser", "game_id": str(track["teaser_id"]), "start": a, "end": b}]
+        elif not records:
             offset = float(track.get("segment_source_in", 0))
             grouping = {str(r.get("key")): r.get("group") for r in track.get("gameplay_grouping", {}).get("games", [])}
             records = [{**r, "start": offset + float(r["start"]), "end": offset + float(r["end"]),
@@ -89,6 +97,7 @@ def timing_text(payload: Mapping[str, Any], *, segments: Sequence[Mapping[str, A
                                  "game_index": record.get("game_index")})
     lines: list[str] = []
     game_number = 0
+    teaser_numbers: dict[Any, int] = {}
     previous_role = None
     for chapter in chapters:
         role = chapter["identity"][1]
@@ -97,6 +106,12 @@ def timing_text(payload: Mapping[str, Any], *, segments: Sequence[Mapping[str, A
             if previous_role == "intro":
                 continue
             label = "Intro"
+        elif role == "teaser":
+            teaser = chapter["identity"][2]
+            if previous_role == "teaser" and teaser in teaser_numbers:
+                continue  # the parts of one teaser stay one chapter
+            teaser_numbers.setdefault(teaser, len(teaser_numbers) + 1)
+            label = f"Teaser {teaser_numbers[teaser]}"
         else:
             game_number += 1
             label = f"Partita {game_number}"

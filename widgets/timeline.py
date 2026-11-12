@@ -196,12 +196,17 @@ class TimelineWidget(QWidget):
     # scrubbing lifecycle (for MainWindow sync)
     scrubStarted = Signal()
     scrubEnded = Signal()
+    textOverlayClicked = Signal(str)  # text overlay id
 
     def __init__(self):
         super().__init__()
         self.setMinimumHeight(160)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.ClickFocus)
+        # text overlays: [(id, start, end, label)] in timeline seconds + the selected id
+        self._texts: list[tuple[str, float, float, str]] = []
+        self._text_selected: Optional[str] = None
+        self._text_hits: list[tuple[QRectF, str]] = []
         self.duration: float = 0.0  # global max duration across tracks
         self.playhead: float = 0.0
 
@@ -230,6 +235,7 @@ class TimelineWidget(QWidget):
 
         # pending cut markers (per-track, from MainWindow)
         self._pending_by_track: dict[int, tuple[Optional[float], Optional[float]]] = {}
+        self._pending_kind = "cut"  # "teaser": the IN marker of a fragment being copied (orange)
 
         # scrubbing state (drag playhead / ruler)
         self._scrubbing: bool = False
@@ -314,10 +320,10 @@ class TimelineWidget(QWidget):
 
     def setToolMode(self, mode: str) -> None:
         m = str(mode).lower().strip()
-        if m not in {"select", "split", "cut"}:
+        if m not in {"select", "split", "cut", "teaser"}:
             m = "select"
         self._tool_mode = m
-        if m in {"split", "cut"}:
+        if m in {"split", "cut", "teaser"}:
             self.setCursor(Qt.CrossCursor)
         else:
             self.unsetCursor()
@@ -549,6 +555,12 @@ class TimelineWidget(QWidget):
         if emit:
             self.trackSelected.emit(idx)
         self._changed()
+
+    def set_pending_kind(self, kind: str) -> None:
+        kind = "teaser" if kind == "teaser" else "cut"
+        if kind != self._pending_kind:
+            self._pending_kind = kind
+            self._changed()
 
     def set_pending_cut(self, start: Optional[float], end: Optional[float], track_index: Optional[int] = None):
         idx = self.active_track if track_index is None else int(track_index)
@@ -995,12 +1007,49 @@ class TimelineWidget(QWidget):
                 self._paint_hover_cut(p, lanes)
                 self._paint_marquee(p, lanes)
                 self._paint_hover_line(p, lanes)
+                self._paint_texts(p, lanes)
                 p.restore()
                 self._paint_playhead(p, lanes, self.height())
         except Exception:
             traceback.print_exc()
         finally:
             p.end()
+
+    def set_text_overlays(self, items: list[tuple[str, float, float, str]], selected: Optional[str] = None) -> None:
+        self._texts = [(str(i), float(a), float(b), str(label)) for i, a, b, label in items]
+        self._text_selected = selected
+        self.update()
+
+    def _paint_texts(self, p: QPainter, lanes: list[_Lane]) -> None:
+        """Text overlays as small chips along the top of the first video lane."""
+        self._text_hits = []
+        lane = next((ln for ln in lanes if ln.kind == "video"), None)
+        if lane is None or not self._texts:
+            return
+        h = 16.0
+        top = lane.top + 2
+        f = QFont(p.font())
+        f.setPixelSize(10)
+        f.setBold(True)
+        p.setFont(f)
+        fm = QFontMetrics(f)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        for ident, a, b, label in self._texts:
+            x1, x2 = self._t_to_xf(a), self._t_to_xf(b)
+            if x2 < HEADER_W or x1 > self.width():
+                continue
+            r = QRectF(x1, top, max(6.0, x2 - x1), h)
+            selected = ident == self._text_selected
+            fill = QColor(155, 93, 229, 235 if selected else 190)
+            p.setPen(QPen(QColor(255, 255, 255, 230), 1.2) if selected else Qt.NoPen)
+            p.setBrush(fill)
+            p.drawRoundedRect(r, 4, 4)
+            if r.width() > 22:
+                text = fm.elidedText("T  " + label, Qt.ElideRight, int(r.width() - 8))
+                p.setPen(QColor(255, 255, 255))
+                p.drawText(r.adjusted(5, 0, -3, 0), Qt.AlignVCenter | Qt.AlignLeft, text)
+            self._text_hits.append((r, ident))
+        p.setFont(QFont(self.font()))
 
     def _render_static(self, p: QPainter) -> None:
         col = self._colors
@@ -1510,22 +1559,23 @@ class TimelineWidget(QWidget):
         top = lanes[0].top
         bottom = lanes[-1].bottom
         ts, te = to_t(ps), to_t(pe)
+        marker = QColor(247, 152, 58) if self._pending_kind == "teaser" else col.pending
         if ts is not None and te is not None:
             a, b = sorted((ts, te))
             x1, x2 = self._t_to_xf(a), self._t_to_xf(b)
-            p.fillRect(QRectF(x1, top, max(1.0, x2 - x1), bottom - top), _alpha(col.pending, 40))
+            p.fillRect(QRectF(x1, top, max(1.0, x2 - x1), bottom - top), _alpha(marker, 40))
         for tv, label in ((ts, "IN"), (te, "OUT")):
             if tv is None:
                 continue
             x = self._t_to_xf(tv)
-            p.setPen(QPen(col.pending, 2))
+            p.setPen(QPen(marker, 2))
             p.drawLine(QPointF(x, top), QPointF(x, bottom))
             f = QFont(p.font())
             f.setPixelSize(9)
             f.setBold(True)
             p.setFont(f)
             chip = QRectF(x - 13, top, 26, 13)
-            p.fillRect(chip, col.pending)
+            p.fillRect(chip, marker)
             p.setPen(QColor("#1A1300"))
             p.drawText(chip, Qt.AlignCenter, label)
             p.setFont(QFont(self.font()))
@@ -1626,6 +1676,13 @@ class TimelineWidget(QWidget):
             return
         x = float(e.position().x())
         y = float(e.position().y())
+        if e.button() == Qt.LeftButton:
+            for rect, ident in reversed(self._text_hits):
+                if rect.contains(QPointF(x, y)):
+                    self._text_selected = ident
+                    self.textOverlayClicked.emit(ident)
+                    self.update()
+                    return
         if x < HEADER_W:
             lane = self._lane_at_y(y)
             if lane is not None and lane.track_idx != self.active_track:
@@ -1678,6 +1735,13 @@ class TimelineWidget(QWidget):
             meta = self._meta_for(self._audio_track_index() if lane is not None and lane.kind != "video"
                                   else track_idx, x, t)
             meta["cut_tool_click"] = True
+            self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
+            return
+
+        if self._tool_mode == "teaser" and y > RULER_H:
+            meta = self._meta_for(self._audio_track_index() if lane is not None and lane.kind != "video"
+                                  else track_idx, x, t)
+            meta["teaser_tool_click"] = True
             self.contextMenuRequested.emit(float(t), e.globalPosition(), meta)
             return
 

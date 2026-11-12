@@ -210,4 +210,4 @@ def enforce_selection(track: Any) -> None:
 def source_tracks(tracks: list[Any], index: int) -> list[Any]:
     target = Path(tracks[index].path).resolve()
     return [t for t in tracks if t.path and Path(t.path).resolve() == target
-            and getattr(t, "source_role", "gameplay") != "intro"]
+            and getattr(t, "source_role", "gameplay") != "intro" and not getattr(t, "teaser_id", "")]

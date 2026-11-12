@@ -55,6 +55,9 @@ class TrackState:
     ai_speaker_ids: list[int] | None = None
     copy_source_id: str | None = None
     copy_index: int = 0
+    # Teaser copy of a fragment (core.teasers): non-empty id; index is "Teaser N" in timeline order.
+    teaser_id: str = ""
+    teaser_index: int = 0
     # Generic gameplay editing (any game): automatic removal regions with their own provenance.
     gameplay_cuts: list[Segment] = field(default_factory=list)
     gameplay_cuts_enabled: bool = False

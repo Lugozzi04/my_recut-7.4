@@ -82,8 +82,11 @@ class ExportWorker(ExportProcessMixin, QObject):
         smart_render_pad: float = 0.5,
         export_settings: ExportSettings | dict | None = None,
         requested_export_settings: ExportSettings | dict | None = None,
+        text_overlays: list[dict] | None = None,
     ):
         super().__init__()
+        # Burned-in texts: [{"png", "x", "y", "intervals": [(out_start, out_end)], "fade", "sig"}] in output time.
+        self.text_overlays = [dict(o) for o in (text_overlays or []) if o.get("png") and o.get("intervals")]
         self.ffmpeg_path = ffmpeg_path
         self.input_path = input_path
         self.input_paths = [input_path]
@@ -3953,6 +3956,7 @@ class ExportWorker(ExportProcessMixin, QObject):
         force_fps: float = 0.0,
         container: str = "mp4",
         lossless_audio: bool = False,
+        text_overlays: list[dict] | None = None,
     ) -> tuple[list[str], float]:
         force_fps = self._effective_force_fps(force_fps)
         segs = []
@@ -4126,6 +4130,9 @@ class ExportWorker(ExportProcessMixin, QObject):
             filt = re.sub(r"\[(\d+):([va])\]", lambda m: f"[{indexes[int(m[1])]}:{m[2]}]", filt)
         else:
             active_inputs = list(range(len(self.input_paths)))
+        text_inputs: list[tuple[str, float]] = []
+        if text_overlays:
+            filt, text_inputs = self._text_overlay_filter(filt, text_overlays, len(active_inputs))
         filt, video_label, final_audio_label = self._decorate_output_filtergraph(
             filt,
             "outv",
@@ -4208,6 +4215,9 @@ class ExportWorker(ExportProcessMixin, QObject):
             if t_lim > 1e-6:
                 cmd += ["-t", f"{t_lim:.3f}"]
             cmd += ["-i", path]
+        fps_in = force_fps if force_fps and force_fps > 1.0 else 60.0
+        for png, seconds in text_inputs:
+            cmd += ["-loop", "1", "-framerate", f"{fps_in:.3f}", "-t", f"{seconds:.3f}", "-i", png]
 
         cmd += ["-filter_complex_script", filter_file]
         if video_label:
@@ -4246,6 +4256,50 @@ class ExportWorker(ExportProcessMixin, QObject):
             cmd += mux
         self._log(f"ffmpeg_cmd_segments={self._fmt_cmd(cmd)}")
         return cmd, total
+
+    TEXT_FADE_SECONDS = 0.2
+
+    def _chunk_text_overlays(self, offset: float, duration: float) -> list[dict]:
+        """Texts on screen inside [offset, offset + duration) of the output, in chunk-local time."""
+        out: list[dict] = []
+        end = offset + duration
+        for ov in self.text_overlays:
+            for a, b in ov.get("intervals") or []:
+                a, b = float(a), float(b)
+                lo, hi = max(a, offset), min(b, end)
+                if hi <= lo + 1e-3:
+                    continue
+                fade = bool(ov.get("fade", True))
+                fade_len = min(self.TEXT_FADE_SECONDS, (b - a) / 3.0)
+                out.append({
+                    "png": str(ov["png"]), "x": int(ov.get("x", 0)), "y": int(ov.get("y", 0)),
+                    "a": lo - offset, "b": hi - offset, "sig": str(ov.get("sig") or ov["png"]),
+                    "fade_in": fade and a >= offset - 1e-6, "fade_out": fade and b <= end + 1e-6,
+                    "fade_len": fade_len,
+                })
+        return out
+
+    @staticmethod
+    def _text_overlay_filter(filt: str, texts: list[dict], first_input: int) -> tuple[str, list[tuple[str, float]]]:
+        """Overlay text images on [outv]. Returns the new graph and the (png, seconds) inputs to append."""
+        if "[outv]" not in filt:
+            return filt, []
+        filt = filt.replace("[outv]", "[outv_notext]", 1).rstrip().rstrip(";")
+        current = "outv_notext"
+        inputs: list[tuple[str, float]] = []
+        for k, t in enumerate(texts):
+            a, b, fl = float(t["a"]), float(t["b"]), float(t.get("fade_len", 0.0) or 0.0)
+            chain = f"[{first_input + k}:v]format=rgba"
+            if t.get("fade_in") and fl > 0:
+                chain += f",fade=t=in:st={a:.3f}:d={fl:.3f}:alpha=1"
+            if t.get("fade_out") and fl > 0:
+                chain += f",fade=t=out:st={max(a, b - fl):.3f}:d={fl:.3f}:alpha=1"
+            label = "outv" if k == len(texts) - 1 else f"vtext{k}"
+            filt += (f";{chain}[text{k}];[{current}][text{k}]overlay=x={int(t['x'])}:y={int(t['y'])}"
+                     f":eof_action=pass:enable='between(t,{a:.3f},{b:.3f})'[{label}]")
+            current = label
+            inputs.append((str(t["png"]), b + 0.5))
+        return filt, inputs
 
     def _compute_segment_preseek(
         self,
@@ -4289,7 +4343,8 @@ class ExportWorker(ExportProcessMixin, QObject):
         total_all = max(1e-6, total_all)
         force_fps = self._segments_base_fps(segments)
         bounded_edit = any(s.get("source_id") for s in segments)
-        hybrid_mode = bool(prefer_hybrid or self.export_method == "smart_hybrid") and not bounded_edit
+        hybrid_mode = (bool(prefer_hybrid or self.export_method == "smart_hybrid") and not bounded_edit
+                       and not self.text_overlays)
         self._log(f"chunked_parallel_segments_hybrid={'on' if hybrid_mode else 'off'}")
         fps_cache: dict[int, float] = {}
         chunk_keyframes: list[float] = []
@@ -4372,6 +4427,10 @@ class ExportWorker(ExportProcessMixin, QObject):
         # Keep chunk order aligned to timeline order.
         # (Sorting here breaks duplicated/reordered timelines.)
         chunk_durs = [sum(float(s.get("duration", 0.0) or 0.0) for s in ch) for ch in chunks]
+        chunk_offsets = [sum(chunk_durs[:i]) for i in range(len(chunks))]
+        chunk_texts = [self._chunk_text_overlays(chunk_offsets[i], chunk_durs[i]) for i in range(len(chunks))]
+        if self.text_overlays:
+            self._log(f"text_overlays chunks_with_text={sum(1 for t in chunk_texts if t)}/{len(chunks)}")
         threads_per = self._threads_per_process(workers)
         self._ffmpeg_threads_override = threads_per
         self._log(
@@ -4407,6 +4466,10 @@ class ExportWorker(ExportProcessMixin, QObject):
                 container=chunk_ext,
                 apply_audio_filters=False,
             )
+            if key and chunk_texts[i]:
+                text_sig = json.dumps([(t["sig"], round(t["a"], 3), round(t["b"], 3), t["fade_in"], t["fade_out"])
+                                       for t in chunk_texts[i]])
+                key = hashlib.sha1(f"{key}|text|{text_sig}".encode("utf-8")).hexdigest()
             sig = f"k:{key}" if key else f"i:{i}"
             gi = sig_to_group.get(sig)
             if gi is None:
@@ -4598,6 +4661,7 @@ class ExportWorker(ExportProcessMixin, QObject):
                 force_fps=force_fps,
                 container=chunk_ext,
                 lossless_audio=bounded_edit,
+                text_overlays=chunk_texts[i],
             )
 
             def _on_progress(out_time: float) -> None:
@@ -4945,6 +5009,8 @@ class ExportWorker(ExportProcessMixin, QObject):
                             apply_audio_filters=True,
                             input_preseek=preseek,
                             force_fps=local_force_fps,
+                            text_overlays=self._chunk_text_overlays(
+                                0.0, sum(float(s.get("duration", 0.0) or 0.0) for s in segs_local)),
                         )
                     else:
                         try:
@@ -5241,6 +5307,12 @@ class ExportWorker(ExportProcessMixin, QObject):
                     dur = 0.0
                 if dur > 1e-6:
                     segments.append(s)
+            if not segments and self.text_overlays and len(self.input_paths) == 1 and self.keeps:
+                audio = has_audio_stream(self.input_paths[0])
+                segments = [{"v_idx": 0, "a_idx": 0 if audio else None,
+                             "v_in": float(k.start), "v_out": float(k.end),
+                             "a_in": float(k.start), "a_out": float(k.end), "duration": float(k.end - k.start)}
+                            for k in sorted(self.keeps, key=lambda k: k.start) if k.end > k.start]
 
             if segments:
                 total_seg = sum(float(s.get("duration", 0.0) or 0.0) for s in segments)
@@ -5279,6 +5351,13 @@ class ExportWorker(ExportProcessMixin, QObject):
                     f"reason={mc_segments_reason} segments={len(segments)} "
                     f"total={total_seg:.3f}s input={float(self._summary_input_duration or 0.0):.1f}s"
                 )
+                if self.text_overlays:
+                    # Texts are drawn on every frame they cover: one full render path that supports them.
+                    self._log(f"text_overlays count={len(self.text_overlays)} path=chunked_parallel_segments")
+                    self._run_chunked_parallel_segments(segments, temp_files, prefer_hybrid=False)
+                    self.progress.emit(100, "100%")
+                    _finalize()
+                    return
                 if len(self.input_paths) > 1 and any(s.get("source_id") for s in segments):
                     # Retain quality; bound hundreds of future trim branches.
                     self._log("selected_composition path=bounded_mp4_chunks")

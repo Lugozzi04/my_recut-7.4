@@ -18,7 +18,7 @@ binaries = []
 hiddenimports = []
 
 # Project assets
-for folder in ("icons", "webui", "bin", "class_refs"):
+for folder in ("icons", "webui", "bin", "class_refs", "fonts"):
     source = project_root / folder
     if source.exists():
         datas.append((str(source), folder))

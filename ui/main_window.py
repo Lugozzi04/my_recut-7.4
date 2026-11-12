@@ -98,6 +98,8 @@ from .gameplay_editing_ui import (
 )
 from core import Project, ProjectSession, Track, TrackState, Clip, Media
 from core.project_file import source_identity
+from core.text_overlays import output_intervals, overlays_from_payload, overlays_to_payload
+from core import teasers as teaser_model
 from core.project_file import (
     PROJECT_FORMAT,
     PROJECT_VERSION,
@@ -253,6 +255,7 @@ class MainWindow(QMainWindow):
         self.manual_cuts: list[Segment] = []
         self._pending_cut_start: float | None = None
         self._pending_cut_end: float | None = None
+        self._pending_teaser: tuple[int, float] | None = None  # (track index, start inside it)
 
         # undo / redo
         self.suppressed_cuts: list[Segment] = []
@@ -265,6 +268,19 @@ class MainWindow(QMainWindow):
         # skip (preview)
         self.skip_on: bool = True
         self._skip_guard = False
+        # Last automatic cut skip: (landing global time, monotonic ts). Positions reported
+        # before the landing right after the jump are stale decoder reports, not playback.
+        self._preview_skip_last: tuple[float, float] | None = None
+        # True while the heard audio comes from the video player itself (audio clip = same file
+        # and same time as the visible video). One decoder: seeks/skips cannot drift or stutter.
+        self._audio_via_video = False
+        # Fires exactly at the next cut start, so preview does not play into the cut
+        # while waiting for the next positionChanged (~50 ms apart).
+        self._preview_skip_timer = QTimer(self)
+        self._preview_skip_timer.setSingleShot(True)
+        self._preview_skip_timer.setTimerType(Qt.PreciseTimer)
+        self._preview_skip_timer.timeout.connect(self._on_preview_skip_timer)
+        self._preview_skip_timer_cut: float | None = None
         self._user_scrubbing = False
         # guard against async QMediaPlayer position jitter after seeks
         self._pending_seek_target: float | None = None
@@ -308,6 +324,10 @@ class MainWindow(QMainWindow):
         # Player (single video track + parallel audio tracks)
         # -----------------------------
         self.video_widget = FrameVideoWidget(self._open_path, self.open_file)
+        self.video_widget.text_provider = lambda w, h: (
+            self.text_overlays_ctl.preview_items(w, h) if getattr(self, "text_overlays_ctl", None) else [])
+        self.video_widget.on_text_moved = lambda ident, x, y: self.text_overlays_ctl.move(ident, x, y)
+        self.video_widget.on_text_clicked = lambda ident: self.text_overlays_ctl.select(ident)
 
         self.video_player = QMediaPlayer(self)
         self.video_audio = QAudioOutput(self)
@@ -481,6 +501,8 @@ class MainWindow(QMainWindow):
         self._web_zoom_steps_max = self._calc_zoom_steps_max()
         self.timeline.setSnapEnabled(bool(getattr(self, "_snap_enabled", False)))
         self.timeline.seekRequested.connect(self._seek_to)
+        self.timeline.textOverlayClicked.connect(
+            lambda ident: self.text_overlays_ctl.select(ident) if getattr(self, "text_overlays_ctl", None) else None)
         if hasattr(self.timeline, "trackSelected"):
             self.timeline.trackSelected.connect(self._on_timeline_track_selected)
         if hasattr(self.timeline, "clipMoveRequested"):
@@ -1570,6 +1592,7 @@ class MainWindow(QMainWindow):
             self.btn_cut_tool, self.btn_split, self.btn_zoom_out, self.btn_zoom_in, self.btn_zoom_reset
         )
         self.timeline_toolbar.selectToolClicked.connect(lambda: self._set_tool_mode("select"))
+        self.timeline_toolbar.teaserToolClicked.connect(self._toggle_teaser_tool)
         self.timeline_toolbar.undoClicked.connect(self._undo_cuts)
         self.timeline_toolbar.redoClicked.connect(self._redo_cuts)
         self.timeline_toolbar.snapToggled.connect(self._set_snap_enabled)
@@ -1749,6 +1772,11 @@ class MainWindow(QMainWindow):
         can_redo = bool(getattr(self, "_edit_redo_stack", None) or getattr(self, "_redo_stack", None))
         bar.set_history(can_undo, can_redo)
 
+    def _refresh_text_overlays(self) -> None:
+        ctl = getattr(self, "text_overlays_ctl", None)
+        if ctl is not None:
+            ctl.refresh()
+
     def _mark_project_dirty(self, dirty: bool = True) -> None:
         self._project_dirty = bool(dirty)
         if getattr(self, "top_bar", None) is not None:
@@ -1803,6 +1831,11 @@ class MainWindow(QMainWindow):
             t = max(0.0, min(float(t), float(total)))
             pos_ms = int(t * 1000)
         self._dbg_segments(f"set_all_positions t={t:.3f} pos_ms={pos_ms} total={total:.3f}")
+        self._preview_skip_last = None
+        try:
+            self._preview_skip_timer.stop()
+        except Exception:
+            pass
         self._last_pos = float(t)
         self._set_pending_seek(t)
         self._sync_video_to_global(t, force=True)
@@ -2088,9 +2121,28 @@ class MainWindow(QMainWindow):
             self._dbg_segments(f"sync_video_to_global: seek cur={cur} target={target}")
             self.video_player.setPosition(target)
 
+    def _set_preview_audio_route(self, via_video: bool) -> None:
+        """Hear the video player's own audio (via_video) or the dedicated audio player, never both."""
+        if bool(via_video) == self._audio_via_video:
+            return
+        self._audio_via_video = bool(via_video)
+        try:
+            self.video_audio.setMuted(not via_video)
+            self.audio_output.setMuted(bool(via_video))
+        except Exception:
+            pass
+
+    def _audio_matches_video(self, t: float, audio_path: str, audio_local: float) -> bool:
+        vmap = self._map_global_to_video(t)
+        if vmap is None:
+            return False
+        _vidx, vseg, vlocal = vmap
+        return self._same_local_path(str(vseg.get("path") or ""), audio_path) and abs(float(vlocal) - audio_local) < 0.05
+
     def _sync_audio_to_global(self, t: float, force: bool = False) -> None:
         mapped = self._map_global_to_audio(t)
         if mapped is None:
+            self._set_preview_audio_route(False)
             if force or (time.monotonic() < float(getattr(self, "_media_debug_sync_focus_until", 0.0) or 0.0)):
                 self._media_dbg(f"sync_audio_to_global no_map t={float(t):.3f} force={bool(force)}", throttle_s=0.05)
             try:
@@ -2103,6 +2155,12 @@ class MainWindow(QMainWindow):
         idx, seg, local = mapped
         path = str(seg.get("path") or "")
         if not path:
+            return
+        via_video = self._audio_matches_video(t, path, float(local))
+        self._set_preview_audio_route(via_video)
+        if via_video and not force and idx == self._audio_segment_index:
+            # The audible track is the video player's: the muted dedicated player only needs
+            # to follow on real jumps (force) so it is ready if the route changes.
             return
 
         now = time.monotonic()
@@ -2153,6 +2211,17 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
             self._set_audio_player_source(path)
+
+        if force and was_playing and not source_changed and not segment_changed:
+            try:
+                audio_playing = self.audio_player.playbackState() == QMediaPlayer.PlayingState
+                already_there = abs(int(self.audio_player.position()) - target_ms) <= 40
+            except Exception:
+                audio_playing = already_there = False
+            if audio_playing and already_there:
+                # Seeking a playing player onto its own position restarts its output and
+                # repeats the last few ms (heard as a stutter right after every cut skip).
+                return
 
         if force:
             self._media_dbg(
@@ -2511,6 +2580,8 @@ class MainWindow(QMainWindow):
         if not track.path:
             return ""
         name = Path(track.path).name
+        if teaser_model.is_teaser(track):
+            return teaser_model.teaser_label(int(getattr(track, "teaser_index", 0) or 1))
         try:
             cidx = int(getattr(track, "copy_index", 0) or 0)
         except Exception:
@@ -3145,9 +3216,33 @@ class MainWindow(QMainWindow):
     def _sync_project_from_track(self, track: TrackState) -> None:
         self._project_session.sync_state_to_project(track)
 
-    def _finalize_timeline_reorder(self) -> None:
+    def _timeline_layout(self) -> list[dict]:
+        """Where each piece's footage sits on the timeline (for texts that must follow their footage)."""
+        layout: list[dict] = []
+        for t in self._tracks:
+            clip = self._find_clip(t.video_clip_id) or self._find_clip(t.audio_clip_id)
+            if clip is None or not t.path:
+                continue
+            layout.append({"key": id(t), "path": str(t.path), "group": str(t.segment_group_id or ""),
+                           "teaser": str(getattr(t, "teaser_id", "") or ""),
+                           "src_in": float(clip.source_in), "src_out": float(clip.source_out),
+                           "tl_in": float(clip.timeline_in), "tl_out": float(clip.timeline_out)})
+        return layout
+
+    def _reanchor_text_overlays(self, before: list[dict] | None) -> None:
+        texts = list(getattr(self.project, "text_overlays", []) or [])
+        if not texts or not before:
+            return
+        moved = teaser_model.reanchor_overlays(texts, before, self._timeline_layout())
+        if moved != texts:
+            self.project.text_overlays = moved
+            self._refresh_text_overlays()
+
+    def _finalize_timeline_reorder(self, text_anchor: list[dict] | None = None) -> None:
         self._rebuild_sequential_timeline()
         self._renumber_segment_groups()
+        teaser_model.renumber(self._tracks)
+        self._reanchor_text_overlays(text_anchor)
         self._refresh_timeline_tracks(reset_view=False)
         total = self._global_duration if self._global_duration > 0 else self.duration
         self.seek.setRange(0, int(total * 1000))
@@ -3173,16 +3268,18 @@ class MainWindow(QMainWindow):
         if idx_a >= len(self._tracks) or idx_b >= len(self._tracks):
             return
         self._push_undo_state(kind="timeline")
+        anchor = self._timeline_layout()
         self._tracks[idx_a], self._tracks[idx_b] = self._tracks[idx_b], self._tracks[idx_a]
         if self._active_track_index == idx_a:
             self._active_track_index = idx_b
         elif self._active_track_index == idx_b:
             self._active_track_index = idx_a
-        self._finalize_timeline_reorder()
+        self._finalize_timeline_reorder(anchor)
 
-    def _move_track_to_index(self, from_idx: int, to_idx: int) -> None:
+    def _move_track_to_index(self, from_idx: int, to_idx: int, text_anchor: list[dict] | None = None) -> None:
         if from_idx < 0 or from_idx >= len(self._tracks):
             return
+        anchor = text_anchor if text_anchor is not None else self._timeline_layout()
         track = self._tracks.pop(from_idx)
         to_idx = max(0, min(int(to_idx), len(self._tracks)))
         self._tracks.insert(to_idx, track)
@@ -3195,7 +3292,7 @@ class MainWindow(QMainWindow):
             elif to_idx <= self._active_track_index < from_idx:
                 self._active_track_index += 1
 
-        self._finalize_timeline_reorder()
+        self._finalize_timeline_reorder(anchor)
 
     def _move_track_by_time(self, track_idx: int, new_start: float) -> None:
         if track_idx < 0 or track_idx >= len(self._tracks):
@@ -3428,12 +3525,19 @@ class MainWindow(QMainWindow):
         if not isinstance(tracks_snap, list) or project_snap is None:
             return
 
+        # Texts are not part of the cut undo history: undoing a cut must never drop or revert a text.
+        # They follow their footage when undo moves pieces (e.g. removing a teaser shifts the rest back).
+        texts = list(getattr(self.project, "text_overlays", []) or [])
+        anchor = self._timeline_layout()
         self.project = copy.deepcopy(project_snap)
+        self.project.text_overlays = texts
         restored_tracks: list[TrackState] = []
         for t in tracks_snap:
             if isinstance(t, TrackState):
                 restored_tracks.append(self._clone_track_state_for_history(t))
         self._tracks = restored_tracks if restored_tracks else [TrackState()]
+        teaser_model.renumber(self._tracks)
+        self._reanchor_text_overlays(anchor)
 
         idx = int(state.get("active_track_index", 0))
         self._active_track_index = max(0, min(idx, len(self._tracks) - 1))
@@ -3527,6 +3631,7 @@ class MainWindow(QMainWindow):
             return
 
         self._push_undo_state(kind="timeline")
+        anchor = self._timeline_layout()
 
         media_id = src.media_id
         if (not media_id) and src.path:
@@ -3587,6 +3692,8 @@ class MainWindow(QMainWindow):
         dup.ai_speech_raw = self._clone_segments_list(getattr(src, "ai_speech_raw", []))
         src_speakers = getattr(src, "ai_speaker_ids", None)
         dup.ai_speaker_ids = list(src_speakers) if isinstance(src_speakers, list) else None
+        if teaser_model.is_teaser(src):
+            dup.teaser_id = uuid.uuid4().hex  # a copy of a teaser is another teaser
         dup.undo_stack.clear()
         dup.redo_stack.clear()
         dup.pending_cut_start = None
@@ -3660,8 +3767,203 @@ class MainWindow(QMainWindow):
             )
             dup.audio_clip_id = aclip.id
 
-        self._finalize_timeline_reorder()
+        self._finalize_timeline_reorder(anchor)
         self._web_push_full_state()
+
+    # -----------------------------
+    # Teasers: copy a fragment, put it at the start (the original stays where it is)
+    # -----------------------------
+    TEASER_COLOR = ((214, 118, 38, 150), (247, 152, 58))
+
+    def _create_teaser_from_range(self, track_idx: int, start_s: float, end_s: float) -> TrackState | None:
+        """Copy [start_s, end_s] (seconds inside piece `track_idx`) as a new teaser at the start."""
+        if not (0 <= int(track_idx) < len(self._tracks)):
+            return None
+        src = self._tracks[int(track_idx)]
+        if not src.path:
+            return None
+        seg_in, _seg_out, seg_len = self._segment_bounds(src)
+        a, b = sorted((float(start_s), float(end_s)))
+        a = max(0.0, min(a, seg_len))
+        b = max(0.0, min(b, seg_len))
+        dur = b - a
+        if dur < teaser_model.MIN_TEASER_SECONDS:
+            self.statusBar().showMessage("Teaser: select at least 0.2 s of video.", 3000)
+            return None
+        # What the original plays in that range, exactly: its final keeps (cuts, gameplay selection...).
+        cuts_on = bool(getattr(src, "cuts_enabled", False))
+        if cuts_on:
+            keeps = list(src.keeps or []) or invert_to_keeps(float(seg_len), merge_overlaps(list(src.cuts or [])),
+                                                              min_keep=0.0)
+            keeps = merge_overlaps(self._slice_segments(keeps, a, b, a))
+            if not keeps:
+                self.statusBar().showMessage("Teaser: that part is entirely cut, nothing to copy.", 4000)
+                return None
+            cuts = invert_to_keeps(dur, keeps, min_keep=0.0)
+        else:
+            keeps, cuts = [Segment(0.0, dur)], []
+
+        try:
+            self._play_requested = False
+            self.video_player.pause()
+        except Exception:
+            pass
+        anchor = self._timeline_layout()
+        self._push_undo_state(kind="timeline")
+
+        media_id = src.media_id
+        if not media_id:
+            media_id = next((mid for mid, m in self.project.media.items() if str(m.path) == str(src.path)), None)
+            if not media_id:
+                media = self.project.add_media(str(src.path), name=Path(str(src.path)).name)
+                media_id = media.id
+
+        dup = TrackState()
+        dup.path = src.path
+        dup.media_id = media_id
+        dup.duration = float(dur)
+        dup.rms = src.rms
+        dup.hop_s = float(getattr(src, "hop_s", 0.03) or 0.03)
+        dup.cfg = dict(getattr(src, "cfg", {}) or {})
+        dup.filters_restored = bool(getattr(src, "filters_restored", False))
+        dup.cuts_restored = True
+        # Frozen edit: the copy plays what the original plays; re-analysis never regenerates it.
+        dup.automatic_cuts_enabled = False
+        dup.cuts_enabled = bool(cuts)
+        dup.cuts = cuts
+        dup.keeps = keeps
+        dup.manual_cuts = self._clone_segments_list(cuts)
+        dup.suppressed_cuts = []
+        dup.classic_cuts = self._clone_segments_list(cuts)
+        dup.classic_keeps = self._clone_segments_list(keeps)
+        dup.classic_manual_cuts = self._clone_segments_list(cuts)
+        dup.classic_cuts_enabled = dup.cuts_enabled
+        dup.source_id = src.source_id
+        dup.source_role = "gameplay"
+        dup.segment_source_in = float(seg_in + a)
+        dup.segment_source_out = float(seg_in + b)
+        dup.segment_group_id = uuid.uuid4().hex
+        dup.segment_index = 1
+        dup.teaser_id = uuid.uuid4().hex
+        dup.video_color, dup.video_edge = self.TEASER_COLOR
+        try:
+            self._update_segment_rms_stats(dup)
+        except Exception:
+            pass
+
+        insert_idx = teaser_model.start_insert_index(self._tracks)
+        self._tracks.insert(insert_idx, dup)
+        if self._active_track_index >= insert_idx:
+            self._active_track_index += 1
+        teaser_model.renumber(self._tracks)
+        self._ensure_video_track_for_state(dup)
+        self._ensure_audio_track_for_state(dup)
+        link_id = uuid.uuid4().hex
+        name = self._segment_display_name(dup)
+        for kind, track_id in (("video", dup.video_track_id), ("audio", dup.audio_track_id)):
+            if not track_id:
+                continue
+            clip = self.project.add_clip(track_id=str(track_id), media_id=str(media_id), link_id=link_id,
+                                         source_in=float(dup.segment_source_in), source_out=float(dup.segment_source_out),
+                                         timeline_in=0.0, timeline_out=float(dur), name=name,
+                                         color=dup.video_color if kind == "video" else None,
+                                         edge=dup.video_edge if kind == "video" else None)
+            if kind == "video":
+                dup.video_clip_id = clip.id
+            else:
+                dup.audio_clip_id = clip.id
+
+        self._finalize_timeline_reorder(anchor)
+        self._web_push_full_state()
+        out_len = sum(k.dur for k in keeps)
+        self.statusBar().showMessage(
+            f"{name} added at the start ({fmt_hms(out_len)}). The original stays in place. "
+            "Drag it, or right-click it → Move this teaser to the playhead · Ctrl+Z to undo", 7000)
+        self._app_log("teaser_created", index=int(dup.teaser_index), seconds=round(out_len, 2))
+        return dup
+
+    def _move_teaser_to_time(self, track_idx: int, t: float) -> bool:
+        """Place a teaser at timeline time `t`, splitting the piece under `t` when needed."""
+        if not (0 <= int(track_idx) < len(self._tracks)):
+            return False
+        teaser = self._tracks[int(track_idx)]
+        layout = {p["key"]: p for p in self._timeline_layout()}
+        own = layout.get(id(teaser))
+        t = float(t)
+        if own is not None and float(own["tl_in"]) - 1e-6 <= t <= float(own["tl_out"]) + 1e-6:
+            self.statusBar().showMessage("Move the playhead outside this teaser first.", 3000)
+            return False
+        target = next((i for i, tr in enumerate(self._tracks) if tr is not teaser and id(tr) in layout
+                       and float(layout[id(tr)]["tl_in"]) - 1e-6 <= t < float(layout[id(tr)]["tl_out"]) - 1e-6), None)
+        anchor = self._timeline_layout()
+        split_at = None
+        before: TrackState | None = None  # the teaser goes right before this piece (None = at the end)
+        if target is not None:
+            piece = self._tracks[target]
+            tl_in, tl_out = float(layout[id(piece)]["tl_in"]), float(layout[id(piece)]["tl_out"])
+            if t - tl_in <= 0.05:
+                before = piece
+            elif tl_out - t <= 0.05:
+                before = self._tracks[target + 1] if target + 1 < len(self._tracks) else None
+            else:
+                split_at = target
+        if split_at is None and (before is teaser or (before is None and self._tracks and self._tracks[-1] is teaser)):
+            return False  # already there
+        self._push_undo_state(kind="timeline")
+        if split_at is not None:
+            self._split_track_state_at_time(split_at, t, push_undo=False)
+            before = self._tracks[split_at + 1]
+        active = self._tracks[self._active_track_index] if 0 <= self._active_track_index < len(self._tracks) else None
+        self._tracks.pop(next(i for i, tr in enumerate(self._tracks) if tr is teaser))
+        dest = len(self._tracks) if before is None else next(i for i, tr in enumerate(self._tracks) if tr is before)
+        self._tracks.insert(dest, teaser)
+        if active is not None:
+            self._active_track_index = next(i for i, tr in enumerate(self._tracks) if tr is active)
+        self._finalize_timeline_reorder(anchor)
+        self._web_push_full_state()
+        self.statusBar().showMessage(f"{self._segment_display_name(teaser)} moved · Ctrl+Z to undo", 4000)
+        return True
+
+    def _move_teaser_to_start(self, track_idx: int) -> None:
+        if not (0 <= int(track_idx) < len(self._tracks)):
+            return
+        teaser = self._tracks[int(track_idx)]
+        rest = [tr for tr in self._tracks if tr is not teaser]
+        dest = 0  # right after the leading intros: it becomes Teaser 1
+        while dest < len(rest) and rest[dest].source_role == "intro":
+            dest += 1
+        if int(track_idx) == dest:
+            return
+        self._push_undo_state(kind="timeline")
+        self._move_track_to_index(int(track_idx), dest)
+
+    def _on_teaser_tool_click(self, edit_t: float) -> None:
+        """Teaser tool: first click = start, second click on the same video = end → copy at the start."""
+        idx = int(self._active_track_index)
+        pending = getattr(self, "_pending_teaser", None)
+        if pending is None or int(pending[0]) != idx:
+            self._pending_teaser = (idx, float(edit_t))
+            self._set_teaser_pending_visual(float(edit_t), idx)
+            self.statusBar().showMessage("Teaser: now click the END of the fragment to copy (Esc to cancel).", 5000)
+            return
+        self._cancel_pending_teaser()
+        self._create_teaser_from_range(idx, float(pending[1]), float(edit_t))
+
+    def _set_teaser_pending_visual(self, start: float | None, track_state_idx: int | None = None) -> None:
+        try:
+            self.timeline.set_pending_kind("teaser" if start is not None else "cut")
+        except Exception:
+            pass
+        self._set_pending_cut_visual(start, None, track_state_idx=track_state_idx)
+
+    def _cancel_pending_teaser(self) -> None:
+        if getattr(self, "_pending_teaser", None) is None:
+            return
+        self._pending_teaser = None
+        self._set_teaser_pending_visual(None)
+
+    def _toggle_teaser_tool(self) -> None:
+        self._set_tool_mode("select" if self.tool_mode == "teaser" else "teaser")
 
     def _remove_track_at_index(self, idx: int) -> None:
         if idx < 0 or idx >= len(self._tracks):
@@ -3683,6 +3985,7 @@ class MainWindow(QMainWindow):
             return
 
         self._push_undo_state(kind="timeline")
+        anchor = self._timeline_layout()
 
         # stop playback if needed
         try:
@@ -3739,7 +4042,7 @@ class MainWindow(QMainWindow):
                 pass
 
         # Re-sequence to avoid timeline holes
-        self._finalize_timeline_reorder()
+        self._finalize_timeline_reorder(anchor)
         self._web_push_full_state()
 
     def _perform_workspace_reset(self) -> None:
@@ -3793,6 +4096,7 @@ class MainWindow(QMainWindow):
             self._ai_processing = False
             self._video_color_cursor = 0
             self.project = Project.create_default("Untitled")
+            self._refresh_text_overlays()
             if hasattr(self, "thumbnails"):
                 self.thumbnails.restore_outputs()
             if hasattr(self, "clips"):
@@ -4118,9 +4422,19 @@ class MainWindow(QMainWindow):
     # -----------------------------
     def _set_tool_mode(self, mode: str) -> None:
         m = str(mode).lower().strip()
-        if m not in {"select", "cut", "split"}:
+        if m not in {"select", "cut", "split", "teaser"}:
             m = "select"
         mode = m
+        if mode != "teaser":
+            self._cancel_pending_teaser()
+        elif getattr(self, "tool_mode", "select") != "teaser":
+            if self._pending_cut_start is not None or self._pending_cut_end is not None:
+                self._cancel_pending_cut()
+            try:
+                self.statusBar().showMessage("Teaser tool: click the START, then the END of the moment to copy "
+                                             "to the start of the video.", 6000)
+            except Exception:
+                pass
         self.tool_mode = mode
         try:
             self.btn_cut_tool.blockSignals(True)
@@ -4253,7 +4567,7 @@ class MainWindow(QMainWindow):
                 out.append(Segment(a - shift, b - shift))
         return out
 
-    def _split_track_state_at_time(self, track_idx: int, t: float) -> bool:
+    def _split_track_state_at_time(self, track_idx: int, t: float, push_undo: bool = True) -> bool:
         if track_idx < 0 or track_idx >= len(self._tracks):
             return False
         ts = self._tracks[track_idx]
@@ -4279,7 +4593,8 @@ class MainWindow(QMainWindow):
         if left_len <= 0.0 or right_len <= 0.0:
             return False
 
-        self._push_undo_state(kind="timeline")
+        if push_undo:
+            self._push_undo_state(kind="timeline")
 
         # Ensure segment metadata
         self._ensure_segment_meta(ts)
@@ -4361,6 +4676,12 @@ class MainWindow(QMainWindow):
             ts_right.copy_index = int(getattr(ts, "copy_index", 0) or 0)
         except Exception:
             ts_right.copy_index = 0
+        # Both halves of a teaser stay the same "Teaser N" (and keep its look and frozen cuts).
+        ts_right.teaser_id = str(getattr(ts, "teaser_id", "") or "")
+        if ts_right.teaser_id:
+            ts_right.automatic_cuts_enabled = False
+            ts_right.video_color = ts.video_color
+            ts_right.video_edge = ts.video_edge
 
         # Insert right track after current
         self._tracks.insert(track_idx + 1, ts_right)
@@ -6788,6 +7109,7 @@ class MainWindow(QMainWindow):
             "clips": copy.deepcopy(getattr(self.project, "clips", {}) or {}),
             "creative_direction": copy.deepcopy(getattr(self.project, "creative_direction", {}) or {}),
             "gameplay_export": copy.deepcopy(getattr(self.project, "gameplay_export", {}) or {}),
+            "text_overlays": overlays_to_payload(getattr(self.project, "text_overlays", []) or []),
             "global": {
                 "analysis_mode": str(getattr(self, "analysis_mode", "classic") or "classic"),
                 "active_track_index": int(getattr(self, "_active_track_index", 0) or 0),
@@ -7076,6 +7398,8 @@ class MainWindow(QMainWindow):
         if hasattr(self, "thumb_direction"):
             self.thumb_direction.restore(self.project.creative_direction)
         self.project.gameplay_export = copy.deepcopy(raw.get("gameplay_export") or {})
+        self.project.text_overlays = overlays_from_payload(raw.get("text_overlays"))
+        self._refresh_text_overlays()
         self._refresh_gameplay_panel()
         self.project.clips = copy.deepcopy(raw.get("clips") or {})
         if hasattr(self, "thumbnails"):
@@ -7200,6 +7524,7 @@ class MainWindow(QMainWindow):
             "segment_index",
             "copy_source_id",
             "copy_index",
+            "teaser_id",
             "duration",
             "video_color",
             "video_edge",
@@ -7235,6 +7560,11 @@ class MainWindow(QMainWindow):
                 track.copy_index = int(restore_state.get("copy_index") or 0)
         except Exception:
             pass
+        track.teaser_id = str(restore_state.get("teaser_id") or "")
+        try:
+            track.teaser_index = int(restore_state.get("teaser_index") or 0) if track.teaser_id else 0
+        except Exception:
+            track.teaser_index = 0
         try:
             if restore_state.get("segment_source_in") is not None:
                 track.segment_source_in = float(restore_state.get("segment_source_in") or 0.0)
@@ -7555,6 +7885,9 @@ class MainWindow(QMainWindow):
                           "source_role": t.source_role, "intro_targets": list(t.intro_targets),
                            "automatic_cuts_enabled": t.automatic_cuts_enabled,
                            "gameplay_target_class": t.gameplay_target_class}
+            if teaser_model.is_teaser(t):
+                item["teaser_id"] = str(t.teaser_id)
+                item["teaser_index"] = int(getattr(t, "teaser_index", 0) or 0)
             if include_cfg:
                 cfg = getattr(t, "cfg", None)
                 if isinstance(cfg, dict) and cfg:
@@ -10726,6 +11059,16 @@ class MainWindow(QMainWindow):
                 t = seg_start
         global_ms = int(t * 1000)
 
+        skip_last = self._preview_skip_last
+        if skip_last is not None:
+            landing, skip_ts = skip_last
+            if (time.monotonic() - skip_ts) < 0.8 and t < (landing - 0.05):
+                # Stale report from before the automatic skip: accepting it would re-sync audio
+                # (and re-skip) on the cut we just jumped over -> the "same bit twice" stutter.
+                return
+            if (time.monotonic() - skip_ts) >= 0.8 or t >= landing:
+                self._preview_skip_last = None
+
         pending = getattr(self, "_pending_seek_target", None)
         if pending is not None:
             try:
@@ -10799,22 +11142,37 @@ class MainWindow(QMainWindow):
         if not self.skip_on or self._skip_guard:
             return
 
+        target, next_cut = self._preview_cut_skip_info(t)
+        if target is not None:
+            self._preview_skip_to(target)
+            return
+        # Schedule the skip for the exact cut start instead of noticing it one position
+        # report (~50 ms of the removed footage) too late.
+        playing = self.video_player.playbackState() == QMediaPlayer.PlayingState
+        if playing and next_cut is not None and 0.0 < (next_cut - t) <= 0.15:
+            self._preview_skip_timer_cut = float(next_cut)
+            self._preview_skip_timer.start(max(1, int(round((next_cut - t) * 1000))))
+        elif self._preview_skip_timer.isActive():
+            self._preview_skip_timer.stop()
+
+    def _preview_cut_skip_info(self, t: float) -> tuple[float | None, float | None]:
+        """(landing time if `t` is inside a cut, global start of the next cut) for preview skipping."""
         # Drive cuts/skip by the track that owns the current global time.
         amap = self._map_global_to_audio(t, None)
         if amap is None:
-            return
+            return None, None
         _aidx, _aseg, _local_src_t = amap
         try:
             track_idx = int(_aseg.get("track_state_idx"))
         except Exception:
             track_idx = None
         if track_idx is None or not (0 <= track_idx < len(self._tracks)):
-            return
+            return None, None
 
         track = self._tracks[track_idx]
         cuts = track.cuts or []
         if not track.cuts_enabled or not cuts:
-            return
+            return None, None
 
         try:
             seg_start = float(_aseg.get("start", 0.0) or 0.0)
@@ -10825,9 +11183,8 @@ class MainWindow(QMainWindow):
 
         for c in cuts:
             if local_t < c.start:
-                break
+                return None, seg_start + float(c.start)
             if c.start <= local_t < c.end:
-                self._skip_guard = True
                 try:
                     new_global = seg_start + max(0.0, float(c.end))
                     # clamp to segment end / global duration
@@ -10846,9 +11203,29 @@ class MainWindow(QMainWindow):
                         new_global = min(new_global, float(total))
                 except Exception:
                     new_global = seg_start
-                self._set_all_positions(int(new_global * 1000))
-                self._skip_guard = False
-                break
+                return new_global, None
+        return None, None
+
+    def _on_preview_skip_timer(self) -> None:
+        cut_start = self._preview_skip_timer_cut
+        self._preview_skip_timer_cut = None
+        if cut_start is None or not self.skip_on or self._skip_guard or self._user_scrubbing:
+            return
+        if self.video_player.playbackState() != QMediaPlayer.PlayingState:
+            return
+        target, _next = self._preview_cut_skip_info(cut_start + 1e-4)
+        if target is not None:
+            self._preview_skip_to(target)
+
+    def _preview_skip_to(self, new_global: float) -> None:
+        """Jump over a cut during preview with a single seek per player."""
+        self._skip_guard = True
+        try:
+            self._preview_skip_timer.stop()
+            self._set_all_positions(int(new_global * 1000))
+            self._preview_skip_last = (float(new_global), time.monotonic())
+        finally:
+            self._skip_guard = False
 
     # -----------------------------
     # Timeline: manual cuts / removal
@@ -10945,6 +11322,7 @@ class MainWindow(QMainWindow):
         ("Editing", "V", "Select tool"),
         ("Editing", "C", "Cut tool (click start, then end)"),
         ("Editing", "S", "Split tool"),
+        ("Editing", "D", "Teaser tool: click start and end of a moment → copy at the start (original stays)"),
         ("Editing", "I / O", "Mark cut start / end at the playhead (O creates the cut)"),
         ("Editing", "Delete / Backspace", "Restore the selected cuts (keep that footage)"),
         ("Editing", "Ctrl+A", "Select all cuts of the active video"),
@@ -10983,6 +11361,7 @@ class MainWindow(QMainWindow):
         sc("V", lambda: self._set_tool_mode("select"))
         sc("C", self._toggle_cut_tool)
         sc("S", self._toggle_split_tool)
+        sc("D", self._toggle_teaser_tool)
         sc("N", self._toggle_snap)
         sc("J", self.transport_seek_backward)
         sc("K", self.toggle_play)
@@ -11162,6 +11541,9 @@ class MainWindow(QMainWindow):
         self._commit_pending_cut(confirm=False)
 
     def _on_escape(self) -> None:
+        if getattr(self, "_pending_teaser", None) is not None:
+            self._cancel_pending_teaser()
+            return
         if self._pending_cut_start is not None or self._pending_cut_end is not None:
             self._cancel_pending_cut()
             return
@@ -11564,7 +11946,8 @@ class MainWindow(QMainWindow):
         sources: list[str] = []
         for t in self._tracks:
             path = str(getattr(t, "path", "") or "")
-            if t.source_role != "intro" and path and not any(self._same_local_path(path, s) for s in sources):
+            if (t.source_role != "intro" and not teaser_model.is_teaser(t) and path
+                    and not any(self._same_local_path(path, s) for s in sources)):
                 sources.append(path)
         self._gameplay_queue = sources
         self._gameplay_mode = mode
@@ -11580,7 +11963,8 @@ class MainWindow(QMainWindow):
             return
         video = queue.pop(0)
         previous_grouping = next((getattr(t, "gameplay_grouping", {}) for t in self._tracks
-                                  if self._same_local_path(getattr(t, "path", None), video)), {})
+                                  if not teaser_model.is_teaser(t)
+                                  and self._same_local_path(getattr(t, "path", None), video)), {})
         worker = GameplayEditWorker(video, self._gameplay_mode,
                                     str(self.gameplay_end_policy_combo.currentData() or "balanced"),
                                     previous_grouping=previous_grouping,
@@ -11648,7 +12032,8 @@ class MainWindow(QMainWindow):
         # Keep all detected games (also LOSS/partial) for local portrait grouping.
         for result in results:
             for track in self._tracks:
-                if track.source_role != "intro" and self._same_local_path(getattr(track, "path", None), result.get("video")):
+                if (track.source_role != "intro" and not teaser_model.is_teaser(track)
+                        and self._same_local_path(getattr(track, "path", None), result.get("video"))):
                     track.gameplay_report = copy.deepcopy(result.get("report") or {})
                     if "grouping" in result:
                         track.gameplay_grouping = gameplay_selection.preserve_editor(track.gameplay_grouping, result["grouping"])
@@ -11660,7 +12045,8 @@ class MainWindow(QMainWindow):
         for result in results:
             if not result.get("keeps") and (result.get("report") or {}).get("settings", {}).get("target_class"):
                 for idx, track in enumerate(self._tracks):
-                    if track.source_role != "intro" and self._same_local_path(track.path, result.get("video")):
+                    if (track.source_role != "intro" and not teaser_model.is_teaser(track)
+                            and self._same_local_path(track.path, result.get("video"))):
                         track.gameplay_mode = "keep"
                         track.gameplay_keeps = []
                         track.gameplay_detected_keeps = []
@@ -11671,7 +12057,8 @@ class MainWindow(QMainWindow):
                 self._refresh_timeline_tracks(reset_view=False)
         usable = [r for r in results if r.get("keeps")]
         if not usable and not any(t.gameplay_grouping.get("editor") for t in self._tracks
-                                  if any(self._same_local_path(t.path, r.get("video")) for r in results)):
+                                  if not teaser_model.is_teaser(t)
+                                  and any(self._same_local_path(t.path, r.get("video")) for r in results)):
             reason = "; ".join(errors) if errors else "no complete WIN was found, so nothing would be kept"
             self.lbl_gameplay_status.setText(f"Not applied: {reason}.")
             self._ui_set_state("Ready")
@@ -11682,7 +12069,8 @@ class MainWindow(QMainWindow):
             keeps_src = [Segment(float(a), float(b)) for a, b in result["keeps"]]
             report = result.get("report") or {}
             for idx, track in enumerate(self._tracks):
-                if track.source_role == "intro" or not self._same_local_path(getattr(track, "path", None), result.get("video")):
+                if (track.source_role == "intro" or teaser_model.is_teaser(track)
+                        or not self._same_local_path(getattr(track, "path", None), result.get("video"))):
                     continue
                 seg_in, seg_out, seg_len = self._segment_bounds(track)
                 keeps = to_segment_domain(keeps_src, seg_in, seg_out)
@@ -11694,7 +12082,8 @@ class MainWindow(QMainWindow):
                 track.gameplay_islands = island_metadata(report, seg_in, seg_out)
                 affected.append(idx)
         for result in results:
-            matching = [t for t in self._tracks if t.source_role != "intro" and self._same_local_path(t.path, result.get("video"))]
+            matching = [t for t in self._tracks if t.source_role != "intro" and not teaser_model.is_teaser(t)
+                        and self._same_local_path(t.path, result.get("video"))]
             if matching and "editor" in matching[0].gameplay_grouping:
                 gameplay_selection.apply(matching, matching[0].gameplay_grouping)
                 affected.extend(i for i, t in enumerate(self._tracks) if any(t is m for m in matching))
@@ -11998,8 +12387,10 @@ class MainWindow(QMainWindow):
             source_t = cut_meta.get("source_t")
             local_t = cut_meta.get("local_t")
             cut_tool_click = bool(cut_meta.get("cut_tool_click"))
+            teaser_tool_click = bool(cut_meta.get("teaser_tool_click"))
         else:
             cut_idx = cut_meta
+            teaser_tool_click = False
 
         if track_state_idx is not None:
             try:
@@ -12046,6 +12437,10 @@ class MainWindow(QMainWindow):
         if cut_tool_click:
             if can_edit_cuts:
                 self._on_cut_tool_timeline_click(float(edit_t))
+            return
+        if teaser_tool_click:
+            if track_state_idx is not None:
+                self._on_teaser_tool_click(float(edit_t))
             return
 
         actions: dict = {}
@@ -12118,6 +12513,21 @@ class MainWindow(QMainWindow):
                 add("Split video here", lambda c=str(clip_id), t=float(t_sec): self._on_clip_split_requested(c, t))
             add("Duplicate this video", lambda i=int(track_state_idx): self._duplicate_track_at_index(i))
             add("Remove this video", lambda i=int(track_state_idx): self._remove_track_at_index(i))
+            menu.addSeparator()
+            ts_i = int(track_state_idx)
+            pending_teaser = getattr(self, "_pending_teaser", None)
+            if pending_teaser is not None and int(pending_teaser[0]) == ts_i:
+                add("Teaser: end here → copy to the start\tD",
+                    lambda: self._on_teaser_tool_click(float(edit_t)))
+                add("Cancel teaser selection\tEsc", self._cancel_pending_teaser)
+            else:
+                add("Teaser: start here (then pick the end)\tD",
+                    lambda: (self._set_tool_mode("teaser"), self._on_teaser_tool_click(float(edit_t))))
+            if 0 <= ts_i < len(self._tracks) and teaser_model.is_teaser(self._tracks[ts_i]):
+                playhead = float(getattr(self.timeline, "playhead", 0.0) or 0.0)
+                add(f"Move this teaser to the playhead ({fmt_hms(playhead)})",
+                    lambda i=ts_i, p=playhead: self._move_teaser_to_time(i, p))
+                add("Move this teaser to the start", lambda i=ts_i: self._move_teaser_to_start(i))
 
         if not actions:
             return
@@ -12640,19 +13050,26 @@ class MainWindow(QMainWindow):
             if v_idx is None and a_idx is None:
                 continue
 
-            out_segments.append(
-                {
-                    "start": float(t0),
-                    "end": float(t1),
-                    "duration": float(dur),
-                    "v_idx": v_idx,
-                    "v_in": v_in,
-                    "v_out": v_out,
-                    "a_idx": a_idx,
-                    "a_in": a_in,
-                    "a_out": a_out,
-                }
-            )
+            out_seg = {
+                "start": float(t0),
+                "end": float(t1),
+                "duration": float(dur),
+                "v_idx": v_idx,
+                "v_in": v_in,
+                "v_out": v_out,
+                "a_idx": a_idx,
+                "a_in": a_in,
+                "a_out": a_out,
+            }
+            owner = v_item if isinstance(v_item, dict) else a_item
+            try:
+                owner_track = self._tracks[int(owner.get("track_state_idx"))] if isinstance(owner, dict) else None
+            except Exception:
+                owner_track = None
+            if owner_track is not None and teaser_model.is_teaser(owner_track):
+                # Chapters: same source as the original, so the piece must be named explicitly.
+                out_seg["teaser_id"] = str(owner_track.teaser_id)
+            out_segments.append(out_seg)
 
         return input_paths, out_segments
 
@@ -13121,6 +13538,16 @@ class MainWindow(QMainWindow):
 
         input_paths, flat_segments = self._build_flatten_export_segments()
         keeps_for_export: list[Segment] = []
+        text_ctl = getattr(self, "text_overlays_ctl", None)
+        want_texts = bool(text_ctl is not None and text_ctl.overlays()
+                          and settings.output_mode in ("single", "selected_range", "video_only"))
+        # kept timeline ranges in export order (the coordinates the texts are placed on)
+        text_kept = [(float(s.get("start", 0.0) or 0.0), float(s.get("end", 0.0) or 0.0)) for s in flat_segments]
+        if want_texts and not text_kept:
+            text_kept = [(float(k.start), float(k.end)) for k in self._collect_global_keeps()]
+        if want_texts and settings.output_mode == "selected_range":
+            lo, hi = float(settings.range_start), float(settings.range_end)
+            text_kept = [(max(a, lo), min(b, hi)) for a, b in text_kept if min(b, hi) > max(a, lo)]
 
         selected_range = settings.output_mode == "selected_range"
         if selected_range:
@@ -13140,7 +13567,7 @@ class MainWindow(QMainWindow):
         # Fast-path: if flattened segments map linearly to a single input,
         # convert to legacy keeps (faster, uses preseek).
         if flat_segments:
-            if settings.output_mode != "per_clip":
+            if settings.output_mode != "per_clip" and not want_texts:
                 fast_ok, fast_keeps = self._segments_to_legacy_keeps(input_paths, flat_segments)
                 if fast_ok:
                     flat_segments = []
@@ -13213,6 +13640,23 @@ class MainWindow(QMainWindow):
             )
         except Exception:
             pass
+        text_specs: list[dict] = []
+        if want_texts and text_ctl is not None:
+            from ui.text_overlays_panel import probe_frame_size
+
+            frame_w, frame_h = probe_frame_size(self.ffmpeg_path, str((input_paths or [self.input_path])[0]))
+            if frame_w <= 0 or frame_h <= 0:
+                QMessageBox.critical(self, "Export texts", "Cannot read the video size, so the texts cannot be "
+                                     "placed. Export cancelled; nothing was written.")
+                return
+            try:
+                text_specs = text_ctl.export_specs(text_kept, frame_w, frame_h)
+            except Exception as exc:
+                QMessageBox.critical(self, "Export texts", f"Cannot prepare the texts for the export: {exc}")
+                return
+            if text_ctl.overlays() and not text_specs:
+                self._on_export_detail("text_overlays none_on_kept_parts (all texts fall inside cuts)")
+            self._app_log("export_text_overlays", count=len(text_specs), frame=f"{frame_w}x{frame_h}")
         try:
             from uuid import uuid4
             from export.artifacts import save_snapshot, write_timings
@@ -13275,6 +13719,7 @@ class MainWindow(QMainWindow):
                 segments=flat_segments if flat_segments else None,
                 export_settings=settings,
                 requested_export_settings=requested_settings,
+                text_overlays=text_specs,
             )
             self.ex_worker.timeline_report = (payload, artifact_dir / "timestamps.txt")
             self.ex_worker.moveToThread(self.ex_thread)

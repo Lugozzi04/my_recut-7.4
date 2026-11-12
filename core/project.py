@@ -96,6 +96,7 @@ class Project:
     gameplay_export: dict = field(default_factory=dict)
     creative_direction: dict = field(default_factory=dict)
     clips: dict = field(default_factory=dict)  # {"folder": ...} of the Clips page for an unsaved project
+    text_overlays: list = field(default_factory=list)  # core.text_overlays.TextOverlay, timeline seconds
 
     @classmethod
     def create_default(cls, name: str = "Untitled") -> "Project":

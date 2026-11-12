@@ -272,6 +272,18 @@ def build_stylesheet(p: Palette) -> str:
         background: {p.app}; color: {p.text_2}; border: 1px solid {p.border}; border-radius: 6px;
         font-family: 'Cascadia Mono', 'Consolas', monospace; font-size: 11px;
     }}
+    QPlainTextEdit#TextOverlayEdit {{
+        background: {p.raised}; color: {p.text}; border: 1px solid {p.border_strong}; border-radius: 6px;
+        font-family: {FONT_UI}; font-size: 13px; padding: 4px 6px; selection-background-color: {p.accent};
+    }}
+    QPlainTextEdit#TextOverlayEdit:focus {{ border-color: {p.focus}; }}
+    QListWidget#TextOverlayList {{
+        background: {p.app}; color: {p.text}; border: 1px solid {p.border}; border-radius: 6px; padding: 3px;
+        outline: 0;
+    }}
+    QListWidget#TextOverlayList::item {{ min-height: 24px; padding: 0 6px; border-radius: 4px; color: {p.text_2}; }}
+    QListWidget#TextOverlayList::item:hover {{ background: {p.hover}; color: {p.text}; }}
+    QListWidget#TextOverlayList::item:selected {{ background: {p.hover}; color: {p.text}; border-left: 2px solid #9B5DE5; }}
 
     /* ---------- menus / scrollbars / status bar ---------- */
     QMenu {{

@@ -30,6 +30,7 @@ def _divider() -> QFrame:
 
 class TimelineToolbar(QFrame):
     selectToolClicked = Signal()
+    teaserToolClicked = Signal()
     undoClicked = Signal()
     redoClicked = Signal()
     snapToggled = Signal(bool)
@@ -65,7 +66,11 @@ class TimelineToolbar(QFrame):
             b.setIconSize(QSize(16, 16))
             b.setFocusPolicy(Qt.NoFocus)
         self.btn_select.setFixedSize(30, 26)
-        for b in (self.btn_select, self.btn_cut, self.btn_split):
+        self.btn_teaser = _icon_button("Teaser tool  (D)\nClick the start, then the end of a moment: a copy goes to "
+                                       "the start of the video, the original stays in place",
+                                       checkable=True, name="ToolButton")
+        self.btn_teaser.setFixedSize(30, 26)
+        for b in (self.btn_select, self.btn_cut, self.btn_split, self.btn_teaser):
             tools_l.addWidget(b)
         lay.addWidget(tools)
         lay.addSpacing(6)
@@ -128,6 +133,7 @@ class TimelineToolbar(QFrame):
         lay.addWidget(self.btn_fit)
 
         self.btn_select.clicked.connect(self.selectToolClicked.emit)
+        self.btn_teaser.clicked.connect(self.teaserToolClicked.emit)
         self.btn_undo.clicked.connect(self.undoClicked.emit)
         self.btn_redo.clicked.connect(self.redoClicked.emit)
         self.btn_snap.toggled.connect(self.snapToggled.emit)
@@ -139,6 +145,7 @@ class TimelineToolbar(QFrame):
         self.btn_select.setIcon(glyph_icon("select", c, 16, disabled=d))
         self.btn_cut.setIcon(glyph_icon("scissors", c, 16, disabled=d))
         self.btn_split.setIcon(glyph_icon("split", c, 16, disabled=d))
+        self.btn_teaser.setIcon(glyph_icon("teaser", c, 16, disabled=d))
         self.btn_undo.setIcon(glyph_icon("undo", c, 16, disabled=d))
         self.btn_redo.setIcon(glyph_icon("redo", c, 16, disabled=d))
         self.btn_snap.setIcon(glyph_icon("magnet", c, 16, disabled=d))
@@ -158,8 +165,11 @@ class TimelineToolbar(QFrame):
 
     def set_tool(self, mode: str) -> None:
         self.btn_select.blockSignals(True)
-        self.btn_select.setChecked(mode not in {"cut", "split"})
+        self.btn_select.setChecked(mode not in {"cut", "split", "teaser"})
         self.btn_select.blockSignals(False)
+        self.btn_teaser.blockSignals(True)
+        self.btn_teaser.setChecked(mode == "teaser")
+        self.btn_teaser.blockSignals(False)
 
     def set_history(self, can_undo: bool, can_redo: bool) -> None:
         self.btn_undo.setEnabled(bool(can_undo))

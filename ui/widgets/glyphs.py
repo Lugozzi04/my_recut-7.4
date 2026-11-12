@@ -124,6 +124,16 @@ def _split(p, pen):
     p.drawRoundedRect(QRectF(14.5, 8, 6, 8), 1.5, 1.5)
 
 
+@_glyph("teaser")
+def _teaser(p, pen):
+    """Copy a moment to the start: a clip with its copy pulled back to a start bar."""
+    p.drawLine(QPointF(4, 4), QPointF(4, 20))
+    p.drawRoundedRect(QRectF(13, 5, 7.5, 6), 1.5, 1.5)
+    p.drawRoundedRect(QRectF(7, 13, 7.5, 6), 1.5, 1.5)
+    p.drawLine(QPointF(16.5, 11), QPointF(16.5, 14.5))
+    p.drawLine(QPointF(16.5, 16), QPointF(14.5, 16))
+
+
 def _arc_arrow(p: QPainter, pen: QPen, mirror: bool) -> None:
     p.save()
     if mirror:

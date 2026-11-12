@@ -20,7 +20,7 @@ from core.project_file import source_identity
 def output_options(tracks: list[Any]) -> dict[str, str]:
     result = {}
     for track in tracks:
-        if track.source_role == "intro":
+        if track.source_role == "intro" or getattr(track, "teaser_id", ""):
             continue
         for group in track.gameplay_grouping.get("groups", {}):
             key = output_key({"path": track.path, "source_id": track.source_id,
@@ -74,8 +74,8 @@ class SourcesPanel(QWidget):
             active = getattr(self.owner, "_active_track_index", 0)
             self.sources.clear()
             for index, track in enumerate(tracks):
-                if not track.path:
-                    continue
+                if not track.path or getattr(track, "teaser_id", ""):
+                    continue  # teasers are copies on the timeline, not sources
                 status = "Not needed" if track.source_role == "intro" else (
                     f'{len(track.gameplay_report["games"])} games' if track.gameplay_report.get("games")
                     else ("Audio ready · detect games" if track.rms is not None else "Pending"))

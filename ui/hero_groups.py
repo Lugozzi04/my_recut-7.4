@@ -217,7 +217,7 @@ class HeroGroupsPanel(QWidget):
         """Export class choices keep the last Gameplay source when viewing an Intro."""
         return [t for t in getattr(self.owner, "_tracks", [])
                 if getattr(t, "path", None) and getattr(t, "source_role", "gameplay") != "intro"
-                and str(Path(t.path).resolve()) == self.group_source]
+                and not getattr(t, "teaser_id", "") and str(Path(t.path).resolve()) == self.group_source]
 
     def refresh(self) -> None:
         if self.running():
@@ -232,7 +232,7 @@ class HeroGroupsPanel(QWidget):
         self.track_index = next((i for i, t in enumerate(getattr(self.owner, "_tracks", []) or []) if t is track), None)
         self.source = str(Path(track.path).resolve()) if track else ""
         gameplay_sources = [t for t in tracks if getattr(t, "path", None)
-                            and getattr(t, "source_role", "gameplay") != "intro"]
+                            and getattr(t, "source_role", "gameplay") != "intro" and not getattr(t, "teaser_id", "")]
         group_track = track if any(track is t for t in gameplay_sources) else next(
             (t for t in gameplay_sources if str(Path(t.path).resolve()) == self.group_source),
             next((t for t in gameplay_sources if getattr(t, "gameplay_grouping", {}).get("groups")), None))

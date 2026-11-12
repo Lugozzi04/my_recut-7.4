@@ -41,7 +41,7 @@ def analyze_project(
     service = service or HeroGroupingService()
     seen: dict[str, dict[str, Any]] = {}
     for track in result["tracks"]:
-        if track.get("source_role") == "intro":
+        if track.get("source_role") == "intro" or track.get("teaser_id"):
             continue
         source = str(Path(track["path"]).resolve())
         report = report_for_track(result, track)
@@ -379,8 +379,8 @@ def selected_project(payload: dict[str, Any], *, output: str | None = None,
     records = []
     present_outputs: set[str] = set()
     for index, track in enumerate(child.get("tracks", [])):
-        if track.get("source_role", "gameplay") == "intro":
-            continue
+        if track.get("source_role", "gameplay") == "intro" or track.get("teaser_id"):
+            continue  # teasers are copies of a moment: never part of a class/game export
         grouping = track.get("gameplay_grouping", {})
         rows = {r["key"]: r for r in grouping.get("games", [])}
         selected = set(grouping.get("selected", grouping.get("groups", {})))

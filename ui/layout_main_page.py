@@ -346,8 +346,11 @@ def build_main_page(window) -> None:
 
     advanced.toggled.connect(_on_adv_toggled)
 
-    window.main_scroll = _scroll_page(window.page_main, [cuts, preset, detection, advanced],
-                                      name="InspectorScroll")
+    from ui.text_overlays_panel import TextOverlayController
+
+    window.text_overlays_ctl = TextOverlayController(window)
+    window.main_scroll = _scroll_page(window.page_main, [cuts, window.text_overlays_ctl.section, preset, detection,
+                                                         advanced], name="InspectorScroll")
 
 
 # --------------------------------------------------------------------------------------------

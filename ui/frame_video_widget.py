@@ -42,6 +42,14 @@ class FrameVideoWidget(QWidget):
         self._overlay_timer = QTimer(self)
         self._overlay_timer.setInterval(50)
         self._overlay_timer.timeout.connect(self._tick_overlay)
+        # Text overlays: provider(frame_w, frame_h) -> [(QImage, x, y, opacity, id, selected)] in frame pixels;
+        # on_text_moved(id, cx, cy) with the new centre relative to the frame; on_text_clicked(id).
+        self.text_provider = None
+        self.on_text_moved = None
+        self.on_text_clicked = None
+        self._text_hits: list[tuple[QRectF, str]] = []
+        self._fitted = QRectF()
+        self._drag_text: dict | None = None
 
         self.video_sink = QVideoSink(self)
         self.video_sink.videoFrameChanged.connect(self._on_frame)
@@ -169,7 +177,11 @@ class FrameVideoWidget(QWidget):
                 y = target.y() + (target.height() - h) // 2
                 fitted = QRect(x, y, w, h)
                 p.drawImage(fitted, img)
+                self._fitted = QRectF(fitted)
+                self._paint_texts(p, iw, ih, scale)
         else:
+            self._fitted = QRectF()
+            self._text_hits = []
             self._paint_empty_state(p)
 
         if self._overlay_text:
@@ -196,6 +208,49 @@ class FrameVideoWidget(QWidget):
 
         p.end()
 
+    def _paint_texts(self, p: QPainter, iw: int, ih: int, scale: float) -> None:
+        self._text_hits = []
+        if not callable(self.text_provider):
+            return
+        try:
+            items = self.text_provider(iw, ih) or []
+        except Exception:
+            return
+        drag = self._drag_text or {}
+        for img, x, y, alpha, ident, selected in items:
+            dx, dy = (drag.get("dx", 0.0), drag.get("dy", 0.0)) if drag.get("id") == ident else (0.0, 0.0)
+            target = QRectF(self._fitted.left() + x * scale + dx, self._fitted.top() + y * scale + dy,
+                            img.width() * scale, img.height() * scale)
+            p.save()
+            p.setOpacity(max(0.0, min(1.0, float(alpha))))
+            p.drawImage(target, img)
+            p.restore()
+            if selected:
+                pen = QPen(self._tok("accent", "#4D8DFF"), 1.2)
+                pen.setStyle(Qt.DashLine)
+                p.setPen(pen)
+                p.setBrush(Qt.NoBrush)
+                p.drawRect(target.adjusted(-2, -2, 2, 2))
+            self._text_hits.append((target, str(ident)))
+
+    def _text_at(self, pos) -> tuple[QRectF, str] | None:
+        for rect, ident in reversed(self._text_hits):
+            if rect.contains(pos):
+                return rect, ident
+        return None
+
+    def mousePressEvent(self, event):
+        if self._image and event.button() == Qt.LeftButton:
+            pos = event.position()
+            hit = self._text_at(pos)
+            if hit is not None:
+                rect, ident = hit
+                self._drag_text = {"id": ident, "x0": pos.x(), "y0": pos.y(), "dx": 0.0, "dy": 0.0, "rect": rect}
+                self.setCursor(Qt.SizeAllCursor)
+                event.accept()
+                return
+        return super().mousePressEvent(event)
+
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             self._drag_hover = True
@@ -220,7 +275,16 @@ class FrameVideoWidget(QWidget):
 
     def mouseMoveEvent(self, event):
         if self._image:
-            self.unsetCursor()
+            pos = event.position()
+            if self._drag_text is not None:
+                self._drag_text["dx"] = pos.x() - self._drag_text["x0"]
+                self._drag_text["dy"] = pos.y() - self._drag_text["y0"]
+                self.update()
+                return
+            if self._text_at(pos) is not None:
+                self.setCursor(Qt.OpenHandCursor)
+            else:
+                self.unsetCursor()
             return super().mouseMoveEvent(event)
         pos = event.position().toPoint()
         if self._empty_browse_rect.isValid() and self._empty_browse_rect.contains(pos):
@@ -237,6 +301,22 @@ class FrameVideoWidget(QWidget):
         return super().leaveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        drag = self._drag_text
+        if drag is not None:
+            self._drag_text = None
+            self.unsetCursor()
+            moved = abs(drag["dx"]) > 3 or abs(drag["dy"]) > 3
+            fitted = self._fitted
+            if moved and callable(self.on_text_moved) and fitted.width() > 0 and fitted.height() > 0:
+                c = drag["rect"].center()
+                cx = (c.x() + drag["dx"] - fitted.left()) / fitted.width()
+                cy = (c.y() + drag["dy"] - fitted.top()) / fitted.height()
+                self.on_text_moved(drag["id"], cx, cy)
+            elif not moved and callable(self.on_text_clicked):
+                self.on_text_clicked(drag["id"])
+            self.update()
+            event.accept()
+            return
         if (
             not self._image
             and event.button() == Qt.LeftButton
